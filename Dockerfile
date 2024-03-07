@@ -1,62 +1,71 @@
-# syntax = docker/dockerfile:1
+# syntax=docker/dockerfile:1
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.0.6
-FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim as base
+ARG RUBY_VERSION=3.3.0
+FROM ruby:${RUBY_VERSION}-slim AS Builder
 
-# Rails app lives here
-WORKDIR /rails
+# Set environment variables to minimize the size of the resulting image
+ENV RAILS_ENV=production \
+    BUNDLE_WITHOUT="development test" \
+    BUNDLE_FROZEN=true
 
-# Set production environment
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
+# Set working directory
+WORKDIR /app
 
+# Install packages needed to build gems and for runtime
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    libvips-dev \
+    postgresql-client \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Throw-away build stage to reduce size of final image
-FROM base as build
+# Copy just the Gemfile to take advantage of Docker cache
+COPY Gemfile ./
 
-# Install packages needed to build gems
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev libvips pkg-config
+# Install gems
+# Note: We copy Gemfile.lock and run `bundle install` in a separate step to take advantage of Docker cache
+COPY Gemfile.lock ./
+RUN bundle config set without 'development test' && \
+    bundle install --jobs 4 --retry 3
 
-# Install application gems
-COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
+# Copy the rest of the application code
+COPY . ./
 
-# Copy application code
-COPY . .
+# Use ARG to allow override of these values at build time. Provide default dummy values.
+ARG SECRET_KEY_BASE
+ARG RAILS_MASTER_KEY
 
-# Precompile bootsnap code for faster boot times
-RUN bundle exec bootsnap precompile app/ lib/
+# Set environment variables for the precompilation process
+ENV SECRET_KEY_BASE=${SECRET_KEY_BASE} \
+    RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompile assets using the environment variables
+RUN if [ -n "$SECRET_KEY_BASE" ] && [ -n "$RAILS_MASTER_KEY" ]; then bundle exec rails assets:precompile; fi
 
+# Remove folders not needed in resulting image
+RUN rm -rf node_modules tmp/cache app/assets vendor/assets spec
 
-# Final stage for app image
-FROM base
+# Start a new stage from scratch to create a slim final image
+FROM ruby:${RUBY_VERSION}-slim
+COPY --from=Builder /usr/local/bundle/ /usr/local/bundle/
+COPY --from=Builder /app /app
+WORKDIR /app
 
-# Install packages needed for deployment
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libvips postgresql-client && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# Install runtime dependencies
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    libpq5 \
+    libvips42 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy built artifacts: gems, application
-COPY --from=build /usr/local/bundle /usr/local/bundle
-COPY --from=build /rails /rails
+# Create a non-root user and switch to it
+RUN groupadd -r rails && useradd --no-log-init -r -g rails rails \
+    && chown -R rails:rails /app
+USER rails
 
-# Run and own only the runtime files as a non-root user for security
-RUN useradd rails --create-home --shell /bin/bash && \
-    chown -R rails:rails db log storage tmp
-USER rails:rails
-
-# Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-
-# Start the server by default, this can be overwritten at runtime
+# Expose port 3000 to the Docker host, so we can access it from the outside.
 EXPOSE 3000
-CMD ["./bin/rails", "server"]
+
+# The main command to run when the container starts.
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
