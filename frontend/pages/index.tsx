@@ -1,10 +1,11 @@
-// pages/index.tsx
 import React, { useEffect, useState } from 'react';
-import { fetchDreams } from '../servicesモジュール/dreamService';
+import { fetchDreams } from '../services/dreamService';
 import DreamCard from '../components/DreamCard';
+import { Dream } from '../types';
+import { GetServerSideProps } from 'next';
 
 const HomePage = () => {
-  const [dreams, setDreams] = useState([]);
+  const [dreams, setDreams] = useState<Dream[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,5 +24,8 @@ const HomePage = () => {
     </div>
   );
 };
-
+export const getServerSideProps: GetServerSideProps = async () => {
+  const dreams = await fetchDreams();
+  return { props: { dreams } };
+};
 export default HomePage;
