@@ -1,8 +1,10 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import DreamCard from '../components/DreamCard';
-import { Dream } from '../types';
+import { Dream }from '../types';
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
   const [dreams, setDreams] = useState<Dream[]>([]);
 
   useEffect(() => {
