@@ -9,6 +9,7 @@ class DreamsController < ApplicationController
 
   # GET /dreams/:id
   def show
+    @dream = Dream.find(params[:id])
     render json: @dream
   end
 

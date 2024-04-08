@@ -1,3 +1,3 @@
 Rails.application.routes.draw do
-  resources :dreams
+   resources :dreams, only: [:index, :show, :create, :update, :destroy]
 end

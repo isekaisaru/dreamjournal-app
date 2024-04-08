@@ -7,7 +7,8 @@ FROM ruby:${RUBY_VERSION}-slim AS Builder
 # Set environment variables to minimize the size of the resulting image
 ENV RAILS_ENV=production \
     BUNDLE_WITHOUT="development test" \
-    BUNDLE_FROZEN=true
+    BUNDLE_FROZEN=true \
+    POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 # Set working directory
 WORKDIR /app
