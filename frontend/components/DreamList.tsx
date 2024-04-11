@@ -1,15 +1,25 @@
+import { Dream } from '@/app/types';
+import Link from 'next/link';
 import React from 'react';
 
 type DreamListProps = {
-  title: string;
-  description: string;
+   dreams: Dream[];
 };
 
-const DreamList: React.FC<DreamListProps> = ({ title, description }) => {
+const DreamList = ({ dreams }: DreamListProps) => {
   return (
-    <div className="max-w-sm rounded overflow-hidden shadow-lg p-4 m-2 bg-white">
-      <h2 className="font-bold text-gray-700 text-xl mb-2">{title}</h2>
-      <p className="text-gray-700 text-base">{description}</p>
+    <div>
+      {dreams.map((dream) => (
+        <div className="shadow my-4 flex flex-col" key={dream.id}>
+          <Link href={`dream/${dream.id}`} className="text-slate-900 text-3xl font-bold hover:text-gray-700 pb-4">
+            {dream.title}
+          </Link>
+          <Link href={`dream/${dream.id}`} className="text-slate-900 text-xl font-bold hover:text-gray-700 pb-4">
+            {dream.description}
+          </Link>
+        </div>
+       ))}  
+
     </div>
   );
 };
