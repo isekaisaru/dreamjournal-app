@@ -3,6 +3,8 @@ import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import Header from "./Header";
 import Footer from "./Footer";
+import { Suspense } from "react";
+import Loading from "./loading";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 
@@ -20,8 +22,12 @@ export default function RootLayout({
     <html lang="ja">
       <body className={"container mx-auto  bg-sky-600 text-slate-50 ${notoSansJP.className}"}>
         <Header />
-        {children}
+        <div className="flex flex-col min-h-screen">
+          <main className="flex-grow">
+            <Suspense fallback={<Loading />}>{children}</Suspense>
+          </main>
         <Footer />
+        </div>
         </body>
     </html>
   );
