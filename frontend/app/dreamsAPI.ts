@@ -56,14 +56,14 @@ export const getDetailDream = async (id: string): Promise<Dream> => {
      throw error; 
    }
  };
- export const deleteDream = async (id:string): Promise<Dream> => {
+ export const deleteDream = async (id:string): Promise<void> => {
     const res = await fetch(`http://localhost:3001/dreams/${id}`, {
       method: "DELETE",
     });
     
     if (!res.ok) {
       throw new Error("エラーが発生しました。");
-    }
-    const deleteDream = await res.json();
-    return deleteDream;
+    
+    } 
+      return;
 };
