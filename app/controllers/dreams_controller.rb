@@ -16,10 +16,13 @@ class DreamsController < ApplicationController
   # POST /dreams
   def create
     @dream = Dream.new(dream_params)
+    @dream.user_id ||= 1
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
-      render json: @dream.errors, status: :unprocessable_entity
+      error_messages = @dream.errors.full_messages.to_sentence
+      logger.debug "Create failed: #{error_messages}"
+      render json: { errors: @dream.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -28,14 +31,21 @@ class DreamsController < ApplicationController
     if @dream.update(dream_params)
       render json: @dream
     else
-      render json: @dream.errors, status: :unprocessable_entity
+    error_messages = @dream.errors.full_messages.to_sentence
+    logger.debug "Update failed: #{error_messages}"
+    render json: { errors: error_messages }, status: :unprocessable_entity
     end
   end
 
   # DELETE /dreams/:id
   def destroy
-    @dream.destroy
+   if @dream.destroy
+    Rails.logger.info "Dream deleted successfully."
     head :no_content
+   else
+    Rails.logger.error "Failed to delete dream : #{dream.errors.full_messages.to_sentence}"
+    render json: @dream.errors, status: :unprocessable_entity
+   end
   end
 
   private
@@ -46,6 +56,6 @@ class DreamsController < ApplicationController
 
     # Only allow a trusted parameter "white list" through.
     def dream_params
-      params.require(:dream).permit(:title, :description, :user_id)
+      params.require(:dream).permit(:title, :description)
     end
 end

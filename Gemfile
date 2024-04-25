@@ -21,6 +21,9 @@ gem "stimulus-rails"
 # Building JSON APIs
 gem "jbuilder"
 
+# Add CORS to accept requests from different origins
+gem 'rack-cors'
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
