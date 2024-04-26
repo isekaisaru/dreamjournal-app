@@ -2,8 +2,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface Dream {
@@ -11,6 +11,6 @@ export interface Dream {
   title: string;
   description: string;
   userId: number;
-  createdAt: Date;
-  updatedAt: Date;
+  created_at: Date;
+  updated_at: Date;
 }
