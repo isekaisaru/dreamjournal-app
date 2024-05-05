@@ -1,5 +1,6 @@
 import { getDetailDream } from '@/app/dreamsAPI';
 import DeleteButton from '@/components/DeleteButton';
+import UpdateButton from '@/components/UpdateButton';
 import React from 'react'
 
 const Dream = async ({ params }  :{ params: { id: string} }) => {
@@ -14,6 +15,7 @@ const Dream = async ({ params }  :{ params: { id: string} }) => {
       </div>
       <div className="text-right mt-3">
         <DeleteButton id={detailDream.id.toString()}/>
+        <UpdateButton id={detailDream.id.toString()} initialTitle={detailDream.title} initialDescription={detailDream.description} />
       </div>
     </div>
   );
