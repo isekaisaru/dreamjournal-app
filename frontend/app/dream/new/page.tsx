@@ -39,13 +39,13 @@ const DreamJournalPage= () => {
           <label className="text-gray-700 text-sm font-bold mb-2">夢のタイトル</label>
           <input
             type="text"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight foucus:outline-none"
+            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none"
             onChange={(e) => setTitle(e.target.value)}/>
         </div>
         <div className='mb-4'>
           <label className="text-gray-700 text-sm font-bold mb-2">夢の内容</label>
           <textarea
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight foucus:outline-none"
+            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none"
             onChange={(e) => setDescription(e.target.value)}>
           </textarea>
         </div>

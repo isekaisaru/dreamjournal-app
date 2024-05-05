@@ -1,5 +1,5 @@
 import { User,Dream } from "./types";
-import { notFound } from "next/navigation";
+
 
 export const getAllDreams = async (): Promise<Dream[]> => {
    try {
@@ -17,7 +17,11 @@ export const getAllDreams = async (): Promise<Dream[]> => {
 
 export const getDetailDream = async (id: string): Promise<Dream> => {
    try {
-     const res = await fetch(`http://localhost:3001/dreams/${id}`);
+     const res = await fetch(`http://localhost:3001/dreams/${id}`,{
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+     });
      if (res.status === 400) {
        throw new Error("Request failed with status 400: Bad Request");
      }
@@ -56,6 +60,34 @@ export const getDetailDream = async (id: string): Promise<Dream> => {
      throw error; 
    }
  };
+
+ export const updateDream = async (
+  id: string,
+  title: string,
+  description: string
+): Promise<Dream> => {
+  try {
+    const res = await fetch(`http://localhost:3001/dreams/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ dream: { title, description } }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Failed to update dream: HTTP error, status = ${res.status}, ${errorData.message}`);
+    }
+
+    const updatedDream = await res.json();
+    return updatedDream;
+  } catch (error) {
+    console.error("Failed to update dream:", error);
+    throw error;
+  }
+};
+
  export const deleteDream = async (id:string): Promise<void> => {
     const res = await fetch(`http://localhost:3001/dreams/${id}`, {
       method: "DELETE",
