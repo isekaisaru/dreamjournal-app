@@ -25,6 +25,9 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
 # Copy just the Gemfile to take advantage of Docker cache
 COPY Gemfile ./
 
+# Set permissions for the bundler cache directory
+RUN mkdir -p /usr/local/bundle && chmod -R 777 /usr/local/bundle
+
 # Install gems
 # Note: We copy Gemfile.lock and run `bundle install` in a separate step to take advantage of Docker cache
 COPY Gemfile.lock ./

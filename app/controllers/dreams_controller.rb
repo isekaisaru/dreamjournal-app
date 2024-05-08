@@ -4,13 +4,13 @@ class DreamsController < ApplicationController
   # GET /dreams
   def index
     @dreams = Dream.all
-    render json: @dreams
+    render json: @dreams.as_json(only: [:id, :title, :description, :created_at]) 
   end
 
   # GET /dreams/:id
   def show
     @dream = Dream.find(params[:id])
-    render json: @dream
+    render json: @dream.as_json(only: [:id, :title, :description, :created_at])
   end
 
   # POST /dreams
