@@ -25,8 +25,8 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
 # Copy just the Gemfile to take advantage of Docker cache
 COPY Gemfile ./
 
-# Set permissions for the bundler cache directory
-RUN mkdir -p /usr/local/bundle && chmod -R 777 /usr/local/bundle
+# Set permissions for the bundler cache directory to avoid permissions issues
+RUN mkdir -p /usr/local/bundle/cache && chmod -R 777 /usr/local/bundle
 
 # Install gems
 # Note: We copy Gemfile.lock and run `bundle install` in a separate step to take advantage of Docker cache
@@ -65,7 +65,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
 
 # Create a non-root user and switch to it
 RUN groupadd -r rails && useradd --no-log-init -r -g rails rails \
-    && chown -R rails:rails /app
+    && chown -R rails:rails /usr/local/bundle /app
 USER rails
 
 # Expose port 3000 to the Docker host, so we can access it from the outside.

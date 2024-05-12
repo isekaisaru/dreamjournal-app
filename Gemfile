@@ -27,6 +27,9 @@ gem 'rack-cors'
 # JSON Web Tokens for authentication
 gem 'jwt'
 
+# Use bcrypt for secure password hashing
+gem 'bcrypt', '~> 3.1.7'
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
