@@ -2,16 +2,12 @@ import DreamList from "@/components/DreamList";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { getAllDreams } from "./dreamsAPI";
 
-export default async function Home() {
-  const dreams = await getAllDreams();
-
-  
+export default function Home() {
   return (
     <div className="md:flex">
       <section className="w-full md:w-1/3 flex flex-col items-center px-3 md:pl-6">
-        <DreamList dreams={dreams} />
+        <DreamList title="夢のリスト" description="これはあなたが見た夢のリストです"/>
       </section>
 
       <aside className="w-full md:w-1/3 flex flex-col itemes-center px-3 md:pl-6">
