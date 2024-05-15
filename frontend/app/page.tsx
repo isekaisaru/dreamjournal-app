@@ -1,21 +1,41 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import DreamList from "@/components/DreamList";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import axios from "axios";
+import { Dream } from "@/app/types";
 
 export default function Home() {
+  const [dreams, setDreams] = useState<Dream[]>([]);
+
+  useEffect(() => {
+    const fetchDreams = async () => {
+      try {
+        const response = await axios.get('http://localhost:3001/dreams'); // RailsのAPIエンドポイントにアクセス
+        setDreams(response.data);
+      } catch (error) {
+        console.error('Error fetching dreams:', error);
+      }
+    };
+
+    fetchDreams();
+  }, []);
+
   return (
     <div className="md:flex">
       <section className="w-full md:w-1/3 flex flex-col items-center px-3 md:pl-6">
-        <DreamList title="夢のリスト" description="これはあなたが見た夢のリストです"/>
+        <DreamList dreams={dreams} />
       </section>
 
-      <aside className="w-full md:w-1/3 flex flex-col itemes-center px-3 md:pl-6">
+      <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:pl-6">
         <div className="bg-white shadow-md rounded p-4 mb-6 mt-4">
-        <h3 className="font-bold text-gray-600  md:-m-2">前に見た夢</h3>
-        <p className="text-gray-600">
-          前に見た夢を振り返ってみましょう！
-        </p>
+          <h3 className="font-bold text-gray-600 md:-m-2">前に見た夢</h3>
+          <p className="text-gray-600">
+            前に見た夢を振り返ってみましょう！
+          </p>
         </div>
         <ul>
           <li>
@@ -25,7 +45,7 @@ export default function Home() {
           </li>
           <li>
             <Link href="/dream/2">
-            2024年2月の夢
+              2024年2月の夢
             </Link>
           </li>
           <li>
@@ -35,7 +55,6 @@ export default function Home() {
           </li>
         </ul>
       </aside>
-       
     </div>
   );
 }
