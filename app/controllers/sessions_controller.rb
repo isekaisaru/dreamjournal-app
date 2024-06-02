@@ -10,10 +10,4 @@ class SessionsController < ApplicationController
       render json: { error: 'Invalid email or password'}, status: :unauthorized
     end
    end
-
-   private
-
-   def encode_token(payload)
-    JWT.encode(payload, Rails.application.credentials.secret_key_base)
-   end
 end

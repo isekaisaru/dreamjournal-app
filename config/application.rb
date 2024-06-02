@@ -16,10 +16,17 @@ module App
       raise "POSTGRES_PASSWORD environment variable is not set."
     end
 
+    # CORS設定を追加
+    config.middleware.insert_before 0, Rack::Cors do
+      allow do
+        origins 'http://localhost:3000'
+        resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options, :head]
+      end
+    end
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -28,6 +35,5 @@ module App
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-    
   end
 end
