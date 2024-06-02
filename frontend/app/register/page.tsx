@@ -22,7 +22,12 @@ export default function Register() {
       setError('パスワードが一致しません。');
       return;
     }
+    if (password.length < 6) {
+      setError('パスワードは6文字以上である必要があります。');
+      return;
+    }
     try {
+      console.log( { email, username, password, password_confirmation: passwordConfirmation });
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
         email,
         username,
@@ -56,7 +61,7 @@ export default function Register() {
             placeholder="ユーザー名"
             autoComplete="username"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <input
             type="email"
@@ -66,7 +71,7 @@ export default function Register() {
             placeholder="メールアドレス"
             autoComplete="email"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <input
             type="password"
@@ -76,7 +81,7 @@ export default function Register() {
             placeholder="パスワード"
             autoComplete="new-password"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <input
             type="password"
@@ -86,7 +91,7 @@ export default function Register() {
             placeholder="パスワード確認"
             autoComplete="new-password"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <button type="submit" className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 active:bg-blue-700">登録</button>
         </div>
