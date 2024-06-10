@@ -1,9 +1,8 @@
 "use client";
 
 import { createDream } from '@/app/dreamsAPI';
-import { Coming_Soon } from 'next/font/google';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 
 
 const DreamJournalPage= () => {
@@ -23,6 +22,7 @@ const DreamJournalPage= () => {
     router.push("/");
     router.refresh();
    } catch (err) {
+    setLoading(false);
      setError("投稿に失敗しました");
    }
   };
@@ -36,17 +36,27 @@ const DreamJournalPage= () => {
         onSubmit={handleSubmit}
         >
         <div className='mb-4'>
-          <label className="text-gray-700 text-sm font-bold mb-2">夢のタイトル</label>
+          <label className="text-gray-700 text-sm font-bold mb-2" htmlFor="title">夢のタイトル</label>
           <input
+            id="title"
             type="text"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none"
-            onChange={(e) => setTitle(e.target.value)}/>
+            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            aria-required="true"
+            aria-invalid={error ? "true" : "false"}
+          />
         </div>
         <div className='mb-4'>
-          <label className="text-gray-700 text-sm font-bold mb-2">夢の内容</label>
+          <label className="text-gray-700 text-sm font-bold mb-2" htmlFor="description">夢の内容</label>
           <textarea
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none"
-            onChange={(e) => setDescription(e.target.value)}>
+            id="description"
+            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            aria-required="true"
+            aria-invalid={error ? "true" : "false"}
+            >
           </textarea>
         </div>
         <button type="submit"
@@ -54,13 +64,14 @@ const DreamJournalPage= () => {
            loading
              ? " bg-purple-300 cursor-not-allowed"
              : " bg-purple-400 hover:bg-purple-500"
-         }` }
+         } transition-colors duration-200 ease-in-out` }
          disabled={loading}
          >記録する
          </button>
       </form>
+      {error && <p className="text-red-500 mt-4">{error}</p>}
     </div>
   );
 };
 
-export default DreamJournalPage
+export default DreamJournalPage;

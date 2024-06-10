@@ -19,16 +19,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={"container mx-auto  bg-sky-600 text-slate-50 ${notoSansJP.className}"}>
+    <html lang="ja" className="min-h-full">
+      <body className={`${notoSansJP.className} bg-sky-600 text-slate-50 px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}>
         <Header />
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col flex-grow">
           <main className="flex-grow">
             <Suspense fallback={<Loading />}>{children}</Suspense>
           </main>
-        <Footer />
+          <Footer />
         </div>
-        </body>
+      </body>
     </html>
   );
 }

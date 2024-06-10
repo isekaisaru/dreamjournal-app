@@ -34,6 +34,7 @@ const UpdateButton = ({ id, initialTitle, initialDescription }: UpdateButtonProp
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12">
+    <div className="mb-4">
     <label className="text-gray-700 text-sm font-bold mb-2">夢のタイトル</label>
     <input type="text" 
       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none"
@@ -41,16 +42,19 @@ const UpdateButton = ({ id, initialTitle, initialDescription }: UpdateButtonProp
       onChange={(e) => setTitle(e.target.value)} 
       placeholder="Title" 
     />
+    </div>
+    <div className="mb-4">
     <textarea 
       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none"
       value={description} 
       onChange={(e) => setDescription(e.target.value)} 
       placeholder="Description"
     />
-    <div className="bg-blue-500 hover:bg-blue-600 rounded-md py-2 px-5 inline cursor-pointer"
+    </div>
+    <button className="bg-blue-500 hover:bg-blue-600 rounded-md py-2 px-5 inline cursor-pointer transition-all duration-300 ease-in-out"
       onClick={handleUpdate}>
       更新
-    </div>
+    </button>
   </div>
 );
 };

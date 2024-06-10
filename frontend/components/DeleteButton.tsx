@@ -18,10 +18,11 @@ const DeleteButton = ({ id }: DeleteButtonProps) => {
     router.refresh();
   }
   return (
-    <div className="bg-red-500 hover:bg-red-600 rounded-md py-2 px-5 inline cursor-pointer"
+    <button 
+      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md cusor-pointer transition-all duration-300 ease-in-out"
          onClick={handleDelete}>
       削除
-    </div>
+    </button>
   );
 };
 
