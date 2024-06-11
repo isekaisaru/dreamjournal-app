@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DreamList from "@/components/DreamList";
+import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import axios from "axios";
 import { Dream } from "@/app/types";
@@ -9,22 +10,24 @@ import { Dream } from "@/app/types";
 export default function Home() {
   const [dreams, setDreams] = useState<Dream[]>([]);
 
-  useEffect(() => {
-    const fetchDreams = async () => {
+    const fetchDreams = async (query = '', startDate = '', endDate = '') => {
       try {
-        const response = await axios.get('http://localhost:3001/dreams'); // RailsのAPIエンドポイントにアクセス
+        const response = await axios.get('http://localhost:3001/dreams', {
+          params: { query, start_date: startDate, end_date: endDate },
+        });
         setDreams(response.data);
       } catch (error) {
         console.error('Error fetching dreams:', error);
       }
     };
-
+useEffect(() => {
     fetchDreams();
   }, []);
 
   return (
     <div className="md:flex">
       <section className="w-full md:w-2/3 flex flex-col items-center px-3 md:px-6">
+        <SearchBar onSearch={fetchDreams}/>
         <DreamList dreams={dreams} />
       </section>
 
