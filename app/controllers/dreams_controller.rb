@@ -7,6 +7,15 @@ class DreamsController < ApplicationController
   # GET /dreams
   def index
     @dreams = Dream.all
+
+    if params[:query].present?
+      @dreams = @dreams.where("title LIKE ?", "%#{params[:query]}%")
+    end
+
+    if params[:start_date].present? && params[:end_date].present?
+      @dreams = @dreams.where(created_at: params[:start_date]..params[:end_date])
+    end
+
     render json: @dreams.as_json(only: [:id, :title, :description, :created_at]) 
   end
 
