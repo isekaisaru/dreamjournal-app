@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   created_at: Date;
@@ -7,7 +7,7 @@ export interface User {
 }
 
 export interface Dream {
-  id: number;
+  id: string;
   title: string;
   description: string;
   userId: number;
