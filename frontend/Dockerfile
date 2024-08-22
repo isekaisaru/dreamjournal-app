@@ -1,17 +1,28 @@
 # ベースイメージとしてNode.jsのバージョン18を使用
-FROM node:18
+FROM node:18 AS builder
 
-# コンテナ内の作業ディレクトリを指定
+# 作業ディレクトリの設定
 WORKDIR /app
 
-# package.jsonとyarn.lockをコピー
-COPY package.json yarn.lock ./
-
 # 依存関係のインストール
-RUN yarn install
+COPY package.json yarn.lock ./
+RUN yarn install --production=false
 
-# 現在のディレクトリのすべてのファイルをコピー
+# アプリケーションのコピーとビルド
 COPY . .
+RUN yarn build
 
-# 開発サーバーを起動
-CMD ["yarn", "dev"]
+# 実行ステージ
+FROM node:18-alpine
+
+# 作業ディレクトリの設定
+WORKDIR /app
+
+# 必要なファイルのみをコピー
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# 実行コマンドの設定
+CMD ["yarn", "start"]
