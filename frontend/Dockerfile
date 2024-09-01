@@ -18,6 +18,9 @@ FROM node:18-alpine
 # 作業ディレクトリの設定
 WORKDIR /app
 
+# 環境変数を設定
+ENV NEXT_PUBLIC_API_URL=http://backend:3000
+
 # 必要なファイルのみをコピー
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
