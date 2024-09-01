@@ -1,14 +1,25 @@
-"use client"
+"use client"; 
 
-import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from 'axios';
+import { useState } from 'react';
 
 export default function TrialPage() {
   const [userId, setUserId] = useState<number | null>(null);
 
   const createTrialUser = async () => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/trial_users`);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      if (!apiUrl) {
+        throw new Error('NEXT_PUBLIC_API_URL is not defined');
+      }
+      console.log('API URL:', apiUrl);
+      const response = await axios.post(`${apiUrl}/trial_users`, {
+        trial_user: {
+          name: "Test User",
+          email: "test@example.com",
+          password: "password123"
+        }
+      });
       const { user_id, token } = response.data;
 
       localStorage.setItem('token', token);
@@ -20,16 +31,10 @@ export default function TrialPage() {
     }
   };
 
-  useEffect(() => {
-    createTrialUser();
-  }, []);
-
   return (
     <div>
-      <h1>お試しモードで夢を記録</h1>
-      <p>お試しユーザーID: {userId}</p>
-      <p>このモードでは、夢の記録を試すことができます。</p>
-      <button onClick={() => window.location.href = '/register'}>今すぐ登録</button>
+      <button onClick={createTrialUser}>Create Trial User</button>
+      {userId && <p>User ID: {userId}</p>}
     </div>
   );
 }
