@@ -17,6 +17,9 @@
 !/log/.keep
 !/tmp/.keep
 
+# データベース関連のファイルを無視
+/data/db/
+
 # 他の既存の設定はそのまま
 /.bundle
 /.env*

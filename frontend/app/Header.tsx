@@ -46,9 +46,14 @@ const Header = () => {
             </button>
             </>
           ) : (
+            <>
             <Link href="/login">
              <Button className="bg-purple-400 px-3 py-2 md:py-3 rounded-md">ログイン</Button> 
             </Link>
+            <Link href="/register">{/* ユーザー登録リンク */}
+              <Button className="ml-4 bg-green-400 px-3 py-2 md:py-3 rounded-md">ユーザー登録</Button>
+            </Link>
+            </>
           )}
         </nav>
       </div>
