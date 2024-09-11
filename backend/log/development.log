@@ -1,0 +1,1382 @@
+Started POST "/trial_users" for 127.0.0.1 at 2024-08-22 20:20:30 +0000
+  
+ActiveRecord::NoDatabaseError (We could not find your database: app_development. Which can be found in the database configuration file located at config/database.yml.
+
+To resolve this issue:
+
+- Did you create the database for this app, or delete it? You may need to create your database.
+- Has the database name changed? Check your database.yml config has the correct database name.
+
+To create your database, run:
+
+        bin/rails db:create
+):
+  
+activerecord (7.0.8.1) lib/active_record/connection_adapters/postgresql_adapter.rb:81:in `rescue in new_client'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/postgresql_adapter.rb:77:in `new_client'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/postgresql_adapter.rb:37:in `postgresql_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:656:in `public_send'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:656:in `new_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:700:in `checkout_new_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:679:in `try_to_checkout_new_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:640:in `acquire_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:341:in `checkout'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:181:in `connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_handler.rb:211:in `retrieve_connection'
+activerecord (7.0.8.1) lib/active_record/connection_handling.rb:313:in `retrieve_connection'
+activerecord (7.0.8.1) lib/active_record/connection_handling.rb:280:in `connection'
+activerecord (7.0.8.1) lib/active_record/migration.rb:648:in `connection'
+activerecord (7.0.8.1) lib/active_record/migration.rb:643:in `build_watcher'
+activerecord (7.0.8.1) lib/active_record/migration.rb:625:in `block in call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:624:in `synchronize'
+activerecord (7.0.8.1) lib/active_record/migration.rb:624:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+Started POST "/trial_users" for 127.0.0.1 at 2024-08-22 20:27:00 +0000
+  
+ActiveRecord::NoDatabaseError (We could not find your database: app_development. Which can be found in the database configuration file located at config/database.yml.
+
+To resolve this issue:
+
+- Did you create the database for this app, or delete it? You may need to create your database.
+- Has the database name changed? Check your database.yml config has the correct database name.
+
+To create your database, run:
+
+        bin/rails db:create
+):
+  
+activerecord (7.0.8.1) lib/active_record/connection_adapters/postgresql_adapter.rb:81:in `rescue in new_client'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/postgresql_adapter.rb:77:in `new_client'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/postgresql_adapter.rb:37:in `postgresql_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:656:in `public_send'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:656:in `new_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:700:in `checkout_new_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:679:in `try_to_checkout_new_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:640:in `acquire_connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:341:in `checkout'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_pool.rb:181:in `connection'
+activerecord (7.0.8.1) lib/active_record/connection_adapters/abstract/connection_handler.rb:211:in `retrieve_connection'
+activerecord (7.0.8.1) lib/active_record/connection_handling.rb:313:in `retrieve_connection'
+activerecord (7.0.8.1) lib/active_record/connection_handling.rb:280:in `connection'
+activerecord (7.0.8.1) lib/active_record/migration.rb:648:in `connection'
+activerecord (7.0.8.1) lib/active_record/migration.rb:643:in `build_watcher'
+activerecord (7.0.8.1) lib/active_record/migration.rb:625:in `block in call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:624:in `synchronize'
+activerecord (7.0.8.1) lib/active_record/migration.rb:624:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+  [1m[35m (583.6ms)[0m  [1m[35mCREATE DATABASE "app_development" ENCODING = 'unicode'[0m
+  [1m[35m (370.3ms)[0m  [1m[35mCREATE DATABASE "app_test" ENCODING = 'unicode'[0m
+  [1m[35m (16.7ms)[0m  [1m[35mCREATE TABLE "schema_migrations" ("version" character varying NOT NULL PRIMARY KEY)[0m
+  [1m[35m (4.3ms)[0m  [1m[35mCREATE TABLE "ar_internal_metadata" ("key" character varying NOT NULL PRIMARY KEY, "value" character varying, "created_at" timestamp(6) NOT NULL, "updated_at" timestamp(6) NOT NULL)[0m
+  [1m[35m (0.3ms)[0m  [1m[34mSELECT pg_try_advisory_lock(5277929974492897470)[0m
+  [1m[36mActiveRecord::SchemaMigration Pluck (0.6ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+Migrating to CreateUsers (20240303191155)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  [1m[35m (8.8ms)[0m  [1m[35mCREATE TABLE "users" ("id" bigserial primary key, "name" character varying, "email" character varying, "created_at" timestamp(6) NOT NULL, "updated_at" timestamp(6) NOT NULL)[0m
+  [1m[36mActiveRecord::SchemaMigration Create (1.3ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ($1) RETURNING "version"[0m  [["version", "20240303191155"]]
+  [1m[36mTRANSACTION (1.3ms)[0m  [1m[35mCOMMIT[0m
+Migrating to CreateDreams (20240303191156)
+  [1m[36mTRANSACTION (1.3ms)[0m  [1m[35mBEGIN[0m
+  [1m[35m (12.2ms)[0m  [1m[35mCREATE TABLE "dreams" ("id" bigserial primary key, "title" character varying, "description" text, "user_id" bigint NOT NULL, "created_at" timestamp(6) NOT NULL, "updated_at" timestamp(6) NOT NULL, CONSTRAINT "fk_rails_eb1c3292a0"
+FOREIGN KEY ("user_id")
+  REFERENCES "users" ("id")
+)[0m
+  [1m[35m (2.3ms)[0m  [1m[35mCREATE INDEX "index_dreams_on_user_id" ON "dreams" ("user_id")[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.5ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ($1) RETURNING "version"[0m  [["version", "20240303191156"]]
+  [1m[36mTRANSACTION (0.7ms)[0m  [1m[35mCOMMIT[0m
+Migrating to AddPasswordDigestToUsers (20240512194624)
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mBEGIN[0m
+  [1m[35m (0.2ms)[0m  [1m[35mALTER TABLE "users" ADD "password_digest" character varying[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.2ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ($1) RETURNING "version"[0m  [["version", "20240512194624"]]
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT[0m
+Migrating to AddUsernameToUsers (20240519205627)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  [1m[35m (0.1ms)[0m  [1m[35mALTER TABLE "users" ADD "username" character varying[0m
+  [1m[35m (1.9ms)[0m  [1m[35mCREATE UNIQUE INDEX "index_users_on_username" ON "users" ("username")[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.2ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ($1) RETURNING "version"[0m  [["version", "20240519205627"]]
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT[0m
+Migrating to AddTrialUserToUsers (20240625200357)
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  [1m[35m (0.1ms)[0m  [1m[35mALTER TABLE "users" ADD "trial_user" boolean[0m
+  [1m[36mActiveRecord::SchemaMigration Create (0.3ms)[0m  [1m[32mINSERT INTO "schema_migrations" ("version") VALUES ($1) RETURNING "version"[0m  [["version", "20240625200357"]]
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT[0m
+  [1m[36mActiveRecord::InternalMetadata Load (0.7ms)[0m  [1m[34mSELECT "ar_internal_metadata".* FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = $1 LIMIT $2[0m  [["key", "environment"], ["LIMIT", 1]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  [1m[36mActiveRecord::InternalMetadata Create (1.3ms)[0m  [1m[32mINSERT INTO "ar_internal_metadata" ("key", "value", "created_at", "updated_at") VALUES ($1, $2, $3, $4) RETURNING "key"[0m  [["key", "environment"], ["value", "development"], ["created_at", "2024-08-25 19:11:33.911381"], ["updated_at", "2024-08-25 19:11:33.911381"]]
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT[0m
+  [1m[35m (0.1ms)[0m  [1m[34mSELECT pg_advisory_unlock(5277929974492897470)[0m
+  [1m[36mActiveRecord::SchemaMigration Pluck (0.6ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:10:14 +0000
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:10:14 +0000
+  [1m[36mActiveRecord::SchemaMigration Pluck (1.3ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+Processing by TrialUsersController#create as HTML
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com"}}
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com"}}
+TrialUsersController#create called
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:5:in `block in create'
+User save failed: Password can't be blank
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 422 Unprocessable Entity in 35ms (Views: 0.4ms | ActiveRecord: 5.7ms | Allocations: 11321)
+
+
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 39ms (Views: 0.1ms | ActiveRecord: 6.5ms | Allocations: 14366)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:47:04 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 28ms (Views: 0.1ms | ActiveRecord: 6.8ms | Allocations: 3654)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:47:05 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 2ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 861)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:47:05 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 3ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 860)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:47:28 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 9ms (Views: 0.6ms | ActiveRecord: 0.0ms | Allocations: 852)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:47:31 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 3ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 852)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:47:31 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 7ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 852)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-01 20:48:26 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 6ms (Views: 0.5ms | ActiveRecord: 0.0ms | Allocations: 852)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-01 20:57:41 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"yanin@gmail.com", "username"=>"yanin@gmail.com", "password"=>"[FILTERED]", "session"=>{"email"=>"yanin@gmail.com", "username"=>"yanin@gmail.com", "password"=>"[FILTERED]"}}
+  [1m[36mUser Load (1.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "yanin@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/sessions_controller.rb:4:in `create'
+Completed 401 Unauthorized in 34ms (Views: 0.3ms | ActiveRecord: 6.5ms | Allocations: 4349)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-01 20:57:45 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"yanin@gmail.com", "username"=>"yanin@gmail.com", "password"=>"[FILTERED]", "session"=>{"email"=>"yanin@gmail.com", "username"=>"yanin@gmail.com", "password"=>"[FILTERED]"}}
+  [1m[36mUser Load (0.3ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "yanin@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/sessions_controller.rb:4:in `create'
+Completed 401 Unauthorized in 4ms (Views: 0.2ms | ActiveRecord: 0.3ms | Allocations: 559)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-02 19:12:16 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 53ms (Views: 0.6ms | ActiveRecord: 10.7ms | Allocations: 3615)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 19:02:35 +0000
+  [1m[36mActiveRecord::SchemaMigration Pluck (1.5ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:5:in `block in create'
+User save failed: Password can't be blank
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 422 Unprocessable Entity in 24ms (Views: 0.2ms | ActiveRecord: 5.7ms | Allocations: 11749)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 19:33:49 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+User save failed: Password can't be blank
+Completed 422 Unprocessable Entity in 32ms (Views: 0.7ms | ActiveRecord: 7.9ms | Allocations: 3697)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:04:36 +0000
+  [1m[36mActiveRecord::SchemaMigration Pluck (1.1ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:5:in `block in create'
+  [1m[36mUser Create (2.8ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:04:37.196086"], ["updated_at", "2024-09-03 20:04:37.196086"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 1
+  [1m[36mTRANSACTION (11.1ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 241ms (Views: 0.1ms | ActiveRecord: 19.0ms | Allocations: 10307)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:05:07 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (1.4ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:05:07.764294"], ["updated_at", "2024-09-03 20:05:07.764294"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 2
+  [1m[36mTRANSACTION (1.7ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 259ms (Views: 0.5ms | ActiveRecord: 3.5ms | Allocations: 2020)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:09:22 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (22.6ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 180ms (Views: 0.2ms | ActiveRecord: 22.6ms | Allocations: 2232)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:09:22 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.3ms | Allocations: 590)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:09:53 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 16ms (Views: 0.5ms | ActiveRecord: 1.1ms | Allocations: 590)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:09:53 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.2ms | Allocations: 578)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:11:26 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"旅行の夢", "description"=>"旅行に行く夢を見ました。"}}
+  [1m[36mUser Load (2.9ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.0ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (2.9ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "旅行の夢"], ["description", "旅行に行く夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:11:26.886206"], ["updated_at", "2024-09-03 20:11:26.886206"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 65ms (Views: 1.2ms | ActiveRecord: 14.4ms | Allocations: 7670)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:11:27 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.4ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 3ms (Views: 0.2ms | ActiveRecord: 0.4ms | Allocations: 691)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:11:27 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.1ms | Allocations: 675)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:11:51 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (3.5ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 20ms (Views: 0.5ms | ActiveRecord: 3.5ms | Allocations: 676)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:11:51 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.2ms | Allocations: 675)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:15:01 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 9ms (Views: 0.5ms | ActiveRecord: 1.3ms | Allocations: 675)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:15:01 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.1ms | Allocations: 675)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:16:56 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"最高の夢", "description"=>"最高の夢を見ました。"}}
+  [1m[36mUser Load (1.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (0.9ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "最高の夢"], ["description", "最高の夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:16:56.518223"], ["updated_at", "2024-09-03 20:16:56.518223"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (0.6ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 66ms (Views: 0.4ms | ActiveRecord: 2.7ms | Allocations: 2599)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:16:56 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 3ms (Views: 0.1ms | ActiveRecord: 0.3ms | Allocations: 764)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:16:56 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.1ms | Allocations: 764)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:17:21 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"宇宙の夢", "description"=>"宇宙の夢を見ました。"}}
+  [1m[36mUser Load (1.1ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (0.7ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "宇宙の夢"], ["description", "宇宙の夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:17:21.560295"], ["updated_at", "2024-09-03 20:17:21.560295"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 27ms (Views: 6.0ms | ActiveRecord: 2.4ms | Allocations: 2595)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:17:21 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.4ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.4ms | Allocations: 853)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:17:21 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 14ms (Views: 0.3ms | ActiveRecord: 0.3ms | Allocations: 853)
+
+
+Started GET "/dreams/3" for 192.168.65.1 at 2024-09-03 20:18:07 +0000
+Started GET "/dreams/3" for 192.168.65.1 at 2024-09-03 20:18:07 +0000
+Processing by DreamsController#show as */*
+  Parameters: {"id"=>"3"}
+Processing by DreamsController#show as */*
+  Parameters: {"id"=>"3"}
+  [1m[36mDream Load (2.5ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:87:in `set_dream'
+  [1m[36mCACHE Dream Load (0.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:28:in `show'
+Completed 200 OK in 19ms (Views: 1.3ms | ActiveRecord: 2.5ms | Allocations: 2601)
+
+
+  [1m[36mDream Load (0.8ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:87:in `set_dream'
+  [1m[36mCACHE Dream Load (0.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:28:in `show'
+Completed 200 OK in 55ms (Views: 0.1ms | ActiveRecord: 9.7ms | Allocations: 5382)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:18:14 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.4ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 63ms (Views: 51.9ms | ActiveRecord: 1.4ms | Allocations: 854)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:18:14 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.2ms | Allocations: 853)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:19:09 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"普通の夢", "description"=>"普通の夢を見ました。"}}
+  [1m[36mUser Load (2.5ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (2.1ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "普通の夢"], ["description", "普通の夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:19:09.327020"], ["updated_at", "2024-09-03 20:19:09.327020"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (1.1ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 28ms (Views: 1.3ms | ActiveRecord: 5.9ms | Allocations: 2615)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:19:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 4ms (Views: 0.1ms | ActiveRecord: 0.2ms | Allocations: 942)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:19:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.1ms | Allocations: 942)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:34:09 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"怖い夢", "description"=>"怖い夢を見ました。"}}
+  [1m[36mUser Load (0.6ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (0.8ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "怖い夢"], ["description", "怖い夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:34:09.250089"], ["updated_at", "2024-09-03 20:34:09.250089"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (5.0ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 63ms (Views: 1.2ms | ActiveRecord: 19.0ms | Allocations: 5498)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:34:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.5ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 3ms (Views: 0.3ms | ActiveRecord: 0.5ms | Allocations: 1048)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:34:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.1ms | Allocations: 1031)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:35:34 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"なかなか起きれない夢", "description"=>"なかなか起きれない夢を見ました。"}}
+  [1m[36mUser Load (1.6ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (1.1ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "なかなか起きれない夢"], ["description", "なかなか起きれない夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:35:34.738894"], ["updated_at", "2024-09-03 20:35:34.738894"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (0.7ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 69ms (Views: 0.4ms | ActiveRecord: 3.6ms | Allocations: 2597)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:35:34 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.2ms | Allocations: 1121)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:35:34 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.1ms | Allocations: 1121)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:36:29 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"空を飛ぶ夢", "description"=>"空飛ぶ夢を見ました。"}}
+  [1m[36mUser Load (1.3ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (0.8ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "空を飛ぶ夢"], ["description", "空飛ぶ夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:36:29.584970"], ["updated_at", "2024-09-03 20:36:29.584970"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 17ms (Views: 1.0ms | ActiveRecord: 2.5ms | Allocations: 2595)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:36:29 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.2ms | Allocations: 1210)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:36:29 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.1ms | Allocations: 1210)
+
+
+Started POST "/dreams" for 192.168.65.1 at 2024-09-03 20:36:58 +0000
+Processing by DreamsController#create as */*
+  Parameters: {"dream"=>{"title"=>"同じ夢", "description"=>"同じ夢を見ました。"}}
+  [1m[36mUser Load (1.8ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 2], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:74:in `authorize'
+Authenticated User ID: 2
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mDream Create (1.7ms)[0m  [1m[32mINSERT INTO "dreams" ("title", "description", "user_id", "created_at", "updated_at") VALUES ($1, $2, $3, $4, $5) RETURNING "id"[0m  [["title", "同じ夢"], ["description", "同じ夢を見ました。"], ["user_id", 2], ["created_at", "2024-09-03 20:36:58.814689"], ["updated_at", "2024-09-03 20:36:58.814689"]]
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/dreams_controller.rb:36:in `create'
+Completed 201 Created in 23ms (Views: 1.4ms | ActiveRecord: 4.0ms | Allocations: 2596)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:36:58 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:36:58 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.4ms | ActiveRecord: 0.1ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:37:10 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (1.9ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:37:10.724800"], ["updated_at", "2024-09-03 20:37:10.724800"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 3
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 217ms (Views: 0.3ms | ActiveRecord: 2.4ms | Allocations: 2004)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:37:45 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (1.4ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:37:46.233857"], ["updated_at", "2024-09-03 20:37:46.233857"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 4
+  [1m[36mTRANSACTION (0.7ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 231ms (Views: 0.4ms | ActiveRecord: 2.3ms | Allocations: 2002)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:37:46 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (0.3ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:37:47.007891"], ["updated_at", "2024-09-03 20:37:47.007891"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 5
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 235ms (Views: 0.1ms | ActiveRecord: 0.8ms | Allocations: 2002)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:45:20 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.8ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 47ms (Views: 0.5ms | ActiveRecord: 7.1ms | Allocations: 4194)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:45:20 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.3ms | ActiveRecord: 0.3ms | Allocations: 1300)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:52:39 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.7ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 45ms (Views: 0.7ms | ActiveRecord: 12.2ms | Allocations: 4142)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:52:39 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.4ms | ActiveRecord: 0.1ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:53:13 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (2.7ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:53:13.763654"], ["updated_at", "2024-09-03 20:53:13.763654"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 6
+  [1m[36mTRANSACTION (7.8ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 235ms (Views: 0.4ms | ActiveRecord: 10.7ms | Allocations: 2005)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:59:38 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.6ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 46ms (Views: 0.4ms | ActiveRecord: 7.5ms | Allocations: 4169)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 20:59:38 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.1ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 20:59:45 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (3.2ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 20:59:45.556279"], ["updated_at", "2024-09-03 20:59:45.556279"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 7
+  [1m[36mTRANSACTION (5.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 234ms (Views: 0.5ms | ActiveRecord: 8.9ms | Allocations: 2008)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-03 21:04:06 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (2.3ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-03 21:04:06.925551"], ["updated_at", "2024-09-03 21:04:06.925551"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 8
+  [1m[36mTRANSACTION (1.6ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 229ms (Views: 0.4ms | ActiveRecord: 4.2ms | Allocations: 2003)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 21:04:08 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.5ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 5ms (Views: 0.3ms | ActiveRecord: 0.5ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 21:04:08 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.6ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 4ms (Views: 0.5ms | ActiveRecord: 0.6ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 21:04:13 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 14ms (Views: 3.9ms | ActiveRecord: 1.0ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-03 21:04:13 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.3ms | Allocations: 1300)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 19:06:23 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (3.8ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 19:06:23.839592"], ["updated_at", "2024-09-04 19:06:23.839592"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 9
+  [1m[36mTRANSACTION (1.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 294ms (Views: 0.9ms | ActiveRecord: 13.0ms | Allocations: 4837)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:15:48 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (2.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 81ms (Views: 1.1ms | ActiveRecord: 32.7ms | Allocations: 4142)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:15:48 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 4ms (Views: 0.6ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:16:07 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 11ms (Views: 0.8ms | ActiveRecord: 1.3ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:16:07 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 3ms (Views: 0.5ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:16:51 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.6ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 13ms (Views: 1.4ms | ActiveRecord: 1.6ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:16:51 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.3ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:20:33 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 62ms (Views: 0.5ms | ActiveRecord: 1.2ms | Allocations: 1300)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:20:33 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 19:20:39 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (3.9ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 19:20:39.621029"], ["updated_at", "2024-09-04 19:20:39.621029"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 10
+  [1m[36mTRANSACTION (7.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 234ms (Views: 0.4ms | ActiveRecord: 11.7ms | Allocations: 2005)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:39:01 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 53ms (Views: 0.7ms | ActiveRecord: 9.6ms | Allocations: 4168)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:39:01 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 6ms (Views: 0.2ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 19:39:12 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.8ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (5.2ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 19:39:12.499276"], ["updated_at", "2024-09-04 19:39:12.499276"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 11
+  [1m[36mTRANSACTION (1.2ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 251ms (Views: 0.5ms | ActiveRecord: 7.3ms | Allocations: 2010)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:39:57 +0000
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:39:57 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (2.4ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 13ms (Views: 0.9ms | ActiveRecord: 2.4ms | Allocations: 2527)
+
+
+  [1m[36mDream Load (0.6ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 51ms (Views: 0.3ms | ActiveRecord: 9.0ms | Allocations: 5753)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 19:40:10 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (4.6ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 19:40:10.574337"], ["updated_at", "2024-09-04 19:40:10.574337"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 12
+  [1m[36mTRANSACTION (1.3ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 266ms (Views: 0.4ms | ActiveRecord: 6.3ms | Allocations: 2010)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 19:40:20 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (0.8ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 19:40:21.121041"], ["updated_at", "2024-09-04 19:40:21.121041"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 13
+  [1m[36mTRANSACTION (1.1ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 238ms (Views: 0.1ms | ActiveRecord: 2.0ms | Allocations: 2003)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:40:54 +0000
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 19:40:54 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.7ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  [1m[36mDream Load (0.8ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 13ms (Views: 0.7ms | ActiveRecord: 1.7ms | Allocations: 2257)
+
+
+Completed 200 OK in 9ms (Views: 0.1ms | ActiveRecord: 0.8ms | Allocations: 2540)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 19:41:20 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (1.5ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 19:41:20.739737"], ["updated_at", "2024-09-04 19:41:20.739737"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 14
+  [1m[36mTRANSACTION (0.6ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 229ms (Views: 0.5ms | ActiveRecord: 2.4ms | Allocations: 2006)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:09:28 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.7ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 54ms (Views: 0.5ms | ActiveRecord: 6.9ms | Allocations: 4195)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:09:28 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.4ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 4ms (Views: 0.3ms | ActiveRecord: 0.4ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 20:09:40 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (3.2ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 20:09:40.744180"], ["updated_at", "2024-09-04 20:09:40.744180"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 15
+  [1m[36mTRANSACTION (0.9ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 241ms (Views: 0.4ms | ActiveRecord: 4.5ms | Allocations: 2007)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:20:39 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (2.8ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 56ms (Views: 0.6ms | ActiveRecord: 24.3ms | Allocations: 4168)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:20:39 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 3ms (Views: 0.2ms | ActiveRecord: 0.1ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 20:20:46 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (2.3ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 20:20:46.275920"], ["updated_at", "2024-09-04 20:20:46.275920"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 16
+  [1m[36mTRANSACTION (1.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 234ms (Views: 0.1ms | ActiveRecord: 3.9ms | Allocations: 2006)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:23:45 +0000
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:23:45 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (5.3ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 21ms (Views: 1.7ms | ActiveRecord: 5.3ms | Allocations: 2044)
+
+
+  [1m[36mDream Load (1.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 75ms (Views: 0.2ms | ActiveRecord: 11.1ms | Allocations: 5754)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 20:23:52 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (1.5ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 20:23:52.535101"], ["updated_at", "2024-09-04 20:23:52.535101"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 17
+  [1m[36mTRANSACTION (0.6ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 244ms (Views: 0.1ms | ActiveRecord: 2.3ms | Allocations: 2005)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:41:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 63ms (Views: 0.5ms | ActiveRecord: 7.1ms | Allocations: 4143)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:41:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 20:41:15 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (2.7ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 20:41:15.509854"], ["updated_at", "2024-09-04 20:41:15.509854"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 18
+  [1m[36mTRANSACTION (1.0ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 229ms (Views: 0.1ms | ActiveRecord: 3.9ms | Allocations: 2005)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:47:05 +0000
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-04 20:47:05 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.7ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  [1m[36mDream Load (1.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 58ms (Views: 0.6ms | ActiveRecord: 25.3ms | Allocations: 6692)
+
+
+Completed 200 OK in 63ms (Views: 0.1ms | ActiveRecord: 22.5ms | Allocations: 8393)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-04 20:47:11 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+  [1m[36mUser Create (3.9ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-04 20:47:12.034696"], ["updated_at", "2024-09-04 20:47:12.034696"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:11:in `block in create'
+User saved successfully: 19
+  [1m[36mTRANSACTION (1.3ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:4:in `create'
+Completed 201 Created in 238ms (Views: 0.6ms | ActiveRecord: 5.5ms | Allocations: 1971)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-05 19:38:05 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 148ms (Views: 2.7ms | ActiveRecord: 25.5ms | Allocations: 4195)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-05 19:38:05 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.1ms | Allocations: 1299)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-08 20:12:49 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 21ms (Views: 13.6ms | ActiveRecord: 0.0ms | Allocations: 219)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-08 20:12:50 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-08 20:18:56 +0000
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-08 20:18:56 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Processing by DreamsController#index as HTML
+Filter chain halted as :authorize_request rendered or redirected
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+Completed 401 Unauthorized in 2ms (Views: 1.1ms | ActiveRecord: 0.0ms | Allocations: 116)
+
+
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 3ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 436)
+
+
+Started GET "/auth/verify" for 192.168.65.1 at 2024-09-08 21:24:52 +0000
+  
+ActionController::RoutingError (No route matches [GET] "/auth/verify"):
+  
+Started GET "/auth/verify" for 192.168.65.1 at 2024-09-08 21:24:53 +0000
+  
+ActionController::RoutingError (No route matches [GET] "/auth/verify"):
+  
+Started GET "/auth/verify" for 192.168.65.1 at 2024-09-09 20:39:49 +0000
+  
+ActionController::RoutingError (uninitialized constant Auth):
+  
+Started GET "/auth/verify" for 192.168.65.1 at 2024-09-09 20:39:50 +0000
+  
+ActionController::RoutingError (uninitialized constant Auth):
+  
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-09 20:47:49 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-09 20:47:49 +0000
+Processing by AuthController#verify as HTML
+Processing by AuthController#verify as HTML
+  Parameters: {"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}, "auth"=>{"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}}}
+  Parameters: {"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}, "auth"=>{"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}}}
+Completed 422 Unprocessable Entity in 3ms (Views: 1.9ms | ActiveRecord: 0.0ms | Allocations: 158)
+
+
+Completed 422 Unprocessable Entity in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms | Allocations: 80)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-09 20:48:42 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-09 20:48:42 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}, "auth"=>{"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}}}
+Completed 422 Unprocessable Entity in 1ms (Views: 0.6ms | ActiveRecord: 0.0ms | Allocations: 80)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}, "auth"=>{"headers"=>{"Authorization"=>"Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxOSwiZXhwIjoxNzI1NTY5MjMyfQ.d_Jr3Odmk3veEcUjpVqrPuwY3gwYPGJ760-hZ0RqA0Q"}}}
+Completed 422 Unprocessable Entity in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 80)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-09 20:59:20 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-09 20:59:20 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Processing by AuthController#verify as HTML
+Completed 401 Unauthorized in 8ms (Views: 0.7ms | ActiveRecord: 0.0ms | Allocations: 126)
+
+
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:46 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 164)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:48 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:49 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:52 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.4ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:52 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:52 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:52 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 100)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:05:56 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 13ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:06:16 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 19ms (Views: 18.5ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:06:16 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 7ms (Views: 6.4ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:06:16 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 10ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-09 21:25:44 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:13:in `block in create'
+  [1m[36mUser Create (7.6ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-09 21:25:44.762069"], ["updated_at", "2024-09-09 21:25:44.762069"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:13:in `block in create'
+User saved successfully: 20
+  [1m[36mTRANSACTION (2.7ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:6:in `create'
+Completed 201 Created in 351ms (Views: 0.2ms | ActiveRecord: 41.1ms | Allocations: 8638)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 19:10:40 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 19:10:40 +0000
+Processing by AuthController#verify as HTML
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 26ms (Views: 5.1ms | ActiveRecord: 0.0ms | Allocations: 193)
+
+
+Completed 401 Unauthorized in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
