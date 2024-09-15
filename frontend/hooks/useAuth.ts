@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function useAuth() {
   console.log("useAuth hook initialized");
-
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     console.log("useAuth hook called");
@@ -19,6 +20,7 @@ export default function useAuth() {
           });
           if (response.status === 200) {
             setIsAuthenticated(true);
+            router.push('/home');
           } else {
             setIsAuthenticated(false);
           }
@@ -31,7 +33,7 @@ export default function useAuth() {
       }
     };
     checkAuth();
-  }, []);
+  }, [router]);
 
   return isAuthenticated;
 }

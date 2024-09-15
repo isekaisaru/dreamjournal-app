@@ -20,11 +20,10 @@ export default function Login() {
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
         email,
-        username,
         password
       });
-      localStorage.setItem('token', response.data.jwt);
-      router.push('/');
+      localStorage.setItem('token', response.data.token);
+      router.push('/home');
     } catch (error: any) {
       setError('ログインに失敗しました。もう一度お試しください。');
       console.error('Login failed:', error);
