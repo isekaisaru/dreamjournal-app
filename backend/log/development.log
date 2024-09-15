@@ -1380,3 +1380,1056 @@ Completed 401 Unauthorized in 26ms (Views: 5.1ms | ActiveRecord: 0.0ms | Allocat
 Completed 401 Unauthorized in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
 
 
+Started POST "/register" for 192.168.65.1 at 2024-09-11 19:35:48 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"sinsennsei@gmai.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"sinsennsei@gmai.com", "username"=>"sinsensei"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff633c1af0>, params: {"email"=>"sinsennsei@gmai.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"sinsennsei@gmai.com", "username"=>"sinsensei"}} }[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (8.7ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "sinsennsei@gmai.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.5ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "sinsensei"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (3.2ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "sinsennsei@gmai.com"], ["created_at", "2024-09-11 19:35:49.549440"], ["updated_at", "2024-09-11 19:35:49.549440"], ["password_digest", "[FILTERED]"], ["username", "sinsensei"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (16.6ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 470ms (Views: 9.3ms | ActiveRecord: 59.6ms | Allocations: 7000)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:36:32 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "session"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 2ms (Views: 0.5ms | ActiveRecord: 0.0ms | Allocations: 163)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:36:45 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "session"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:36:58 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "session"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 2ms (Views: 0.8ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:36:58 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "session"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-11 19:37:29 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff6349b408>, params: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei"}} }[0m
+  [1m[36mTRANSACTION (0.5ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "sinsensei@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "sinsensei"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 278ms (Views: 0.9ms | ActiveRecord: 3.5ms | Allocations: 3763)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:38:02 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]", "session"=>{"email"=>"sinsensei@gmail.com", "username"=>"sinsensei", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.4ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-11 19:38:27 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"takako@gmail.com", "username"=>"takako"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff6a161a60>, params: {"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"takako@gmail.com", "username"=>"takako"}} }[0m
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.5ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "takako@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "takako"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (1.1ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "takako@gmail.com"], ["created_at", "2024-09-11 19:38:28.057865"], ["updated_at", "2024-09-11 19:38:28.057865"], ["password_digest", "[FILTERED]"], ["username", "takako"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (1.5ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 308ms (Views: 0.4ms | ActiveRecord: 5.0ms | Allocations: 3844)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:39:07 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]", "session"=>{"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:39:16 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]", "session"=>{"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:39:17 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]", "session"=>{"email"=>"takako@gmail.com", "username"=>"takako", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-11 19:39:59 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"hirosi@gmail.com", "username"=>"hirosi", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"hirosi@gmail.com", "username"=>"hirosi"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff633c2130>, params: {"email"=>"hirosi@gmail.com", "username"=>"hirosi", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"hirosi@gmail.com", "username"=>"hirosi"}} }[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "hirosi@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "hirosi"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (0.9ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "hirosi@gmail.com"], ["created_at", "2024-09-11 19:39:59.729917"], ["updated_at", "2024-09-11 19:39:59.729917"], ["password_digest", "[FILTERED]"], ["username", "hirosi"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 252ms (Views: 0.7ms | ActiveRecord: 2.9ms | Allocations: 3844)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 19:40:29 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"hirosi@gmail.com", "username"=>"hirosi", "password"=>"[FILTERED]", "session"=>{"email"=>"hirosi@gmail.com", "username"=>"hirosi", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.6ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-11 19:43:57 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"utida@gmail.com", "username"=>"utida", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"utida@gmail.com", "username"=>"utida"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff634cd7a0>, params: {"email"=>"utida@gmail.com", "username"=>"utida", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"utida@gmail.com", "username"=>"utida"}} }[0m
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (2.8ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "utida@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "utida"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (1.2ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "utida@gmail.com"], ["created_at", "2024-09-11 19:43:58.172831"], ["updated_at", "2024-09-11 19:43:58.172831"], ["password_digest", "[FILTERED]"], ["username", "utida"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (2.0ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 255ms (Views: 0.8ms | ActiveRecord: 6.5ms | Allocations: 3842)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:12:56 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:12:56 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 6ms (Views: 1.8ms | ActiveRecord: 0.0ms | Allocations: 118)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/trial_users" for 192.168.65.1 at 2024-09-11 20:21:50 +0000
+Processing by TrialUsersController#create as HTML
+  Parameters: {"trial_user"=>{"name"=>"Test User", "email"=>"test@example.com", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]"}}
+TrialUsersController#create called
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/trial_users_controller.rb:13:in `block in create'
+  [1m[36mUser Create (9.2ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", "Test User"], ["email", "test@example.com"], ["created_at", "2024-09-11 20:21:51.077729"], ["updated_at", "2024-09-11 20:21:51.077729"], ["password_digest", "[FILTERED]"], ["username", nil], ["trial_user", true]]
+  ↳ app/controllers/trial_users_controller.rb:13:in `block in create'
+User saved successfully: 25
+  [1m[36mTRANSACTION (2.1ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/trial_users_controller.rb:6:in `create'
+Completed 201 Created in 630ms (Views: 1.3ms | ActiveRecord: 42.6ms | Allocations: 4840)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-11 20:24:56 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"koutyou@gamil.com", "username"=>"koutyou", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"koutyou@gamil.com", "username"=>"koutyou"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff6342d340>, params: {"email"=>"koutyou@gamil.com", "username"=>"koutyou", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"koutyou@gamil.com", "username"=>"koutyou"}} }[0m
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (4.7ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "koutyou@gamil.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.9ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "koutyou"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (0.4ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "koutyou@gamil.com"], ["created_at", "2024-09-11 20:24:56.375855"], ["updated_at", "2024-09-11 20:24:56.375855"], ["password_digest", "[FILTERED]"], ["username", "koutyou"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (1.0ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 315ms (Views: 2.0ms | ActiveRecord: 7.3ms | Allocations: 3860)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:24:56 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:24:56 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 4ms (Views: 1.5ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 20:25:46 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"kotyou@gmail.com", "username"=>"kotyou", "password"=>"[FILTERED]", "session"=>{"email"=>"kotyou@gmail.com", "username"=>"kotyou", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 3ms (Views: 1.5ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 20:25:55 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"kotyou@gmail.com", "username"=>"kotyou", "password"=>"[FILTERED]", "session"=>{"email"=>"kotyou@gmail.com", "username"=>"kotyou", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.5ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-11 20:25:56 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"kotyou@gmail.com", "username"=>"kotyou", "password"=>"[FILTERED]", "session"=>{"email"=>"kotyou@gmail.com", "username"=>"kotyou", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:25:58 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:25:58 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 1ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-11 20:27:36 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"kyoutou@gmail.com", "username"=>"kyoutou", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"kyoutou@gmail.com", "username"=>"kyoutou"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff68d0a828>, params: {"email"=>"kyoutou@gmail.com", "username"=>"kyoutou", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"kyoutou@gmail.com", "username"=>"kyoutou"}} }[0m
+  [1m[36mTRANSACTION (0.5ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.3ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "kyoutou@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.3ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "kyoutou"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (0.8ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "kyoutou@gmail.com"], ["created_at", "2024-09-11 20:27:36.805450"], ["updated_at", "2024-09-11 20:27:36.805450"], ["password_digest", "[FILTERED]"], ["username", "kyoutou"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (1.7ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 303ms (Views: 0.5ms | ActiveRecord: 4.6ms | Allocations: 3844)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:27:36 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-11 20:27:36 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 19:42:58 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 19:42:58 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Processing by AuthController#verify as HTML
+Completed 401 Unauthorized in 28ms (Views: 7.9ms | ActiveRecord: 0.0ms | Allocations: 118)
+
+
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 19:44:47 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"sadako@gmail.com", "username"=>"sadako", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"sadako@gmail.com", "username"=>"sadako"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff633c2a90>, params: {"email"=>"sadako@gmail.com", "username"=>"sadako", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"sadako@gmail.com", "username"=>"sadako"}} }[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (6.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "sadako@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.5ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "sadako"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (3.6ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "sadako@gmail.com"], ["created_at", "2024-09-12 19:44:48.236117"], ["updated_at", "2024-09-12 19:44:48.236117"], ["password_digest", "[FILTERED]"], ["username", "sadako"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (2.4ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 474ms (Views: 2.5ms | ActiveRecord: 55.3ms | Allocations: 6695)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-12 19:44:49 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mUser Load (0.6ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 28], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (1.7ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 69ms (Views: 0.4ms | ActiveRecord: 2.8ms | Allocations: 4457)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-12 19:44:49 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mUser Load (0.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 28], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 13ms (Views: 3.0ms | ActiveRecord: 0.4ms | Allocations: 1872)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 19:46:25 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 19:46:25 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 6ms (Views: 2.8ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-12 19:46:56 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sadako@gmail.com", "username"=>"sadako", "password"=>"[FILTERED]", "session"=>{"email"=>"sadako@gmail.com", "username"=>"sadako", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 3ms (Views: 1.3ms | ActiveRecord: 0.0ms | Allocations: 100)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-12 19:47:25 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"sadako@gmail.com", "username"=>"sadako", "password"=>"[FILTERED]", "session"=>{"email"=>"sadako@gmail.com", "username"=>"sadako", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 2ms (Views: 0.7ms | ActiveRecord: 0.0ms | Allocations: 99)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 19:48:08 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"tokei@gmail.com", "username"=>"tokei", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"tokei@gmail.com", "username"=>"tokei"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff636b4258>, params: {"email"=>"tokei@gmail.com", "username"=>"tokei", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"tokei@gmail.com", "username"=>"tokei"}} }[0m
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (2.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "tokei@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "tokei"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (0.8ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "tokei@gmail.com"], ["created_at", "2024-09-12 19:48:09.015009"], ["updated_at", "2024-09-12 19:48:09.015009"], ["password_digest", "[FILTERED]"], ["username", "tokei"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (1.2ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 273ms (Views: 0.8ms | ActiveRecord: 5.5ms | Allocations: 3844)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-12 19:48:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mUser Load (0.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 4ms (Views: 0.2ms | ActiveRecord: 0.5ms | Allocations: 1870)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-12 19:48:09 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mUser Load (0.1ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 28ms (Views: 0.2ms | ActiveRecord: 0.3ms | Allocations: 1871)
+
+
+Started GET "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:44 +0000
+Started GET "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:44 +0000
+Processing by DreamsController#show as */*
+  Parameters: {"id"=>"3"}
+Processing by DreamsController#show as */*
+  Parameters: {"id"=>"3"}
+  [1m[36mUser Load (11.1ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (1.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:71:in `set_dream'
+  [1m[36mCACHE Dream Load (0.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:28:in `show'
+Completed 200 OK in 49ms (Views: 0.6ms | ActiveRecord: 12.2ms | Allocations: 2962)
+
+
+  [1m[36mUser Load (0.6ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (0.5ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:71:in `set_dream'
+  [1m[36mCACHE Dream Load (0.0ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1 LIMIT $2[0m  [["id", 3], ["LIMIT", 1]]
+  ↳ app/controllers/dreams_controller.rb:28:in `show'
+Completed 200 OK in 147ms (Views: 0.1ms | ActiveRecord: 21.8ms | Allocations: 6636)
+
+
+Started DELETE "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:47 +0000
+Processing by DreamsController#destroy as */*
+  Parameters: {"id"=>"3"}
+  [1m[36mUser Load (0.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+Completed 500 Internal Server Error in 6ms (ActiveRecord: 0.2ms | Allocations: 706)
+
+
+  
+NoMethodError (undefined method `authorize' for an instance of DreamsController):
+  
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:400:in `block in make_lambda'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:180:in `block (2 levels) in halting_and_conditional'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:34:in `block (2 levels) in <module:Callbacks>'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:181:in `block in halting_and_conditional'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `block in invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `each'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:116:in `block in run_callbacks'
+turbo-rails (2.0.4) lib/turbo-rails.rb:24:in `with_request_id'
+turbo-rails (2.0.4) app/controllers/concerns/turbo/request_id_tracking.rb:10:in `turbo_tracking_request_id'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:127:in `block in run_callbacks'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:138:in `run_callbacks'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:233:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/rescue.rb:23:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:67:in `block in process_action'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `block in instrument'
+activesupport (7.0.8.1) lib/active_support/notifications/instrumenter.rb:24:in `instrument'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `instrument'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:66:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/params_wrapper.rb:259:in `process_action'
+activerecord (7.0.8.1) lib/active_record/railties/controller_runtime.rb:27:in `process_action'
+actionpack (7.0.8.1) lib/abstract_controller/base.rb:151:in `process'
+actionview (7.0.8.1) lib/action_view/rendering.rb:39:in `process'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:188:in `dispatch'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:251:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:49:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:50:in `block in serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `each'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:852:in `call'
+rack (2.2.8.1) lib/rack/tempfile_reaper.rb:15:in `call'
+rack (2.2.8.1) lib/rack/etag.rb:27:in `call'
+rack (2.2.8.1) lib/rack/conditional_get.rb:40:in `call'
+rack (2.2.8.1) lib/rack/head.rb:12:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/permissions_policy.rb:38:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/content_security_policy.rb:36:in `call'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:266:in `context'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:260:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/cookies.rb:704:in `call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:638:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+Started DELETE "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:49 +0000
+Processing by DreamsController#destroy as */*
+  Parameters: {"id"=>"3"}
+  [1m[36mUser Load (0.7ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+Completed 500 Internal Server Error in 5ms (ActiveRecord: 0.7ms | Allocations: 678)
+
+
+  
+NoMethodError (undefined method `authorize' for an instance of DreamsController):
+  
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:400:in `block in make_lambda'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:180:in `block (2 levels) in halting_and_conditional'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:34:in `block (2 levels) in <module:Callbacks>'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:181:in `block in halting_and_conditional'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `block in invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `each'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:116:in `block in run_callbacks'
+turbo-rails (2.0.4) lib/turbo-rails.rb:24:in `with_request_id'
+turbo-rails (2.0.4) app/controllers/concerns/turbo/request_id_tracking.rb:10:in `turbo_tracking_request_id'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:127:in `block in run_callbacks'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:138:in `run_callbacks'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:233:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/rescue.rb:23:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:67:in `block in process_action'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `block in instrument'
+activesupport (7.0.8.1) lib/active_support/notifications/instrumenter.rb:24:in `instrument'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `instrument'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:66:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/params_wrapper.rb:259:in `process_action'
+activerecord (7.0.8.1) lib/active_record/railties/controller_runtime.rb:27:in `process_action'
+actionpack (7.0.8.1) lib/abstract_controller/base.rb:151:in `process'
+actionview (7.0.8.1) lib/action_view/rendering.rb:39:in `process'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:188:in `dispatch'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:251:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:49:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:50:in `block in serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `each'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:852:in `call'
+rack (2.2.8.1) lib/rack/tempfile_reaper.rb:15:in `call'
+rack (2.2.8.1) lib/rack/etag.rb:27:in `call'
+rack (2.2.8.1) lib/rack/conditional_get.rb:40:in `call'
+rack (2.2.8.1) lib/rack/head.rb:12:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/permissions_policy.rb:38:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/content_security_policy.rb:36:in `call'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:266:in `context'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:260:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/cookies.rb:704:in `call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:638:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+Started DELETE "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:50 +0000
+Processing by DreamsController#destroy as */*
+  Parameters: {"id"=>"3"}
+  [1m[36mUser Load (0.6ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+Completed 500 Internal Server Error in 4ms (ActiveRecord: 0.6ms | Allocations: 676)
+
+
+  
+NoMethodError (undefined method `authorize' for an instance of DreamsController):
+  
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:400:in `block in make_lambda'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:180:in `block (2 levels) in halting_and_conditional'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:34:in `block (2 levels) in <module:Callbacks>'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:181:in `block in halting_and_conditional'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `block in invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `each'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:116:in `block in run_callbacks'
+turbo-rails (2.0.4) lib/turbo-rails.rb:24:in `with_request_id'
+turbo-rails (2.0.4) app/controllers/concerns/turbo/request_id_tracking.rb:10:in `turbo_tracking_request_id'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:127:in `block in run_callbacks'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:138:in `run_callbacks'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:233:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/rescue.rb:23:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:67:in `block in process_action'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `block in instrument'
+activesupport (7.0.8.1) lib/active_support/notifications/instrumenter.rb:24:in `instrument'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `instrument'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:66:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/params_wrapper.rb:259:in `process_action'
+activerecord (7.0.8.1) lib/active_record/railties/controller_runtime.rb:27:in `process_action'
+actionpack (7.0.8.1) lib/abstract_controller/base.rb:151:in `process'
+actionview (7.0.8.1) lib/action_view/rendering.rb:39:in `process'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:188:in `dispatch'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:251:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:49:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:50:in `block in serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `each'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:852:in `call'
+rack (2.2.8.1) lib/rack/tempfile_reaper.rb:15:in `call'
+rack (2.2.8.1) lib/rack/etag.rb:27:in `call'
+rack (2.2.8.1) lib/rack/conditional_get.rb:40:in `call'
+rack (2.2.8.1) lib/rack/head.rb:12:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/permissions_policy.rb:38:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/content_security_policy.rb:36:in `call'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:266:in `context'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:260:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/cookies.rb:704:in `call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:638:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+Started DELETE "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:50 +0000
+Processing by DreamsController#destroy as */*
+  Parameters: {"id"=>"3"}
+  [1m[36mUser Load (0.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+Completed 500 Internal Server Error in 1ms (ActiveRecord: 0.2ms | Allocations: 676)
+
+
+  
+NoMethodError (undefined method `authorize' for an instance of DreamsController):
+  
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:400:in `block in make_lambda'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:180:in `block (2 levels) in halting_and_conditional'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:34:in `block (2 levels) in <module:Callbacks>'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:181:in `block in halting_and_conditional'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `block in invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `each'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:116:in `block in run_callbacks'
+turbo-rails (2.0.4) lib/turbo-rails.rb:24:in `with_request_id'
+turbo-rails (2.0.4) app/controllers/concerns/turbo/request_id_tracking.rb:10:in `turbo_tracking_request_id'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:127:in `block in run_callbacks'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:138:in `run_callbacks'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:233:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/rescue.rb:23:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:67:in `block in process_action'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `block in instrument'
+activesupport (7.0.8.1) lib/active_support/notifications/instrumenter.rb:24:in `instrument'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `instrument'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:66:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/params_wrapper.rb:259:in `process_action'
+activerecord (7.0.8.1) lib/active_record/railties/controller_runtime.rb:27:in `process_action'
+actionpack (7.0.8.1) lib/abstract_controller/base.rb:151:in `process'
+actionview (7.0.8.1) lib/action_view/rendering.rb:39:in `process'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:188:in `dispatch'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:251:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:49:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:50:in `block in serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `each'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:852:in `call'
+rack (2.2.8.1) lib/rack/tempfile_reaper.rb:15:in `call'
+rack (2.2.8.1) lib/rack/etag.rb:27:in `call'
+rack (2.2.8.1) lib/rack/conditional_get.rb:40:in `call'
+rack (2.2.8.1) lib/rack/head.rb:12:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/permissions_policy.rb:38:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/content_security_policy.rb:36:in `call'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:266:in `context'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:260:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/cookies.rb:704:in `call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:638:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+Started PUT "/dreams/3" for 192.168.65.1 at 2024-09-12 19:48:55 +0000
+Processing by DreamsController#update as */*
+  Parameters: {"dream"=>{"title"=>"宇宙の夢", "description"=>"宇宙の夢を見ました。oo"}, "id"=>"3"}
+  [1m[36mUser Load (0.3ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 29], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+Completed 500 Internal Server Error in 2ms (ActiveRecord: 0.3ms | Allocations: 677)
+
+
+  
+NoMethodError (undefined method `authorize' for an instance of DreamsController):
+  
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:400:in `block in make_lambda'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:180:in `block (2 levels) in halting_and_conditional'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:34:in `block (2 levels) in <module:Callbacks>'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:181:in `block in halting_and_conditional'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `block in invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `each'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:595:in `invoke_before'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:116:in `block in run_callbacks'
+turbo-rails (2.0.4) lib/turbo-rails.rb:24:in `with_request_id'
+turbo-rails (2.0.4) app/controllers/concerns/turbo/request_id_tracking.rb:10:in `turbo_tracking_request_id'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:127:in `block in run_callbacks'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:138:in `run_callbacks'
+actionpack (7.0.8.1) lib/abstract_controller/callbacks.rb:233:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/rescue.rb:23:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:67:in `block in process_action'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `block in instrument'
+activesupport (7.0.8.1) lib/active_support/notifications/instrumenter.rb:24:in `instrument'
+activesupport (7.0.8.1) lib/active_support/notifications.rb:206:in `instrument'
+actionpack (7.0.8.1) lib/action_controller/metal/instrumentation.rb:66:in `process_action'
+actionpack (7.0.8.1) lib/action_controller/metal/params_wrapper.rb:259:in `process_action'
+activerecord (7.0.8.1) lib/active_record/railties/controller_runtime.rb:27:in `process_action'
+actionpack (7.0.8.1) lib/abstract_controller/base.rb:151:in `process'
+actionview (7.0.8.1) lib/action_view/rendering.rb:39:in `process'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:188:in `dispatch'
+actionpack (7.0.8.1) lib/action_controller/metal.rb:251:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:49:in `dispatch'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:50:in `block in serve'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `each'
+actionpack (7.0.8.1) lib/action_dispatch/journey/router.rb:32:in `serve'
+actionpack (7.0.8.1) lib/action_dispatch/routing/route_set.rb:852:in `call'
+rack (2.2.8.1) lib/rack/tempfile_reaper.rb:15:in `call'
+rack (2.2.8.1) lib/rack/etag.rb:27:in `call'
+rack (2.2.8.1) lib/rack/conditional_get.rb:40:in `call'
+rack (2.2.8.1) lib/rack/head.rb:12:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/permissions_policy.rb:38:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/http/content_security_policy.rb:36:in `call'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:266:in `context'
+rack (2.2.8.1) lib/rack/session/abstract/id.rb:260:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/cookies.rb:704:in `call'
+activerecord (7.0.8.1) lib/active_record/migration.rb:638:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:27:in `block in call'
+activesupport (7.0.8.1) lib/active_support/callbacks.rb:99:in `run_callbacks'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/callbacks.rb:26:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/actionable_exceptions.rb:17:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/debug_exceptions.rb:28:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/show_exceptions.rb:29:in `call'
+railties (7.0.8.1) lib/rails/rack/logger.rb:40:in `call_app'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `block in call'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `block in tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:37:in `tagged'
+activesupport (7.0.8.1) lib/active_support/tagged_logging.rb:99:in `tagged'
+railties (7.0.8.1) lib/rails/rack/logger.rb:25:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/remote_ip.rb:93:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/request_id.rb:26:in `call'
+rack (2.2.8.1) lib/rack/method_override.rb:24:in `call'
+rack (2.2.8.1) lib/rack/runtime.rb:22:in `call'
+activesupport (7.0.8.1) lib/active_support/cache/strategy/local_cache_middleware.rb:29:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:61:in `block in call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:26:in `collect_events'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/server_timing.rb:60:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/executor.rb:14:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/static.rb:23:in `call'
+rack (2.2.8.1) lib/rack/sendfile.rb:110:in `call'
+actionpack (7.0.8.1) lib/action_dispatch/middleware/host_authorization.rb:138:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+rack-cors (2.0.2) lib/rack/cors.rb:102:in `call'
+railties (7.0.8.1) lib/rails/engine.rb:530:in `call'
+puma (5.6.8) lib/puma/configuration.rb:252:in `call'
+puma (5.6.8) lib/puma/request.rb:77:in `block in handle_request'
+puma (5.6.8) lib/puma/thread_pool.rb:340:in `with_force_shutdown'
+puma (5.6.8) lib/puma/request.rb:76:in `handle_request'
+puma (5.6.8) lib/puma/server.rb:443:in `process_client'
+puma (5.6.8) lib/puma/thread_pool.rb:147:in `block in spawn_thread'
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 19:48:57 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 19:48:57 +0000
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 1ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 116)
+
+
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms | Allocations: 116)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-12 19:49:32 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"tokei@gmail.com", "username"=>"tokei", "password"=>"[FILTERED]", "session"=>{"email"=>"tokei@gmail.com", "username"=>"tokei", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 2ms (Views: 0.9ms | ActiveRecord: 0.0ms | Allocations: 98)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 19:50:00 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"koko@gmail.com", "username"=>"koko", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"koko@gmail.com", "username"=>"koko"}}
+[31mUnpermitted parameter: :user. Context: { controller: UsersController, action: register, request: #<ActionDispatch::Request:0x0000ffff635b4ba0>, params: {"email"=>"koko@gmail.com", "username"=>"koko", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "controller"=>"users", "action"=>"register", "user"=>{"email"=>"koko@gmail.com", "username"=>"koko"}} }[0m
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (11.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "koko@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (3.0ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "koko"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (2.0ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "koko@gmail.com"], ["created_at", "2024-09-12 19:50:00.519608"], ["updated_at", "2024-09-12 19:50:00.519608"], ["password_digest", "[FILTERED]"], ["username", "koko"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.7ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 286ms (Views: 0.7ms | ActiveRecord: 17.5ms | Allocations: 3861)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-12 19:50:00 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mUser Load (0.2ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 30], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 4ms (Views: 0.2ms | ActiveRecord: 0.3ms | Allocations: 1869)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-12 19:50:00 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mUser Load (0.1ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."id" = $1 LIMIT $2[0m  [["id", 30], ["LIMIT", 1]]
+  ↳ app/controllers/application_controller.rb:26:in `authorize_request'
+  [1m[36mDream Load (0.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 3ms (Views: 0.2ms | ActiveRecord: 0.2ms | Allocations: 1869)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-12 19:50:28 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"koko@gmail.com", "username"=>"koko", "password"=>"[FILTERED]", "session"=>{"email"=>"koko@gmail.com", "username"=>"koko", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 1ms (Views: 0.7ms | ActiveRecord: 0.0ms | Allocations: 100)
+
+
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 20:54:19 +0000
+Started POST "/auth/verify" for 192.168.65.1 at 2024-09-12 20:54:19 +0000
+Processing by AuthController#verify as HTML
+Processing by AuthController#verify as HTML
+  Parameters: {"auth"=>{}}
+  Parameters: {"auth"=>{}}
+Completed 401 Unauthorized in 14ms (Views: 3.0ms | ActiveRecord: 0.0ms | Allocations: 198)
+
+
+Completed 401 Unauthorized in 3ms (Views: 0.3ms | ActiveRecord: 0.0ms | Allocations: 117)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 20:55:02 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"nami@gmail.com", "username"=>"nami", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"nami@gmail.com", "username"=>"nami"}}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (5.4ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "nami@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "nami"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 38ms (Views: 0.6ms | ActiveRecord: 25.6ms | Allocations: 5900)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 20:55:32 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"nami@gmail.com", "username"=>"nami", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"nami@gmail.com", "username"=>"nami"}}
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.3ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "nami@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "nami"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 14ms (Views: 0.5ms | ActiveRecord: 1.9ms | Allocations: 3641)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 20:55:33 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"nami@gmail.com", "username"=>"nami", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"nami@gmail.com", "username"=>"nami"}}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "nami@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "nami"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 4ms (Views: 0.1ms | ActiveRecord: 0.5ms | Allocations: 3642)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 20:55:34 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"nami@gmail.com", "username"=>"nami", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"nami@gmail.com", "username"=>"nami"}}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "nami@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "nami"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 41ms (Views: 0.1ms | ActiveRecord: 0.6ms | Allocations: 3641)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 20:56:07 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"nami@gmail.com", "username"=>"nami", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"nami@gmail.com", "username"=>"nami"}}
+  [1m[36mTRANSACTION (0.3ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "nami@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.2ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "nami"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 106ms (Views: 0.2ms | ActiveRecord: 1.8ms | Allocations: 3642)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-12 20:56:50 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"email"=>"kurohige@gmail.com", "username"=>"kurohige", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]", "user"=>{"email"=>"kurohige@gmail.com", "username"=>"kurohige"}}
+  [1m[36mTRANSACTION (0.2ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (1.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "kurohige@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.4ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "kurohige"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 422 Unprocessable Entity in 20ms (Views: 0.5ms | ActiveRecord: 1.8ms | Allocations: 3642)
+
+
+Started POST "/register" for 192.168.65.1 at 2024-09-13 19:18:23 +0000
+Processing by UsersController#register as HTML
+  Parameters: {"user"=>{"email"=>"utidasan@gmail.com", "username"=>"utidasan", "password"=>"[FILTERED]", "password_confirmation"=>"[FILTERED]"}}
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[35mBEGIN[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (5.3ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "utidasan@gmail.com"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Exists? (0.1ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "utidasan"], ["LIMIT", 1]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mUser Create (5.7ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "utidasan@gmail.com"], ["created_at", "2024-09-13 19:18:24.075887"], ["updated_at", "2024-09-13 19:18:24.075887"], ["password_digest", "[FILTERED]"], ["username", "utidasan"], ["trial_user", nil]]
+  ↳ app/controllers/users_controller.rb:7:in `register'
+  [1m[36mTRANSACTION (2.2ms)[0m  [1m[35mCOMMIT[0m
+  ↳ app/controllers/users_controller.rb:7:in `register'
+Completed 201 Created in 435ms (Views: 3.1ms | ActiveRecord: 43.6ms | Allocations: 6711)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-13 19:18:24 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (1.1ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 33ms (Views: 0.2ms | ActiveRecord: 1.1ms | Allocations: 3652)
+
+
+Started GET "/dreams?query=&start_date=&end_date=" for 192.168.65.1 at 2024-09-13 19:18:24 +0000
+Processing by DreamsController#index as HTML
+  Parameters: {"query"=>"", "start_date"=>"", "end_date"=>""}
+  [1m[36mDream Load (0.2ms)[0m  [1m[34mSELECT "dreams".* FROM "dreams"[0m
+  ↳ app/controllers/dreams_controller.rb:23:in `index'
+Completed 200 OK in 2ms (Views: 0.2ms | ActiveRecord: 0.2ms | Allocations: 1299)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-13 19:19:04 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"utida@gmail.com", "username"=>"utida", "password"=>"[FILTERED]", "session"=>{"email"=>"utida@gmail.com", "username"=>"utida", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 3ms (Views: 1.5ms | ActiveRecord: 0.0ms | Allocations: 163)
+
+
+Started POST "/login" for 192.168.65.1 at 2024-09-13 19:19:18 +0000
+Processing by SessionsController#create as HTML
+  Parameters: {"email"=>"utida@gmail.com", "username"=>"utida", "password"=>"[FILTERED]", "session"=>{"email"=>"utida@gmail.com", "username"=>"utida", "password"=>"[FILTERED]"}}
+Filter chain halted as :authorize_request rendered or redirected
+Completed 401 Unauthorized in 0ms (Views: 0.2ms | ActiveRecord: 0.0ms | Allocations: 100)
+
+
+  [1m[35m (1.3ms)[0m  [1m[34mSELECT pg_try_advisory_lock(5277929974492897470)[0m
+  [1m[36mActiveRecord::SchemaMigration Pluck (3.0ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[36mActiveRecord::InternalMetadata Load (1.9ms)[0m  [1m[34mSELECT "ar_internal_metadata".* FROM "ar_internal_metadata" WHERE "ar_internal_metadata"."key" = $1 LIMIT $2[0m  [["key", "environment"], ["LIMIT", 1]]
+  [1m[35m (0.3ms)[0m  [1m[34mSELECT pg_advisory_unlock(5277929974492897470)[0m
+  [1m[36mActiveRecord::SchemaMigration Pluck (0.6ms)[0m  [1m[34mSELECT "schema_migrations"."version" FROM "schema_migrations" ORDER BY "schema_migrations"."version" ASC[0m
+  [1m[36mTRANSACTION (0.8ms)[0m  [1m[35mBEGIN[0m
+  [1m[36mUser Exists? (4.8ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "test@example.com"], ["LIMIT", 1]]
+  [1m[36mUser Exists? (0.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "testuser"], ["LIMIT", 1]]
+  [1m[36mTRANSACTION (0.1ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (1.3ms)[0m  [1m[35mBEGIN[0m
+  [1m[36mUser Exists? (4.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "test@example.com"], ["LIMIT", 1]]
+  [1m[36mUser Exists? (1.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "testuser"], ["LIMIT", 1]]
+  [1m[36mTRANSACTION (0.4ms)[0m  [1m[31mROLLBACK[0m
+  [1m[36mTRANSACTION (2.2ms)[0m  [1m[35mBEGIN[0m
+  [1m[36mUser Exists? (13.7ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."email" = $1 LIMIT $2[0m  [["email", "test2@example.com"], ["LIMIT", 1]]
+  [1m[36mUser Exists? (0.6ms)[0m  [1m[34mSELECT 1 AS one FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "testuser2"], ["LIMIT", 1]]
+  [1m[36mUser Create (16.0ms)[0m  [1m[32mINSERT INTO "users" ("name", "email", "created_at", "updated_at", "password_digest", "username", "trial_user") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING "id"[0m  [["name", nil], ["email", "test2@example.com"], ["created_at", "2024-09-13 20:19:25.279628"], ["updated_at", "2024-09-13 20:19:25.279628"], ["password_digest", "[FILTERED]"], ["username", "testuser2"], ["trial_user", nil]]
+  [1m[36mTRANSACTION (0.9ms)[0m  [1m[35mCOMMIT[0m
+  [1m[36mUser Load (1.7ms)[0m  [1m[34mSELECT "users".* FROM "users" WHERE "users"."username" = $1 LIMIT $2[0m  [["username", "testuser2"], ["LIMIT", 1]]
