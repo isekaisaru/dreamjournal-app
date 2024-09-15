@@ -1,6 +1,6 @@
 class DreamsController < ApplicationController
   # ユーザー認証を行う
-  before_action :authorize, only: [:create,:update, :destroy, :my_dreams]
+  before_action :authorize_request, only: [:create,:update, :destroy, :my_dreams]
   #  指定した夢を取得する
   before_action :set_dream, only: [:show, :update, :destroy]
   # 正しいユーザーかどうか確認する
@@ -32,7 +32,7 @@ class DreamsController < ApplicationController
   # POST /dreams
   def create
     @dream = Dream.new(dream_params)
-    @dream.user_id = @user&.id || nil
+    @dream.user_id = @current_user&.id || nil
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
@@ -60,7 +60,7 @@ class DreamsController < ApplicationController
   end
 
   def my_dreams
-    @dreams = @user.dreams
+    @dreams = @current_user.dreams
     render json: @dreams.as_json(only: [:id, :title, :description, :created_at])
   end
 
@@ -80,7 +80,7 @@ class DreamsController < ApplicationController
 
     # 正しいユーザーかどうか確認する
     def correct_user
-      @dream = @user.dreams.find_by(id: params[:id])
+      @dream = @current_user.dreams.find_by(id: params[:id])
       Rails.logger.info "Current user ID: #{@user.id}"
       Rails.logger.info "Dream user ID: #{@dream&.user_id}"
     if @dream.nil?

@@ -29,15 +29,18 @@ export default function Register() {
     try {
       console.log( { email, username, password, password_confirmation: passwordConfirmation });
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/register`, {
-        email,
-        username,
-        password,
-        password_confirmation: passwordConfirmation
+        user: {
+          email,
+          username,
+          password,
+          password_confirmation: passwordConfirmation
+        }
       });
-
+      console.log('Token received:', response.data.token);
       localStorage.setItem('token', response.data.token);
+
       console.log('Registration successful:', response.data);
-      router.push('/login');
+      router.push('/home');
     } catch (error: any) {
       if (error.response) {
         setError(error.response.data.errors.join(', '));
