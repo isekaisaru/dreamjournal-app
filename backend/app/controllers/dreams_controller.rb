@@ -81,10 +81,11 @@ class DreamsController < ApplicationController
     # 正しいユーザーかどうか確認する
     def correct_user
       @dream = @current_user.dreams.find_by(id: params[:id])
-      Rails.logger.info "Current user ID: #{@user.id}"
+      Rails.logger.info "Current user ID: #{@current_user.id}"
       Rails.logger.info "Dream user ID: #{@dream&.user_id}"
+
     if @dream.nil?
-      Rails.logger.warn "User #{@user.id} is not authorized to delete dream #{params[:id]}"
+      Rails.logger.warn "User #{@current_user.id} is not authorized to delete dream #{params[:id]}"
       render json: { error: "Not Authorized" }, status: :forbidden
     end
     end

@@ -3,6 +3,7 @@ class ApplicationController < ActionController::API
 
   # トークンをエンコードする
   def encode_token(payload)
+    payload[:exp] = 24.hours.from_now.to_i
     JWT.encode(payload, Rails.application.credentials.secret_key_base)
   end
 
@@ -11,6 +12,8 @@ class ApplicationController < ActionController::API
     JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: 'HS256')[0]
   rescue JWT::DecodeError
     nil
+  rescue JWT::ExpiredSignature
+    render json: { errors: 'Token expired' }, status: :unauthorized
   end
 
   private
@@ -18,17 +21,25 @@ class ApplicationController < ActionController::API
   # リクエストを認証する
   def authorize_request
     header = request.headers['Authorization']
-    token = header.split(' ').last if header
-
-    if token
-      begin
-        decoded = decode_token(token)
-        @current_user = User.find_by(id: decoded['user_id'])
-      rescue ActiveRecord::RecordNotFound, JWT::DecodeError
-        render json: { errors: 'User not found' }, status: :unauthorized
+    if header
+      token = header.split(' ').last
+      if token
+        begin
+          decoded = decode_token(token)
+          if decoded
+            @current_user = User.find_by(id: decoded['user_id'])
+            render json: { errors: 'ユーザーが見つかりません' }, status: :unauthorized unless @current_user
+          else
+            render json: { errors: '無効なトークンです。' }, status: :unauthorized
+          end
+        rescue ActiveRecord::RecordNotFound
+          render json: { errors: 'ユーザーが見つかりません' }, status: :unauthorized
+        end
+      else
+        render json: { errors: 'トークンが見つかりません' }, status: :unauthorized
       end
     else
-      render json: { errors: 'Missing token' }, status: :unauthorized
+      render json: { errors: 'トークンが見つかりません' }, status: :unauthorized
     end
   end
 end
