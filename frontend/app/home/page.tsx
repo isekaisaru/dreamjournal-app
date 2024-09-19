@@ -23,7 +23,7 @@ export default function HomePage() {
         throw new Error('Token not found'); // トークンがない場合はエラーをスロー
       }
       // 夢データ取得APIエンドポイントにリクエストを送信
-      const response = await axios.get('http://localhost:3001/dreams', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dreams`, {
         params: { query, start_date: startDate, end_date: endDate }, // クエリパラメータを設定
         headers: {
           Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
@@ -31,9 +31,11 @@ export default function HomePage() {
       });
       // レスポンスデータから夢データを取得し、状態を更新
       setDreams(response.data);
-    } catch (error:any) {
+    } catch (error: unknown) {
       console.error('Error fetching dreams:', error);
+      if (error instanceof Error) {
       setErrorMessage('夢のデータの取得に失敗しました。認証エラーです。');
+      }
     }
   };
 

@@ -6,14 +6,13 @@ import axios from 'axios';
 
 export default function Login() {
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!email || !username || !password) {
+    if (!email || !password) {
       setError('すべてのフィールドを入力してください。');
       return;
     }
@@ -22,7 +21,7 @@ export default function Login() {
         email,
         password
       });
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('token', response.data.jwt);
       router.push('/home');
     } catch (error: any) {
       setError('ログインに失敗しました。もう一度お試しください。');
@@ -35,18 +34,6 @@ export default function Login() {
       <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl md:text-3xl font-semibold  mb-4 md:mb-6 text-center text-gray-800">ログイン</h2>
         <div className="space-y-4">
-          <input
-            type="text"
-            name="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="ユーザー名"
-            autoComplete="username"
-            required
-            aria-label="ユーザー名"
-            aria-required="true"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
-          />
           <input
             type="email"
             name="email"

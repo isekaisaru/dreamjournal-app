@@ -11,11 +11,12 @@ export default function useAuth() {
     console.log("useAuth hook called");
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
+      console.log("Token beging sent for verification:", token);
       if (token) {
         try {
-          const response = await axios.post('http://localhost:3001/auth/verify', {}, {
+          const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/verify`, {}, {
             headers: {
-              Authorization: `Bearer ${token}`
+              Authorization: `Bearer ${token}`,
             },
           });
           if (response.status === 200) {
