@@ -21,7 +21,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           ? dream.description.substring(0,70) + "..."
           : dream.description}
       </Link>
-      <Link href={`dream/${dream.id}`} className="text-pink-800 hover:text-black">
+      <Link href={`/dream/${dream.id}`} className="text-pink-800 hover:text-black">
         続きを読む
       </Link>
     </div>

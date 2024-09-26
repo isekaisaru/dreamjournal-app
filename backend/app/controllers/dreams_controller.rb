@@ -9,7 +9,8 @@ class DreamsController < ApplicationController
 
   # GET /dreams
   def index
-    @dreams = Dream.all
+    # 現在のユーザーの夢を取得
+    @dreams = @current_user.dreams
     # クエリパラメーターが存在する場合、タイトルでフィルタリング
     if params[:query].present?
       @dreams = @dreams.where("title LIKE ?", "%#{params[:query]}%")
@@ -25,7 +26,6 @@ class DreamsController < ApplicationController
 
   # GET /dreams/:id
   def show
-    @dream = Dream.find(params[:id])
     render json: @dream.as_json(only: [:id, :title, :description, :created_at])
   end
 
@@ -68,9 +68,10 @@ class DreamsController < ApplicationController
    
     # 指定した夢を取得する
     def set_dream
-      @dream = Dream.find(params[:id])
-    rescue ActiveRecord::RecordNotFound => e
-      render json: { errors: e.message }, status: :not_found
+      @dream = Dream.find_by(id: params[:id])
+      unless @dream
+       render json: { errors: 'Dream not found' }, status: :not_found
+      end
     end
 
     # 認可されたパラメーターを取得する
@@ -80,13 +81,11 @@ class DreamsController < ApplicationController
 
     # 正しいユーザーかどうか確認する
     def correct_user
-      @dream = @current_user.dreams.find_by(id: params[:id])
-      Rails.logger.info "Current user ID: #{@current_user.id}"
-      Rails.logger.info "Dream user ID: #{@dream&.user_id}"
-
-    if @dream.nil?
-      Rails.logger.warn "User #{@current_user.id} is not authorized to delete dream #{params[:id]}"
-      render json: { error: "Not Authorized" }, status: :forbidden
-    end
+     if @dream.user_id != @current_user.id
+      Rails.logger.debug "current user ID: #{@current_user.id}"
+      Rails.logger.debug "dream user ID: #{@dream.user_id}"
+      Rails.logger.debug "User #{@current_user.id} is not authorized to access dream #{params[:id]}"
+      render json: { error: " Not Authorized" }, status: :forbidden
+     end
     end
 end

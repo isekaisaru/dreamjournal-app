@@ -1,5 +1,9 @@
 class AuthController < ApplicationController
-  skip_before_action :authorize_request, only: [:verify]
+  before_action :authorize_request, only: [:verify, :me]
+
+  def me
+    render json: { user: @current_user.as_json(only: [:id, :email, :username]) }, status: :ok
+  end
 
   def verify
     header = request.headers['Authorization']

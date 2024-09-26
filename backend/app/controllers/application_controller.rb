@@ -17,7 +17,10 @@ class ApplicationController < ActionController::API
   end
 
   private
-
+  # 現在のユーザーを取得する
+  def current_user
+    @current_user
+  end
   # リクエストを認証する
   def authorize_request
     header = request.headers['Authorization']
