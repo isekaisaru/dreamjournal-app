@@ -11,28 +11,44 @@ import { Dream } from "@/app/types";
  * HomePageコンポーネント
  * - 認証されたユーザーが見るホームページ
  */
+interface User {
+  id: number;
+  email: string;
+  username: string;
+}
+
 export default function HomePage() {
   const [dreams, setDreams] = useState<Dream[]>([]); // 夢データの状態管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
+  const [user, setUser] = useState<User | null>(null);  // ユーザー情報の状態管理
 
- // 認証トークンを使用して夢データを取得する関数
-  const fetchDreams = async (query = '', startDate = '', endDate = '') => {
+ // 認証トークンを使用して夢データとユーザー情報を取得する関数
+  const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('token'); // ローカルストレージからJWTトークンを取得
       if (!token) {
-        throw new Error('Token not found'); // トークンがない場合はエラーをスロー
+        throw new Error('トークンがありません。'); // トークンがない場合はエラーをスロー
       }
-      // 夢データ取得APIエンドポイントにリクエストを送信
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dreams`, {
-        params: { query, start_date: startDate, end_date: endDate }, // クエリパラメータを設定
+
+      // ユーザー情報と夢データを取得するAPIエンドポイントにリクエストを送信
+      const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
         headers: {
           Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
         },
       });
-      // レスポンスデータから夢データを取得し、状態を更新
-      setDreams(response.data);
+
+      setUser(userResponse.data.user); // ユーザー情報を状態に設定
+    
+      // 夢データ取得APIエンドポイントにリクエストを送信
+      const dreamsResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/my_dreams`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
+        },
+      });
+      
+      setDreams(dreamsResponse.data); //夢データの状態を更新
     } catch (error: unknown) {
-      console.error('Error fetching dreams:', error);
+      console.error('Error fetching user data:', error);
       if (error instanceof Error) {
       setErrorMessage('夢のデータの取得に失敗しました。認証エラーです。');
       }
@@ -40,13 +56,16 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    fetchDreams(); // コンポーネントがマウントされたときに夢データを取得
+    fetchUserData(); // コンポーネントがマウントされたときにユーザー情報と夢データを取得
   }, []);
 
   return (
     <div className="md:flex">
       <section className="w-full md:w-2/3 flex flex-col items-center px-3 md:px-6">
-        <SearchBar onSearch={fetchDreams}/> {/* 検索バー */}
+        <h1 className = "text-2xl font-bold">
+          {user ? `${user.username}さんの夢` : '夢'}
+        </h1>
+        <SearchBar onSearch={fetchUserData}/> {/* 検索バー */}
 
         {/* エラーメッセージを表示する部分 */}
         {errorMessage && (

@@ -10,6 +10,7 @@ const getToken = () => {
     console.log("Token:", token);
     return token;
   }
+  console.error("Window is undefined, cannot retrieve token");
   return null;
 };
 console.log("API URL:", API_URL); 
@@ -120,10 +121,15 @@ export const updateDream = async (
 };
 
 export const deleteDream = async (id: string): Promise<void> => {
+
+  const token = getToken();
+  if (!token) {
+    console.error("No tokebn available, cannot delete dream");
+    return;
+  }
+
   try {
     console.log("Deleting dream with id:", id);
-    const token = getToken();
-    console.log("Authorization token:", token);
     const res = await fetch(`${API_URL}/dreams/${id}`, {
       method: "DELETE",
       headers: {
