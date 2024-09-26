@@ -22,6 +22,7 @@ export default function Login() {
         password
       });
       localStorage.setItem('token', response.data.jwt);
+      window.dispatchEvent(new Event('storage'));
       router.push('/home');
     } catch (error: any) {
       setError('ログインに失敗しました。もう一度お試しください。');
