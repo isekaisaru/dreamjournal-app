@@ -1,6 +1,6 @@
 class DreamsController < ApplicationController
   # ユーザー認証を行う
-  before_action :authorize_request, only: [:create,:update, :destroy, :my_dreams]
+  before_action :authorize_request, only: [:create,:update, :destroy, :my_dreams, :dreams_by_month]
   #  指定した夢を取得する
   before_action :set_dream, only: [:show, :update, :destroy]
   # 正しいユーザーかどうか確認する
@@ -58,7 +58,22 @@ class DreamsController < ApplicationController
     render json: @dream.errors, status: :unprocessable_entity
    end
   end
+  # GET /dreams_by_month
+  def dreams_by_month
+    month = params[:month] # クエリパラメーターから月を取得
 
+    if month.nil?
+      return render json: { error: '月のパラメータが必要です。'}, status: :bad_request
+    end
+
+    # 月ごとの夢をフィルタリング
+    filtered_dreams = @current_user.dreams.where("to_char(created_at, 'YYYY-MM') = ?", month)
+
+    # 取得した夢データを返す
+    render json: filtered_dreams.as_json(only: [:id, :title, :description, :created_at])
+  end
+
+  # GET /my_dreams
   def my_dreams
     @dreams = @current_user.dreams
     render json: @dreams.as_json(only: [:id, :title, :description, :created_at])

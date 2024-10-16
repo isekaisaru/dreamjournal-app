@@ -7,6 +7,7 @@ class AuthController < ApplicationController
 
   def verify
     header = request.headers['Authorization']
+    puts "Authorization header:", header.inspect
     token = header.split(' ').last if header
     if token
       begin
@@ -18,11 +19,14 @@ class AuthController < ApplicationController
         puts "Failed to decode token"
         render json: { errors: 'Invalid token' }, status: :unauthorized
       rescue JWT::ExpiredSignature
+        puts "Token has expired"
         render json: { errors: 'Token expired' }, status: :unauthorized
       rescue ActiveRecord::RecordNotFound
+        puts "User not found for ID #{decoded['user_id']}"
         render json: { errors: 'User not found' }, status: :not_found
       end
     else
+      puts "Token missing from the request"
       render json: { errors: 'Token missing' }, status: :unprocessable_entity
     end
   end
