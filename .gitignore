@@ -17,6 +17,12 @@
 !/log/.keep
 !/tmp/.keep
 
+# Backendのログと一時ファイルを無視
+/backend/log/*
+!/backend/log/.keep
+/backend/tmp/*
+!/backend/tmp/.keep
+
 # データベース関連のファイルを無視
 /data/db/
 
