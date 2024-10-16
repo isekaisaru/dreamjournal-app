@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { set } from 'date-fns';
+
 
 export default function useAuth() {
   console.log("useAuth hook initialized");
@@ -24,6 +24,9 @@ export default function useAuth() {
           if (response.status === 200) {
             setIsAuthenticated(true);
             setMessage("ログインに成功しました");
+           
+            // 認証成功時にデフォルトヘッダーを設定
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             router.push('/home');
           } else {
             setIsAuthenticated(false);

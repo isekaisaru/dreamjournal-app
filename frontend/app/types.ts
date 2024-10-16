@@ -10,6 +10,7 @@ export interface Dream {
   id: string;
   title: string;
   description: string;
+  date: string;
   userId: number;
   created_at: Date;
   updated_at: Date;
