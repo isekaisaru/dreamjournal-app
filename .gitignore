@@ -34,4 +34,4 @@
 /storage/*
 !/storage/.keep
 /tmp/storage/*
-!/tmp/storage/.keep
+!/tmp/storage/.keepbackend/log/development.log
