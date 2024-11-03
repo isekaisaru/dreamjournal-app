@@ -51,6 +51,9 @@ const Header = () => {
             <Link href= "/my-dreams">
               <Button  className="ml-4 bg-green-400 px-3 py-2 md:px-3 md:py-3 rounded-md text-white">わたしの夢</Button>
             </Link>
+            <Link href="/settings">
+            <Button className="ml-4 bg-blue-400 px-3 py-2 md:px-3 md:py-3 rounded-md text-white">設定</Button>
+            </Link>
             <button onClick={handleLogout} className="ml-4 bg-red-500 text-white px-3 py-2 rounded-md">
               ログアウト
             </button>

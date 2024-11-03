@@ -6,6 +6,6 @@ Rails.application.routes.draw do
     post 'login', to: 'sessions#create'
     post 'register', to: 'users#register'
     post 'trial_users', to: 'trial_users#create'
-
     post 'auth/verify', to: 'auth#verify'
+    resources :users, only: [:destroy]
 end

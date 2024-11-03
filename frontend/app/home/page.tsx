@@ -45,8 +45,11 @@ export default function HomePage() {
     try {
       const token = localStorage.getItem('token'); // ローカルストレージからトークンを取得
       if (!token) {
-        throw new Error('トークンが見つかりません。 ログインが必要です。'); // トークンがない場合はエラーをスロー
+        // トークンが見つからない場合はエラーメッセージを設定して、データ取得をスキップ
+        setErrorMessage('トークンが見つかりません。 ログインが必要です。'); 
+        return; // トークンがない場合はリクエストをスキップ
       }
+      
       // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
       const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
         headers: { 
