@@ -26,12 +26,14 @@
 # データベース関連のファイルを無視
 /data/db/
 
-# 他の既存の設定はそのまま
-/.bundle
+# 環境変数ファイル（.envファイル）を無視
 /.env*
 !/.env*.erb
+
+# 他の既存の設定はそのまま
+/.bundle
 /config/master.key
 /storage/*
 !/storage/.keep
 /tmp/storage/*
-!/tmp/storage/.keepbackend/log/development.log
+!/tmp/storage/.keep
