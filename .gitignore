@@ -37,3 +37,9 @@
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/.keep
+
+# Bootsnap cache files
+backend/tmp/cache/bootsnap/
+
+# Database files
+data/db/
