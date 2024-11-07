@@ -14,19 +14,19 @@ const SettingsPage = () => {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      if(userId) { // ユーザーIDがあれば削除処理を実行
-      await deleteUser(userId); // ユーザーIDをdeleteUserに渡す
+      if(userId) { 
+      await deleteUser(userId); 
       alert('アカウントは削除されました。');
-      logout(); // ログアウト処理
+      logout(); 
       router.push('/');
       } else {
         console.error("ユーザーIDが見つかりません。");
       }
     } catch (error) {
       console.error('ユーザー削除に失敗しました。', error);
-      alert('アカウントの削除に失敗しました。');
+      alert('アカウントの削除に失敗しました。 しばらくしてから実行してください。');
     } finally {
-      setIsDeleting(false); // 削除完了後に状態をリセット
+      setIsDeleting(false); 
     }
   };
 
@@ -35,32 +35,32 @@ return (
   <div className="min-h-screen p-6 bg-gradient-to-r from-blue-100 to-blue-300">
     <h2 className="text-4xl font-bold mb-6">設定ページ</h2>
 
-    {/* アカウント削除ボタン */}
+    
     <button
-      className="bg-red-500  text-white font-bold px-4 py-2 rounded"
-      onClick={() => setIsModalOpen(true)} // モーダルを表示
+      className="bg-red-500 text-white font-bold px-4 py-2 rounded"
+      onClick={() => setIsModalOpen(true)} 
     >
       アカウントを削除
     </button>
 
-    {/* 削除モーダル */}
+    
     {isModalOpen && (
       <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-        <div className="modal-content bg-white p-6 rounded shadow-lg">
-          <p className="text-lg font-bold mb-4">本当にアカウントを削除しますか？ この操作は取り消せません。</p>
+        <div className="modal-content bg-white p-6 rounded shadow-lg w-full sm:w-96">
+          <p className="text-lg font-bold mb-4 text-red-600 bg-yellow-50 p-4 rounded-lg border border-red-500">
+            本当にアカウントを削除しますか？ この操作は取り消せません。
+          </p>
           <div className="flex justify-end space-x-4 mt-4">
-            {/* キャンセルボタン */}  
             <button
-              className="bg-gray-500  text-white px-4 py-2 rounded"
-              onClick={() => setIsModalOpen(false)} // モーダルを閉じる
+              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors duration-200"
+              onClick={() => setIsModalOpen(false)}
             >
               キャンセル
             </button>
-            {/* 削除ボタン */}
             <button
-              className={`bg-red-500  text-white px-4 py-2 rounded ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={handleDelete} // 削除処理を実行
-              disabled={isDeleting} // 削除中はボタンを無効化
+              className={`bg-red-500 text-white px-4 py-2 rounded ${isDeleting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600'} transition-colors duration-200`}
+              onClick={handleDelete} 
+              disabled={isDeleting} 
             >
               {isDeleting ? '削除中…' : '削除する'}
             </button>

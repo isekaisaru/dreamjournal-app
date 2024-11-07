@@ -4,6 +4,10 @@ FROM node:18 AS builder
 # 作業ディレクトリの設定
 WORKDIR /app
 
+# 既存のYarnを削除してからグローバルにYarn 1.xをインストール
+RUN rm -rf /usr/local/bin/yarn /usr/local/bin/yarnpkg && npm install -g yarn@1
+
+
 # 依存関係のインストール
 COPY package.json yarn.lock ./
 RUN yarn install --production=false

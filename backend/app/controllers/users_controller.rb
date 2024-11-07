@@ -1,5 +1,5 @@
 class UsersController < ApplicationController
-  before_action :authorize_request
+  before_action :authorize_request, except: [:register]
   before_action :set_user, only: [:destroy]
   
 

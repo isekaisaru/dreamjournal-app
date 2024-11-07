@@ -56,9 +56,15 @@ export default function Register() {
       }, 3000);
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.errors) {
-        setError(error.response.data.errors.join(', '));
+        console.log("Error details:", error.response.data.errors); // エラーデータを確認
+        
+       // エラーが配列か文字列か確認して、適切にセット
+        const errorMessage = Array.isArray(error.response.data.errors)
+        ? error.response.data.errors.join(', ')  // 配列なら文字列に変換
+        : error.response.data.errors;            // 文字列ならそのまま使う
+        setError(errorMessage);
       } else if (error.response && error.response.data && error.response.data.message) {
-        setError(error.response.data.message);
+        setError(error.response.data.message);   // 別のエラーメッセージがある場合
       } else {
         console.error('General error:', error);
         setError('登録に失敗しました。もう一度お試しください。');
@@ -94,7 +100,7 @@ export default function Register() {
             autoComplete="email"
             required
             aria-required="true"
-            aria-invaild={error ? "true" : "false"}
+            aria-invalid={error ? "true" : "false"}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <input
