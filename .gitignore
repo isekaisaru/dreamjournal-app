@@ -17,6 +17,10 @@
 !/log/.keep
 !/tmp/.keep
 
+# Backendのログと一時ファイルを無視
+/backend/log/
+/backend/tmp/
+
 # 他の既存の設定はそのまま
 /.bundle
 /.env*
