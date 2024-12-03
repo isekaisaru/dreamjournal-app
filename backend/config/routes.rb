@@ -1,11 +1,20 @@
 Rails.application.routes.draw do
-    resources :dreams, only: [:index, :show, :create, :update, :destroy]
-    get 'my_dreams', to: 'dreams#my_dreams'
-    get 'dreams/month/:month', to: 'dreams#dreams_by_month'
-    get 'me', to: 'auth#me'
-    post 'login', to: 'sessions#create'
-    post 'register', to: 'users#register'
-    post 'trial_users', to: 'trial_users#create'
-    post 'auth/verify', to: 'auth#verify'
-    resources :users, only: [:destroy]
+    resources :dreams, only: [:index, :show, :create, :update, :destroy] do
+        collection do
+            post :analyze # AI分析のエンドポイント
+            get  :my_dreams # 自分の夢を取得
+            get  :by_month  # 月ごとの夢を取得
+        end
+    end
+    
+    # 認証関連
+    post 'auth/login', to: 'auth#login' # ログイン
+    get  '/me', to: 'auth#me' # 現在のユーザーを取得
+    post 'auth/verify', to: 'auth#verify' # トークンの検証
+    post 'auth/refresh', to: 'auth#refresh' # トークンをリフレッシュ
+
+
+    # ユーザー関連
+    post '/register', to: 'users#register' # ユーザー登録
+    resources :users, only: [:destroy]     # ユーザー削除
 end

@@ -1,19 +1,32 @@
 # syntax=docker/dockerfile:1
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
+# Rubyのバージョンを定義
 ARG RUBY_VERSION=3.3.0
-FROM ruby:${RUBY_VERSION}-slim AS Builder
+FROM ruby:${RUBY_VERSION}-bullseye AS Builder
 
-# Set environment variables to minimize the size of the resulting image
+# 環境変数の設定
 ENV RAILS_ENV=production \
     BUNDLE_WITHOUT="development test" \
     BUNDLE_FROZEN=true \
-    POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    DEBIAN_FRONTEND=noninteractive
 
-# Set working directory
+# 作業ディレクトリの設定
 WORKDIR /app
 
-# Install packages needed to build gems and for runtime
+# 必要なパッケージとDebianアーカイブキーのインストール
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+    gnupg \
+    curl \
+    ca-certificates \
+    debian-archive-keyring \
+    && rm -rf /var/lib/apt/lists/*
+
+# Debianリポジトリの設定
+RUN echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list && \
+    echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
+
+# 必要なビルドパッケージのインストール
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -22,55 +35,48 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy just the Gemfile to take advantage of Docker cache
-COPY Gemfile ./
-
-# Set permissions for the bundler cache directory to avoid permissions issues
-RUN mkdir -p /usr/local/bundle/cache && chmod -R 777 /usr/local/bundle
-
-# Install gems
-# Note: We copy Gemfile.lock and run `bundle install` in a separate step to take advantage of Docker cache
-COPY Gemfile.lock ./
+# Gemfileをコピーして依存関係をインストール
+COPY Gemfile Gemfile.lock ./
 RUN bundle config set without 'development test' && \
     bundle install --jobs 4 --retry 3
 
-# Copy the rest of the application code
+# アプリケーションコードをコピー
 COPY . ./
 
-# Use ARG to allow override of these values at build time. Provide default dummy values.
+# アセットのプリコンパイル
 ARG SECRET_KEY_BASE
 ARG RAILS_MASTER_KEY
-
-# Set environment variables for the precompilation process
 ENV SECRET_KEY_BASE=${SECRET_KEY_BASE} \
     RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+RUN if [ -n "$SECRET_KEY_BASE" ] && [ -n "$RAILS_MASTER_KEY" ]; then \
+    bundle exec rails assets:precompile; \
+fi
 
-# Precompile assets using the environment variables
-RUN if [ -n "$SECRET_KEY_BASE" ] && [ -n "$RAILS_MASTER_KEY" ]; then bundle exec rails assets:precompile; fi
-
-# Remove folders not needed in resulting image
+# 不要なファイルを削除してイメージを軽量化
 RUN rm -rf node_modules tmp/cache app/assets vendor/assets spec
 
-# Start a new stage from scratch to create a slim final image
-FROM ruby:${RUBY_VERSION}-slim
-COPY --from=Builder /usr/local/bundle/ /usr/local/bundle/
-COPY --from=Builder /app /app
-WORKDIR /app
+# 本番環境用の軽量イメージを構築
+FROM ruby:${RUBY_VERSION}-bullseye
 
-# Install runtime dependencies
+# 必要なランタイムパッケージをインストール
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     libpq5 \
     libvips42 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user and switch to it
+# アプリケーションデータをコピー
+COPY --from=Builder /usr/local/bundle/ /usr/local/bundle/
+COPY --from=Builder /app /app
+WORKDIR /app
+
+# 非rootユーザーを作成
 RUN groupadd -r rails && useradd --no-log-init -r -g rails rails \
     && chown -R rails:rails /usr/local/bundle /app
 USER rails
 
-# Expose port 3000 to the Docker host, so we can access it from the outside.
+# Railsサーバーのポートを公開
 EXPOSE 3000
 
-# The main command to run when the container starts.
+# コンテナ起動時にRailsサーバーを実行
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

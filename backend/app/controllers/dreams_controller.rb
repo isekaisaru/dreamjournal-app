@@ -1,3 +1,4 @@
+require 'openai'
 class DreamsController < ApplicationController
   # ユーザー認証を行う
   before_action :authorize_request, only: [:create,:update, :destroy, :my_dreams, :dreams_by_month]
@@ -79,6 +80,48 @@ class DreamsController < ApplicationController
     render json: @dreams.as_json(only: [:id, :title, :description, :created_at])
   end
 
+  # POST /dreams/analyze
+  def analyze
+    dream_content = params[:content]&.strip
+
+   # パラメータ検証
+   if params[:content].nil? || params[:content].strip.blank?
+    error_message = "夢の内容が空です。 パラメータ: #{params.inspect}"
+    Rails.logger.error(error_message)
+    render json: { error: error_message }, status: :bad_request
+    return
+   end
+   begin
+      $openai_client ||= OpenAI::Client.new(access_token: ENV.fetch('OPENAI_API_KEY'))
+      client = $openai_client
+   # OpenAI APIにリクエストを送信
+    response = client.chat(
+      parameters: {
+        model: "gpt-3.5-turbo",
+        messages: [
+        { role: "system", content: "あなたは夢分析の専門家です。ユーザーの夢を解釈し、テーマや感情、考えらる意味について教えてください。" },
+        { role: "user", content: dream_content }
+        ],
+        max_tokens: 1500
+      }
+    )
+    # 分析結果を返す
+    analysis = response&.dig("choices", 0, "message", "content")
+
+    if analysis.present?
+      render json: { analysis: analysis }, status: :ok
+    else
+      Rails.logger.error response.present? ? "Invalid response format #{response.inspect}" : "Response is nil or empty."
+      render json: { error: "夢の分析に失敗しました。"}, status: :unprocessable_entity
+    end
+  # エラーハンドリング
+
+   rescue StandardError => e
+      log_error(e)
+      render json: { error: "予期しないエラーが発生しました: #{e.message}" }, status: :internal_server_error
+   end
+  end
+
   private
    
     # 指定した夢を取得する
@@ -102,5 +145,11 @@ class DreamsController < ApplicationController
       Rails.logger.debug "User #{@current_user.id} is not authorized to access dream #{params[:id]}"
       render json: { error: " Not Authorized" }, status: :forbidden
      end
+    end
+    # エラーログを出力
+    def log_error(error)
+      Rails.logger.error "#{error.class}: #{error.message}"
+      Rails.logger.error "Request Params: #{params.inspect}" if params.present?
+      Rails.logger.error error.backtrace.join("\n") if error.respond_to?(:backtrace)
     end
 end

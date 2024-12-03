@@ -3,17 +3,28 @@ class ApplicationController < ActionController::API
 
   # トークンをエンコードする
   def encode_token(payload)
-    payload[:exp] = 24.hours.from_now.to_i
+    payload[:exp] = 24.hours.from_now.to_i #
     JWT.encode(payload, Rails.application.credentials.secret_key_base)
   end
 
   # トークンをデコードする
   def decode_token(token)
     JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: 'HS256')[0]
+  rescue JWT::ExpiredSignature
+    { 'expired' => true } # トークンが期限切れの場合
   rescue JWT::DecodeError
     nil
-  rescue JWT::ExpiredSignature
-    render json: { errors: 'Token expired' }, status: :unauthorized
+  end
+
+  # トークンをリフレッシュする
+  def refresh_token
+    if @current_user
+      payload = { user_id: @current_user.id }
+      new_token = encode_token(payload)
+      render json: { token: new_token}, status: :ok
+    else
+      render json: { errors: 'ユーザーが認証されていません。'}, status: :unauthorized
+    end
   end
 
   private
@@ -29,7 +40,9 @@ class ApplicationController < ActionController::API
       if token
         begin
           decoded = decode_token(token)
-          if decoded
+          if decoded && decoded['expired']
+            refresh_token # トークンが期限切れの場合はリフレッシュする 
+          elsif decoded
             @current_user = User.find_by(id: decoded['user_id'])
             render json: { errors: 'ユーザーが見つかりません' }, status: :unauthorized unless @current_user
           else

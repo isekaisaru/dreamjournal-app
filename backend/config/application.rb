@@ -2,6 +2,10 @@ require_relative 'boot'
 
 require 'rails/all'
 
+if %w[development test].include? ENV['RAILS_ENV']
+  require 'dotenv/load'
+end
+
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
@@ -25,6 +29,7 @@ module App
     end
 
     config.autoload_paths << Rails.root.join('lib')
+    config.debug_exception_response_format = :api
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.

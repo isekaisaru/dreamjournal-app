@@ -60,7 +60,7 @@ export default function HomePage() {
       setUser(userResponse.data.user); // ユーザーデータを状態に設定
       
       // 夢データ取得APIエンドポイントにGETリクエストを送信
-      const dreamsResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/my_dreams`, {
+      const dreamsResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`, {
         headers: { Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
        },
       });
