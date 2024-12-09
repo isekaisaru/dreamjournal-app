@@ -44,6 +44,7 @@ export default function HomePage() {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('token'); // ローカルストレージからトークンを取得
+      console.log('送信するトークン:', token);
       if (!token) {
         // トークンが見つからない場合はエラーメッセージを設定して、データ取得をスキップ
         setErrorMessage('トークンが見つかりません。 ログインが必要です。'); 

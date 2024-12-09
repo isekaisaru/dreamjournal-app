@@ -52,7 +52,7 @@ export default function useAuth(redirectAfterLogin: boolean = false) {
               },
             }
           );
-
+          console.log("送信したヘッダー:" , `Bearer ${token}`);
           if (response.status === 200) {
             setIsAuthenticated(true);
             setMessage("ログインに成功しました");

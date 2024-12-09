@@ -6,6 +6,7 @@ class AuthController < ApplicationController
     user = User.find_by(email: params[:email])
     if user&.authenticate(params[:password])
       token = encode_token({ user_id: user.id })
+      Rails.logger.debug "生成されたトークン: #{token}"
       render json: { token: token, user: user.as_json(only: [:id, :email, :username]) }, status: :ok
     else
       render json: { errors: '無効なメールアドレスまたはパスワードです。'}, status: :unauthorized
@@ -19,7 +20,7 @@ class AuthController < ApplicationController
 
   # トークンをリフレッシュする
   def refresh
-    header = request.headers['Authorizaton']
+    header = request.headers['Authorization']
     token = header.split(' ').last if header
 
     if token

@@ -17,12 +17,18 @@ export default function Login() {
       return;
     }
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         email,
         password
       });
-      localStorage.setItem('token', response.data.jwt);
-      window.dispatchEvent(new Event('storage'));
+
+      if (!response.data.token) {
+        setError('トークンが取得されませんでした。');
+        console.error('トークンが空です。', response.data);
+        return;
+      }
+      localStorage.setItem('token', response.data.token);
+      console.log('保存されたトークン:', localStorage.getItem('token'));
       router.push('/home');
     } catch (error: any) {
       setError('ログインに失敗しました。もう一度お試しください。');
