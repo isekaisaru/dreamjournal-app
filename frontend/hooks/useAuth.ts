@@ -65,10 +65,19 @@ export default function useAuth(redirectAfterLogin: boolean = false) {
             setIsAuthenticated(false);
             setMessage("ログインに失敗しました。もう一度お試しください。");
           }
-        } catch (error) {
-          console.error('Error verifying token:', error);
+
+        } catch (error: any) {
+          if (error.response && error.response.status === 401) {
+        
           setIsAuthenticated(false);
-          setMessage("サーバーに接続できません。もう一度お試しください。");
+          setMessage("トークンが有効ではありません。 再ログインしてください。");
+
+          router.push('/login');
+          } else {
+            console.error('Error verifying token:', error);
+            setIsAuthenticated(false);
+            setMessage("サーバーに接続できません。もう一度お試しください。");
+          }
         }
     };
 

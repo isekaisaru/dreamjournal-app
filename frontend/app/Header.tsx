@@ -2,44 +2,18 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation'
 
 const Header = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const router = useRouter(); 
-
-  useEffect(() => {
-    // クライアントサイドでのみ実行されるように条件分岐
-    const checkToken = () => {
-      if (typeof window !== "undefined") {
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token); // トークンがあればログイン状態に設定
-      }
-    };
-
-    checkToken(); // 初回チェック
-
-    // ローカルストレージの変更を監視してログイン状態を更新
-    if (typeof window !== "undefined") {
-      window.addEventListener('storage', checkToken);
-    }
-
-    // クリーンアップ時にイベントリスナーを削除
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener('storage', checkToken);
-      }
-    };
-  }, []);
-
+  const {isLoggedIn, setIsLoggedIn} = useAuth();
+  const router = useRouter();
+  
   // ログアウト処理
-  const handleLogout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem('token'); //ログイントークンを削除
+  const handleLogout = async () => { 
+      localStorage.removeItem('token'); //トークンを削除
       setIsLoggedIn(false); // ログイン状態をfalseに設定
-      router.push('/'); // ホームページに移動
-    }
+      router.refresh(); // ページをリフレッシュ
   };
 
   return (

@@ -6,6 +6,8 @@ import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import axios, { AxiosError } from "axios";
 import { Dream } from "@/app/types"; 
+import { useAuth } from "@/context/AuthContext";
+import { set } from "date-fns";
 /**
  * HomePageコンポーネント
  * - 認証されたユーザーが見るホームページ
@@ -36,6 +38,7 @@ function groupDreamsByMonth(dreams: Dream[]) {
 }
 
 export default function HomePage() {
+  const { isLoggedIn } = useAuth(); // ユーザーの認証状態を取得
   const [dreams, setDreams] = useState<Dream[]>([]); //夢データの状態管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
   const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
@@ -48,6 +51,8 @@ export default function HomePage() {
       if (!token) {
         // トークンが見つからない場合はエラーメッセージを設定して、データ取得をスキップ
         setErrorMessage('トークンが見つかりません。 ログインが必要です。'); 
+        setDreams([]); // 夢データを空に設定
+        setUser(null); // ユーザーデータを空に設定
         return; // トークンがない場合はリクエストをスキップ
       }
       
@@ -59,6 +64,7 @@ export default function HomePage() {
       });
 
       setUser(userResponse.data.user); // ユーザーデータを状態に設定
+      setErrorMessage(null); // エラーメッセージをリセット
       
       // 夢データ取得APIエンドポイントにGETリクエストを送信
       const dreamsResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`, {
@@ -82,9 +88,17 @@ export default function HomePage() {
     }
   };
 
+  // isLoggedinが変更されたときにユーザーデータを取得
   useEffect(() => {
+    if (isLoggedIn) {
     fetchUserData(); //コンポーネントがマウントされたときにユーザーデータを取得
-  }, []);
+  } else {
+    // ログアウト時
+    setDreams([]); // 夢データを空に設定
+    setUser(null); // ユーザーデータを空に設定
+    setErrorMessage(null); // エラーメッセージをリセット
+  }
+  }, [isLoggedIn]); // isLoggedinが変更されたときに実行
 
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);

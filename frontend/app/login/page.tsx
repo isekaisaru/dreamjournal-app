@@ -3,12 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
+import { set } from 'date-fns';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const { setIsLoggedIn } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -17,22 +20,18 @@ export default function Login() {
       return;
     }
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        email,
-        password
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`, { email,password});
 
       if (!response.data.token) {
         setError('トークンが取得されませんでした。');
-        console.error('トークンが空です。', response.data);
         return;
       }
       localStorage.setItem('token', response.data.token);
-      console.log('保存されたトークン:', localStorage.getItem('token'));
+      setIsLoggedIn(true);
       router.push('/home');
     } catch (error: any) {
       setError('ログインに失敗しました。もう一度お試しください。');
-      console.error('Login failed:', error);
     }
   };
 
