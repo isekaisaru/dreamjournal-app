@@ -1,5 +1,6 @@
 "use client";
 
+import { error } from "console";
 import { User, Dream } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -100,7 +101,9 @@ export const createDream = async (title: string, description: string): Promise<D
       body: JSON.stringify({ dream: { title, description } }),
     });
     if (!res.ok) {
-      throw new Error(`Failed to create a new dream: HTTP error, status = ${res.status}`);
+      const data = await res.json();
+      const errorMsg = data.errors ? data.errors.join(", ") : "投稿に失敗しました";
+      throw new Error(errorMsg);
     }
     const newDream = await res.json();
     console.log("Created new dream:", newDream);

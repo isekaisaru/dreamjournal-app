@@ -15,6 +15,31 @@ const DreamJournalPage= () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
+
+    if(title.trim() === "") {
+      setError("タイトルを入力してください。");
+      setLoading(false);
+      return;
+    }
+
+    if(title.length > 100) {
+      setError("タイトルは100文字以内で入力してください。");
+      setLoading(false);
+    }
+
+    if(description.trim() === "") {
+      setError("内容を入力してください。");
+      setLoading(false);
+      return;
+    }
+
+    if(description.length > 1000) {
+      setError("内容は1000文字以内で入力してください。");
+      setLoading(false);
+      return;
+    }
+
    try {
     await createDream(title,description);
 
@@ -23,7 +48,11 @@ const DreamJournalPage= () => {
     router.refresh();
    } catch (err) {
     setLoading(false);
-     setError("投稿に失敗しました");
+    if (err instanceof Error) {
+      setError(err.message);
+    }else {
+      setError("投稿に失敗しました。");
+    }
    }
   };
 
@@ -69,7 +98,7 @@ const DreamJournalPage= () => {
          >記録する
          </button>
       </form>
-      {error && <p className="text-red-500 mt-4">{error}</p>}
+      {error && <p className="text-red-500  text-lg  font-bold mt-4">{error}</p>}
     </div>
   );
 };

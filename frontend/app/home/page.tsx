@@ -5,7 +5,7 @@ import DreamList from "@/components/DreamList";
 import SearchBar from "@/components/SearchBar";
 import Link from "next/link";
 import axios, { AxiosError } from "axios";
-import { Dream } from "@/app/types"; 
+import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import { set } from "date-fns";
 /**
@@ -26,7 +26,10 @@ interface User {
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce((groupedDreams, dream) => {
     const date = new Date(dream.created_at); // 夢の日付をDateオブジェクトに変換
-    const yearMonth = `${date.getFullYear()}-${('0' + (date.getMonth() + 1)).slice(-2)}`; //"2024-01"の形式
+    const yearMonth = `${date.getFullYear()}-${(
+      "0" +
+      (date.getMonth() + 1)
+    ).slice(-2)}`; //"2024-01"の形式
 
     if (!groupedDreams[yearMonth]) {
       groupedDreams[yearMonth] = [];
@@ -46,44 +49,51 @@ export default function HomePage() {
   // ユーザーデータと夢データを取得する関数
   const fetchUserData = async () => {
     try {
-      const token = localStorage.getItem('token'); // ローカルストレージからトークンを取得
-      console.log('送信するトークン:', token);
+      const token = localStorage.getItem("token"); // ローカルストレージからトークンを取得
+      console.log("送信するトークン:", token);
       if (!token) {
         // トークンが見つからない場合はエラーメッセージを設定して、データ取得をスキップ
-        setErrorMessage('トークンが見つかりません。 ログインが必要です。'); 
+        setErrorMessage("トークンが見つかりません。 ログインが必要です。");
         setDreams([]); // 夢データを空に設定
         setUser(null); // ユーザーデータを空に設定
         return; // トークンがない場合はリクエストをスキップ
       }
-      
+
       // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
-      const userResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-         }, //認証ヘッダーを設定
-      });
+      const userResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }, //認証ヘッダーを設定
+        }
+      );
 
       setUser(userResponse.data.user); // ユーザーデータを状態に設定
       setErrorMessage(null); // エラーメッセージをリセット
-      
+
       // 夢データ取得APIエンドポイントにGETリクエストを送信
-      const dreamsResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`, {
-        headers: { Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
-       },
-      });
+      const dreamsResponse = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
+          },
+        }
+      );
 
       setDreams(dreamsResponse.data); //夢データの状態を更新
     } catch (error: unknown) {
-      console.error('Error fetching user data:', error);
+      console.error("Error fetching user data:", error);
 
       if (axios.isAxiosError(error)) {
         if (error.response?.data.message) {
           setErrorMessage(error.response.data.message);
         } else {
-          setErrorMessage('夢のデータの取得に失敗しました。認証エラーです。');
+          setErrorMessage("夢のデータの取得に失敗しました。認証エラーです。");
         }
       } else {
-        setErrorMessage('予期しないエラーが発生しました。');
+        setErrorMessage("予期しないエラーが発生しました。");
       }
     }
   };
@@ -91,13 +101,13 @@ export default function HomePage() {
   // isLoggedinが変更されたときにユーザーデータを取得
   useEffect(() => {
     if (isLoggedIn) {
-    fetchUserData(); //コンポーネントがマウントされたときにユーザーデータを取得
-  } else {
-    // ログアウト時
-    setDreams([]); // 夢データを空に設定
-    setUser(null); // ユーザーデータを空に設定
-    setErrorMessage(null); // エラーメッセージをリセット
-  }
+      fetchUserData(); //コンポーネントがマウントされたときにユーザーデータを取得
+    } else {
+      // ログアウト時
+      setDreams([]); // 夢データを空に設定
+      setUser(null); // ユーザーデータを空に設定
+      setErrorMessage(null); // エラーメッセージをリセット
+    }
   }, [isLoggedIn]); // isLoggedinが変更されたときに実行
 
   // 夢データを月ごとにグループ化
@@ -105,40 +115,42 @@ export default function HomePage() {
 
   return (
     <div className="md:flex">
-      {/* メインセクション: ユーザー名の下に夢リストを表示 */}  
+      {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full md:w-2/3 flex flex-col items-center px-3 md:px-6">
         <h1 className="text-2xl font-bold">
-          {user ? `${user.username}さんの夢` : '夢リスト'}
+          {user ? `${user.username}さんの夢` : "夢リスト"}
         </h1>
         <SearchBar onSearch={fetchUserData} />
-        
         {/* エラーメッセージがある場合は表示 */}
         {errorMessage && (
-          <div className="text-red-500 mb-4">
-            {errorMessage}</div>
-            )}
-
-        { /* 夢リストコンポーネント */}
+          <div className="text-red-500 mb-4">{errorMessage}</div>
+        )}
+        {/* 夢リストコンポーネント */}
         <DreamList dreams={dreams} /> {/* 夢データをリストして表示 */}
       </section>
 
-     {/* サイドバー: 月ごとの夢リンクを動的に表示 */}
+      {/* サイドバー: 月ごとの夢リンクを動的に表示 */}
       <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 md:mt-0">
         <div className="bg-white shadow-md rounded p-4 mb-6">
           <h3 className="font-bold text-gray-600 mb-2">前に見た夢</h3>
-          <p className="text-gray-600">
-            前に見た夢を振り返ってみましょう！
-          </p>
+          <p className="text-gray-600">前に見た夢を振り返ってみましょう！</p>
         </div>
         <ul className="space-y-2">
           {/* 月ごとの夢リンクを表示 */}
-            {Object.entries(groupedDreams).map(([yearMonth, dreams]) => (
-              <li key={yearMonth}>
-                <Link href={`/dream/month/${yearMonth}`} className="text-blue-500 hover:underline">
-                  {new Date(dreams[0].created_at).toLocaleString('ja-JP', { year: 'numeric', month: 'long' })}の夢
-                </Link>
-              </li>
-            ))}
+          {Object.entries(groupedDreams).map(([yearMonth, dreams]) => (
+            <li key={yearMonth}>
+              <Link
+                href={`/dream/month/${yearMonth}`}
+                className="text-blue-500 hover:underline"
+              >
+                {new Date(dreams[0].created_at).toLocaleString("ja-JP", {
+                  year: "numeric",
+                  month: "long",
+                })}
+                の夢
+              </Link>
+            </li>
+          ))}
         </ul>
       </aside>
     </div>
