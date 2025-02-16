@@ -1,4 +1,3 @@
-require 'openai'
 class DreamsController < ApplicationController
   # ユーザー認証を行う
   before_action :authorize_request, only: [:create,:update, :destroy, :my_dreams, :dreams_by_month]
@@ -11,7 +10,7 @@ class DreamsController < ApplicationController
   # GET /dreams
   def index
     # 現在のユーザーの夢を取得
-    @dreams = @current_user.dreams
+    @dreams = current_user.dreams
     # クエリパラメーターが存在する場合、タイトルでフィルタリング
     if params[:query].present?
       @dreams = @dreams.where("title LIKE ?", "%#{params[:query]}%")
@@ -32,8 +31,7 @@ class DreamsController < ApplicationController
 
   # POST /dreams
   def create
-    @dream = Dream.new(dream_params)
-    @dream.user_id = @current_user&.id || nil
+    @dream = current_user.dreams.build(dream_params)
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
@@ -68,7 +66,7 @@ class DreamsController < ApplicationController
     end
 
     # 月ごとの夢をフィルタリング
-    filtered_dreams = @current_user.dreams.where("to_char(created_at, 'YYYY-MM') = ?", month)
+    filtered_dreams = current_user.dreams.where("to_char(created_at, 'YYYY-MM') = ?", month)
 
     # 取得した夢データを返す
     render json: filtered_dreams.as_json(only: [:id, :title, :description, :created_at])
@@ -76,49 +74,18 @@ class DreamsController < ApplicationController
 
   # GET /my_dreams
   def my_dreams
-    @dreams = @current_user.dreams
+    @dreams = current_user.dreams
     render json: @dreams.as_json(only: [:id, :title, :description, :created_at])
   end
 
   # POST /dreams/analyze
   def analyze
-    dream_content = params[:content]&.strip
+   result = DreamAnalysisService.analyze(dream_content)
 
-   # パラメータ検証
-   if params[:content].nil? || params[:content].strip.blank?
-    error_message = "夢の内容が空です。 パラメータ: #{params.inspect}"
-    Rails.logger.error(error_message)
-    render json: { error: error_message }, status: :bad_request
-    return
-   end
-   begin
-      $openai_client ||= OpenAI::Client.new(access_token: ENV.fetch('OPENAI_API_KEY'))
-      client = $openai_client
-   # OpenAI APIにリクエストを送信
-    response = client.chat(
-      parameters: {
-        model: "gpt-3.5-turbo",
-        messages: [
-        { role: "system", content: "あなたは夢分析の専門家です。ユーザーの夢を解釈し、テーマや感情、考えらる意味について教えてください。" },
-        { role: "user", content: dream_content }
-        ],
-        max_tokens: 1500
-      }
-    )
-    # 分析結果を返す
-    analysis = response&.dig("choices", 0, "message", "content")
-
-    if analysis.present?
-      render json: { analysis: analysis }, status: :ok
-    else
-      Rails.logger.error response.present? ? "Invalid response format #{response.inspect}" : "Response is nil or empty."
-      render json: { error: "夢の分析に失敗しました。"}, status: :unprocessable_entity
-    end
-  # エラーハンドリング
-
-   rescue StandardError => e
-      log_error(e)
-      render json: { error: "予期しないエラーが発生しました: #{e.message}" }, status: :internal_server_error
+   if result[:error]
+     render json: { error: result[:error] }, status: :unprocessable_entity
+   else
+     render json: { analysis: result[:analysis] }, status: :ok
    end
   end
 
