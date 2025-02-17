@@ -1,0 +1,5 @@
+ja:
+  errors:
+    unauthorized: "認証されていません。"
+  messages:
+    token_refreshed: "トークンが更新されました。"

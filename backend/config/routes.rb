@@ -8,13 +8,15 @@ Rails.application.routes.draw do
     end
     
     # 認証関連
-    post 'auth/login', to: 'auth#login' # ログイン
-    get  '/me', to: 'auth#me' # 現在のユーザーを取得
-    post 'auth/verify', to: 'auth#verify' # トークンの検証
-    post 'auth/refresh', to: 'auth#refresh' # トークンをリフレッシュ
+    namespace :auth do
+      post 'login'
+      get 'me'
+      post 'verify'
+      post 'refresh'
+    end
 
 
     # ユーザー関連
     post '/register', to: 'users#register' # ユーザー登録
-    resources :users, only: [:destroy]     # ユーザー削除
+    delete 'users/:id', to: 'users#destroy'    # ユーザー削除
 end
