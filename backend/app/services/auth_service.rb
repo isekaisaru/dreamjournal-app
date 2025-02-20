@@ -5,19 +5,34 @@ class AuthService
 
   # JWTトークンを生成する
     def self.encode_token(user_id)
-      payload = jwt_payload(user_id)
-      JWT.encode(payload, SECRET_KEY)
+      raise ArgumentError, "User ID is missing" if user_id.nil?
+
+      payload = { user_id: user_id, exp: jwt_expiration_time}
+      JWT.encode(payload, SECRET_KEY, 'HS256')
     end
   
     # トークンをデコードする
     def self.decode_token(token)
-      JWT.decode(token, SECRET_KEY, true, algorithm: 'HS256')[0]
-    rescue JWT::ExpiredSignature 
+      return nil if token.nil?
+
+      begin
+        decoded = JWT.decode(token, SECRET_KEY, true, algorithm: 'HS256')[0]
+
+        # `user_id` が `nil` の場合はエラーとして処理 
+        user_id = decoded['user_id']
+        unless user_id.is_a?(Integer)
+          Rails.logger.warn "Invalid JWT payload: #{decoded}"
+          return nil
+        end
+
+        decoded
+      rescue JWT::ExpiredSignature 
       Rails.logger.warn "Expired JWT token: #{token}"
       { 'expired' => true } # トークンが期限切れ
-    rescue JWT::DecodeError
-      Rails.logger.warn "Invalid JWT token: #{token}"
+      rescue JWT::DecodeError => e
+      Rails.logger.warn "Invalid JWT token: #{token}, Error: #{e.message}"
       nil
+      end
     end
 
     # トークンをリフレッシュする
@@ -25,7 +40,7 @@ class AuthService
     return { errors: I18n.t('errors.unauthorized')} unless user
 
     new_token = encode_token(user.id)
-    { token: new_token, message: I18n.t('messages.token_refreshed') }
+    { token: new_token, message: `トークンがリフレッシュされました。`}
   end
 
   private

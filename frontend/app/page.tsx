@@ -9,7 +9,6 @@ import TrialPage from "./trial/page";
 export default function IndexPage() {
   try {
     const isAuthenticated = useAuth();
-    console.log("isAuthenticated in IndexPage:", isAuthenticated);
 
     if (isAuthenticated) {
       return <HomePage />;

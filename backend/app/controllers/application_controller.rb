@@ -15,33 +15,34 @@ class ApplicationController < ActionController::API
     header = request.headers['Authorization']
     token = header.split(' ').last if header
 
-    Rails.logger.debug "受け取った Authorization ヘッダー: #{header.inspect}"
-    Rails.logger.debug "抽出されたトークン: #{token}"
+    Rails.logger.info "受け取った Authorization ヘッダー: Bearer [FILTERED]"
+    Rails.logger.info "トークンを受け取り、認証処理を実行"
   
-    if token
-      decoded = AuthService.decode_token(token)
+    if token.nil?
+      render json: { errors: 'トークンが見つかりません' }, status: :unauthorized
+      return
+    end
 
-      if decoded && decoded['expired']
-        refresh_token # トークンが期限切れの場合はリフレッシュする 
-      elsif decoded
-       @current_user = User.find_by(id: decoded['user_id'])
-       render json: { errors: 'ユーザーが見つかりません' }, status: :unauthorized unless @current_user
-      else
-       render json: { errors: '無効なトークンです。' }, status: :unauthorized
-      end
-    else
-        render json: { errors: 'トークンが見つかりません' }, status: :unauthorized
+    decoded = AuthService.decode_token(token)
+
+    if decoded.nil?
+      Rails.logger.warn "無効なトークンを受け取りました。"
+      render json: { errors: '無効なトークンです。'}, status: :unauthorized
+      return
+    end
+
+    if decoded['expired']
+      render json: { errors: 'トークンの有効期限が切れています。再ログインしてください'}, status: :unauthorized
+      return
+    end
+
+    @current_user = User.find_by(id: decoded['user_id'])
+
+    if @current_user.nil?
+      Rails.logger.warn " User not found for ID: #{decoded['user_id']}"
+      render json: { errors: 'ユーザーが見つかりません' }, status: :unauthorized
     end
   end
 
-  # トークンをリフレッシュする
-  def refresh_token
-    result = AuthService.refresh_token(current_user)
-
-    if result[:errors]
-      render json: { errors: result[:errors] }, status: :unauthorized
-    else
-      render json: result, status: :ok
-    end
-  end
+  
 end

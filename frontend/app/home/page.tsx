@@ -7,7 +7,7 @@ import Link from "next/link";
 import axios, { AxiosError } from "axios";
 import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
-import { set } from "date-fns";
+
 /**
  * HomePageコンポーネント
  * - 認証されたユーザーが見るホームページ
@@ -61,7 +61,7 @@ export default function HomePage() {
 
       // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
       const userResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/me`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -11,7 +11,6 @@ interface DecodedToken {
 
 // useAuht関数の定義
 export default function useAuth(redirectAfterLogin: boolean = false) {
-  console.log("useAuth hook initialized");
 
   //  認証状態やユーザー情報を保持するためのstateを定義
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -52,7 +51,7 @@ export default function useAuth(redirectAfterLogin: boolean = false) {
               },
             }
           );
-          console.log("送信したヘッダー:" , `Bearer ${token}`);
+          
           if (response.status === 200) {
             setIsAuthenticated(true);
             setMessage("ログインに成功しました");
