@@ -2,10 +2,9 @@
 
 import { useDream } from "../../../hooks/useDream";
 import { usePathname } from "next/navigation";
-import DeleteButton from "@/components/DeleteButton";
-import UpdateButton from "@/components/UpdateButton";
+import DeleteButton from "@/app/components/DeleteButton";
+import UpdateButton from "@/app/components/UpdateButton";
 import { useState } from "react";
-
 
 // スピナー用のコンポーネント
 const Spinner = () => {
@@ -22,13 +21,10 @@ const DreamPage = () => {
   const { dream, error, isUpdating, updateDreamData } = useDream(id as string);
   const [isEditing, setIsEditing] = useState(false);
 
-  
   // 更新ボタンがクリックされたときの処理
   const handleUpdateClick = () => {
-    setIsEditing(!isEditing); 
+    setIsEditing(!isEditing);
   };
-
-
 
   // ロード中のスピナー表示
   if (!dream && !error) {
@@ -42,11 +38,7 @@ const DreamPage = () => {
           {isEditing ? "夢を編集" : dream?.title}
         </h2>
 
-        {error && (
-          <p className="text-red-500 text-center mb-4">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
 
         {isEditing && dream ? (
           <form
@@ -82,9 +74,7 @@ const DreamPage = () => {
                 id="description"
                 className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500"
                 value={dream.description}
-                onChange={(e) =>
-                  updateDreamData(dream.title, e.target.value)
-                  }
+                onChange={(e) => updateDreamData(dream.title, e.target.value)}
               />
             </div>
             <div className="flex justify-between mt-4">

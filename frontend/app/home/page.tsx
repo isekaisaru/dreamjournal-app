@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import DreamList from "@/components/DreamList";
-import SearchBar from "@/components/SearchBar";
+import DreamList from "@/app/components/DreamList";
+import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 import axios, { AxiosError } from "axios";
 import { Dream } from "@/app/types";
