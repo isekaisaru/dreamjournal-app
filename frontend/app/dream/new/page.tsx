@@ -1,106 +1,30 @@
 "use client";
 
-import { createDream } from '@/app/dreamsAPI';
+import DreamForm from '../../components/DreamForm';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
-
-const DreamJournalPage= () => {
+export default function NewDreamPage() {
   const router = useRouter();
-  const [title, setTitle] = useState<string>("")
-  const [description, setDescription] = useState<string>("")
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    if(title.trim() === "") {
-      setError("タイトルを入力してください。");
-      setLoading(false);
-      return;
+  const createDream = async (dreamData: { title: string; description: string}) => {
+    setIsLoading(true);
+    try {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/dreams`, dreamData);
+      router.push("/home");
+    } catch (error) {
+      console.error("夢の作成に失敗しました:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    if(title.length > 100) {
-      setError("タイトルは100文字以内で入力してください。");
-      setLoading(false);
-    }
-
-    if(description.trim() === "") {
-      setError("内容を入力してください。");
-      setLoading(false);
-      return;
-    }
-
-    if(description.length > 1000) {
-      setError("内容は1000文字以内で入力してください。");
-      setLoading(false);
-      return;
-    }
-
-   try {
-    await createDream(title,description);
-
-    setLoading(false);
-    router.push("/");
-    router.refresh();
-   } catch (err) {
-    setLoading(false);
-    if (err instanceof Error) {
-      setError(err.message);
-    }else {
-      setError("投稿に失敗しました。");
-    }
-   }
   };
-
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12">
-      <h2 className="text-2xl font-bold mb-4">今日の夢の記録</h2>
-      <form
-        className="bg-slate-200 p-6 rounded shadow-lg"
-        onSubmit={handleSubmit}
-        >
-        <div className='mb-4'>
-          <label className="text-gray-700 text-sm font-bold mb-2" htmlFor="title">夢のタイトル</label>
-          <input
-            id="title"
-            type="text"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            aria-required="true"
-            aria-invalid={error ? "true" : "false"}
-          />
-        </div>
-        <div className='mb-4'>
-          <label className="text-gray-700 text-sm font-bold mb-2" htmlFor="description">夢の内容</label>
-          <textarea
-            id="description"
-            className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            aria-required="true"
-            aria-invalid={error ? "true" : "false"}
-            >
-          </textarea>
-        </div>
-        <button type="submit"
-         className={`py-2 px-4 border rounded-md ${
-           loading
-             ? " bg-purple-300 cursor-not-allowed"
-             : " bg-purple-400 hover:bg-purple-500"
-         } transition-colors duration-200 ease-in-out` }
-         disabled={loading}
-         >記録する
-         </button>
-      </form>
-      {error && <p className="text-red-500  text-lg  font-bold mt-4">{error}</p>}
+      <h1 className="text-2xl font-bold mb-4">新しい夢を作成</h1>
+      <DreamForm onSubmit={createDream} isLoading={isLoading} />
     </div>
-  );
-};
-
-export default DreamJournalPage;
+  )
+}

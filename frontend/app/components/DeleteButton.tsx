@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteDream } from '@/app/dreamsAPI';
+import { useDream } from '../../hooks/useDream';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
@@ -11,6 +11,7 @@ type DeleteButtonProps = {
 
 const DeleteButton = ({ id }: DeleteButtonProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const { deleteDream } = useDream();
   const router = useRouter();
 
   const handleDelete = async () => {
