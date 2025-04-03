@@ -13,6 +13,7 @@ Rails.application.routes.draw do
       get 'me'
       post 'verify'
       post 'refresh'
+      post 'logout'
     end
 
 

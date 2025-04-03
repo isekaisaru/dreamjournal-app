@@ -7,6 +7,13 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
+    env_file:
+      - ./backend/.env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -18,18 +25,20 @@ services:
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
       RAILS_ENV: development
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
+      JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+
     command: >
-      bash -c "rm -f /app/tmp/pids/server.pid && 
-      bundle exec rails s -p 3001 -b '0.0.0.0'"
+      bash -c "rm -f /app/tmp/pids/server.pid && bundle exec rails db:create && bundle exec rails db:migrate && bundle exec rails s -p 3001 -b '0.0.0.0'"
     volumes:
       - ./backend:/app
     ports:
       - "3001:3001"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
     env_file:
-      - .env  
+      - ./backend/.env
 
   frontend:
     build:
@@ -42,6 +51,6 @@ services:
     depends_on:
       - backend
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - NEXT_PUBLIC_API_URL=http://backend:3001
     command: >
       sh -c "yarn install && yarn build && yarn start"

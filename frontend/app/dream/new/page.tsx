@@ -1,15 +1,18 @@
 "use client";
 
-import DreamForm from '../../components/DreamForm';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import DreamForm from "../../components/DreamForm";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
 
 export default function NewDreamPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const createDream = async (dreamData: { title: string; description: string}) => {
+  const createDream = async (dreamData: {
+    title: string;
+    description: string;
+  }) => {
     setIsLoading(true);
     try {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/dreams`, dreamData);
@@ -26,5 +29,5 @@ export default function NewDreamPage() {
       <h1 className="text-2xl font-bold mb-4">新しい夢を作成</h1>
       <DreamForm onSubmit={createDream} isLoading={isLoading} />
     </div>
-  )
+  );
 }

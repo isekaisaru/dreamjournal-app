@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 type UpdateButtonProps = {
   onClick: () => void; // 更新ボタンがクリックした際に発火する関数を受け取る
@@ -13,6 +13,6 @@ const UpdateButton: React.FC<UpdateButtonProps> = ({ onClick }) => {
       更新
     </button>
   );
-}
+};
 
 export default UpdateButton;

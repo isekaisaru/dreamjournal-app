@@ -5,7 +5,6 @@ import useAuth from "@/hooks/useAuth";
 import HomePage from "./home/page";
 import TrialPage from "./trial/page";
 
-
 export default function IndexPage() {
   try {
     const isAuthenticated = useAuth();

@@ -1,6 +1,6 @@
 class DreamsController < ApplicationController
   # ユーザー認証を行う
-  before_action :authorize_request, only: [:create,:update, :destroy, :my_dreams, :dreams_by_month]
+  before_action :authorize_request, only: [:index, :create, :update, :destroy, :my_dreams, :dreams_by_month]
   #  指定した夢を取得する
   before_action :set_dream, only: [:show, :update, :destroy]
   # 正しいユーザーかどうか確認する
@@ -9,6 +9,11 @@ class DreamsController < ApplicationController
 
   # GET /dreams
   def index
+    if current_user.nil?
+      Rails.logger.warn "DreamsController#index: current_user が nil です。"
+      render json: { errors: "認証されたユーザーがいません" }, status: :unauthorized
+      return
+    end
     # 現在のユーザーの夢を取得
     @dreams = current_user.dreams
     # クエリパラメーターが存在する場合、タイトルでフィルタリング

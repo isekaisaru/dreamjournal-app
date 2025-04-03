@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { Dream } from "@/app/types";
-import { useAuth } from "@/context/AuthContext";
+import useAuth from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 /**
  * HomePageコンポーネント
@@ -24,49 +25,53 @@ interface User {
  */
 
 function groupDreamsByMonth(dreams: Dream[]) {
-  return dreams.reduce((groupedDreams, dream) => {
-    const date = new Date(dream.created_at); // 夢の日付をDateオブジェクトに変換
-    const yearMonth = `${date.getFullYear()}-${(
-      "0" +
-      (date.getMonth() + 1)
-    ).slice(-2)}`; //"2024-01"の形式
+  return dreams.reduce(
+    (groupedDreams, dream) => {
+      const date = new Date(dream.created_at); // 夢の日付をDateオブジェクトに変換
+      const yearMonth = `${date.getFullYear()}-${(
+        "0" +
+        (date.getMonth() + 1)
+      ).slice(-2)}`; //"2024-01"の形式
 
-    if (!groupedDreams[yearMonth]) {
-      groupedDreams[yearMonth] = [];
-    }
+      if (!groupedDreams[yearMonth]) {
+        groupedDreams[yearMonth] = [];
+      }
 
-    groupedDreams[yearMonth].push(dream);
-    return groupedDreams;
-  }, {} as Record<string, Dream[]>);
+      groupedDreams[yearMonth].push(dream);
+      return groupedDreams;
+    },
+    {} as Record<string, Dream[]>
+  );
 }
 
 export default function HomePage() {
-  const { isLoggedIn } = useAuth(); // ユーザーの認証状態を取得
+  const router = useRouter();
+  const { isAuthenticated, getValidAccessToken } = useAuth(); // ユーザーの認証状態を取得
   const [dreams, setDreams] = useState<Dream[]>([]); //夢データの状態管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
   const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
 
   // ユーザーデータと夢データを取得する関数
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token"); // ローカルストレージからトークンを取得
+      const token = await getValidAccessToken(); // 有効なアクセストークンを取得
       console.log("送信するトークン:", token);
-      if (!token) {
-        // トークンが見つからない場合はエラーメッセージを設定して、データ取得をスキップ
+      if (!token || token === "null" || token === "undefined") {
+        console.warn("有効なトークンが見つかりません。ログインが必要です。");
         setErrorMessage("トークンが見つかりません。 ログインが必要です。");
+        localStorage.removeItem("access_token"); // ローカルストレージからトークンを削除
+        localStorage.removeItem("refresh_token"); // ローカルストレージからリフレッシュトークンを削除
         setDreams([]); // 夢データを空に設定
         setUser(null); // ユーザーデータを空に設定
+        router.push("/login"); // ログインページにリダイレクト
         return; // トークンがない場合はリクエストをスキップ
       }
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`; // 認証ヘッダーを設定
 
       // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
       const userResponse = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          }, //認証ヘッダーを設定
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setUser(userResponse.data.user); // ユーザーデータを状態に設定
@@ -75,15 +80,10 @@ export default function HomePage() {
       // 夢データ取得APIエンドポイントにGETリクエストを送信
       const dreamsResponse = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // 認証ヘッダーを設定
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setDreams(dreamsResponse.data); //夢データの状態を更新
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Error fetching user data:", error);
 
       if (axios.isAxiosError(error)) {
@@ -96,19 +96,20 @@ export default function HomePage() {
         setErrorMessage("予期しないエラーが発生しました。");
       }
     }
-  };
+  }, [getValidAccessToken, router]);
 
   // isLoggedinが変更されたときにユーザーデータを取得
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchUserData(); //コンポーネントがマウントされたときにユーザーデータを取得
+    if (isAuthenticated) {
+      fetchUserData();
+      //コンポーネントがマウントされたときにユーザーデータを取得
     } else {
       // ログアウト時
       setDreams([]); // 夢データを空に設定
       setUser(null); // ユーザーデータを空に設定
       setErrorMessage(null); // エラーメッセージをリセット
     }
-  }, [isLoggedIn]); // isLoggedinが変更されたときに実行
+  }, [isAuthenticated, fetchUserData]);
 
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);

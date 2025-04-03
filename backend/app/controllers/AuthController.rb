@@ -1,15 +1,21 @@
 class AuthController < ApplicationController
-  skip_before_action :authorize_request, only: [:login, :refresh]
+  skip_before_action :authorize_request, only: [:login, :refresh, :logout]
 
   # ユーザーのログイン
   def login
-    user = User.find_by(email: params[:email])
-    if user&.authenticate(params[:password])
-      token = AuthService.encode_token(user.id)
-      Rails.logger.debug "生成されたトークン: #{token}"
-      render json: { token: token, user: user.as_json(only: [:id, :email, :username]) }, status: :ok
-    else
-      render json: { errors: '無効なメールアドレスまたはパスワードです。'}, status: :unauthorized
+    begin
+      result = AuthService.login(params[:email], params[:password])
+
+      Rails.logger.info "生成されたトークン: #{result[:access_token]}"
+      Rails.logger.info "生成されたリフレッシュトークン: #{result[:refresh_token]}"
+      
+      render json: {
+        access_token: result[:access_token],
+        refresh_token: result[:refresh_token],
+        user: result[:user].as_json(only: [:id, :email, :username])
+      }, status: :ok
+    rescue InvalidCredentialsError => e
+      render json: { errors: e.message }, status: :unauthorized
     end
   end
 
@@ -20,47 +26,82 @@ class AuthController < ApplicationController
 
   # トークンをリフレッシュする
   def refresh
-    header = request.headers['Authorization']
-    token = header.split(' ').last if header
+    refresh_token = params[:refresh_token]
 
-    if token
-      decoded = AuthService.decode_token(token)
-
-      if decoded && decoded['expired']
-        user = User.find_by(id: decoded['user_id'])
-        if user
-          new_token = AuthService.encode_token(user.id)
-          render json: { token: new_token }, status: :ok
-        else
-          render json: { errors: 'ユーザーが見つかりません。' }, status: :not_found
-        end
-      else
-        render json: { errors: 'トークンが有効です。'}, status: :bad_request
-      end
-    else
-      render json: { errors: 'トークンが見つかりません。'},status: :unprocessable_entity
+    Rails.logger.info "受け取ったリフレッシュトークン: #{refresh_token.present? ? '[FILTERED]' : '[なし]'}"
+    if refresh_token.nil?
+      Rails.logger.warn "リフレッシュトークンがありません"
+      render json: { errors: "リフレッシュトークンがありません" }, status: :unauthorized
+      return
     end
+
+    begin
+      result = AuthService.refresh_token(refresh_token)
+      Rails.logger.info "新しいアクセストークンを発行: #{result[:access_token]}"
+      render json: { access_token: result[:access_token] }, status: :ok
+    rescue InvalidRefreshTokenError => e
+      Rails.logger.warn "無効なリフレッシュトークン: #{refresh_token}"
+      render json: { errors: e.message }, status: :unauthorized
+    end
+  end
+
+  # ログアウト
+  def logout
+    header = request.headers['Authorization']
+    token = header&.split(' ')&.last
+
+    Rails.logger.info "受け取った Authorization ヘッダー: #{token.present? ? '[FILTERED]' : '[なし]'}"
+    decoded = AuthService.decode_token(token)
+
+    if decoded.nil?
+      Rails.logger.warn "無効なトークン: #{token}"
+      render json: { errors: "トークンが無効です"}, status: :unauthorized
+      return
+    end
+
+    unless decoded.is_a?(Hash)
+      Rails.logger.warn "無効なトークン: #{token}"
+      render json: { errors: "トークンが無効です"}, status: :unauthorized
+      return
+    end
+
+    if decoded['user_id'].nil?
+      Rails.logger.warn "無効なトークン: #{token}"
+      render json: { errors: "トークンが無効です"}, status: :unauthorized
+      return
+    end
+
+    user = User.find_by(id: decoded['user_id'])
+    if user.nil?
+      Rails.logger.warn "無効なユーザーです: #{decoded['user_id']}"
+      render json: { errors: "無効なユーザーです"}, status: :unauthorized
+      return
+    end
+
+    user.update(refresh_token: nil)
+    render json: { message: "ログアウトしました"}, status: :ok
   end
 
   # トークンの検証
   def verify
     header = request.headers['Authorization']
-    token = header.split(' ').last if header
+    return render json: { errors: 'Authorization ヘッダーが必要です。'}, status: :bad_request unless header
 
-    if token
-      decoded = AuthService.decode_token(token)
-      if decoded
-        user = User.find_by(id: decoded['user_id'])
-        if user
-          render json: { message: 'トークンは有効です。', user: user.as_json(only: [:id, :email, :username]) }, status: :ok
-        else
-          render json: { errors: '無効なユーザーです。'}, status: :unauthorized
-        end
+    token = header.split(' ').last
+    decoded = AuthService.decode_token(token)
+
+    if decoded && decoded['user_id']
+      user = User.find_by(id: decoded['user_id'])
+      if user
+        render json: { message: 'トークンは有効です。', user: user.as_json(only: [:id, :email, :username]) }, status: :ok
       else
-        render json: { errors: 'トークンが無効です。'}, status: :unauthorized
+        Rails.logger.warn "トークンは有効だが、該当ユーザーが見つかりません: #{decoded['user_id']}"
+        render json: { errors: '無効なユーザーです。'}, status: :unauthorized
       end
     else
-      render json: { errors: 'トークンが見つかりません。'}, status: :bad_request
+      Rails.logger.warn "無効なトークン: #{token}"
+      render json: { errors: 'トークンが無効です。'}, status: :unauthorized
     end
   end
+  
 end

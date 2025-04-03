@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode} from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 
 type AuthContextType = {
   isLoggedIn: boolean;
@@ -11,12 +17,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
- 
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("access_token");
+    console.log("AuthContext - ローカルストレージから取得したトークン:", token);
     setIsLoggedIn(!!token);
   }, []);
-  
+
   return (
     <AuthContext.Provider value={{ isLoggedIn, setIsLoggedIn }}>
       {children}

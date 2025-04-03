@@ -1,21 +1,21 @@
 "use client";
 
-import React from 'react';
-import { useParams } from 'next/navigation'; // useRouterを使用
-import axios from 'axios';
-import { useEffect, useState } from 'react';
-import { Dream } from '@/app/types';
+import React from "react";
+import { useParams } from "next/navigation"; // useRouterを使用
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { Dream } from "@/app/types";
 
 export default function DreamByMonthPage() {
   const params = useParams();
-  const  yearMonth  = params.yearMonth; // URLのパラメータからyearMonthを取得
+  const yearMonth = params.yearMonth; // URLのパラメータからyearMonthを取得
   const [dreams, setDreams] = useState<Dream[]>([]); // 夢データを保存するための変数
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
 
   // ページが表記されたときに実行される部分
   useEffect(() => {
     if (yearMonth) {
-      const token = localStorage.getItem('token'); // トークンを取得
+      const token = localStorage.getItem("token"); // トークンを取得
 
       // APIを使って夢データを取得
       axios
@@ -28,8 +28,8 @@ export default function DreamByMonthPage() {
           setDreams(response.data); //取得した夢データを状態に設定
         })
         .catch((error) => {
-          console.error('Error fetching dreams by month:', error);
-          setErrorMessage('夢の取得に失敗しました'); // エラーメッセージを設定
+          console.error("Error fetching dreams by month:", error);
+          setErrorMessage("夢の取得に失敗しました"); // エラーメッセージを設定
         });
     }
   }, [yearMonth]); // yearMonthが変わるたびに実行

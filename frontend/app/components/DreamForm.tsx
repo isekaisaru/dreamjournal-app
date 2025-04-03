@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Dream } from "../types";
 
 interface DreamFormProps {
@@ -21,7 +21,8 @@ export default function DreamForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ title, description });
+    if (!title.trim() || !description.trim()) return;
+    onSubmit({ title: title.trim(), description: description.trim() });
   };
 
   return (

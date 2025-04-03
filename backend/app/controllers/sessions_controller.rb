@@ -1,24 +1,30 @@
 class SessionsController < ApplicationController
   skip_before_action :authorize_request, only: [:create]
-   def create
-    user = User.find_by(email: params[:email])
-    if user
+
+  def create
+    begin
+      result = AuthService.login(params[:email], params[:password])
+      user = result[:user]
+      access_token = result[:access_token]
+      refresh_token = result[:refresh_token]
+
       Rails.logger.info "User found: #{user.username}"
-    else
-      Rails.logger.warn "No user found with email: #{params[:email]}"
+      render json: {
+        user: user.as_json(only: [:id, :email, :username]),
+        jwt: access_token,
+        refresh_token: refresh_token
+      }, status: :created
+    rescue InvalidCredentialsError => e
+      render json: { error: e.message }, status: :unauthorized
     end
+  end
 
-    if user && user.authenticate(params[:password])
-      token = encode_token({ user_id: user.id })
-      render json: { user: user.as_json(only: [:id, :email, :username]), jwt:token }, status: :created
+  def destroy
+    if current_user
+      current_user.update(refresh_token: nil)
+      render json: { message: "ログアウトしました" }, status: :ok
     else
-      render json: { error: 'Invalid email or password'}, status: :unauthorized
+      render json: { message: "すでにログアウトしています" }, status: :ok
     end
-   end
-
-   private
-
-   def encode_token(payload)
-     JWT.encode(payload, Rails.application.credentials.secret_key_base)
-   end
+  end
 end
