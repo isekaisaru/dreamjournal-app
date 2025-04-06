@@ -14,7 +14,7 @@ class SessionsController < ApplicationController
         jwt: access_token,
         refresh_token: refresh_token
       }, status: :created
-    rescue InvalidCredentialsError => e
+    rescue AuthService::InvalidCredentialsError => e
       render json: { error: e.message }, status: :unauthorized
     end
   end

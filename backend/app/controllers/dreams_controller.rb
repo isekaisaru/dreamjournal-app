@@ -11,7 +11,7 @@ class DreamsController < ApplicationController
   def index
     if current_user.nil?
       Rails.logger.warn "DreamsController#index: current_user が nil です。"
-      render json: { errors: "認証されたユーザーがいません" }, status: :unauthorized
+      render json: { error: "認証されたユーザーがいません" }, status: :unauthorized
       return
     end
     # 現在のユーザーの夢を取得
@@ -40,7 +40,7 @@ class DreamsController < ApplicationController
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
-      render json: { errors: @dream.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
@@ -49,18 +49,18 @@ class DreamsController < ApplicationController
     if @dream.update(dream_params)
       render json: @dream
     else
-    render json: { errors: @dream.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
     end
   end
 
   # DELETE /dreams/:id
   def destroy
-   if @dream.destroy
-    Rails.logger.info "Dream deleted successfully."
-    head :no_content
-   else
-    render json: @dream.errors, status: :unprocessable_entity
-   end
+    if @dream.destroy
+      Rails.logger.info "Dream deleted successfully."
+      head :no_content
+    else
+      render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
+    end
   end
   # GET /dreams_by_month
   def dreams_by_month
