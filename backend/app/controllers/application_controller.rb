@@ -11,8 +11,8 @@ class ApplicationController < ActionController::API
     header = request.headers['Authorization']
     token = header&.split(' ')&.last
 
-    Rails.logger.info "受け取った Authorization ヘッダー: Bearer [FILTERED]"
-    Rails.logger.info "トークンを受け取り、認証処理を実行"
+    Rails.logger.info "受け取った Authorization ヘッダー: Bearer [FILTERED]" if Rails.env.development?
+    Rails.logger.info "トークンを受け取り、認証処理を実行" if Rails.env.development?
 
     if token.nil?
       Rails.logger.warn "トークンが見つかりません"
@@ -25,14 +25,14 @@ class ApplicationController < ActionController::API
     # decode_tokenn が nil または想定外の型である場合
     if decoded_token.nil?
       Rails.logger.warn "トークンのデコードに失敗しました (nil)"
-      render json: { error: 'トークンの解析に失敗しました'}, status: :unauthorized
+      render json: { error: 'トークンの解析に失敗しました。トークンが不正です。'}, status: :unauthorized
       return
     end
 
     # decoce_token が Hash であることを確認
     unless decoded_token.is_a?(Hash)
       Rails.logger.warn "無効なトークン: #{decoded_token.inspect}"
-      render json: { error: '無効なトークンです。'}, status: :unauthorized
+      render json: { error: '無効なトークンです。トークンの形式が正しくありません。'}, status: :unauthorized
       return
     end
 
@@ -43,10 +43,10 @@ class ApplicationController < ActionController::API
 
     if @current_user.nil?
       Rails.logger.warn "認証されたユーザーが見つかりません。 ID: #{user_id} | トークン: #{token}"
-      render json: { error: '認証エラー: ユーザーが見つかりません。 ログインし直してください。' }, status: :unauthorized
+      render json: { error: '認証エラー: 指定されたユーザーIDのユーザーが見つかりません。' }, status: :unauthorized
       return
     end
 
-    Rails.logger.info "認証成功: ユーザー ID #{user_id}"
+    Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
   end
 end

@@ -9,15 +9,17 @@ class AuthService
 
   # ログイン処理
   def self.login(email, password)
-    user = User.find_by(email: email)
-    if user&.authenticate(password)
+    user = User.find_by(email: email.downcase)
+    if user.nil?
+      raise InvalidCredentialsError, 'メールアドレスが正しくありません'
+    elsif user.authenticate(password)
       access_token = encode_token(user.id)
       refresh_token = generate_refresh_token
       user.update(refresh_token: refresh_token)
-      Rails.logger.info "ユーザーのリフレッシュトークンを保存: #{user.refresh_token}"
+      Rails.logger.info "ユーザーのリフレッシュトークンを保存: #{user.refresh_token}" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise InvalidCredentialsError, 'メールアドレスまたはパスワードが正しくありません'
+      raise InvalidCredentialsError, 'パスワードが正しくありません'
     end
   end
 
@@ -67,12 +69,12 @@ class AuthService
     return nil if token.nil?
 
     begin
-      Rails.logger.info "受け取ったトークン: #{token.inspect}"
+      Rails.logger.info "受け取ったトークン: #{token.inspect}" if Rails.env.development?
 
       decoded_array = JWT.decode(token, SECRET_KEY, true, { algorithm: 'HS256' })
       decoded = decoded_array[0]
 
-      Rails.logger.info "デコード後のトークン情報: #{decoded.inspect}"
+      Rails.logger.info "デコード後のトークン情報: #{decoded.inspect}" if Rails.env.development?
 
       if decoded.nil?
         Rails.logger.warn "JWT の decoded がnilです: #{decoded.inspect}"
@@ -89,45 +91,46 @@ class AuthService
       decoded
     rescue JWT::ExpiredSignature
       Rails.logger.warn "JWT トークンが期限切れです: #{token}"
-      return { error: "トークンが期限切れです。" }
+      return nil
     rescue JWT::DecodeError => e
       Rails.logger.warn "JWT トークンのデコードに失敗しました。: #{token}, Error: #{e.message}"
-      return { error: "トークンのデコードに失敗しました。" }
+      return nil
     end
   end
 
   # リフレッシュトークンを生成
   def self.refresh_token(refresh_token)
-    Rails.logger.info "リフレッシュトークンを検証: #{refresh_token}"
+    Rails.logger.info "リフレッシュトークンを検証: #{refresh_token}" if Rails.env.development?
     user = find_user_by_refresh_token(refresh_token)
 
-    if user
-      new_access_token = encode_token(user.id)
-      new_refresh_token = generate_refresh_token
-      user.update(refresh_token: new_refresh_token)
-      Rails.logger.info "ユーザーのリフレッシュトークンを保存: #{user.refresh_token}"
-      { access_token: new_access_token, refresh_token: new_refresh_token, user: user }
-    else
+    if user.nil?
       Rails.logger.warn "無効なリフレッシュトークン: #{refresh_token}"
       raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
     end
+
+    new_access_token = encode_token(user.id)
+    new_refresh_token = generate_refresh_token
+    user.refresh_token = new_refresh_token
+    user.update(refresh_token: new_refresh_token)
+    Rails.logger.info "ユーザーのリフレッシュトークンを保存: #{user.refresh_token}" if Rails.env.development?
+    { access_token: new_access_token, refresh_token: new_refresh_token, user: user }
   end
 
   # リフレッシュトークンからユーザーを検索
   def self.find_user_by_refresh_token(refresh_token)
-    Rails.logger.info "リフレッシュトークンからユーザーを検索: #{refresh_token}"
-    return nil if refresh_token.nil?
+    Rails.logger.info "リフレッシュトークンからユーザーを検索: #{refresh_token}" if Rails.env.development?
+    raise InvalidRefreshTokenError, 'リフレッシュトークンがありません' if refresh_token.nil?
 
     user = User.find_by(refresh_token: refresh_token)
 
-    Rails.logger.info "User.find_by(refresh_token: refresh_token)の結果: #{user.inspect}"
+    Rails.logger.info "User.find_by(refresh_token: refresh_token)の結果: #{user.inspect}" if Rails.env.development?
 
     if user.nil?
       Rails.logger.warn "リフレッシュトークンがデータベースに存在しません: #{refresh_token}"
       return nil
     end
 
-    Rails.logger.info "ユーザーが見つかりました: ユーザー ID: #{user.id}"
+    Rails.logger.info "ユーザーが見つかりました: ユーザー ID: #{user.id}" if Rails.env.development?
     user
   end
 
