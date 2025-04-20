@@ -1,10 +1,5 @@
 class DreamsController < ApplicationController
-  # ユーザー認証を行う
-  before_action :authorize_request, only: [:index, :create, :update, :destroy, :my_dreams, :dreams_by_month]
-  #  指定した夢を取得する
-  before_action :set_dream, only: [:show, :update, :destroy]
-  # 正しいユーザーかどうか確認する
-  before_action :correct_user, only: [:update, :destroy]
+  before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze]
   
 
   # GET /dreams
@@ -31,7 +26,7 @@ class DreamsController < ApplicationController
 
   # GET /dreams/:id
   def show
-    render json: @dream.as_json(only: [:id, :title, :description, :created_at])
+    render json: @dream.as_json(only: [:id, :title, :description, :created_at, :content])
   end
 
   # POST /dreams
@@ -85,43 +80,40 @@ class DreamsController < ApplicationController
 
   # POST /dreams/analyze
   def analyze
-   result = DreamAnalysisService.analyze(dream_content)
+    Rails.logger.info "DreamsController#analyze called for dream ID: #{@dream.id}" if Rails.env.development?
 
-   if result[:error]
-     render json: { error: result[:error] }, status: :unprocessable_entity
-   else
-     render json: { analysis: result[:analysis] }, status: :ok
-   end
+    unless @dream.content.present?
+      return render json: { error: "分析対象の夢の内容がありません。" }, status: :unprocessable_entity
+    end
+
+    result = DreamAnalysisService.analyze(@dream.content)
+
+    if result[:analysis]
+      render json: { analysis: result[:analysis] }, status: :ok
+    else
+      error_message = result[:error] || "分析処理中に不明なエラーが発生しました。"
+      render json: { error: error_message }, status: :unprocessable_entity
+    end
   end
 
   private
    
-    # 指定した夢を取得する
-    def set_dream
-      @dream = Dream.find_by(id: params[:id])
-      unless @dream
-       render json: { errors: 'Dream not found' }, status: :not_found
-      end
-    end
-
     # 認可されたパラメーターを取得する
     def dream_params
-      params.require(:dream).permit(:title, :description)
+      params.require(:dream).permit(:title, :description, :content)
     end
 
-    # 正しいユーザーかどうか確認する
-    def correct_user
-     if @dream.user_id != @current_user.id
-      Rails.logger.debug "current user ID: #{@current_user.id}"
-      Rails.logger.debug "dream user ID: #{@dream.user_id}"
-      Rails.logger.debug "User #{@current_user.id} is not authorized to access dream #{params[:id]}"
-      render json: { error: " Not Authorized" }, status: :forbidden
-     end
-    end
-    # エラーログを出力
-    def log_error(error)
-      Rails.logger.error "#{error.class}: #{error.message}"
-      Rails.logger.error "Request Params: #{params.inspect}" if params.present?
-      Rails.logger.error error.backtrace.join("\n") if error.respond_to?(:backtrace)
+    def set_dream_and_authorize_user
+      @dream = Dream.find_by(id: params[:id])
+
+      unless @dream
+        render json: { error: '指定された夢が見つかりません' }, status: :not_found
+        return
+      end
+
+      unless @dream.user_id == @current_user.id
+        Rails.logger.warn "User #{@current_user.id} attemptec to access dream #{@dream.id} #{@dream.user_id}" if Rails.env.development?
+        render json: { error: "この夢へのアクセス権限がありません" }, status: :forbidden
+      end
     end
 end

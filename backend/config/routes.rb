@@ -1,9 +1,11 @@
 Rails.application.routes.draw do
     resources :dreams, only: [:index, :show, :create, :update, :destroy] do
+        member do
+          post :analyze
+        end
         collection do
-            post :analyze # AI分析のエンドポイント
             get  :my_dreams # 自分の夢を取得
-            get  :by_month  # 月ごとの夢を取得
+            get  :by_month
         end
     end
     

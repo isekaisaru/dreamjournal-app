@@ -1,58 +1,88 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dream } from "../types";
+
+interface DreamFormData {
+  title: string;
+  description: string;
+  content?: string;
+}
 
 interface DreamFormProps {
   initialData?: Dream;
-  onSubmit: (data: { title: string; description: string }) => void;
+  onSubmit: (data: DreamFormData) => void;
   isLoading?: boolean;
 }
 
-export default function DreamForm({
-  initialData,
-  onSubmit,
-  isLoading = false,
-}: DreamFormProps) {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
+export default function DreamForm({ initialData, onSubmit, isLoading = false }: DreamFormProps) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
+
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title || "");
+      setDescription(initialData.description || "");
+      setContent(initialData.content || "");
+    }
+  }, [initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
-    onSubmit({ title: title.trim(), description: description.trim() });
+    if (!title.trim()) {
+        alert("タイトルを入力してください。");
+        return;
+    }
+    onSubmit({
+        title: title.trim(),
+        description: description.trim(),
+        content: content.trim()
+    });
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-4 border rounded-md bg-white shadow-md"
+      className="p-6 border rounded-lg bg-white shadow"
     >
-      <label className="block mb-2 font-semibold">タイトル</label>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full p-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500"
-        required
-      />
-      <label className="block mt-4 mb-2 font-semibold">内容</label>
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full p-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500"
-        required
-      ></textarea>
+      <div className="mb-4">
+        <label htmlFor="dream-title" className="block mb-2 font-semibold text-gray-700">タイトル</label>
+        <input
+          id="dream-title" type="text" value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded text-gray-900 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+          required
+        />
+      </div>
+
+      <div className="mb-4">
+        <label htmlFor="dream-description" className="block mb-2 font-semibold text-gray-700">簡単な説明</label>
+        <input
+          id="dream-description" type="text" value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded text-gray-900 bg-white focus:ring-indigo-500 focus:border-indigo-500"
+        />
+      </div>
+      
+      <div className="mb-6">
+        <label htmlFor="dream-content" className="block mb-2 font-semibold text-gray-700">夢の詳細な内容 (分析用)</label>
+        <textarea
+          id="dream-content" value={content}
+          onChange={(e) => setContent(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded text-gray-900 bg-white focus:ring-indigo-500 focus:border-indigo-500 h-40"
+          placeholder="見た夢の内容をできるだけ詳しく書いてみましょう..."
+        ></textarea>
+      </div>
+
       <button
         type="submit"
-        className={`mt-4 w-full py-2 rounded text-white ${
-          isLoading ? "bg-gray-400" : "bg-blue-500 hover:bg-blue-600"
+        className={`w-full py-2.5 px-4 rounded text-white font-medium transition-colors ${
+          isLoading ? "bg-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         }`}
         disabled={isLoading}
       >
-        {isLoading ? "送信中..." : "保存"}
+        {isLoading ? "保存中..." : "保存"}
       </button>
     </form>
   );

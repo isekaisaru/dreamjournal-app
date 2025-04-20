@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -7,6 +5,12 @@ import { Dream } from "../app/types";
 import useAuth from "./useAuth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+export interface DreamInput {
+  title: string;
+  description: string;
+  content?: string;
+}
 
 export const useDream = (id?: string) => {
   const [dream, setDream] = useState<Dream | null>(null);
@@ -17,123 +21,162 @@ export const useDream = (id?: string) => {
   const router = useRouter();
   const { getValidAccessToken } = useAuth();
 
-  const fetchDreams = useCallback(async () => {
+  const fetchDreamDetail = useCallback(async () => {
+    const numericId = id ? parseInt(id, 10) : null;
+    if (!numericId) return;
+
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
+      setIsLoading(false);
       return;
     }
-
+    setError(null);
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      console.log("認証ヘッダー:", `Bearer ${token}`);
+      const response = await axios.get(`${API_URL}/dreams/${numericId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDream(response.data);
+    } catch (error) {
+      console.error("エラー発生:", error);
+      let message = "夢の詳細データ取得に失敗しました";
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        message = "指定された夢が見つかりません。";
+      } else if (axios.isAxiosError(error)) {
+        message = error.response?.data?.error || message;
+      }
+      setError(message);
+      setDream(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id, getValidAccessToken]);
+
+   const fetchDreams = useCallback(async () => {
+    const token = await getValidAccessToken();
+    if (!token) {
+      setError("ログインが必要です");
+      setIsLoading(false);
+      return;
+    }
+    setError(null);
+    setIsLoading(true);
+    try {
       const response = await axios.get(`${API_URL}/dreams`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDreams(response.data);
     } catch (error) {
       console.error("夢データ取得エラー:", error);
-      setError("夢のデータを取得できませんでした");
+      let message = "夢のデータを取得できませんでした";
+      if (axios.isAxiosError(error)) {
+        message = error.response?.data?.error || message;
+      }
+      setError(message);
+      setDreams([]);
     } finally {
       setIsLoading(false);
     }
   }, [getValidAccessToken]);
 
-  const fetchDreamDetail = useCallback(async () => {
-    if (!id) return;
-    const token = await getValidAccessToken();
-    if (!token) {
-      setError("ログインが必要です");
-      return;
-    }
-    try {
-      setIsLoading(true);
-      console.log("認証ヘッダー:", `Bearer ${token}`);
-      const response = await axios.get(`${API_URL}/dreams/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDream(response.data);
-    } catch (error) {
-      console.error("エラー発生:", error);
-      setError("夢の詳細データ取得に失敗しました");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id, getValidAccessToken]);
 
-  // 夢を作成
-  const createDream = async (title: string, description: string) => {
+  
+  const createDream = async (dreamData: DreamInput) => {
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
       return;
     }
+    setError(null);
+    setIsUpdating(true);
     try {
-      setIsUpdating(true);
       const response = await axios.post(
         `${API_URL}/dreams`,
-        { dream: { title, description } },
+        { dream: dreamData },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setDreams((prev) => [...prev, response.data]);
       router.push("/home");
-    } catch {
-      setError("夢の作成に失敗しました");
+    } catch (err) {
+       console.error("Create dream error:", err);
+       let message = "夢の作成に失敗しました";
+       if (axios.isAxiosError(err) && err.response?.data?.error) {
+           const backendError = err.response.data.error;
+           message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
+       }
+       setError(message);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  //  **夢を更新**
-  const updateDream = async (title: string, description: string) => {
-    if (!id) return;
+  const updateDream = async (dreamData: DreamInput) => {
+    const numericId = id ? parseInt(id, 10) : null;
+    if (!numericId) return;
+
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
       return;
     }
+    setError(null);
+    setIsUpdating(true);
     try {
-      setIsUpdating(true);
       await axios.put(
-        `${API_URL}/dreams/${id}`,
-        { dream: { title, description } },
+        `${API_URL}/dreams/${numericId}`,
+        { dream: dreamData },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setDream({ title, description } as Dream);
-      router.push("/home");
-    } catch (error: any) {
-      console.error("エラー詳細:", error.response?.data || error.message);
-      setError("夢の更新に失敗しました");
+      await fetchDreamDetail();
+      console.log("夢が正常に更新されました");
+    } catch (err) {
+      console.error("Update dream error:", err);
+       let message = "夢の更新に失敗しました";
+       if (axios.isAxiosError(err) && err.response?.data?.error) {
+           const backendError = err.response.data.error;
+           message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
+       }
+      setError(message);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // **夢を削除**
-  const deleteDream = async (id: string) => {
+
+  const deleteDream = async (deleteId: number) => {
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
       return;
     }
+    setError(null);
     try {
-      await axios.delete(`${API_URL}/dreams/${id}`, {
+      await axios.delete(`${API_URL}/dreams/${deleteId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setDreams((prev) => prev.filter((dream) => dream.id !== id));
-      router.push("/home");
-    } catch {
-      setError("夢の削除に失敗しました");
+      const currentNumericId = id ? parseInt(id, 10) : null;
+      if (currentNumericId && currentNumericId === deleteId) {
+          router.push("/home");
+      } else {
+          setDreams((prev) => prev.filter((d) => d.id !== deleteId));
+      }
+    } catch (err) {
+       console.error("Delete dream error:", err);
+       let message = "夢の削除に失敗しました";
+       if (axios.isAxiosError(err) && err.response?.data?.error) {
+           const backendError = err.response.data.error;
+           message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
+       }
+       setError(message);
     }
   };
+
 
   useEffect(() => {
     if (id) {
       fetchDreamDetail();
-    } else {
-      fetchDreams();
     }
-  }, [id, fetchDreamDetail, fetchDreams]);
+  }, [id, fetchDreamDetail]);
 
   return {
     dream,
