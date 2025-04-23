@@ -5,7 +5,6 @@ import { Dream } from "../types";
 
 interface DreamFormData {
   title: string;
-  description: string;
   content?: string;
 }
 
@@ -17,13 +16,11 @@ interface DreamFormProps {
 
 export default function DreamForm({ initialData, onSubmit, isLoading = false }: DreamFormProps) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [content, setContent] = useState("");
 
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
-      setDescription(initialData.description || "");
       setContent(initialData.content || "");
     }
   }, [initialData]);
@@ -36,7 +33,6 @@ export default function DreamForm({ initialData, onSubmit, isLoading = false }: 
     }
     onSubmit({
         title: title.trim(),
-        description: description.trim(),
         content: content.trim()
     });
   };
@@ -56,17 +52,8 @@ export default function DreamForm({ initialData, onSubmit, isLoading = false }: 
         />
       </div>
 
-      <div className="mb-4">
-        <label htmlFor="dream-description" className="block mb-2 font-semibold text-gray-700">簡単な説明</label>
-        <input
-          id="dream-description" type="text" value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded text-gray-900 bg-white focus:ring-indigo-500 focus:border-indigo-500"
-        />
-      </div>
-      
       <div className="mb-6">
-        <label htmlFor="dream-content" className="block mb-2 font-semibold text-gray-700">夢の詳細な内容 (分析用)</label>
+        <label htmlFor="dream-content" className="block mb-2 font-semibold text-gray-700">夢の内容</label>
         <textarea
           id="dream-content" value={content}
           onChange={(e) => setContent(e.target.value)}

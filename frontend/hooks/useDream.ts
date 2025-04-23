@@ -8,7 +8,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 export interface DreamInput {
   title: string;
-  description: string;
   content?: string;
 }
 
@@ -94,7 +93,8 @@ export const useDream = (id?: string) => {
       const response = await axios.post(
         `${API_URL}/dreams`,
         { dream: dreamData },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}`, 
+        'Content-Type': 'application/json' } }
       );
       router.push("/home");
     } catch (err) {

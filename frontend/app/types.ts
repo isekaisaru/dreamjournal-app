@@ -9,7 +9,6 @@ export interface User {
 export interface Dream {
   id: number;
   title: string;
-  description: string;
   content?: string;
   userId: number;
   created_at: string;

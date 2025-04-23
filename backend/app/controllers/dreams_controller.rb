@@ -21,12 +21,12 @@ class DreamsController < ApplicationController
       @dreams = @dreams.where(created_at: params[:start_date]..params[:end_date])
     end
 
-    render json: @dreams.as_json(only: [:id, :title, :description, :created_at]) 
+    render json: @dreams.as_json(only: [:id, :title,:created_at]) 
   end
 
   # GET /dreams/:id
   def show
-    render json: @dream.as_json(only: [:id, :title, :description, :created_at, :content])
+    render json: @dream.as_json(only: [:id, :title, :created_at, :content])
   end
 
   # POST /dreams
@@ -69,13 +69,13 @@ class DreamsController < ApplicationController
     filtered_dreams = current_user.dreams.where("to_char(created_at, 'YYYY-MM') = ?", month)
 
     # 取得した夢データを返す
-    render json: filtered_dreams.as_json(only: [:id, :title, :description, :created_at])
+    render json: filtered_dreams.as_json(only: [:id, :title, :content, :created_at])
   end
 
   # GET /my_dreams
   def my_dreams
     @dreams = current_user.dreams
-    render json: @dreams.as_json(only: [:id, :title, :description, :created_at])
+    render json: @dreams.as_json(only: [:id, :title, :content, :created_at])
   end
 
   # POST /dreams/analyze
@@ -100,7 +100,7 @@ class DreamsController < ApplicationController
    
     # 認可されたパラメーターを取得する
     def dream_params
-      params.require(:dream).permit(:title, :description, :content)
+      params.require(:dream).permit(:title, :content)
     end
 
     def set_dream_and_authorize_user
