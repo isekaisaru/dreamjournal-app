@@ -5,19 +5,15 @@ import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 import axios from "axios";
-import { Dream } from "@/app/types";
-import useAuth from "@/hooks/useAuth";
+import { Dream, User } from "@/app/types";
+import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Loading from "../loading";
 
 /**
  * HomePageコンポーネント
  * - 認証されたユーザーが見るホームページ
  */
-interface User {
-  id: number;
-  email: string;
-  username: string;
-}
 /**
  * 夢を月ごとにグループ化する関数
  * @param {Dream[]} dreams - 夢データの配列
@@ -46,7 +42,7 @@ function groupDreamsByMonth(dreams: Dream[]) {
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, getValidAccessToken } = useAuth(); // ユーザーの認証状態を取得
+  const { isLoggedIn, userId, getValidAccessToken } = useAuth(); // ユーザーの認証状態を取得
   const [dreams, setDreams] = useState<Dream[]>([]); //夢データの状態管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
   const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
@@ -55,16 +51,9 @@ export default function HomePage() {
   const fetchUserData = useCallback(async () => {
     try {
       const token = await getValidAccessToken(); // 有効なアクセストークンを取得
-      console.log("送信するトークン:", token);
       if (!token || token === "null" || token === "undefined") {
-        console.warn("有効なトークンが見つかりません。ログインが必要です。");
-        setErrorMessage("トークンが見つかりません。 ログインが必要です。");
-        localStorage.removeItem("access_token"); // ローカルストレージからトークンを削除
-        localStorage.removeItem("refresh_token"); // ローカルストレージからリフレッシュトークンを削除
-        setDreams([]); // 夢データを空に設定
-        setUser(null); // ユーザーデータを空に設定
-        router.push("/login"); // ログインページにリダイレクト
-        return; // トークンがない場合はリクエストをスキップ
+        console.warn("HomePage: No valid token for fetching data. AuthContext should have redirected if initial check failed.");
+        return;
       }
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`; // 認証ヘッダーを設定
 
@@ -73,9 +62,11 @@ export default function HomePage() {
         `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      setUser(userResponse.data.user); // ユーザーデータを状態に設定
-      setErrorMessage(null); // エラーメッセージをリセット
+      if (userResponse.data && userResponse.data.user) {
+        setUser(userResponse.data.user);
+      } else {
+        console.warn("User data not found in /auth/me response:", userResponse.data);
+      }
 
       // 夢データ取得APIエンドポイントにGETリクエストを送信
       const dreamsResponse = await axios.get(
@@ -83,33 +74,38 @@ export default function HomePage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDreams(dreamsResponse.data); //夢データの状態を更新
+      setErrorMessage(null);
     } catch (error) {
       console.error("Error fetching user data:", error);
 
       if (axios.isAxiosError(error)) {
         if (error.response?.data.message) {
           setErrorMessage(error.response.data.message);
+        } else if (error.response?.data.error) {
+          setErrorMessage(error.response.data.error);
         } else {
-          setErrorMessage("夢のデータの取得に失敗しました。認証エラーです。");
+          setErrorMessage("夢のデータの取得に失敗しました。");
         }
       } else {
         setErrorMessage("予期しないエラーが発生しました。");
       }
     }
-  }, [getValidAccessToken, router]);
+  }, [getValidAccessToken]);
 
   // isLoggedinが変更されたときにユーザーデータを取得
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isLoggedIn && userId) {
       fetchUserData();
-      //コンポーネントがマウントされたときにユーザーデータを取得
-    } else {
-      // ログアウト時
+    } else if (isLoggedIn === false) {
       setDreams([]); // 夢データを空に設定
       setUser(null); // ユーザーデータを空に設定
       setErrorMessage(null); // エラーメッセージをリセット
     }
-  }, [isAuthenticated, fetchUserData]);
+  }, [isLoggedIn, userId, fetchUserData]);
+
+  if (isLoggedIn === null) {
+    return <Loading />;
+  }
 
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);

@@ -4,6 +4,7 @@ import React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ export default function Register() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ export default function Register() {
       return;
     }
     try {
-      console.error({
+      console.log("Submitting registration data:", {
         email,
         username,
         password,
@@ -46,32 +48,26 @@ export default function Register() {
           },
         }
       );
-      console.error("Token received:", response.data.token);
+      // バックエンドから返されるアクセストークンとリフレッシュトークンを正しく取得
+      const { access_token, refresh_token, user: userData } = response.data;
+      
+      if (access_token && refresh_token && userData) {
+        console.log("Access Token received:", access_token);
+        console.log("Refresh Token received:", refresh_token);
+        console.log("User data received:", userData);
 
-      try {
-        localStorage.setItem("token", response.data.token);
-        console.error("Token saved succesfully");
-      } catch (storageError) {
-        console.error("Error saving token:", storageError);
+        login(access_token, refresh_token, userData);
+
+        setMessage("登録に成功しました。ホームページに移動します...");
+      } else {
+        console.error("Registration response missing tokens or user data:", response.data);
+        setError("登録処理中にエラーが発生しました。必要な情報がサーバーから返されませんでした。");
       }
-
-      setMessage("登録に成功しました");
-      console.error("Registration successful:", response.data);
-      setTimeout(() => {
-        router.push("/home");
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }, 3000);
     } catch (error: any) {
-      if (error.response && error.response.data && error.response.data.errors) {
-        console.error("Error details:", error.response.data.errors); // エラーデータを確認
-
-        // エラーが配列か文字列か確認して、適切にセット
-        const errorMessage = Array.isArray(error.response.data.errors)
-          ? error.response.data.errors.join(", ") // 配列なら文字列に変換
-          : error.response.data.errors; // 文字列ならそのまま使う
-        setError(errorMessage);
+      console.error("Registration error:", error);
+      if (error.response && error.response.data) {
+        const backendError = error.response.data.error || error.response.data.errors;
+        setError(Array.isArray(backendError) ? backendError.join(", ") : backendError || "登録に失敗しました。");
       } else if (
         error.response &&
         error.response.data &&
@@ -82,7 +78,6 @@ export default function Register() {
         console.error("General error:", error);
         setError("登録に失敗しました。もう一度お試しください。");
       }
-      console.error("Registration error:", error);
     }
   };
 

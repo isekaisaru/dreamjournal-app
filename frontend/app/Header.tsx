@@ -6,14 +6,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 
 const Header = () => {
-  const { isLoggedIn, setIsLoggedIn } = useAuth();
+  const { isLoggedIn, logout } = useAuth();
   const router = useRouter();
 
   // ログアウト処理
   const handleLogout = async () => {
-    localStorage.removeItem("token"); //トークンを削除
-    setIsLoggedIn(false); // ログイン状態をfalseに設定
-    router.refresh(); // ページをリフレッシュ
+    await logout();
   };
 
   return (

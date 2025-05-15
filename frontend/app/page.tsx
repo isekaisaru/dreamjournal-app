@@ -1,25 +1,26 @@
 // app/page.tsx
 "use client";
 
-import useAuth from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import HomePage from "./home/page";
 import TrialPage from "./trial/page";
+import Loading from "./loading";
 
 export default function IndexPage() {
   try {
-    const isAuthenticated = useAuth();
+    const { isLoggedIn } = useAuth();
 
-    if (isAuthenticated) {
+    if (isLoggedIn === null) {
+      return <Loading />;
+    }
+
+    if (isLoggedIn) {
       return <HomePage />;
     } else {
       return <TrialPage />;
     }
   } catch (error) {
     console.error("Error in IndexPage:", error);
-    if (error instanceof Error) {
-      return <div>Error: {error.message}</div>;
-    } else {
-      return <div>Unknown error occurred</div>;
-    }
+    return <div>アプリケーションの読み込み中にエラーが発生しました。</div>;
   }
 }
