@@ -6,7 +6,7 @@ import { useDream, DreamInput } from "../../../hooks/useDream";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import axios from "axios";
-import useAuth from "../../../hooks/useAuth";
+import  { useAuth } from "@/context/AuthContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +49,10 @@ export default function EditDreamPage() {
 
   const handleUpdateSubmit = async (formData: DreamInput) => {
     if (!idFromPath) return;
-    await hookUpdateDream(formData);
+    const success = await hookUpdateDream(formData);
+    if (success) {
+      router.push("/home");
+    }
   };
 
   const handleAnalyze = async () => {
@@ -96,8 +99,11 @@ export default function EditDreamPage() {
     if (dream && dream.id) {
       setIsDeleting(true);
       try {
-        await hookDeleteDream(dream.id);
+        const success = await hookDeleteDream(dream.id);
         setIsDeleteDialogOpen(false);
+        if (success) {
+          router.push("/home");
+        }
       } catch (err) {
         console.error("削除処理中にエラー:", err);
         alert("削除中にエラーが発生しました。");

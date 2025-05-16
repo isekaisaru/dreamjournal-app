@@ -80,12 +80,12 @@ export const useDream = (id?: string) => {
   }, [getValidAccessToken]);
 
 
-  
-  const createDream = async (dreamData: DreamInput) => {
+  const createDream = async (dreamData: DreamInput): Promise<boolean> => {
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
-      return;
+      setIsUpdating(false);
+      return false;
     }
     setError(null);
     setIsUpdating(true);
@@ -96,7 +96,6 @@ export const useDream = (id?: string) => {
         { headers: { Authorization: `Bearer ${token}`, 
         'Content-Type': 'application/json' } }
       );
-      router.push("/home");
     } catch (err) {
        console.error("Create dream error:", err);
        let message = "夢の作成に失敗しました";
@@ -105,19 +104,25 @@ export const useDream = (id?: string) => {
            message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
        }
        setError(message);
+       return false;
     } finally {
       setIsUpdating(false);
     }
+    return true;
   };
 
-  const updateDream = async (dreamData: DreamInput) => {
+  const updateDream = async (dreamData: DreamInput): Promise<boolean> => {
     const numericId = id ? parseInt(id, 10) : null;
-    if (!numericId) return;
+    if (!numericId) {
+      setError("更新対象の夢のIDがありません。");
+      return false;
+    }
 
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
-      return;
+      setIsUpdating(false);
+      return false;
     }
     setError(null);
     setIsUpdating(true);
@@ -128,7 +133,6 @@ export const useDream = (id?: string) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       await fetchDreamDetail();
-      console.log("夢が正常に更新されました");
     } catch (err) {
       console.error("Update dream error:", err);
        let message = "夢の更新に失敗しました";
@@ -137,17 +141,20 @@ export const useDream = (id?: string) => {
            message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
        }
       setError(message);
+      return false;
     } finally {
       setIsUpdating(false);
     }
+    console.log("夢が正常に更新されました");
+    return true;
   };
 
 
-  const deleteDream = async (deleteId: number) => {
+  const deleteDream = async (deleteId: number): Promise<boolean> => {
     const token = await getValidAccessToken();
     if (!token) {
       setError("ログインが必要です");
-      return;
+      return false;
     }
     setError(null);
     try {
@@ -155,9 +162,7 @@ export const useDream = (id?: string) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const currentNumericId = id ? parseInt(id, 10) : null;
-      if (currentNumericId && currentNumericId === deleteId) {
-          router.push("/home");
-      } else {
+      if (!(currentNumericId && currentNumericId === deleteId)) {
           setDreams((prev) => prev.filter((d) => d.id !== deleteId));
       }
     } catch (err) {
@@ -168,7 +173,9 @@ export const useDream = (id?: string) => {
            message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
        }
        setError(message);
+       return false;
     }
+    return true;
   };
 
 
