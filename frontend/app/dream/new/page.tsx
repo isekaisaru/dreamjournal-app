@@ -3,8 +3,7 @@
 import DreamForm from "../../components/DreamForm";
 import { useDream, DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
-import useAuth from "../../../hooks/useAuth";
+import React, { useEffect } from "react";
 
 
 export default function NewDreamPage() {
@@ -24,8 +23,14 @@ export default function NewDreamPage() {
   }, [error]);
 
   const handleCreateSubmit = async (formData: DreamInput) => {
-    await hookCreateDream(formData);
-  }
+    const success = await hookCreateDream(formData);
+    if(success) {
+      router.push("/home");
+    } else {
+      console.error("夢の作成に失敗しました。 エラーメッセージ:", error);
+    }
+  };
+
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
