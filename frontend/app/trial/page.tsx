@@ -1,16 +1,20 @@
 "use client";
 
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "next/navigation";
+import Loading from "../loading";
 
 export default function TrialPage() {
-  const [userId, setUserId] = useState<number | null>(null);
   const [dreams, setDreams] = useState<
     { title: string; description: string }[]
   >([]);
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージ用の状態
+  const { isLoggedIn, login, userId } = useAuth();
+  const router = useRouter();
 
   // トライアルユーザーの作成
   const createTrialUser = async () => {
@@ -30,12 +34,13 @@ export default function TrialPage() {
           password_confirmation: "password123",
         },
       });
-
-      const { user_id, token } = response.data;
-      localStorage.setItem("token", token); // トークンを保存
-      localStorage.setItem("user_id", user_id.toString()); // ユーザーIDを保存
-      setUserId(user_id); // ユーザーIDを状態に設定
-      setErrorMessage(null); // エラーをリセット
+      const { access_token, refresh_token, user: userData } = response.data;
+      if (access_token && refresh_token && userData) {
+        login(access_token, refresh_token, userData);
+      } else {
+        throw new Error("トライアルユーザー作成時のレスポンスに必要なデータが含まれていません。");
+      }
+      setErrorMessage(null);
     } catch (error) {
       setErrorMessage("トライアルユーザーの作成に失敗しました。");
       console.error("Error creating trial user:", error);
@@ -61,6 +66,12 @@ export default function TrialPage() {
     setTitle("");
     setDescription("");
   };
+
+  useEffect(() => {
+    if (isLoggedIn === true) {
+      router.push("/home");
+    }
+  }, [isLoggedIn, router]);
 
   return (
     <div className="container mx-auto p-4">

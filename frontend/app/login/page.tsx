@@ -1,22 +1,29 @@
 "use client";
 
-import React from "react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const router = useRouter();
-  const { setIsLoggedIn } = useAuth();
+  const [pageError, setPageError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, error: authError } = useAuth();
+
+  useEffect(() => {
+    if (authError) {
+      setPageError(authError);
+    }
+  }, [authError]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setPageError("");
+    setIsLoading(true);
     if (!email || !password) {
-      setError("すべてのフィールドを入力してください。");
+      setPageError("すべてのフィールドを入力してください。");
+      setIsLoading(false);
       return;
     }
     try {
@@ -24,29 +31,21 @@ export default function Login() {
         `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
         { email, password }
       );
-      console.log("レスポンス:", response.data);
-      if (!response.data.access_token) {
-        setError("トークンが取得されませんでした。");
-        return;
-      }
-      localStorage.setItem("access_token", response.data.access_token);
-      localStorage.setItem("refresh_token", response.data.refresh_token);
-
-      console.log(
-        "保存されたアクセストークン:",
-        localStorage.getItem("access_token")
-      );
-      console.log(
-        "保存されたリフレッシュトークン:",
-        localStorage.getItem("refresh_token")
-      );
-
-      setIsLoggedIn(true);
-      router.push("/home");
-    } catch (error: any) {
-      console.error("ログインエラー:", error);
-      setError("ログインに失敗しました。もう一度お試しください。");
+     const { access_token, refresh_token, user } = response.data;
+     if (access_token && refresh_token && user) {
+        login(access_token, refresh_token, user);
+     } else {
+      console.error("Login response missing tokens or user data:", response.data);
+      setPageError("ログイン情報の取得に失敗しました。");
+     }
+    } catch (apiError: any) {
+      console.error("ログインAPI呼び出しエラー:", apiError);
+      const backendErrorMessage: string = apiError.response?.data?.error || apiError.response?.data?.message || "ログインに失敗しました。もう一度お試しください。";
+      setPageError(backendErrorMessage);
+    } finally {
+      setIsLoading(false);
     }
+  
   };
 
   return (
@@ -81,17 +80,18 @@ export default function Login() {
             required
             aria-label="パスワード"
             aria-required="true"
-            aria-invalid={error ? "true" : "false"}
+            aria-invalid={pageError ? "true" : "false"}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
           />
           <button
             type="submit"
-            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 active:bg-blue-700 transition-colors duration-200 ease-in-out"
+            disabled={isLoading}
+            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 active:bg-blue-700 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            ログイン
+            {isLoading ? "ログイン中..." : "ログイン"} {}
           </button>
         </div>
-        {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
+        {pageError && <p className="text-red-500 mt-4 text-center">{pageError}</p>}
       </form>
     </div>
   );

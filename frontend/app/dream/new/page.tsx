@@ -4,16 +4,23 @@ import DreamForm from "../../components/DreamForm";
 import { useDream, DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
+import { useAuth } from "../../../context/AuthContext";
+import Loading from "../../loading";
 
 
 export default function NewDreamPage() {
   const router = useRouter();
+  const { isLoggedIn, userId } = useAuth();
 
   const {
       createDream: hookCreateDream,
       isUpdating,
       error
   } = useDream();
+
+  if (isLoggedIn === null) {
+    return <Loading />;
+  }
 
   useEffect(() => {
     if (error) {
@@ -23,6 +30,12 @@ export default function NewDreamPage() {
   }, [error]);
 
   const handleCreateSubmit = async (formData: DreamInput) => {
+    
+    if (!isLoggedIn) {
+      alert("ログインが必要です。");
+      router.push("/login");
+      return;
+    }
     const success = await hookCreateDream(formData);
     if(success) {
       router.push("/home");
@@ -31,7 +44,9 @@ export default function NewDreamPage() {
     }
   };
 
-
+  if (!isLoggedIn) {
+    return <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto"><p>このページを表示するにはログインが必要です。</p></div>;
+  }
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">新しい夢を記録</h1>

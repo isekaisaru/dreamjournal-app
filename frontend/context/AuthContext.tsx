@@ -12,6 +12,7 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useRouter, usePathname } from "next/navigation";
 
+
 interface DecodedToken {
   user_id: string;
   exp: number;
@@ -37,6 +38,8 @@ type AuthContextType = {
     refreshToken: string,
     userData: User
   ) => void;
+  error: string | null;
+  deleteUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,6 +52,7 @@ const TOKEN_EXPIRY_THRESHOLD_SECONDS = 60; // トークン有効期限切れの6
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -70,10 +74,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoggedIn(false);
       setUserId(null);
       delete axios.defaults.headers.common["Authorization"];
+      setError(null);
       console.log("AuthContext: Local cleanup done, redirecting to /login");
       router.push("/login");
     }
   }, [router]);
+
+  
 
   const getValidAccessToken = useCallback(async (): Promise<string | null> => {
     const tokenFromStorage = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -83,9 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     if (!tokenFromStorage || tokenFromStorage === "null" || tokenFromStorage === "undefined") {
-      console.warn(
-        "AuthContext: Access token is invalid or missing in getValidAccessToken."
-      );
+      //console.warn(
+        //"AuthContext: Access token is invalid or missing in getValidAccessToken."
+      //);
       return null;
     }
     const currentToken: string = tokenFromStorage; // Ensure currentToken is string for jwtDecode
@@ -103,6 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.warn(
             "AuthContext: Refresh token not found for refresh attempt. Cannot refresh."
           );
+          setError("リフレッシュトークンが見つかりません。再度ログインしてください。");
           // Potentially logout user here if refresh token is crucial and missing
           return null;
         }
@@ -122,14 +130,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (typeof newRefreshToken === 'string' && newRefreshToken.length > 0) {
               localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
             }
+            setError(null);
             console.log("AuthContext: Access token refreshed and saved.");
             return newAccessToken;
           } else {
             console.error(
               "AuthContext: Refresh response did not include a valid new access token."
             );
-            // If refresh fails to provide a valid token, consider logging out
-            // await logout(); // This might be too aggressive, depends on desired UX
+            setError("トークンのリフレッシュに失敗しました。");
             return null;
           }
         } catch (refreshError) {
@@ -137,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             "AuthContext: Access token refresh API call failed:",
             refreshError
           );
-          // await logout(); // Consider logout on refresh failure
+          setError("トークンのリフレッシュに失敗しました。再度ログインしてください。");
           return null;
         }
       }
@@ -146,12 +154,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return currentToken;
     } catch (decodeError) {
       console.error("AuthContext: Access token decode failed (possibly invalid format):", decodeError);
+      setError("アクセストークンの形式が無効です。");
       // If token is undecodable, it's invalid. Clear it and logout.
       // await logout(); // This might be too aggressive
       return null;
     }
-  }, [logout]); // Added logout to dependency array as it might be called
+  }, [logout, setError]);
 
+const deleteUser = useCallback(async () => {
+    console.log("AuthContext: deleteUser initiated");
+    const token = await getValidAccessToken();
+    if (!token) {
+      setError("ユーザー削除のための認証ができませんでした。再度ログインしてください。");
+      throw new Error("Not authenticated for user deletion");
+    }
+    if (!userId) {
+      setError("ユーザーIDが見つからないため、アカウントを削除できません。");
+      throw new Error("User ID not found for deletion");
+    }
+
+    try {
+      await axios.delete(`${API_URL}/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("AuthContext: User deletion successful on server.");
+    } catch (error) {
+      console.error("AuthContext: User deletion API call failed:", error);
+      setError("アカウントの削除に失敗しました。サーバーエラーが発生した可能性があります。");
+      throw error;
+    }
+  }, [getValidAccessToken, userId, setError]);
   const handleAuthenticationSuccess = useCallback(
     (accessToken: string, refreshToken: string, userData: User) => {
       localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
@@ -159,12 +191,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
       setUserId(userData.id ? userData.id.toString() : null);
       setIsLoggedIn(true);
+      setError(null);
       console.log(
         "AuthContext: Authentication success handled, state updated.",
         { userId: userData.id, isLoggedIn: true }
       );
     },
-    [setIsLoggedIn, setUserId]
+    [setIsLoggedIn, setUserId, setError]
   );
 
   const login = useCallback(
@@ -189,6 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const decoded: DecodedToken = jwtDecode<DecodedToken>(validToken);
           setUserId(decoded.user_id);
+          setError(null);
           setIsLoggedIn(true);
           // axios.defaults.headers.common["Authorization"] is already set in getValidAccessToken
           console.log("AuthContext: User is authenticated via useEffect.", {
@@ -234,6 +268,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         getValidAccessToken,
         handleAuthenticationSuccess,
+        error,
+        deleteUser,
       }}
     >
       {children}

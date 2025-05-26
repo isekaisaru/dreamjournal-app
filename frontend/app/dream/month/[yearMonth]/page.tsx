@@ -3,36 +3,56 @@
 import React from "react";
 import { useParams } from "next/navigation"; // useRouterを使用
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Dream } from "@/app/types";
+import { useAuth } from "../../../../context/AuthContext";
+import Loading from "../../../loading";
+
 
 export default function DreamByMonthPage() {
   const params = useParams();
   const yearMonth = params.yearMonth; // URLのパラメータからyearMonthを取得
   const [dreams, setDreams] = useState<Dream[]>([]); // 夢データを保存するための変数
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
+  const { isLoggedIn, getValidAccessToken } = useAuth();
+  const fetchDreamsByMonth = useCallback(async () => {
+    if (yearMonth && isLoggedIn) {
+      const token = await getValidAccessToken();
+      if (!token) {
+        setErrorMessage("認証されていません。");
+        return;
+      }
 
-  // ページが表記されたときに実行される部分
-  useEffect(() => {
-    if (yearMonth) {
-      const token = localStorage.getItem("token"); // トークンを取得
-
-      // APIを使って夢データを取得
-      axios
-        .get(`${process.env.NEXT_PUBLIC_API_URL}/dreams/month/${yearMonth}`, {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/dreams/month/${yearMonth}`,
+          {
           headers: {
-            Authorization: `Bearer ${token}`, // 認証ヘッダーを設
+            Authorization: `Bearer ${token}`,
           },
-        })
-        .then((response) => {
-          setDreams(response.data); //取得した夢データを状態に設定
-        })
-        .catch((error) => {
-          console.error("Error fetching dreams by month:", error);
-          setErrorMessage("夢の取得に失敗しました"); // エラーメッセージを設定
-        });
+        }
+        );
+        setDreams(response.data);
+        setErrorMessage(null);
+      } catch (error) {
+        console.error("Error fetching dreams by month:", error);
+        setErrorMessage("夢の取得に失敗しました");
+      }
     }
-  }, [yearMonth]); // yearMonthが変わるたびに実行
+  }, [yearMonth, isLoggedIn, getValidAccessToken]);
+
+  useEffect(() => {
+    if (isLoggedIn === true) {
+      fetchDreamsByMonth();
+    }
+  }, [isLoggedIn, fetchDreamsByMonth]);
+
+  if (isLoggedIn === null) {
+    return <Loading />;
+  }
+  if (!isLoggedIn) {
+    return <div className="container mx-auto p-5"><p>このページを表示するにはログインが必要です。</p></div>;
+  }
 
   return (
     <div className="container mx-auto p-5">
@@ -48,7 +68,7 @@ export default function DreamByMonthPage() {
             dreams.map((dream) => (
               <li key={dream.id} className="border-b py-2">
                 <h2 className="text-xl font-bold">{dream.title}</h2>
-                <p>{dream.description}</p>
+                <p>{dream.content}</p>
               </li>
             ))
           ) : (

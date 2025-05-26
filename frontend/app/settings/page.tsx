@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import useAuth from "@/hooks/useAuth";
+import { useAuth } from "../../context/AuthContext";
+import Loading from "../loading";
 
 const SettingsPage = () => {
-  const { userId, logout, deleteUser } = useAuth();
+  const { isLoggedIn, userId, logout, deleteUser } = useAuth();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false); // モーダルの状態を管理
   const [isDeleting, setIsDeleting] = useState(false); // 削除中の状態を管理
@@ -29,6 +30,9 @@ const SettingsPage = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+  if (isLoggedIn === null) {
+    return <Loading />;
   };
 
   return (

@@ -14,6 +14,25 @@ const Header = () => {
     await logout();
   };
 
+  if (isLoggedIn === null) {
+    return (
+      <header className="py-5 px-4 sm:px-6 md:px-10 border-b flex-col sm:flex-row justify-between items-center">
+        <div className="mb-4 sm:mb-0">
+          <h1 className="text-2xl md:text-4xl font-extrabold">
+            <Link href="/">ユメログ</Link>
+          </h1>
+        </div>
+        <div>
+          <nav className="text-sm font-medium flex space-x-4">
+            <div className="h-8 w-20 bg-gray-400 rounded-md animate-pulse"></div>
+            <div className="h-8 w-24 bg-gray-400 rounded-md animate-pulse"></div>
+          </nav>
+
+        </div>
+      </header>
+    );
+  }
+  
   return (
     <header className="py-5 px-4 sm:px-6 md:px-10 border-b flex flex-col sm:flex-row justify-between items-center">
       <div className="mb-4 sm:mb-0">

@@ -55,8 +55,7 @@ export default function HomePage() {
         console.warn("HomePage: No valid token for fetching data. AuthContext should have redirected if initial check failed.");
         return;
       }
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`; // 認証ヘッダーを設定
-
+      
       // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
       const userResponse = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
