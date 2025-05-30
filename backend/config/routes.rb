@@ -5,7 +5,7 @@ Rails.application.routes.draw do
         end
         collection do
             get  :my_dreams # 自分の夢を取得
-            get  :by_month
+            get  'month/:year_month', to: 'dreams#by_month_index', as: :dreams_by_month
         end
     end
     

@@ -57,21 +57,24 @@ class DreamsController < ApplicationController
       render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
     end
   end
-  # GET /dreams_by_month
-  def dreams_by_month
-    month = params[:month] # クエリパラメーターから月を取得
+  # GET /dreams/month/:yaer_month
+  def by_month_index
+    year_month_str = params[:year_month]
 
-    if month.nil?
-      return render json: { error: '月のパラメータが必要です。'}, status: :bad_request
+    if year_month_str.blank?
+      return render json: { error: 'year_month パラメータが必要です (例: /dreams/month/2025-05)' }, status: :bad_request
     end
 
-    # 月ごとの夢をフィルタリング
-    filtered_dreams = current_user.dreams.where("to_char(created_at, 'YYYY-MM') = ?", month)
-
-    # 取得した夢データを返す
-    render json: filtered_dreams.as_json(only: [:id, :title, :content, :created_at])
+    begin
+      year, month = year_month_str.split('-').map(&:to_i)
+      start_date = Date.new(year, month, 1).beginning_of_month
+      end_date = Date.new(year, month, 1).end_of_month
+      @dreams = current_user.dreams.where(created_at: start_date..end_date).order(created_at: :desc)
+      render json: @dreams.as_json(only: [:id, :title, :content, :created_at])
+    rescue ArgumentError, TypeError
+      render json: { error: "無効な日付フォーマットです。YYYY-MM 形式で指定してください。" }, status: :bad_request
+    end
   end
-
   # GET /my_dreams
   def my_dreams
     @dreams = current_user.dreams
