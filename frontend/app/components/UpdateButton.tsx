@@ -8,7 +8,7 @@ const UpdateButton: React.FC<UpdateButtonProps> = ({ onClick }) => {
   return (
     <button
       onClick={onClick}
-      className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-300 ease-in-out shadow-md"
+      className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold py-2 px-4 rounded-md cursor-pointer transition-all duration-300 ease-in-out shadow-md"
     >
       更新
     </button>
