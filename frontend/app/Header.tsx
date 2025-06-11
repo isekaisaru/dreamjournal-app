@@ -16,10 +16,10 @@ const Header = () => {
 
   if (isLoggedIn === null) {
     return (
-      <header className="py-5 px-4 sm:px-6 md:px-10 border-b flex-col sm:flex-row justify-between items-center">
+      <header className="py-5 px-4 sm:px-6 md:px-10 border-b border-border bg-background text-foreground flex flex-col sm:flex-row justify-between items-center">
         <div className="mb-4 sm:mb-0">
           <h1 className="text-2xl md:text-4xl font-extrabold">
-            <Link href="/">ユメログ</Link>
+            <Link href="/" className="text-primary hover:text-primary/90">ユメログ</Link>
           </h1>
         </div>
         <div>
@@ -34,34 +34,29 @@ const Header = () => {
   }
   
   return (
-    <header className="py-5 px-4 sm:px-6 md:px-10 border-b flex flex-col sm:flex-row justify-between items-center">
+    <header className="py-5 px-4 sm:px-6 md:px-10 border-b border-border bg-background text-foreground flex flex-col sm:flex-row justify-between items-center">
       <div className="mb-4 sm:mb-0">
         <h1 className="text-2xl md:text-4xl font-extrabold">
-          <Link href="/">ユメログ</Link>
+          <Link href="/" className="text-primary hover:text-primary/90">ユメログ</Link>
         </h1>
       </div>
       <div>
-        <nav className="text-sm font-medium">
+        <nav className="text-sm font-medium flex items-center space-x-2 md:space-x-4">
           {isLoggedIn ? (
             <>
               <Link href="/dream/new">
-                <Button className="bg-purple-400 px-3 py-2 md:px-3 md:py-3 rounded-md">
+                <Button variant="default" className="px-3 py-2 md:px-3 md:py-3">
                   夢の記録
                 </Button>
               </Link>
-              <Link href="/my-dreams">
-                <Button className="ml-4 bg-green-400 px-3 py-2 md:px-3 md:py-3 rounded-md text-white">
-                  わたしの夢
-                </Button>
-              </Link>
               <Link href="/settings">
-                <Button className="ml-4 bg-blue-400 px-3 py-2 md:px-3 md:py-3 rounded-md text-white">
+                <Button variant="outline" className="px-3 py-2 md:px-3 md:py-3">
                   設定
                 </Button>
               </Link>
               <button
                 onClick={handleLogout}
-                className="ml-4 bg-red-500 text-white px-3 py-2 rounded-md"
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-2 rounded-md"
               >
                 ログアウト
               </button>
@@ -69,12 +64,12 @@ const Header = () => {
           ) : (
             <>
               <Link href="/login">
-                <Button className="bg-purple-400 px-3 py-2 md:py-3 rounded-md">
+                <Button variant="default" className="px-3 py-2 md:py-3">
                   ログイン
                 </Button>
               </Link>
               <Link href="/register">
-                <Button className="ml-4 bg-green-400 px-3 py-2 md:py-3 rounded-md">
+                <Button variant="secondary" className="px-3 py-2 md:py-3">
                   ユーザー登録
                 </Button>
               </Link>

@@ -21,22 +21,22 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="検索"
-        className="border p-2 rounded mr-2 text-gray-700"
+        placeholder="夢を検索..."
+        className="border border-input bg-background text-foreground p-2 rounded mr-2 focus:ring-2 focus:ring-ring focus:border-ring"
       />
       <input
         type="date"
         value={startDate}
         onChange={(e) => setStartDate(e.target.value)}
-        className="border p-2 rounded mr-2 text-gray-700"
+        className="border border-input bg-background text-foreground p-2 rounded mr-2 focus:ring-2 focus:ring-ring focus:border-ring"
       />
       <input
         type="date"
         value={endDate}
         onChange={(e) => setEndDate(e.target.value)}
-        className="border p-2 rounded mr-2 text-gray-700"
+        className="border border-input bg-background text-foreground p-2 rounded mr-2 focus:ring-2 focus:ring-ring focus:border-ring"
       />
-      <button className="bg-blue-500 text-white p-2 rounded">検索</button>
+      <button className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded">検索</button>
     </div>
   );
 };
