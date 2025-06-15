@@ -110,16 +110,16 @@ export default function HomePage() {
   const groupedDreams = groupDreamsByMonth(dreams);
 
   return (
-    <div className="md:flex">
+    <div className="md:flex text-foreground">
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full md:w-2/3 flex flex-col items-center px-3 md:px-6">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-foreground">
           {user ? `${user.username}さんの夢` : "夢リスト"}
         </h1>
         <SearchBar onSearch={fetchUserData} />
         {/* エラーメッセージがある場合は表示 */}
         {errorMessage && (
-          <div className="text-red-500 mb-4">{errorMessage}</div>
+          <div className="text-destructive mb-4">{errorMessage}</div>
         )}
         {/* 夢リストコンポーネント */}
         <DreamList dreams={dreams} /> {/* 夢データをリストして表示 */}
@@ -127,9 +127,9 @@ export default function HomePage() {
 
       {/* サイドバー: 月ごとの夢リンクを動的に表示 */}
       <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 md:mt-0">
-        <div className="bg-white shadow-md rounded p-4 mb-6">
-          <h3 className="font-bold text-gray-600 mb-2">前に見た夢</h3>
-          <p className="text-gray-600">前に見た夢を振り返ってみましょう！</p>
+        <div className="bg-card text-card-foreground shadow-md rounded p-4 mb-6 border border-border">
+          <h3 className="font-bold text-card-foreground mb-2">前に見た夢</h3>
+          <p className="text-muted-foreground">前に見た夢を振り返ってみましょう！</p>
         </div>
         <ul className="space-y-2">
           {/* 月ごとの夢リンクを表示 */}
@@ -137,7 +137,7 @@ export default function HomePage() {
             <li key={yearMonth}>
               <Link
                 href={`/dream/month/${yearMonth}`}
-                className="text-blue-500 hover:underline"
+                className="text-primary hover:text-primary/90 hover:underline"
               >
                 {new Date(dreams[0].created_at).toLocaleString("ja-JP", {
                   year: "numeric",
