@@ -49,12 +49,12 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-blue-500 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md"
+        className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
-        <h2 className="text-2xl md:text-3xl font-semibold  mb-4 md:mb-6 text-center text-gray-800">
+        <h2 className="text-2xl md:text-3xl font-semibold  mb-4 md:mb-6 text-center text-card-foreground">
           ログイン
         </h2>
         <div className="space-y-4">
@@ -68,7 +68,7 @@ export default function Login() {
             required
             aria-label="メールアドレス"
             aria-required="true"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <input
             type="password"
@@ -81,17 +81,17 @@ export default function Login() {
             aria-label="パスワード"
             aria-required="true"
             aria-invalid={pageError ? "true" : "false"}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 active:bg-blue-700 transition-colors duration-200 ease-in-out disabled:opacity-50"
+            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
             {isLoading ? "ログイン中..." : "ログイン"} {}
           </button>
         </div>
-        {pageError && <p className="text-red-500 mt-4 text-center">{pageError}</p>}
+        {pageError && <p className="text-destructive mt-4 text-center">{pageError}</p>}
       </form>
     </div>
   );
