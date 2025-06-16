@@ -82,12 +82,12 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-blue-500 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md"
+        className="bg-card p-8 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
-        <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-gray-800">
+        <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-card-foreground">
           ユーザー登録
         </h2>
         <div className="space-y-4">
@@ -102,7 +102,7 @@ export default function Register() {
             aria-label="ユーザー名"
             aria-required="true"
             aria-invalid={error ? "true" : "false"}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <input
             type="email"
@@ -114,7 +114,7 @@ export default function Register() {
             required
             aria-required="true"
             aria-invalid={error ? "true" : "false"}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <input
             type="password"
@@ -124,7 +124,7 @@ export default function Register() {
             placeholder="パスワード"
             autoComplete="new-password"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <input
             type="password"
@@ -137,18 +137,18 @@ export default function Register() {
             aria-label="パスワード確認"
             aria-required="true"
             aria-invalid={error ? "true" : "false"}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
+            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             type="submit"
-            className="w-full py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 active:bg-blue-700"
+            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out"
           >
             登録
           </button>
         </div>
-        {error && <p className="text-red-500 mt-4 text-center">{error}</p>}
+        {error && <p className="text-destructive mt-4 text-center">{error}</p>}
         {message && (
-          <p className="text-green-500 mt-4 text-center">{message}</p>
+          <p className="text-success mt-4 text-center">{message}</p>
         )}
       </form>
     </div>
