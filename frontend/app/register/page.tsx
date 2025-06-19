@@ -11,23 +11,28 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setIsLoading(true);
     if (!email || !username || !password || !passwordConfirmation) {
       setError("すべてのフィールドを入力してください。");
+      setIsLoading(false);
       return;
     }
     if (password !== passwordConfirmation) {
       setError("パスワードが一致しません。");
+      setIsLoading(false);
       return;
     }
     if (password.length < 6) {
       setError("パスワードは6文字以上である必要があります。");
+      setIsLoading(false);
       return;
     }
     try {
@@ -56,9 +61,8 @@ export default function Register() {
         console.log("Refresh Token received:", refresh_token);
         console.log("User data received:", userData);
 
-        login(access_token, refresh_token, userData);
-
-        setMessage("登録に成功しました。ホームページに移動します...");
+        await login(access_token, refresh_token, userData);
+        router.push("/home?registered=true");
       } else {
         console.error("Registration response missing tokens or user data:", response.data);
         setError("登録処理中にエラーが発生しました。必要な情報がサーバーから返されませんでした。");
@@ -78,6 +82,8 @@ export default function Register() {
         console.error("General error:", error);
         setError("登録に失敗しました。もう一度お試しください。");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -141,15 +147,15 @@ export default function Register() {
           />
           <button
             type="submit"
-            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out"
+            disabled={isLoading}
+            className={`w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            登録
+            {isLoading ? "登録中..." : "登録"}
           </button>
         </div>
         {error && <p className="text-destructive mt-4 text-center">{error}</p>}
-        {message && (
-          <p className="text-success mt-4 text-center">{message}</p>
-        )}
       </form>
     </div>
   );

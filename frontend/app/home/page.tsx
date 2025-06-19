@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 import axios from "axios";
 import { Dream, User } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import toast from "react-hot-toast";
 import Loading from "../loading";
 
 /**
@@ -43,19 +44,23 @@ function groupDreamsByMonth(dreams: Dream[]) {
 export default function HomePage() {
   const router = useRouter();
   const { isLoggedIn, userId, getValidAccessToken } = useAuth(); // ユーザーの認証状態を取得
+  const searchParams = useSearchParams();
   const [dreams, setDreams] = useState<Dream[]>([]); //夢データの状態管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
   const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
+  const hasShownRegisteredToastRef = useRef(false); // 登録完了トーストの表示状態をuseRefで管理
 
   // ユーザーデータと夢データを取得する関数
   const fetchUserData = useCallback(async () => {
     try {
       const token = await getValidAccessToken(); // 有効なアクセストークンを取得
       if (!token || token === "null" || token === "undefined") {
-        console.warn("HomePage: No valid token for fetching data. AuthContext should have redirected if initial check failed.");
+        console.warn(
+          "HomePage: No valid token for fetching data. AuthContext should have redirected if initial check failed."
+        );
         return;
       }
-      
+
       // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
       const userResponse = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
@@ -64,7 +69,10 @@ export default function HomePage() {
       if (userResponse.data && userResponse.data.user) {
         setUser(userResponse.data.user);
       } else {
-        console.warn("User data not found in /auth/me response:", userResponse.data);
+        console.warn(
+          "User data not found in /auth/me response:",
+          userResponse.data
+        );
       }
 
       // 夢データ取得APIエンドポイントにGETリクエストを送信
@@ -102,6 +110,19 @@ export default function HomePage() {
     }
   }, [isLoggedIn, userId, fetchUserData]);
 
+  useEffect(() => {
+    if (hasShownRegisteredToastRef.current) {
+      return;
+    }
+    const registered = searchParams.get("registered");
+    if (registered === "true") {
+        toast.success("ようこそ！ユーザー登録が完了しました。");
+        hasShownRegisteredToastRef.current = true;
+      
+      router.replace("/home");
+    }
+  }, []);
+
   if (isLoggedIn === null) {
     return <Loading />;
   }
@@ -129,7 +150,9 @@ export default function HomePage() {
       <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 md:mt-0">
         <div className="bg-card text-card-foreground shadow-md rounded p-4 mb-6 border border-border">
           <h3 className="font-bold text-card-foreground mb-2">前に見た夢</h3>
-          <p className="text-muted-foreground">前に見た夢を振り返ってみましょう！</p>
+          <p className="text-muted-foreground">
+            前に見た夢を振り返ってみましょう！
+          </p>
         </div>
         <ul className="space-y-2">
           {/* 月ごとの夢リンクを表示 */}

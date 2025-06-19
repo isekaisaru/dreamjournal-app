@@ -203,8 +203,7 @@ const deleteUser = useCallback(async () => {
   const login = useCallback(
     (accessToken: string, refreshToken: string, userData: User) => {
       handleAuthenticationSuccess(accessToken, refreshToken, userData);
-      router.push("/home");
-      console.log("AuthContext: Login successful, redirecting to /home");
+      console.log("AuthContext: Login successful, state updated.");
     },
     [handleAuthenticationSuccess, router]
   );

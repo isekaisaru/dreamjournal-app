@@ -5,6 +5,7 @@ import "./globals.css";
 import Header from "./Header";
 import Footer from "./Footer";
 import { Suspense } from "react";
+import { Toaster } from "react-hot-toast";
 import Loading from "./loading";
 import { AuthProvider } from "../context/AuthContext";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           <Header />
           <div className="flex flex-col flex-grow">
             <main className="flex-grow">
+              <Toaster position="top-center" />
               <Suspense fallback={<Loading />}>{children}</Suspense>
             </main>
             <Footer />
