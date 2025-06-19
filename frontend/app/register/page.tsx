@@ -62,7 +62,8 @@ export default function Register() {
         console.log("User data received:", userData);
 
         await login(access_token, refresh_token, userData);
-        router.push("/home?registered=true");
+        sessionStorage.setItem("registrationSuccess", "true");
+        router.push("/home");
       } else {
         console.error("Registration response missing tokens or user data:", response.data);
         setError("登録処理中にエラーが発生しました。必要な情報がサーバーから返されませんでした。");

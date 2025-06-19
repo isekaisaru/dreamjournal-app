@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 import axios from "axios";
 import { Dream, User } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Loading from "../loading";
 
@@ -44,11 +44,9 @@ function groupDreamsByMonth(dreams: Dream[]) {
 export default function HomePage() {
   const router = useRouter();
   const { isLoggedIn, userId, getValidAccessToken } = useAuth(); // ユーザーの認証状態を取得
-  const searchParams = useSearchParams();
   const [dreams, setDreams] = useState<Dream[]>([]); //夢データの状態管理
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
   const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
-  const hasShownRegisteredToastRef = useRef(false); // 登録完了トーストの表示状態をuseRefで管理
 
   // ユーザーデータと夢データを取得する関数
   const fetchUserData = useCallback(async () => {
@@ -111,15 +109,10 @@ export default function HomePage() {
   }, [isLoggedIn, userId, fetchUserData]);
 
   useEffect(() => {
-    if (hasShownRegisteredToastRef.current) {
-      return;
-    }
-    const registered = searchParams.get("registered");
-    if (registered === "true") {
-        toast.success("ようこそ！ユーザー登録が完了しました。");
-        hasShownRegisteredToastRef.current = true;
-      
-      router.replace("/home");
+    const registrationSuccess = sessionStorage.getItem("registrationSuccess");
+    if (registrationSuccess === "true") {
+      toast.success("ようこそ！ユーザー登録が完了しました。");
+      sessionStorage.removeItem("registrationSuccess");
     }
   }, []);
 
