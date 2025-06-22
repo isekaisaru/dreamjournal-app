@@ -109,12 +109,14 @@ export default function HomePage() {
   }, [isLoggedIn, userId, fetchUserData]);
 
   useEffect(() => {
-    const registrationSuccess = sessionStorage.getItem("registrationSuccess");
-    if (registrationSuccess === "true") {
-      toast.success("ようこそ！ユーザー登録が完了しました。");
-      sessionStorage.removeItem("registrationSuccess");
+    if (isLoggedIn === true) {
+      const registrationSuccess = sessionStorage.getItem("registrationSuccess");
+      if (registrationSuccess === "true") {
+        toast.success("ようこそ！ユーザー登録が完了しました。");
+        sessionStorage.removeItem("registrationSuccess");
+      }
     }
-  }, []);
+  }, [isLoggedIn]);
 
   if (isLoggedIn === null) {
     return <Loading />;
