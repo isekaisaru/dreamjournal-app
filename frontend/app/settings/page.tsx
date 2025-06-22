@@ -36,34 +36,34 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen p-6 bg-gradient-to-r from-blue-100 to-blue-300">
-      <h2 className="text-4xl font-bold mb-6">設定ページ</h2>
+    <div className="min-h-screen p-6 bg-background text-foreground">
+      <h2 className="text-4xl font-bold mb-6 text-foreground">設定ページ</h2>
 
       <button
-        className="bg-red-500 text-white font-bold px-4 py-2 rounded"
+        className="bg-destructive text-destructive-foreground font-bold px-4 py-2 rounded hover:bg-destructive/90"
         onClick={() => setIsModalOpen(true)}
       >
         アカウントを削除
       </button>
 
       {isModalOpen && (
-        <div className="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="modal-content bg-white p-6 rounded shadow-lg w-full sm:w-96">
-            <p className="text-lg font-bold mb-4 text-red-600 bg-yellow-50 p-4 rounded-lg border border-red-500">
+        <div className="modal-overlay fixed inset-0 bg-black/50 flex justify-center items-center">
+          <div className="modal-content bg-card p-6 rounded shadow-lg w-full sm:w-96 border border-border">
+            <p className="text-lg font-bold mb-4 text-destructive-foreground bg-destructive/80 p-4 rounded-lg border border-destructive">
               本当にアカウントを削除しますか？ この操作は取り消せません。
             </p>
             <div className="flex justify-end space-x-4 mt-4">
               <button
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors duration-200"
+                className="bg-muted text-muted-foreground px-4 py-2 rounded hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
                 onClick={() => setIsModalOpen(false)}
               >
                 キャンセル
               </button>
               <button
-                className={`bg-red-500 text-white px-4 py-2 rounded ${
+                className={`bg-destructive text-destructive-foreground px-4 py-2 rounded ${
                   isDeleting
                     ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-red-600"
+                    : "hover:bg-destructive/90"
                 } transition-colors duration-200`}
                 onClick={handleDelete}
                 disabled={isDeleting}
