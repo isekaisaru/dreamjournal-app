@@ -51,28 +51,28 @@ export default function DreamByMonthPage() {
     return <Loading />;
   }
   if (!isLoggedIn) {
-    return <div className="container mx-auto p-5"><p>このページを表示するにはログインが必要です。</p></div>;
+    return <div className="container mx-auto p-5 bg-background text-foreground"><p>このページを表示するにはログインが必要です。</p></div>;
   }
 
   return (
-    <div className="container mx-auto p-5">
-      <h1 className="text-3xl md:text-4xl font-bold text-center mb-6">
+    <div className="container mx-auto p-5 bg-background text-foreground">
+      <h1 className="text-3xl md:text-4xl font-bold text-center mb-6 text-foreground">
         {yearMonth}の夢一覧
       </h1>
 
       {errorMessage ? (
-        <p className="text-red-500">{errorMessage}</p>
+        <p className="text-destructive text-center">{errorMessage}</p>
       ) : (
         <ul>
           {dreams.length > 0 ? (
             dreams.map((dream) => (
-              <li key={dream.id} className="border-b py-2">
-                <h2 className="text-xl font-bold">{dream.title}</h2>
-                <p>{dream.content}</p>
+              <li key={dream.id} className="border-b border-border py-4">
+                <h2 className="text-xl font-bold text-foreground">{dream.title}</h2>
+                <p className="text-muted-foreground mt-1">{dream.content}</p>
               </li>
             ))
           ) : (
-            <p>まだこの月には夢が見つかりません。</p>
+            <p className="text-muted-foreground text-center">まだこの月には夢が見つかりません。</p>
           )}
         </ul>
       )}
