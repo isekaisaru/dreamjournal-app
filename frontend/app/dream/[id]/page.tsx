@@ -117,17 +117,17 @@ export default function EditDreamPage() {
   };
 
   if (dreamLoading)
-    return <p className="text-center mt-10">夢の情報を読み込み中...</p>;
+    return <p className="text-center mt-10 text-foreground">夢の情報を読み込み中...</p>;
 
   if (error && !dream)
-    return <p className="text-red-500 text-center mt-10">エラー: {error}</p>;
+    return <p className="text-destructive text-center mt-10">エラー: {error}</p>;
 
   if (!dream)
-    return <p className="text-center mt-10">指定された夢が見つかりません。</p>;
+    return <p className="text-center mt-10 text-foreground">指定された夢が見つかりません。</p>;
 
   return (
-    <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">夢の詳細・編集</h1>
+    <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
+      <h1 className="text-3xl font-bold mb-6 text-foreground">夢の詳細・編集</h1>
 
       <DreamForm
         initialData={dream}
@@ -135,30 +135,30 @@ export default function EditDreamPage() {
         isLoading={isUpdating}
       />
 
-      <div className="mt-8 p-6 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-700">夢の分析</h2>
+      <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm">
+        <h2 className="text-2xl font-semibold mb-4 text-card-foreground">夢の分析</h2>
         {dream.content && dream.content.trim() !== "" ? (
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing || isUpdating}
-            className={`w-full py-3 px-4 text-white font-semibold rounded-md transition-colors duration-150 ease-in-out ${
+            className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${
               isAnalyzing || isUpdating
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                ? "bg-muted text-muted-foreground cursor-not-allowed"
+                : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
             }`}
           >
             {isAnalyzing ? "分析中..." : "この夢を分析する"}
           </button>
         ) : (
-          <p className="text-gray-500 text-center py-2">
+          <p className="text-muted-foreground text-center py-2">
             夢の内容が記録されていません。分析するには、編集フォームで内容を入力・保存してください。
           </p>
         )}
         {analysisResult && (
-          <div className="mt-6 p-4 bg-white rounded-md border border-gray-300 shadow-inner">
-            <h3 className="text-xl font-bold mb-3 text-gray-800">分析結果</h3>
-            <div className="max-h-80 overflow-y-auto p-3 bg-gray-50 rounded border border-gray-200">
-              <p className="text-gray-700 whitespace-pre-wrap text-base leading-relaxed">
+          <div className="mt-6 p-4 bg-background rounded-md border border-border shadow-inner">
+            <h3 className="text-xl font-bold mb-3 text-foreground">分析結果</h3>
+            <div className="max-h-80 overflow-y-auto p-3 bg-muted/50 rounded border border-border">
+              <p className="text-foreground whitespace-pre-wrap text-base leading-relaxed">
                 {analysisResult}
               </p>
             </div>
@@ -166,7 +166,7 @@ export default function EditDreamPage() {
         )}
       </div>
 
-      <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end">
+      <div className="mt-8 pt-6 border-t border-border flex justify-end">
         {dream.id && <DeleteButton onClick={handleDeleteClick} />}
       </div>
       {/* 削除確認 AlertDialog */}
@@ -188,7 +188,7 @@ export default function EditDreamPage() {
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? "削除中..." : "削除する"}
             </AlertDialogAction>
