@@ -74,32 +74,32 @@ export default function TrialPage() {
   }, [isLoggedIn, router]);
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 bg-background text-foreground">
       <button
         onClick={createTrialUser}
-        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700"
+        className="bg-primary text-primary-foreground py-2 px-4 rounded hover:bg-primary/90"
       >
         Create Trial User
       </button>
 
       {/* エラーメッセージがある場合は表示 */}
-      {errorMessage && <p className="text-red-500 mt-4">{errorMessage}</p>}
+      {errorMessage && <p className="text-destructive mt-4">{errorMessage}</p>}
 
       {/* ユーザーが作成された場合 */}
       {userId && (
         <div className="mt-6">
-          <h2 className="text-2xl font-bold mb-4">夢の記録</h2>
+          <h2 className="text-2xl font-bold mb-4 text-foreground">夢の記録</h2>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               addDream();
             }}
-            className="mb-6"
+            className="mb-6 bg-card p-6 rounded-lg border border-border"
           >
             <div className="mb-4">
               <label
                 htmlFor="title"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-card-foreground"
               >
                 夢のタイトル:
               </label>
@@ -109,13 +109,13 @@ export default function TrialPage() {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="mt-1 block w-full px-3 py-2 border border-input bg-background text-foreground rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm"
               />
             </div>
             <div className="mb-4">
               <label
                 htmlFor="description"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-card-foreground"
               >
                 夢の内容:
               </label>
@@ -124,23 +124,23 @@ export default function TrialPage() {
                 name="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full h-32 border border-gray-300 bg-white text-black px-3 py-2 rounded-md focus:ring focus:ring-blue-500"
+                className="w-full h-32 border border-input bg-background text-foreground px-3 py-2 rounded-md focus:ring-2 focus:ring-ring"
               />
             </div>
             <button
               type="submit"
-              className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-700"
+              className="bg-primary text-primary-foreground py-2 px-4 rounded hover:bg-primary/90"
             >
               夢を記録する
             </button>
           </form>
 
-          <h3 className="text-xl font-semibold mb-2">記録された夢</h3>
+          <h3 className="text-xl font-semibold mb-2 text-foreground">記録された夢</h3>
           <ul className="list-disc pl-5">
             {dreams.map((dream, index) => (
               <li key={index} className="mb-2">
-                <h4 className="text-lg font-bold">{dream.title}</h4>
-                <p className="text-gray-700">{dream.description}</p>
+                <h4 className="text-lg font-bold text-foreground">{dream.title}</h4>
+                <p className="text-muted-foreground">{dream.description}</p>
               </li>
             ))}
           </ul>
