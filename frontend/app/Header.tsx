@@ -24,8 +24,8 @@ const Header = () => {
         </div>
         <div>
           <nav className="text-sm font-medium flex space-x-4">
-            <div className="h-8 w-20 bg-gray-400 rounded-md animate-pulse"></div>
-            <div className="h-8 w-24 bg-gray-400 rounded-md animate-pulse"></div>
+            <div className="h-8 w-20 bg-muted rounded-md animate-pulse"></div>
+            <div className="h-8 w-24 bg-muted rounded-md animate-pulse"></div>
           </nav>
 
         </div>
