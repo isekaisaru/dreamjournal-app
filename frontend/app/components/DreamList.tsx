@@ -8,7 +8,7 @@ type DreamListProps = {
 
 const DreamList = ({ dreams }: DreamListProps) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+    <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4">
       {dreams.map((dream) => (
         <DreamCard dream={dream} key={dream.id} />
       ))}
