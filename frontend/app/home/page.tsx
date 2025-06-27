@@ -49,7 +49,8 @@ export default function HomePage() {
   const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
 
   // ユーザーデータと夢データを取得する関数
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(
+    async (query = "", startDate = "", endDate = "") => {
     try {
       const token = await getValidAccessToken(); // 有効なアクセストークンを取得
       if (!token || token === "null" || token === "undefined") {
@@ -73,10 +74,15 @@ export default function HomePage() {
         );
       }
 
+      const params: Record<string, string> = {};
+      if (query) params.query = query;
+      if (startDate) params.start_date = startDate;
+      if (endDate) params.end_date = endDate;
+
       // 夢データ取得APIエンドポイントにGETリクエストを送信
       const dreamsResponse = await axios.get(
         `${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` }, params }
       );
       setDreams(dreamsResponse.data); //夢データの状態を更新
       setErrorMessage(null);
@@ -95,7 +101,8 @@ export default function HomePage() {
         setErrorMessage("予期しないエラーが発生しました。");
       }
     }
-  }, [getValidAccessToken]);
+    },
+    [getValidAccessToken]);
 
   // isLoggedinが変更されたときにユーザーデータを取得
   useEffect(() => {

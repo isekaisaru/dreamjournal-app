@@ -77,7 +77,19 @@ class DreamsController < ApplicationController
   end
   # GET /my_dreams
   def my_dreams
-    @dreams = current_user.dreams
+    @dreams = current_user.dreams.order(created_at: :desc)
+
+    if params[:query].present?
+      @dreams = @dreams.where("title LIKE :query OR content LIKE :query", query: "%#{params[:query]}%")
+    end
+
+    if params[:start_date].present?
+      @dreams = @dreams.where("created_at >= ?", params[:start_date])
+    end
+
+    if params[:end_date].present?
+      @dreams = @dreams.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
+    end
     render json: @dreams.as_json(only: [:id, :title, :content, :created_at])
   end
 
