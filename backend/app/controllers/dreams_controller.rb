@@ -90,7 +90,11 @@ class DreamsController < ApplicationController
     if params[:end_date].present?
       @dreams = @dreams.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
     end
-    render json: @dreams.as_json(only: [:id, :title, :content, :created_at])
+
+    if params[:emotion_ids].present?
+      @dreams = @dreams.joins(:emotions).where(emotions: { id: params[:emotion_ids] }).distinct
+    end
+    render json: @dreams, include: [:emotions]
   end
 
   # POST /dreams/analyze
@@ -115,7 +119,7 @@ class DreamsController < ApplicationController
    
     # 認可されたパラメーターを取得する
     def dream_params
-      params.require(:dream).permit(:title, :content)
+      params.require(:dream).permit(:title, :content, emotion_ids: [])
     end
 
     def set_dream_and_authorize_user

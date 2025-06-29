@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  dream: one
+  emotion: one
+
+two:
+  dream: two
+  emotion: two

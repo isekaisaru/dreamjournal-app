@@ -8,7 +8,7 @@ Rails.application.routes.draw do
             get  'month/:year_month', to: 'dreams#by_month_index', as: :dreams_by_month
         end
     end
-    
+    resources :emotions, only: [:index]
     # 認証関連
     namespace :auth do
       post 'login'
