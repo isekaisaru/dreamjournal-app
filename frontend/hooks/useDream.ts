@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Dream } from "../app/types";
 import { useAuth } from "@/context/AuthContext";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import apiClient from "../lib/apiClient";
 
 export interface DreamInput {
   title: string;
   content?: string;
+  emotion_ids?: number[];
 }
 
 export const useDream = (id?: string) => {
@@ -33,9 +33,7 @@ export const useDream = (id?: string) => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/dreams/${numericId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`/dreams/${numericId}`);
       setDream(response.data);
     } catch (error) {
       console.error("エラー発生:", error);
@@ -62,9 +60,7 @@ export const useDream = (id?: string) => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/dreams`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(`/dreams`);
       setDreams(response.data);
     } catch (error) {
       console.error("夢データ取得エラー:", error);
@@ -81,21 +77,10 @@ export const useDream = (id?: string) => {
 
 
   const createDream = async (dreamData: DreamInput): Promise<boolean> => {
-    const token = await getValidAccessToken();
-    if (!token) {
-      setError("ログインが必要です");
-      setIsUpdating(false);
-      return false;
-    }
     setError(null);
     setIsUpdating(true);
     try {
-      const response = await axios.post(
-        `${API_URL}/dreams`,
-        { dream: dreamData },
-        { headers: { Authorization: `Bearer ${token}`, 
-        'Content-Type': 'application/json' } }
-      );
+      await apiClient.post(`/dreams`, { dream: dreamData });
     } catch (err) {
        console.error("Create dream error:", err);
        let message = "夢の作成に失敗しました";
@@ -118,20 +103,10 @@ export const useDream = (id?: string) => {
       return false;
     }
 
-    const token = await getValidAccessToken();
-    if (!token) {
-      setError("ログインが必要です");
-      setIsUpdating(false);
-      return false;
-    }
     setError(null);
     setIsUpdating(true);
     try {
-      await axios.put(
-        `${API_URL}/dreams/${numericId}`,
-        { dream: dreamData },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiClient.put(`/dreams/${numericId}`, { dream: dreamData });
       await fetchDreamDetail();
     } catch (err) {
       console.error("Update dream error:", err);
@@ -151,16 +126,9 @@ export const useDream = (id?: string) => {
 
 
   const deleteDream = async (deleteId: number): Promise<boolean> => {
-    const token = await getValidAccessToken();
-    if (!token) {
-      setError("ログインが必要です");
-      return false;
-    }
     setError(null);
     try {
-      await axios.delete(`${API_URL}/dreams/${deleteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient.delete(`/dreams/${deleteId}`);
       const currentNumericId = id ? parseInt(id, 10) : null;
       if (!(currentNumericId && currentNumericId === deleteId)) {
           setDreams((prev) => prev.filter((d) => d.id !== deleteId));

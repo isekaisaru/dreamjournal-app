@@ -28,6 +28,19 @@ const DreamCard = ({ dream }: DreamCardProps) => {
         <p className="text-lg md:text-xl font-bold group-hover:text-primary/90 pb-4 h-16 overflow-hidden">
           {displayContent || <span className="text-muted-foreground italic">内容がありません</span>}
         </p>
+
+        {dream.emotions && dream.emotions.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {dream.emotions.map((emotion) => (
+              <span
+                key={emotion.id}
+                className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full"
+              >
+                {emotion.name}
+              </span>
+            ))}
+          </div>
+        )}
         <span className="text-primary group-hover:text-primary/80 transition-colors duration-200 mt-auto self-end">
           続きを読む
         </span>

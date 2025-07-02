@@ -6,6 +6,11 @@ export interface User {
   updated_at: string;
 }
 
+export interface Emotion {
+  id: number;
+  name: string;
+}
+
 export interface Dream {
   id: number;
   title: string;
@@ -13,4 +18,5 @@ export interface Dream {
   userId: number;
   created_at: string;
   updated_at: string;
+  emotions?: Emotion[];
 }
