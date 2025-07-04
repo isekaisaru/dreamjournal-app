@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Dream, Emotion } from "../types";
 import apiClient from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
+import { getEmotionColors } from "@/lib/emotionUtils";
 
 interface DreamFormData {
   title: string;
@@ -58,8 +59,8 @@ export default function DreamForm({ initialData, onSubmit, isLoading = false }: 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-        alert("タイトルを入力してください。");
-        return;
+      toast.error("タイトルを入力してください。");
+      return;
     }
     onSubmit({
         title: title.trim(),
@@ -100,17 +101,24 @@ export default function DreamForm({ initialData, onSubmit, isLoading = false }: 
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {emotions.length > 0 ? (
-              emotions.map((emotion) => (
-                <label key={emotion.id} className="flex items-center space-x-2 p-2 rounded-md bg-background border border-input cursor-pointer hover:bg-muted transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={selectedEmotionIds.includes(emotion.id)}
-                    onChange={() => handleEmotionChange(emotion.id)}
-                    className="form-checkbox h-4 w-4 text-primary focus:ring-ring border-input rounded"
-                  />
-                  <span className="text-sm text-foreground">{emotion.name}</span>
-                </label>
-              ))
+              emotions.map((emotion) => {
+                const isSelected = selectedEmotionIds.includes(emotion.id);
+                const colors = getEmotionColors(emotion.name);
+                return (
+                  <label
+                    key={emotion.id}
+                    className={`flex items-center justify-center p-2 rounded-md border cursor-pointer transition-colors text-sm font-medium ${isSelected ? `${colors.bg} ${colors.border} ${colors.text}` : 'bg-background border-input hover:bg-muted text-foreground'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={isSelected}
+                      onChange={() => handleEmotionChange(emotion.id)}
+                    />
+                    <span className="whitespace-nowrap">{emotion.name}</span>
+                  </label>
+                );
+              })
             ) : (
               <div className="text-muted-foreground col-span-full">感情タグがありません。</div>
             )}

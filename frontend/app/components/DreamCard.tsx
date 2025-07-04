@@ -2,6 +2,7 @@ import React from "react";
 import { Dream } from "@/app/types";
 import Link from "next/link";
 import { format } from "date-fns";
+import { getEmotionColors } from "@/lib/emotionUtils";
 
 type DreamCardProps = {
   dream: Dream;
@@ -29,18 +30,21 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           {displayContent || <span className="text-muted-foreground italic">内容がありません</span>}
         </p>
 
-        {dream.emotions && dream.emotions.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {dream.emotions.map((emotion) => (
-              <span
-                key={emotion.id}
-                className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full"
-              >
-                {emotion.name}
-              </span>
-            ))}
+        {dream.emotions?.length ? (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {dream.emotions.map((emotion) => {
+              const colors = getEmotionColors(emotion.name);
+              return (
+                <span
+                  key={emotion.id}
+                  className={`px-2 py-0.5 text-xs rounded border ${colors.bg} ${colors.text} ${colors.border}`}
+                >
+                  {emotion.name}
+                </span>
+              );
+            })}
           </div>
-        )}
+        ) : null}
         <span className="text-primary group-hover:text-primary/80 transition-colors duration-200 mt-auto self-end">
           続きを読む
         </span>

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-export const ACCESS_TOKEN_KEY = 'access_Token';
-export const REFRESH_TOKEN_KEY = 'refresh_Token';
+export const ACCESS_TOKEN_KEY = 'access_token';
+export const REFRESH_TOKEN_KEY = 'refresh_token';
 
 export async function attemptTokenRefresh(): Promise<string | null> {
   const currentRefreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
