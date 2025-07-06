@@ -2,44 +2,38 @@
 .git/
 .vscode/
 .idea/
+.DS_Store
 
-# Node.jsの依存関係を無視
+# トップレベルの依存関係
 /node_modules/
+/.bundle/
 
-# Railsのビルドアセットを無視
-/public/assets
-/app/assets/builds/*
-!/app/assets/builds/.keep
+# トップレベルのログと一時ファイル
+/log/
+/tmp/
 
-# Dockerコンテナに不要なログや一時ファイルを無視
-/log/*
-/tmp/*
-!/log/.keep
-!/tmp/.keep
+# 環境変数
+*.env
+*.env.*
+!*.env.example
+!*.env.erb
 
-# Backendのログと一時ファイルを無視
-/backend/log/*
-!/backend/log/.keep
-/backend/tmp/*
-!/backend/tmp/.keep
+# === Frontend (Next.js) ===
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/.env.local
 
-# データベース関連のファイルを無視
-/data/db/
+# === Backend (Rails) ===
+/backend/log/
+/backend/tmp/
+/backend/storage/
+/backend/config/master.key
+/backend/public/assets/
+/backend/tmp/pids/
+/backend/tmp/cache/
 
-# 環境変数ファイル（.envファイル）を無視
-/.env*
-!/.env*.erb
-
-# 他の既存の設定はそのまま
-/.bundle
-/config/master.key
-/storage/*
-!/storage/.keep
-/tmp/storage/*
-!/tmp/storage/.keep
-
-# Bootsnap cache files
-backend/tmp/cache/bootsnap/
-
-# Database files
-data/db/
+# === Docker ===
+# データベースのデータディレクトリ全体を無視
+/data/
+/postgres_backup/
