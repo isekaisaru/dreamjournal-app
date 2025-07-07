@@ -3,8 +3,6 @@ services:
     image: postgres
     volumes:
       - ./data/db:/var/lib/postgresql/data
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     env_file:
@@ -19,14 +17,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile  
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
-      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
-      RAILS_ENV: development
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
-
     command: >
       bash -c "rm -f /app/tmp/pids/server.pid && bundle exec rails db:create && bundle exec rails db:migrate && bundle exec rails s -p 3001 -b '0.0.0.0'"
     volumes:
