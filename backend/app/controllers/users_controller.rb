@@ -17,12 +17,9 @@ class UsersController < ApplicationController
         return
       end
 
-      # フロントエンドが必要とする形式で返す
-      render json: {
-        user: result[:user].as_json(only: [:id, :email, :username]), # パスワードなどは含めない
-        access_token: result[:access_token],
-        refresh_token: result[:refresh_token]
-      }, status: :created # status: 201 Created
+      # ログイン時と同様にCookieを設定
+      set_token_cookies(result[:access_token], result[:refresh_token])
+      render json: { user: result[:user].as_json(only: [:id, :email, :username]) }, status: :created
     rescue AuthService::RegistrationError => e
       render json: { error: e.message }, status: :unprocessable_entity
     end

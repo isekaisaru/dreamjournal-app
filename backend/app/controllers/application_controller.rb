@@ -8,15 +8,13 @@ class ApplicationController < ActionController::API
 
   # リクエストを認証する
   def authorize_request
-    header = request.headers['Authorization']
-    token = header&.split(' ')&.last
+    token = cookies[:access_token]
 
-    Rails.logger.info "受け取った Authorization ヘッダー: Bearer [FILTERED]" if Rails.env.development?
-    Rails.logger.info "トークンを受け取り、認証処理を実行" if Rails.env.development?
+    Rails.logger.info "Cookieからアクセストークンを受け取り、認証処理を実行" if Rails.env.development?
 
     if token.nil?
-      Rails.logger.warn "トークンが見つかりません"
-      render json: { error: 'トークンが見つかりません' }, status: :unauthorized
+      Rails.logger.warn "Cookieにアクセストークンが見つかりません"
+      render json: { error: '認証されていません。ログインしてください。' }, status: :unauthorized
       return
     end
 
@@ -42,11 +40,27 @@ class ApplicationController < ActionController::API
     @current_user = User.find_by(id: user_id)
 
     if @current_user.nil?
-      Rails.logger.warn "認証されたユーザーが見つかりません。 ID: #{user_id} | トークン: #{token}"
+      Rails.logger.warn "認証されたユーザーが見つかりません。 ID: #{user_id}"
       render json: { error: '認証エラー: 指定されたユーザーIDのユーザーが見つかりません。' }, status: :unauthorized
       return
     end
 
     Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
+  end
+
+  def set_token_cookies(access_token, refresh_token)
+    cookies[:access_token] = {
+      value: access_token,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :lax
+    }
+    cookies[:refresh_token] = {
+      value: refresh_token,
+      httponly: true,
+      secure: Rails.env.production?,
+      same_site: :lax,
+      path: '/api/v1/auth'
+    }
   end
 end

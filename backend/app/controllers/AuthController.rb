@@ -16,11 +16,8 @@ class AuthController < ApplicationController
         return
       end
 
-      render json: {
-        access_token: result[:access_token],
-        refresh_token: result[:refresh_token],
-        user: result[:user].as_json(only: [:id, :email, :username])
-      }, status: :ok
+      set_token_cookies(result[:access_token], result[:refresh_token])
+      render json: { user: result[:user].as_json(only: [:id, :email, :username]) }, status: :ok
     rescue AuthService::InvalidCredentialsError => e
       render json: { error: e.message }, status: :unauthorized
     rescue StandardError => e # その他の予期せぬエラー
@@ -36,8 +33,7 @@ class AuthController < ApplicationController
 
   # トークンをリフレッシュする
   def refresh
-    # リクエストボディやパラメータからリフレッシュトークンを取得
-    refresh_token = params[:refresh_token]
+    refresh_token = cookies[:refresh_token]
 
     Rails.logger.info "受け取ったリフレッシュトークン: #{refresh_token.present? ? '[FILTERED]' : '[なし]'}" if Rails.env.development?
     if refresh_token.nil?
@@ -49,11 +45,8 @@ class AuthController < ApplicationController
     begin
       result = AuthService.refresh_token(refresh_token)
       Rails.logger.info "新しいアクセストークンを発行: #{result[:access_token]}" if Rails.env.development?
-      # 新しいアクセストークンとリフレッシュトークンを返す
-      render json: {
-        access_token: result[:access_token],
-        refresh_token: result[:refresh_token] # 新しいリフレッシュトークンも返す
-      }, status: :ok
+      set_token_cookies(result[:access_token], result[:refresh_token]) 
+      render json: { message: "トークンを更新しました" }, status: :ok
     rescue AuthService::InvalidRefreshTokenError => e
       Rails.logger.warn "無効なリフレッシュトークン: #{e.message}"
       render json: { error: e.message }, status: :unauthorized
@@ -66,7 +59,7 @@ class AuthController < ApplicationController
   # ログアウト
   # リフレッシュトークンを受け取り、それを無効化する方式に変更
   def logout
-    refresh_token = params[:refresh_token] # リクエストボディやパラメータから取得
+    refresh_token = cookies[:refresh_token]
 
     unless refresh_token
       Rails.logger.warn "ログアウトリクエストにリフレッシュトークンが含まれていません"
@@ -79,6 +72,8 @@ class AuthController < ApplicationController
       user = AuthService.find_user_by_refresh_token(refresh_token)
       # バリデーションとコールバックをスキップしてリフレッシュトークンのみを無効化
       user.update_column(:refresh_token, nil)
+      cookies.delete(:access_token)
+      cookies.delete(:refresh_token, path: '/api/v1/auth')
       render json: { message: "ログアウトしました" }, status: :ok
     rescue AuthService::InvalidRefreshTokenError => e
       # 無効なリフレッシュトークンが指定された場合 (既にログアウト済み、または不正なトークン)
@@ -94,10 +89,9 @@ class AuthController < ApplicationController
 
   # トークンの検証
   def verify
-    header = request.headers['Authorization']
-    return render json: { error: 'Authorization ヘッダーが必要です。'}, status: :bad_request unless header
+    token = cookies[:access_token]
+    return render json: { error: 'アクセストークンが見つかりません。'}, status: :unauthorized unless token
 
-    token = header.split(' ').last
     decoded = AuthService.decode_token(token)
 
     if decoded.nil?
@@ -127,4 +121,5 @@ class AuthController < ApplicationController
     Rails.logger.error "トークン検証中に予期せぬエラーが発生: #{e.message}\n#{e.backtrace.join("\n")}"
     render json: { error: 'トークン検証中にエラーが発生しました' }, status: :internal_server_error
   end
+
 end
