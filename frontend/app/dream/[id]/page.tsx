@@ -5,8 +5,7 @@ import DeleteButton from "../../components/DeleteButton";
 import { useDream, DreamInput } from "../../../hooks/useDream";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import axios from "axios";
-import  { useAuth } from "@/context/AuthContext";
+import apiClient from "@/lib/apiClient";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +31,6 @@ export default function EditDreamPage() {
   } = useDream(idFromPath);
 
   const router = useRouter();
-  const { getValidAccessToken } = useAuth();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,25 +62,15 @@ export default function EditDreamPage() {
     setIsAnalyzing(true);
     setAnalysisResult("");
     try {
-      const token = await getValidAccessToken();
-      if (!token) {
-        setAnalysisResult(
-          "分析を開始できませんでした。再度ログインしてください。"
-        );
-        return;
-      }
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/dreams/${idFromPath}/analyze`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await apiClient.post(
+        `/dreams/${idFromPath}/analyze`,
+        {}
       );
       setAnalysisResult(response.data.analysis);
     } catch (err) {
       console.error("分析エラー:", err);
       let errorMessage = "分析中にエラーが発生しました。";
-      if (axios.isAxiosError(err) && err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err instanceof Error) {
+      if (err instanceof Error) {
         errorMessage = err.message;
       }
       setAnalysisResult(errorMessage);
@@ -117,17 +105,29 @@ export default function EditDreamPage() {
   };
 
   if (dreamLoading)
-    return <p className="text-center mt-10 text-foreground">夢の情報を読み込み中...</p>;
+    return (
+      <p className="text-center mt-10 text-foreground">
+        夢の情報を読み込み中...
+      </p>
+    );
 
   if (error && !dream)
-    return <p className="text-destructive text-center mt-10">エラー: {error}</p>;
+    return (
+      <p className="text-destructive text-center mt-10">エラー: {error}</p>
+    );
 
   if (!dream)
-    return <p className="text-center mt-10 text-foreground">指定された夢が見つかりません。</p>;
+    return (
+      <p className="text-center mt-10 text-foreground">
+        指定された夢が見つかりません。
+      </p>
+    );
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
-      <h1 className="text-3xl font-bold mb-6 text-foreground">夢の詳細・編集</h1>
+      <h1 className="text-3xl font-bold mb-6 text-foreground">
+        夢の詳細・編集
+      </h1>
 
       <DreamForm
         initialData={dream}
@@ -136,7 +136,9 @@ export default function EditDreamPage() {
       />
 
       <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 text-card-foreground">夢の分析</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-card-foreground">
+          夢の分析
+        </h2>
         {dream.content && dream.content.trim() !== "" ? (
           <button
             onClick={handleAnalyze}

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Register() {
@@ -11,15 +11,22 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/home");
+    }
+  }, [isLoggedIn, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+
     if (!email || !username || !password || !passwordConfirmation) {
       setError("すべてのフィールドを入力してください。");
       setIsLoading(false);
@@ -32,18 +39,11 @@ export default function Register() {
     }
     if (password.length < 6) {
       setError("パスワードは6文字以上である必要があります。");
-      setIsLoading(false);
       return;
     }
     try {
-      console.log("Submitting registration data:", {
-        email,
-        username,
-        password,
-        password_confirmation: passwordConfirmation,
-      });
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/register`,
+      const response = await apiClient.post(
+        `/register`,
         {
           user: {
             email,
@@ -53,36 +53,21 @@ export default function Register() {
           },
         }
       );
-      // バックエンドから返されるアクセストークンとリフレッシュトークンを正しく取得
-      const { access_token, refresh_token, user: userData } = response.data;
-      
-      if (access_token && refresh_token && userData) {
-        console.log("Access Token received:", access_token);
-        console.log("Refresh Token received:", refresh_token);
-        console.log("User data received:", userData);
 
-        await login(access_token, refresh_token, userData);
-        sessionStorage.setItem("registrationSuccess", "true");
-        router.push("/home");
+      const { user } = response.data;
+      if (user) {
+        login(user);
       } else {
-        console.error("Registration response missing tokens or user data:", response.data);
-        setError("登録処理中にエラーが発生しました。必要な情報がサーバーから返されませんでした。");
+        setError("登録後のユーザー情報取得に失敗しました。");
       }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      if (error.response && error.response.data) {
-        const backendError = error.response.data.error || error.response.data.errors;
-        setError(Array.isArray(backendError) ? backendError.join(", ") : backendError || "登録に失敗しました。");
-      } else if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        setError(error.response.data.message); // 別のエラーメッセージがある場合
-      } else {
-        console.error("General error:", error);
-        setError("登録に失敗しました。もう一度お試しください。");
-      }
+    } catch (err: any) {
+      const backendError =
+        err.response?.data?.errors ||
+        err.response?.data?.error ||
+        "登録に失敗しました。";
+      setError(
+        Array.isArray(backendError) ? backendError.join(", ") : backendError
+      );
     } finally {
       setIsLoading(false);
     }
@@ -149,9 +134,7 @@ export default function Register() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
             {isLoading ? "登録中..." : "登録"}
           </button>

@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import { Dream } from "../app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "../lib/apiClient";
@@ -18,14 +17,13 @@ export const useDream = (id?: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
-  const { getValidAccessToken } = useAuth();
+  const { isLoggedIn } = useAuth();
 
   const fetchDreamDetail = useCallback(async () => {
     const numericId = id ? parseInt(id, 10) : null;
     if (!numericId) return;
 
-    const token = await getValidAccessToken();
-    if (!token) {
+    if (!isLoggedIn) {
       setError("ログインが必要です");
       setIsLoading(false);
       return;
@@ -38,21 +36,18 @@ export const useDream = (id?: string) => {
     } catch (error) {
       console.error("エラー発生:", error);
       let message = "夢の詳細データ取得に失敗しました";
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        message = "指定された夢が見つかりません。";
-      } else if (axios.isAxiosError(error)) {
-        message = error.response?.data?.error || message;
+      if (error instanceof Error) {
+        message = error.message;
       }
       setError(message);
       setDream(null);
     } finally {
       setIsLoading(false);
     }
-  }, [id, getValidAccessToken]);
+  }, [id, isLoggedIn]);
 
    const fetchDreams = useCallback(async () => {
-    const token = await getValidAccessToken();
-    if (!token) {
+    if (!isLoggedIn) {
       setError("ログインが必要です");
       setIsLoading(false);
       return;
@@ -65,15 +60,15 @@ export const useDream = (id?: string) => {
     } catch (error) {
       console.error("夢データ取得エラー:", error);
       let message = "夢のデータを取得できませんでした";
-      if (axios.isAxiosError(error)) {
-        message = error.response?.data?.error || message;
+      if (error instanceof Error) {
+        message = error.message;
       }
       setError(message);
       setDreams([]);
     } finally {
       setIsLoading(false);
     }
-  }, [getValidAccessToken]);
+  }, [isLoggedIn]);
 
 
   const createDream = async (dreamData: DreamInput): Promise<boolean> => {
@@ -84,9 +79,8 @@ export const useDream = (id?: string) => {
     } catch (err) {
        console.error("Create dream error:", err);
        let message = "夢の作成に失敗しました";
-       if (axios.isAxiosError(err) && err.response?.data?.error) {
-           const backendError = err.response.data.error;
-           message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
+       if (err instanceof Error) {
+           message = err.message;
        }
        setError(message);
        return false;
@@ -111,9 +105,8 @@ export const useDream = (id?: string) => {
     } catch (err) {
       console.error("Update dream error:", err);
        let message = "夢の更新に失敗しました";
-       if (axios.isAxiosError(err) && err.response?.data?.error) {
-           const backendError = err.response.data.error;
-           message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
+       if (err instanceof Error) {
+           message = err.message;
        }
       setError(message);
       return false;
@@ -136,9 +129,8 @@ export const useDream = (id?: string) => {
     } catch (err) {
        console.error("Delete dream error:", err);
        let message = "夢の削除に失敗しました";
-       if (axios.isAxiosError(err) && err.response?.data?.error) {
-           const backendError = err.response.data.error;
-           message = Array.isArray(backendError) ? backendError.join(', ') : backendError;
+       if (err instanceof Error) {
+           message = err.message;
        }
        setError(message);
        return false;

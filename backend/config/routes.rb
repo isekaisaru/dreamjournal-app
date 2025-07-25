@@ -13,7 +13,7 @@ Rails.application.routes.draw do
     namespace :auth do
       post 'login'
       get 'me'
-      post 'verify'
+      get 'verify'
       post 'refresh'
       post 'logout'
     end

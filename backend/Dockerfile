@@ -7,7 +7,6 @@ FROM ruby:${RUBY_VERSION}-bullseye AS Builder
 # 環境変数の設定
 ENV RAILS_ENV=production \
     BUNDLE_WITHOUT="development test" \
-    BUNDLE_FROZEN=true \
     DEBIAN_FRONTEND=noninteractive
 
 # 作業ディレクトリの設定
@@ -34,11 +33,6 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends \
     postgresql-client \
     git \
     && rm -rf /var/lib/apt/lists/*
-
-# Gemfileをコピーして依存関係をインストール
-COPY Gemfile Gemfile.lock ./
-RUN bundle config set without 'development test' && \
-    bundle install --jobs 4 --retry 3
 
 # アプリケーションコードをコピー
 COPY . ./

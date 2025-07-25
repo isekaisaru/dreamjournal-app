@@ -54,12 +54,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setError(null);
       console.log("AuthContext: Local cleanup done, redirecting to /login");
       router.push("/login");
+      router.refresh();
     }
   }, [router]);
 
 const deleteUser = useCallback(async () => {
     console.log("AuthContext: deleteUser initiated");
     if (!userId) {
+      console.error("AuthContext: User ID not found for deletion.");
       setError("ユーザーIDが見つからないため、アカウントを削除できません。");
       throw new Error("User ID not found for deletion");
     }
@@ -84,8 +86,9 @@ const deleteUser = useCallback(async () => {
       setError(null);
       console.log("AuthContext: Login successful, state updated.");
       router.push("/home");
+      router.refresh();
     },
-    [router, setIsLoggedIn, setUserId, setUser]
+    [router]
   );
 
   useEffect(() => {
@@ -125,7 +128,7 @@ const deleteUser = useCallback(async () => {
     return () => {
       isMounted = false;
     };
-  }, [pathname, router]);
+  }, [pathname]);
 
   return (
     <AuthContext.Provider

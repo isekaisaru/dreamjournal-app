@@ -5,9 +5,8 @@ import "./globals.css";
 import Header from "./Header";
 import Footer from "./Footer";
 import { Suspense } from "react";
-import { Toaster } from "react-hot-toast";
 import Loading from "./loading";
-import { AuthProvider } from "../context/AuthContext";
+import { Providers } from "./providers";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 
@@ -23,17 +22,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className="min-h-full">
-      <body className={`${notoSansJP.className} px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}>
-        <AuthProvider>
+      <body
+        className={`${notoSansJP.className} px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}
+      >
+        <Providers>
           <Header />
           <div className="flex flex-col flex-grow">
             <main className="flex-grow">
-              <Toaster position="top-center" />
               <Suspense fallback={<Loading />}>{children}</Suspense>
             </main>
             <Footer />
           </div>
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

@@ -21,14 +21,6 @@ module App
       raise "POSTGRES_PASSWORD environment variable is not set."
     end
 
-    # CORS設定を追加
-    config.middleware.insert_before 0, Rack::Cors do
-      allow do
-        origins 'http://localhost:3000'
-        resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options, :head]
-      end
-    end
-
     config.autoload_paths << Rails.root.join('lib')
     config.debug_exception_response_format = :api
 

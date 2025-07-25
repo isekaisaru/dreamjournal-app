@@ -18,7 +18,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile  
     command: >
-      bash -c "rm -f /app/tmp/pids/server.pid && bundle exec rails db:create && bundle exec rails db:migrate && bundle exec rails s -p 3001 -b '0.0.0.0'"
+      bash -c "bundle install && rm -f /app/tmp/pids/server.pid && bundle exec rails db:create && bundle exec rails db:migrate && bundle exec rails db:seed && bundle exec rails s -p 3001 -b '0.0.0.0'"
     volumes:
       - ./backend:/app
     ports:
@@ -43,4 +43,4 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:3001
     command: >
-      sh -c "yarn install && yarn build && yarn start"
+      sh -c "yarn install && yarn dev"

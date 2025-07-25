@@ -10,9 +10,10 @@ type DreamCardProps = {
 
 const DreamCard = ({ dream }: DreamCardProps) => {
   const MAX_CONTENT_LENGTH = 70;
-  const displayContent = dream.content && dream.content.length > MAX_CONTENT_LENGTH
-    ? dream.content.substring(0, MAX_CONTENT_LENGTH) + "..."
-    : dream.content || "";
+  const displayContent =
+    dream.content && dream.content.length > MAX_CONTENT_LENGTH
+      ? dream.content.substring(0, MAX_CONTENT_LENGTH) + "..."
+      : dream.content || "";
   return (
     <Link
       href={`dream/${dream.id}`}
@@ -27,7 +28,11 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           {format(new Date(dream.created_at), "yyyy-MM-dd")}
         </p>
         <p className="text-lg md:text-xl font-bold group-hover:text-primary/90 pb-4 h-16 overflow-hidden">
-          {displayContent || <span className="text-muted-foreground italic">内容がありません</span>}
+          {displayContent || (
+            <span className="text-muted-foreground italic">
+              内容がありません
+            </span>
+          )}
         </p>
 
         {dream.emotions?.length ? (

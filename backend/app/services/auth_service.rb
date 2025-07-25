@@ -5,7 +5,10 @@ class AuthService
   class InvalidRefreshTokenError < StandardError; end
   class RegistrationError < StandardError; end
 
-  SECRET_KEY = Rails.application.credentials.secret_key_base
+  SECRET_KEY = ENV['JWT_SECRET_KEY']
+  if SECRET_KEY.blank? && Rails.env.production?
+    raise 'JWT_SECRET_KEY environment variable is not set for production.'
+  end
 
   # ログイン処理
   def self.login(email, password)

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
@@ -27,25 +27,24 @@ export default function Login() {
       return;
     }
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        { email, password }
-      );
-     const { access_token, refresh_token, user } = response.data;
-     if (access_token && refresh_token && user) {
-        login(access_token, refresh_token, user);
-     } else {
-      console.error("Login response missing tokens or user data:", response.data);
-      setPageError("ログイン情報の取得に失敗しました。");
-     }
+      const response = await apiClient.post(`/auth/login`, { email, password });
+      const { user } = response.data;
+      if (user) {
+        login(user); // 新しいlogin関数を呼び出す
+      } else {
+        console.error("Login response missing user data:", response.data);
+        setPageError("ログイン情報の取得に失敗しました。");
+      }
     } catch (apiError: any) {
       console.error("ログインAPI呼び出しエラー:", apiError);
-      const backendErrorMessage: string = apiError.response?.data?.error || apiError.response?.data?.message || "ログインに失敗しました。もう一度お試しください。";
+      const backendErrorMessage: string =
+        apiError.response?.data?.error ||
+        apiError.response?.data?.message ||
+        "ログインに失敗しました。もう一度お試しください。";
       setPageError(backendErrorMessage);
     } finally {
       setIsLoading(false);
     }
-  
   };
 
   return (
@@ -91,7 +90,9 @@ export default function Login() {
             {isLoading ? "ログイン中..." : "ログイン"} {}
           </button>
         </div>
-        {pageError && <p className="text-destructive mt-4 text-center">{pageError}</p>}
+        {pageError && (
+          <p className="text-destructive mt-4 text-center">{pageError}</p>
+        )}
       </form>
     </div>
   );

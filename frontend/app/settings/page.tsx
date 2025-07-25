@@ -33,7 +33,7 @@ const SettingsPage = () => {
   };
   if (isLoggedIn === null) {
     return <Loading />;
-  };
+  }
 
   return (
     <div className="min-h-screen p-6 bg-background text-foreground">

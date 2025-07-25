@@ -4,7 +4,6 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
-import Loading from "../loading";
 
 export default function TrialPage() {
   const [dreams, setDreams] = useState<
@@ -34,11 +33,13 @@ export default function TrialPage() {
           password_confirmation: "password123",
         },
       });
-      const { access_token, refresh_token, user: userData } = response.data;
-      if (access_token && refresh_token && userData) {
-        login(access_token, refresh_token, userData);
+      const { user: userData } = response.data;
+      if (userData) {
+        login(userData);
       } else {
-        throw new Error("トライアルユーザー作成時のレスポンスに必要なデータが含まれていません。");
+        throw new Error(
+          "トライアルユーザー作成時のレスポンスに必要なデータが含まれていません。"
+        );
       }
       setErrorMessage(null);
     } catch (error) {
@@ -135,11 +136,15 @@ export default function TrialPage() {
             </button>
           </form>
 
-          <h3 className="text-xl font-semibold mb-2 text-foreground">記録された夢</h3>
+          <h3 className="text-xl font-semibold mb-2 text-foreground">
+            記録された夢
+          </h3>
           <ul className="list-disc pl-5">
             {dreams.map((dream, index) => (
               <li key={index} className="mb-2">
-                <h4 className="text-lg font-bold text-foreground">{dream.title}</h4>
+                <h4 className="text-lg font-bold text-foreground">
+                  {dream.title}
+                </h4>
                 <p className="text-muted-foreground">{dream.description}</p>
               </li>
             ))}

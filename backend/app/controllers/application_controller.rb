@@ -1,6 +1,7 @@
 require_relative '../services/auth_service'
 
 class ApplicationController < ActionController::API
+  include ActionController::Cookies
   before_action :authorize_request
   attr_reader :current_user
 
@@ -60,7 +61,7 @@ class ApplicationController < ActionController::API
       httponly: true,
       secure: Rails.env.production?,
       same_site: :lax,
-      path: '/api/v1/auth'
+      path: '/'
     }
   end
 end
