@@ -88,7 +88,7 @@ const deleteUser = useCallback(async () => {
       router.push("/home");
       router.refresh();
     },
-    [router]
+    [router, setUser, setUserId, setIsLoggedIn, setError]
   );
 
   useEffect(() => {
@@ -115,12 +115,6 @@ const deleteUser = useCallback(async () => {
           setIsLoggedIn(false);
           setUser(null);
           setUserId(null);
-
-          const publicPaths = ["/login", "/register", "/trial"];
-          if (!publicPaths.includes(pathname)) {
-            console.log("AuthContext: Not on public path and determined unauthenticated, redirecting to /login from useEffect");
-            router.push("/login");
-          }
         }
       }
     };
