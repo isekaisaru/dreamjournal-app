@@ -1,4 +1,3 @@
-import { Button } from "@/app/components/ui/button";
 import Link from "next/link";
 import { getServerAuth } from "@/lib/server-auth";
 import AuthNav from "./components/AuthNav";

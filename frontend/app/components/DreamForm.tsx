@@ -41,7 +41,7 @@ export default function DreamForm({
       setIsFetchingEmotions(true);
       try {
         const response = await apiClient.get<Emotion[]>("/emotions");
-        setEmotions(response.data);
+        setEmotions(response);
       } catch (error) {
         console.error("感情一覧の取得に失敗しました:", error);
         toast.error("感情一覧の取得に失敗しました。");

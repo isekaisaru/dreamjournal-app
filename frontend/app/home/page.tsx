@@ -4,8 +4,8 @@ import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 import { Dream } from "@/app/types";
 import { cookies } from "next/headers";
+import { getMyDreams, getMe, User } from "@/lib/apiClient";
 import { redirect } from "next/navigation";
-import apiClient from "@/lib/apiClient";
 import Loading from "../loading";
 
 /**
@@ -21,11 +21,10 @@ import Loading from "../loading";
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
-      const date = new Date(dream.created_at); // 夢の日付をDateオブジェクトに変換
-      const yearMonth = `${date.getFullYear()}-${(
-        "0" +
-        (date.getMonth() + 1)
-      ).slice(-2)}`; //"2024-01"の形式
+      const date = new Date(dream.created_at);
+      const yearMonth = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
 
       if (!groupedDreams[yearMonth]) {
         groupedDreams[yearMonth] = [];
@@ -38,29 +37,6 @@ function groupDreamsByMonth(dreams: Dream[]) {
   );
 }
 
-async function fetchDreams(
-  token: string,
-  searchParams: { [key: string]: string | string[] | undefined }
-) {
-  const params: Record<string, string> = {};
-  if (searchParams.query) params.query = String(searchParams.query);
-  if (searchParams.startDate)
-    params.start_date = String(searchParams.startDate);
-  if (searchParams.endDate) params.end_date = String(searchParams.endDate);
-  // apiClientはwithCredentials: trueなのでCookieは自動で送られるが、
-  // サーバーコンポーネントではCookieヘッダーを手動で付与する必要がある
-  const response = await apiClient.get(`/dreams/my_dreams`, {
-    headers: { Cookie: `access_token=${token}` },
-    params,
-  });
-  return response.data;
-}
-async function fetchUser(token: string) {
-  const response = await apiClient.get(`/auth/me`, {
-    headers: { Cookie: `access_token=${token}` },
-  });
-  return response.data.user;
-}
 export default async function HomePage({
   searchParams,
 }: {
@@ -68,24 +44,40 @@ export default async function HomePage({
 }) {
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
+
   if (!token) {
     redirect("/login");
   }
 
-  // searchParamsをawaitで解決
   const resolvedSearchParams = await searchParams;
+  const queryParams = new URLSearchParams();
+  if (resolvedSearchParams.query)
+    queryParams.set("query", String(resolvedSearchParams.query));
+  if (resolvedSearchParams.startDate)
+    queryParams.set("start_date", String(resolvedSearchParams.startDate));
+  if (resolvedSearchParams.endDate)
+    queryParams.set("end_date", String(resolvedSearchParams.endDate));
 
-  // データ取得を並列実行
-  const [dreams, user] = await Promise.all([
-    fetchDreams(token, resolvedSearchParams),
-    fetchUser(token),
-  ]).catch((error) => {
+  let dreams: Dream[] = [];
+  let user: User | null = null;
+  let errorMessage: string | null = null;
+
+  try {
+    [dreams, user] = await Promise.all([
+      getMyDreams(token, queryParams),
+      getMe(token),
+    ]);
+  } catch (error) {
+    // fetch に失敗した場合、特にトークンが無効(401)な場合は、
+    // ログインページにリダイレクトするのが安全。
+    if (error instanceof Error && error.message.includes("401")) {
+      redirect("/login");
+    }
     console.error("Error fetching data on server:", error);
-    // エラーが発生した場合は、空のデータとエラーメッセージを返す
-    return [[], null];
-  });
+    errorMessage =
+      "データの取得に失敗しました。ページを再読み込みしてください。";
+  }
 
-  const errorMessage = !user ? "データの取得に失敗しました。" : null;
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);
 

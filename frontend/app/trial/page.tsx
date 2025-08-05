@@ -1,9 +1,10 @@
 "use client";
 
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import { User } from "@/app/types";
 
 export default function TrialPage() {
   const [dreams, setDreams] = useState<
@@ -25,7 +26,7 @@ export default function TrialPage() {
       console.log("API URL:", apiUrl);
 
       // トライアルユーザーのデータを送信
-      const response = await axios.post(`${apiUrl}/trial_users`, {
+      const response = await apiClient.post<{ user: User }>("/trial_users", {
         trial_user: {
           name: "Test User",
           email: "test@example.com",
@@ -33,9 +34,13 @@ export default function TrialPage() {
           password_confirmation: "password123",
         },
       });
-      const { user: userData } = response.data;
+      const userData = response.user;
       if (userData) {
-        login(userData);
+        // login関数はidがstringであることを期待しているため、変換します
+        login({
+          ...userData,
+          id: String(userData.id),
+        });
       } else {
         throw new Error(
           "トライアルユーザー作成時のレスポンスに必要なデータが含まれていません。"

@@ -17,8 +17,10 @@ export default function DreamByMonthPage() {
   const fetchDreamsByMonth = useCallback(async () => {
     if (yearMonth && isLoggedIn) {
       try {
-        const response = await apiClient.get(`/dreams/month/${yearMonth}`);
-        setDreams(response.data);
+        const response = await apiClient.get<Dream[]>(
+          `/dreams/month/${yearMonth}`
+        );
+        setDreams(response);
         setErrorMessage(null);
       } catch (error) {
         console.error("Error fetching dreams by month:", error);

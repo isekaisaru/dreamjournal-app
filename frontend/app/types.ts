@@ -20,3 +20,13 @@ export interface Dream {
   updated_at: string;
   emotions?: Emotion[];
 }
+export type LoginCredentials = {
+  username: string;
+  password: string;
+};
+
+export type RegisterCredentials = {
+  username: string;
+  password: string;
+  password_confirmation: string;
+};

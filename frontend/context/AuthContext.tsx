@@ -2,10 +2,10 @@
 
 import React, {
   createContext,
-  useState,
   useContext,
   useEffect,
   useCallback,
+  useState,
   ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [router]);
 
-const deleteUser = useCallback(async () => {
+  const deleteUser = useCallback(async () => {
     console.log("AuthContext: deleteUser initiated");
     if (!userId) {
       console.error("AuthContext: User ID not found for deletion.");
@@ -73,7 +73,9 @@ const deleteUser = useCallback(async () => {
       await logout();
     } catch (error) {
       console.error("AuthContext: User deletion API call failed:", error);
-      setError("アカウントの削除に失敗しました。サーバーエラーが発生した可能性があります。");
+      setError(
+        "アカウントの削除に失敗しました。サーバーエラーが発生した可能性があります。"
+      );
       throw error;
     }
   }, [userId, setError, logout]);
@@ -94,14 +96,20 @@ const deleteUser = useCallback(async () => {
   useEffect(() => {
     let isMounted = true;
     const checkAuthStatus = async () => {
-      console.log("AuthContext: useEffect - Checking auth status...", { pathname });
+      console.log("AuthContext: useEffect - Checking auth status...", {
+        pathname,
+      });
       // ページ遷移時に認証状態を確認するAPIを叩く
       try {
-        // /auth/verify はCookieを元にユーザー情報を返す
-        const response = await apiClient.get("/auth/verify");
-        if (response.status === 200 && response.data.user) {
-          setUser(response.data.user);
-          setUserId(response.data.user.id);
+        // apiClient.getにレスポンスの型<{ user: ... }>を指定します
+        const response = await apiClient.get<{
+          user: { id: number; username: string; email?: string };
+        }>("/auth/verify");
+
+        // responseとresponse.userの存在を確認します
+        if (response && response.user) {
+          setUser({ ...response.user, id: String(response.user.id) });
+          setUserId(String(response.user.id)); // idを文字列に変換
           setIsLoggedIn(true);
         } else {
           // レスポンスが期待通りでない場合もエラーとして扱う

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import apiClient from "@/lib/apiClient";
+import { User } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
@@ -27,12 +28,18 @@ export default function Login() {
       return;
     }
     try {
-      const response = await apiClient.post(`/auth/login`, { email, password });
-      const { user } = response.data;
-      if (user) {
-        login(user); // 新しいlogin関数を呼び出す
+      const response = await apiClient.post<{ user: User }>(`/auth/login`, {
+        email,
+        password,
+      });
+      if (response && response.user) {
+        // AuthContextはidがstringであることを期待しているため、変換します
+        login({
+          ...response.user,
+          id: String(response.user.id),
+        });
       } else {
-        console.error("Login response missing user data:", response.data);
+        console.error("Login response missing user data:", response);
         setPageError("ログイン情報の取得に失敗しました。");
       }
     } catch (apiError: any) {

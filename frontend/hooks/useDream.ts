@@ -31,8 +31,9 @@ export const useDream = (id?: string) => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await apiClient.get(`/dreams/${numericId}`);
-      setDream(response.data);
+      // apiClient.getに型を指定: 単一のDreamオブジェクトを返すAPI
+      const dream = await apiClient.get<Dream>(`/dreams/${numericId}`);
+      setDream(dream);
     } catch (error) {
       console.error("エラー発生:", error);
       let message = "夢の詳細データ取得に失敗しました";
@@ -46,7 +47,7 @@ export const useDream = (id?: string) => {
     }
   }, [id, isLoggedIn]);
 
-   const fetchDreams = useCallback(async () => {
+  const fetchDreams = useCallback(async () => {
     if (!isLoggedIn) {
       setError("ログインが必要です");
       setIsLoading(false);
@@ -55,8 +56,9 @@ export const useDream = (id?: string) => {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await apiClient.get(`/dreams`);
-      setDreams(response.data);
+      // apiClient.getに型を指定: Dreamの配列を返すAPI
+      const dreams = await apiClient.get<Dream[]>(`/dreams`);
+      setDreams(dreams);
     } catch (error) {
       console.error("夢データ取得エラー:", error);
       let message = "夢のデータを取得できませんでした";
@@ -70,20 +72,19 @@ export const useDream = (id?: string) => {
     }
   }, [isLoggedIn]);
 
-
   const createDream = async (dreamData: DreamInput): Promise<boolean> => {
     setError(null);
     setIsUpdating(true);
     try {
       await apiClient.post(`/dreams`, { dream: dreamData });
     } catch (err) {
-       console.error("Create dream error:", err);
-       let message = "夢の作成に失敗しました";
-       if (err instanceof Error) {
-           message = err.message;
-       }
-       setError(message);
-       return false;
+      console.error("Create dream error:", err);
+      let message = "夢の作成に失敗しました";
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      setError(message);
+      return false;
     } finally {
       setIsUpdating(false);
     }
@@ -104,10 +105,10 @@ export const useDream = (id?: string) => {
       await fetchDreamDetail();
     } catch (err) {
       console.error("Update dream error:", err);
-       let message = "夢の更新に失敗しました";
-       if (err instanceof Error) {
-           message = err.message;
-       }
+      let message = "夢の更新に失敗しました";
+      if (err instanceof Error) {
+        message = err.message;
+      }
       setError(message);
       return false;
     } finally {
@@ -117,27 +118,25 @@ export const useDream = (id?: string) => {
     return true;
   };
 
-
   const deleteDream = async (deleteId: number): Promise<boolean> => {
     setError(null);
     try {
       await apiClient.delete(`/dreams/${deleteId}`);
       const currentNumericId = id ? parseInt(id, 10) : null;
       if (!(currentNumericId && currentNumericId === deleteId)) {
-          setDreams((prev) => prev.filter((d) => d.id !== deleteId));
+        setDreams((prev) => prev.filter((d) => d.id !== deleteId));
       }
     } catch (err) {
-       console.error("Delete dream error:", err);
-       let message = "夢の削除に失敗しました";
-       if (err instanceof Error) {
-           message = err.message;
-       }
-       setError(message);
-       return false;
+      console.error("Delete dream error:", err);
+      let message = "夢の削除に失敗しました";
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      setError(message);
+      return false;
     }
     return true;
   };
-
 
   useEffect(() => {
     if (id) {

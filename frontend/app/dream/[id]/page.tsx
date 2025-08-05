@@ -62,11 +62,11 @@ export default function EditDreamPage() {
     setIsAnalyzing(true);
     setAnalysisResult("");
     try {
-      const response = await apiClient.post(
+      const response = await apiClient.post<{ analysis: string }>(
         `/dreams/${idFromPath}/analyze`,
         {}
       );
-      setAnalysisResult(response.data.analysis);
+      setAnalysisResult(response.analysis);
     } catch (err) {
       console.error("分析エラー:", err);
       let errorMessage = "分析中にエラーが発生しました。";

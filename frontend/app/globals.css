@@ -86,9 +86,9 @@
   * {
     @apply border-border;
   }
-      html {
-        height: 100%;
-      }
+  html {
+    height: 100%;
+  }
   body {
     @apply bg-background text-foreground flex flex-col min-h-screen;
     margin: 0;

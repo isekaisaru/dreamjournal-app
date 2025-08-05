@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { User } from "@/lib/server-auth";
-import apiClient from "@/lib/apiClient";
+import { clientLogout } from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
 
 interface AuthNavProps {
@@ -12,12 +12,12 @@ interface AuthNavProps {
   isAuthenticated: boolean;
 }
 
-export default function AuthNav({ user, isAuthenticated }: AuthNavProps) {
+export default function AuthNav({ isAuthenticated }: AuthNavProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
     try {
-      await apiClient.post("/auth/logout");
+      await clientLogout();
       // Refresh the current route to re-run Server Components and update auth state
       router.refresh();
     } catch (error: any) {

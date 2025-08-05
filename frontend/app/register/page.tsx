@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
+import { User } from "@/app/types";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -42,21 +43,19 @@ export default function Register() {
       return;
     }
     try {
-      const response = await apiClient.post(
-        `/register`,
-        {
-          user: {
-            email,
-            username,
-            password,
-            password_confirmation: passwordConfirmation,
-          },
-        }
-      );
+      // apiClient.postにレスポンスの型 <{ user: User }> を指定します
+      const response = await apiClient.post<{ user: User }>(`/auth/register`, {
+        user: {
+          email,
+          username,
+          password,
+          password_confirmation: passwordConfirmation,
+        },
+      });
 
-      const { user } = response.data;
-      if (user) {
-        login(user);
+      if (response && response.user) {
+        // AuthContextはidがstringであることを期待している可能性があるため、idを文字列に変換します
+        login({ ...response.user, id: String(response.user.id) });
       } else {
         setError("登録後のユーザー情報取得に失敗しました。");
       }
