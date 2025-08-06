@@ -9,7 +9,7 @@ gem "rails", "~> 7.1.0"
 gem "pg", "~> 1.3"
 
 # Puma as the web server
-gem "puma", "~> 6.0"
+gem "puma", "~> 5.0"
 
 # JavaScript with ESM import maps
 gem "importmap-rails"
@@ -66,4 +66,7 @@ group :development do
 
   # Annota for schema documentation
   gem "annotate"
+
+  # For vulnerability scanning
+  gem "bundler-audit", require: false
 end

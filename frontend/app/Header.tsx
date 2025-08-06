@@ -3,7 +3,7 @@ import { getServerAuth } from "@/lib/server-auth";
 import AuthNav from "./components/AuthNav";
 
 export default async function Header() {
-  const { user, isAuthenticated } = await getServerAuth();
+  const { isAuthenticated } = await getServerAuth();
 
   return (
     <header className="py-5 px-4 sm:px-6 md:px-10 border-b border-border bg-background text-foreground flex flex-col sm:flex-row justify-between items-center">
@@ -15,7 +15,7 @@ export default async function Header() {
         </h1>
       </div>
       <div>
-        <AuthNav user={user} isAuthenticated={isAuthenticated} />
+        <AuthNav isAuthenticated={isAuthenticated} />
       </div>
     </header>
   );

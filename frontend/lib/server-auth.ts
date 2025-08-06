@@ -2,7 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createApiUrl } from "./api-config";
-import type { User } from "./apiClient";
+import type { User, BackendUser } from "@/app/types";
 
 export interface AuthResult {
   user: User | null;
@@ -38,7 +38,7 @@ export const getServerAuth = cache(async (): Promise<AuthResult> => {
       // これにより、コンソールに不要なエラーが表示されるのを防ぐ。
       return { user: null, isAuthenticated: false, token: null };
     }
-    const data = await response.json();
+    const data: { user: BackendUser } = await response.json();
     const backendUser = data.user;
 
     if (!backendUser) {

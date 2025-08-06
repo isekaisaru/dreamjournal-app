@@ -1,18 +1,22 @@
 import { createApiUrl } from "./api-config";
-import {
+import type {
   Dream,
   Emotion,
+  BackendUser,
+  User,
   LoginCredentials,
   RegisterCredentials,
-  User as BackendUser, // バックエンドからのUser型（id: number）
 } from "@/app/types";
 
-// Exporting type definitions to be used in other files
-export interface User {
-  id: string;
-  username: string;
-  email?: string;
-}
+// 他のファイルでも使えるように型を再エクスポート
+export type {
+  Dream,
+  Emotion,
+  BackendUser,
+  User,
+  LoginCredentials,
+  RegisterCredentials,
+};
 
 export interface ApiClient {
   get<T = unknown>(url: string): Promise<T>;

@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
-import { User } from "@/lib/server-auth";
 import { clientLogout } from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
 
 interface AuthNavProps {
-  user: User | null;
   isAuthenticated: boolean;
 }
 
