@@ -1,54 +1,108 @@
 services:
+  # =========================
+  # 🗄️ PostgreSQL (DB)
+  # =========================
   db:
-    image: postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dream_journal_development}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     env_file:
       - ./backend/.env
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dream_journal_development}"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    mem_limit: 512m
+    shm_size: 128m
 
+  # =========================
+  # ⚡ Rails API (Backend)
+
+  # =========================
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile  
-    command: >
-      bash -c "bundle install && rm -f /app/tmp/pids/server.pid && bundle exec rails db:create && bundle exec rails db:migrate && bundle exec rails db:seed && bundle exec rails s -p 3001 -b '0.0.0.0'"
+      dockerfile: Dockerfile
+      args:
+        RUBY_VERSION: "3.3.0"
+        RAILS_ENV: development
     volumes:
-      - ./backend:/app
+      - ./backend:/app:cached         # ソースコード同期
+      - backend_tmp:/app/tmp          # 速度&権限安定化
+      - backend_log:/app/log
     ports:
       - "3001:3001"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3001/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
-
     env_file:
       - ./backend/.env
+    environment:
+      - RAILS_ENV=development
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-dream_journal_development}
+      - RAILS_LOG_TO_STDOUT=true      # ログをSTDOUTへ（Docker向け）
+      - RAILS_MAX_THREADS=5           # Pumaスレッド調整（任意）
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    mem_limit: 1g
 
+  # =========================
+  # 🎨 Next.js (Frontend)
+  # =========================
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile  
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: development
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app:cached        # ソースコード同期
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next         # ビルドキャッシュ
     ports:
-      - "8000:3000"
+      - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy
     environment:
+      - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=http://localhost:3001
       - INTERNAL_API_URL=http://backend:3001
-    command: >
-      sh -c "yarn install && yarn dev"
+      - WATCHPACK_POLLING=true        # Mac/Winでの変更検知安定化
+      - CHOKIDAR_USEPOLLING=true
+    command: yarn dev
+    restart: unless-stopped
+    mem_limit: 1g
+
+# =========================
+# 📁 Named Volumes
+# =========================
+volumes:
+  pg_data: {}
+  backend_tmp: {}
+  backend_log: {}
+  node_modules: {}
+  next_cache: {}
+
+# =========================
+# 🌐 Network
+# =========================
+networks:
+  default:
+    name: dream_journal_network
+    driver: bridge

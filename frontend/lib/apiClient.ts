@@ -1,32 +1,3 @@
-import { createApiUrl } from "./api-config";
-import type {
-  Dream,
-  Emotion,
-  BackendUser,
-  User,
-  LoginCredentials,
-  RegisterCredentials,
-} from "@/app/types";
-
-// 他のファイルでも使えるように型を再エクスポート
-export type {
-  Dream,
-  Emotion,
-  BackendUser,
-  User,
-  LoginCredentials,
-  RegisterCredentials,
-};
-
-export interface ApiClient {
-  get<T = unknown>(url: string): Promise<T>;
-  post<T = unknown>(url: string, data?: any): Promise<T>;
-  put<T = unknown>(url: string, data?: any): Promise<T>;
-  delete<T = unknown>(url: string): Promise<T>;
-}
-
-type ApiFetchOptions = RequestInit & { token?: string };
-
 /**
  * A centralized fetch function for API communication.
  * It handles URL creation, JSON content type, and error handling.
@@ -37,7 +8,19 @@ type ApiFetchOptions = RequestInit & { token?: string };
  * @param options 追加のfetchオプション。サーバーサイドで認証が必要な場合は `token` を含める。
  * @returns APIからのJSONレスポンス
  */
-async function apiFetch<T>(
+import { createApiUrl } from "./api-config";
+import type {
+  Dream,
+  Emotion,
+  BackendUser,
+  User,
+  LoginCredentials,
+  RegisterCredentials,
+} from "@/app/types";
+
+type ApiFetchOptions = RequestInit & { token?: string };
+
+export async function apiFetch<T>(
   endpoint: string,
   options: ApiFetchOptions = {}
 ): Promise<T> {
@@ -74,18 +57,21 @@ async function apiFetch<T>(
   const response = await fetch(url, finalOptions);
 
   if (!response.ok) {
-    // 401 Unauthorized は認証失敗であり、予期される動作の一部。
-    // そのため、コンソールにエラーを出力せずに例外をスローする。
-    if (response.status !== 401) {
-      const errorBody = await response.text();
-      console.error(
-        `API Error: ${response.status} ${response.statusText} for endpoint ${endpoint}`,
-        errorBody
-      );
+    let errorMessage = `API request to ${endpoint} failed with status ${response.status}.`;
+    try {
+      const errorData = await response.json();
+      // Railsのエラー形式に合わせて調整
+      errorMessage =
+        errorData.error ||
+        (Array.isArray(errorData.errors)
+          ? errorData.errors.join(", ")
+          : errorData.message) ||
+        errorMessage;
+    } catch {
+      // JSONのパースに失敗した場合
+      console.error(`Could not parse error response for ${endpoint}:`);
     }
-    throw new Error(
-      `API request to ${endpoint} failed with status ${response.status}.`
-    );
+    throw new Error(errorMessage);
   }
 
   // Handle responses with no content
@@ -140,7 +126,7 @@ export async function clientRegister(
   credentials: RegisterCredentials
 ): Promise<{ user: User }> {
   // Rails often expects parameters nested under a model key
-  const response = await apiFetch<{ user: BackendUser }>("/auth/register", {
+  const response = await apiFetch<{ user: BackendUser }>("/auth/register/", {
     method: "POST",
     body: JSON.stringify({ user: credentials }),
   });
@@ -150,7 +136,7 @@ export async function clientRegister(
 }
 
 export async function clientLogout(): Promise<null> {
-  return apiFetch("/auth/logout", {
+  return apiFetch("/auth/logout/", {
     method: "DELETE",
   });
 }
@@ -176,23 +162,23 @@ export async function verifyAuth(): Promise<{ user: User } | null> {
   }
 }
 
-const apiClient: ApiClient = {
-  // axios のような汎用メソッドを提供
-  get: <T>(url: string) => apiFetch<T>(url),
-  post: <T>(url: string, data?: any) =>
+const apiClient = {
+  get: <T>(url: string, options?: ApiFetchOptions) =>
+    apiFetch<T>(url, { ...options, method: "GET" }),
+  post: <T>(url: string, data?: any, options?: ApiFetchOptions) =>
     apiFetch<T>(url, {
+      ...options,
       method: "POST",
       body: data ? JSON.stringify(data) : null,
     }),
-  put: <T>(url: string, data?: any) =>
+  put: <T>(url: string, data?: any, options?: ApiFetchOptions) =>
     apiFetch<T>(url, {
+      ...options,
       method: "PUT",
       body: data ? JSON.stringify(data) : null,
     }),
-  delete: <T>(url: string) =>
-    apiFetch<T>(url, {
-      method: "DELETE",
-    }),
+  delete: <T>(url: string, options?: ApiFetchOptions) =>
+    apiFetch<T>(url, { ...options, method: "DELETE" }),
 };
 
 export default apiClient;

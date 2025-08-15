@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Dream, Emotion } from "../types";
-import apiClient from "@/lib/apiClient";
+import { getEmotions } from "@/lib/apiClient";
 import { toast } from "react-hot-toast";
 import { getEmotionColors } from "@/lib/emotionUtils";
 
@@ -40,8 +40,10 @@ export default function DreamForm({
     const fetchEmotions = async () => {
       setIsFetchingEmotions(true);
       try {
-        const response = await apiClient.get<Emotion[]>("/emotions");
-        setEmotions(response);
+        // 以前: 汎用のapiClient.getを使っていました。
+        // 今回: 感情リスト取得専用の `getEmotions` 関数を使います。
+        const emotionsData = await getEmotions();
+        setEmotions(emotionsData);
       } catch (error) {
         console.error("感情一覧の取得に失敗しました:", error);
         toast.error("感情一覧の取得に失敗しました。");

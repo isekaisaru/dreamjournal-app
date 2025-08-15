@@ -3,9 +3,8 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import apiClient from "@/lib/apiClient";
+import { clientRegister } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
-import { User } from "@/app/types";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -14,9 +13,10 @@ export default function Register() {
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const { login, isLoggedIn } = useAuth();
+  const router = useRouter();
 
+  // 1. 既にログインしているユーザーをホームページに案内する機能
   useEffect(() => {
     if (isLoggedIn) {
       router.push("/home");
@@ -28,6 +28,7 @@ export default function Register() {
     setError("");
     setIsLoading(true);
 
+    // 2. 入力内容のチェックを強化
     if (!email || !username || !password || !passwordConfirmation) {
       setError("すべてのフィールドを入力してください。");
       setIsLoading(false);
@@ -40,33 +41,32 @@ export default function Register() {
     }
     if (password.length < 6) {
       setError("パスワードは6文字以上である必要があります。");
+      setIsLoading(false); // ローディング状態を解除するのを忘れない
       return;
     }
-    try {
-      // apiClient.postにレスポンスの型 <{ user: User }> を指定します
-      const response = await apiClient.post<{ user: User }>(`/auth/register`, {
-        user: {
-          email,
-          username,
-          password,
-          password_confirmation: passwordConfirmation,
-        },
-      });
+    // 3. メールアドレスの形式が正しいかチェックする機能
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("有効なメールアドレスを入力してください。");
+      setIsLoading(false);
+      return;
+    }
 
-      if (response && response.user) {
-        // AuthContextはidがstringであることを期待している可能性があるため、idを文字列に変換します
-        login({ ...response.user, id: String(response.user.id) });
-      } else {
-        setError("登録後のユーザー情報取得に失敗しました。");
-      }
+    try {
+      // 以前: 汎用のapiClient.postを使っていました。
+      // 今回: ユーザー登録専用の `clientRegister` 関数を使います。
+      const { user } = await clientRegister({
+        email,
+        username,
+        password,
+        password_confirmation: passwordConfirmation,
+      });
+      // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
+      login(user);
     } catch (err: any) {
-      const backendError =
-        err.response?.data?.errors ||
-        err.response?.data?.error ||
-        "登録に失敗しました。";
-      setError(
-        Array.isArray(backendError) ? backendError.join(", ") : backendError
-      );
+      // 以前: エラーメッセージは err.response.data.errors など、複数の可能性がありました。
+      // 今回: apiClientから来るエラーメッセージを直接表示します。シンプル！
+      setError(err.message || "登録に失敗しました。");
     } finally {
       setIsLoading(false);
     }
@@ -76,7 +76,7 @@ export default function Register() {
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
       <form
         onSubmit={handleSubmit}
-        className="bg-card p-8 rounded-lg shadow-lg w-full max-w-md border border-border"
+        className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
         <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-card-foreground">
           ユーザー登録
@@ -104,7 +104,7 @@ export default function Register() {
             autoComplete="email"
             required
             aria-required="true"
-            aria-invalid={error ? "true" : "false"}
+            aria-describedby="error-message"
             className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <input
@@ -113,6 +113,7 @@ export default function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="パスワード"
+            aria-describedby="error-message"
             autoComplete="new-password"
             required
             className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -138,7 +139,24 @@ export default function Register() {
             {isLoading ? "登録中..." : "登録"}
           </button>
         </div>
-        {error && <p className="text-destructive mt-4 text-center">{error}</p>}
+        {error && (
+          <p
+            id="error-message"
+            className="text-destructive mt-4 text-center"
+            aria-live="assertive"
+          >
+            {error}
+          </p>
+        )}
+        {/* 4. ログインページへの案内リンク */}
+        <div className="mt-6 text-center text-sm">
+          <p className="text-muted-foreground">
+            すでにアカウントをお持ちですか？
+          </p>
+          <a href="/login" className="font-medium text-primary hover:underline">
+            ログインする
+          </a>
+        </div>
       </form>
     </div>
   );

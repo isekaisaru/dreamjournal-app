@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import apiClient from "@/lib/apiClient";
-import { User } from "@/app/types";
+import { clientLogin } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
@@ -28,27 +27,18 @@ export default function Login() {
       return;
     }
     try {
-      const response = await apiClient.post<{ user: User }>(`/auth/login`, {
-        email,
-        password,
-      });
-      if (response && response.user) {
-        // AuthContextはidがstringであることを期待しているため、変換します
-        login({
-          ...response.user,
-          id: String(response.user.id),
-        });
-      } else {
-        console.error("Login response missing user data:", response);
-        setPageError("ログイン情報の取得に失敗しました。");
-      }
+      // 以前: 汎用のapiClient.postを使っていました。
+      // 今回: ログイン専用の `clientLogin` 関数を呼び出します。コードが何をしたいのか分かりやすくなりますね！
+      const { user } = await clientLogin({ email, password });
+      // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
+      login(user);
     } catch (apiError: any) {
       console.error("ログインAPI呼び出しエラー:", apiError);
-      const backendErrorMessage: string =
-        apiError.response?.data?.error ||
-        apiError.response?.data?.message ||
-        "ログインに失敗しました。もう一度お試しください。";
-      setPageError(backendErrorMessage);
+      // 以前: エラーメッセージは深い階層にありました (apiError.response.data.error)。
+      // 今回: 新しいapiFetch関数のおかげで、エラーメッセージが apiError.message に直接入っています。シンプル！
+      setPageError(
+        apiError.message || "ログインに失敗しました。もう一度お試しください。"
+      );
     } finally {
       setIsLoading(false);
     }

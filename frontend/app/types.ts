@@ -30,11 +30,12 @@ export interface Dream {
   emotions?: Emotion[];
 }
 export type LoginCredentials = {
-  username: string;
+  email: string;
   password: string;
 };
 
 export type RegisterCredentials = {
+  email: string;
   username: string;
   password: string;
   password_confirmation: string;

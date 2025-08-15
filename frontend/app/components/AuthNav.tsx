@@ -19,8 +19,8 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
       // Refresh the current route to re-run Server Components and update auth state
       router.refresh();
     } catch (error: any) {
-      console.error("Logout failed", error);
-      toast.error(error.response?.data?.error || "ログアウトに失敗しました。");
+      console.error("Logout failed:", error);
+      toast.error(error.message || "ログアウトに失敗しました。");
     }
   };
 
@@ -38,12 +38,13 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
               設定
             </Button>
           </Link>
-          <button
+          <Button
             onClick={handleLogout}
-            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-3 py-2 rounded-md"
+            variant="destructive"
+            className="px-3 py-2 md:px-3 md:py-3"
           >
             ログアウト
-          </button>
+          </Button>
         </>
       ) : (
         <>

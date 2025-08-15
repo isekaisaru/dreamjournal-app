@@ -13,17 +13,17 @@ class AuthService
   # ログイン処理
   def self.login(email, password)
     user = User.find_by(email: email.downcase)
-    if user.nil?
-      raise InvalidCredentialsError, 'メールアドレスが正しくありません'
-    elsif user.authenticate(password)
+    if user&.authenticate(password)
       access_token = encode_token(user.id)
       refresh_token = generate_refresh_token
       # バリデーションとコールバックをスキップして refresh_token のみを更新
       user.update_column(:refresh_token, refresh_token)
-      Rails.logger.info "ユーザーのリフレッシュトークンを保存: #{user.refresh_token}" if Rails.env.development?
+      # 🛡️ セキュア化：トークン本文は出力せず、成功の事実のみをログに残す
+      Rails.logger.info "認証成功: ユーザーID=#{user.id} トークン生成完了"
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise InvalidCredentialsError, 'パスワードが正しくありません'
+      Rails.logger.warn "認証失敗: email=#{email}"
+      raise InvalidCredentialsError, 'メールアドレスまたはパスワードが正しくありません'
     end
   rescue ActiveRecord::RecordInvalid => e # update_column は RecordInvalid を発生させないが、念のため残す
     Rails.logger.error "ログイン成功後、リフレッシュトークン更新に失敗: #{e.message}"
@@ -44,7 +44,7 @@ class AuthService
       refresh_token = generate_refresh_token
       # バリデーションとコールバックをスキップして refresh_token のみを更新
       user.update_column(:refresh_token, refresh_token)
-      Rails.logger.info "新規登録ユーザーのリフレッシュトークンを保存: #{user.refresh_token}" if Rails.env.development?
+      Rails.logger.info "新規登録ユーザーID: #{user.id} のリフレッシュトークンを保存しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
       raise RegistrationError, user.errors.full_messages.join(", ")
@@ -68,7 +68,7 @@ class AuthService
       refresh_token = generate_refresh_token
       # バリデーションとコールバックをスキップして refresh_token のみを更新
       user.update_column(:refresh_token, refresh_token)
-      Rails.logger.info "トライアルユーザーのリフレッシュトークンを保存: #{user.refresh_token}" if Rails.env.development?
+      Rails.logger.info "トライアルユーザーID: #{user.id} のリフレッシュトークンを保存しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
       raise RegistrationError, user.errors.full_messages.join(", ")
@@ -91,7 +91,7 @@ class AuthService
     return nil if token.nil?
 
     begin
-      Rails.logger.info "受け取ったトークン: #{token.inspect}" if Rails.env.development?
+      Rails.logger.info "トークンをデコードします。" if Rails.env.development?
 
       decoded_array = JWT.decode(token, SECRET_KEY, true, { algorithm: 'HS256' })
       decoded = decoded_array[0]
@@ -115,13 +115,13 @@ class AuthService
 
   # リフレッシュトークンを生成
   def self.refresh_token(refresh_token)
-    Rails.logger.info "リフレッシュトークンを検証: #{refresh_token}" if Rails.env.development?
+    Rails.logger.info "リフレッシュトークンを検証します。" if Rails.env.development?
     user = find_user_by_refresh_token(refresh_token)
     new_access_token = encode_token(user.id)
     new_refresh_token = generate_refresh_token
     # バリデーションとコールバックをスキップして refresh_token のみを更新
     user.update_column(:refresh_token, new_refresh_token)
-    Rails.logger.info "ユーザーのリフレッシュトークンを更新・保存: #{user.refresh_token}" if Rails.env.development?
+    Rails.logger.info "ユーザーID: #{user.id} のリフレッシュトークンを更新・保存しました。" if Rails.env.development?
     { access_token: new_access_token, refresh_token: new_refresh_token }
   rescue ActiveRecord::RecordInvalid => e # update_column は RecordInvalid を発生させないが、念のため残す
     Rails.logger.error "リフレッシュトークン検証成功後、DB更新に失敗: #{e.message}"
@@ -130,7 +130,7 @@ class AuthService
 
   # リフレッシュトークンからユーザーを検索
   def self.find_user_by_refresh_token(refresh_token)
-    Rails.logger.info "リフレッシュトークンからユーザーを検索: #{refresh_token}" if Rails.env.development?
+    Rails.logger.info "リフレッシュトークンからユーザーを検索します。" if Rails.env.development?
     raise InvalidRefreshTokenError, 'リフレッシュトークンがありません' if refresh_token.blank?
 
     user = User.find_by(refresh_token: refresh_token)

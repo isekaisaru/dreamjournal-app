@@ -4,7 +4,8 @@ import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
 import { Dream } from "@/app/types";
 import { cookies } from "next/headers";
-import { getMyDreams, getMe, User } from "@/lib/apiClient";
+import { getMyDreams, getMe } from "@/lib/apiClient";
+import type { User } from "@/app/types";
 import { redirect } from "next/navigation";
 import Loading from "../loading";
 

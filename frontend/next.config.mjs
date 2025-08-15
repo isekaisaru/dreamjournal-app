@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
+  // 本番環境で必要なファイルのみを .next/standalone に出力する
+  output: "standalone",
 };
 
 export default nextConfig;
