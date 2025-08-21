@@ -1,29 +1,25 @@
-# ベースイメージとしてNode.jsのバージョン18を使用
-FROM node:18 AS builder
-
-# 作業ディレクトリの設定
+# Stage 1: 依存関係のインストール
+FROM node:18-alpine AS deps
 WORKDIR /app
+COPY package.json yarn.lock* ./
+RUN yarn install --frozen-lockfile
 
-# 既存のYarnを削除してからグローバルにYarn 1.xをインストール
-RUN rm -rf /usr/local/bin/yarn /usr/local/bin/yarnpkg && npm install -g yarn@1
-
-
-# 依存関係のインストール
-COPY package.json yarn.lock ./
-RUN yarn install --production=false
-
-# アプリケーションのコピーとビルド
+# Stage 2: ビルドステージ
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN yarn build
 
-# 実行ステージ
+# Stage 3: 本番実行ステージ
 FROM node:18-alpine
 
 # 作業ディレクトリの設定
 WORKDIR /app
 
-# 環境変数を設定
-ENV NEXT_PUBLIC_API_URL=http://backend:3000
+ENV NODE_ENV=production
+# 本番環境ではNEXT_PUBLIC_API_URLはdocker-compose.ymlから渡すのが一般的です
+# ENV NEXT_PUBLIC_API_URL=http://backend:3001
 
 # 必要なファイルのみをコピー
 COPY --from=builder /app/.next ./.next

@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import { clientRegister } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Register() {
@@ -11,15 +11,24 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoggedIn } = useAuth();
   const router = useRouter();
-  const { login } = useAuth();
+
+  // 1. 既にログインしているユーザーをホームページに案内する機能
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/home");
+    }
+  }, [isLoggedIn, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
+
+    // 2. 入力内容のチェックを強化
     if (!email || !username || !password || !passwordConfirmation) {
       setError("すべてのフィールドを入力してください。");
       setIsLoading(false);
@@ -32,57 +41,32 @@ export default function Register() {
     }
     if (password.length < 6) {
       setError("パスワードは6文字以上である必要があります。");
+      setIsLoading(false); // ローディング状態を解除するのを忘れない
+      return;
+    }
+    // 3. メールアドレスの形式が正しいかチェックする機能
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("有効なメールアドレスを入力してください。");
       setIsLoading(false);
       return;
     }
+
     try {
-      console.log("Submitting registration data:", {
+      // 以前: 汎用のapiClient.postを使っていました。
+      // 今回: ユーザー登録専用の `clientRegister` 関数を使います。
+      const { user } = await clientRegister({
         email,
         username,
         password,
         password_confirmation: passwordConfirmation,
       });
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/register`,
-        {
-          user: {
-            email,
-            username,
-            password,
-            password_confirmation: passwordConfirmation,
-          },
-        }
-      );
-      // バックエンドから返されるアクセストークンとリフレッシュトークンを正しく取得
-      const { access_token, refresh_token, user: userData } = response.data;
-      
-      if (access_token && refresh_token && userData) {
-        console.log("Access Token received:", access_token);
-        console.log("Refresh Token received:", refresh_token);
-        console.log("User data received:", userData);
-
-        await login(access_token, refresh_token, userData);
-        sessionStorage.setItem("registrationSuccess", "true");
-        router.push("/home");
-      } else {
-        console.error("Registration response missing tokens or user data:", response.data);
-        setError("登録処理中にエラーが発生しました。必要な情報がサーバーから返されませんでした。");
-      }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      if (error.response && error.response.data) {
-        const backendError = error.response.data.error || error.response.data.errors;
-        setError(Array.isArray(backendError) ? backendError.join(", ") : backendError || "登録に失敗しました。");
-      } else if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
-        setError(error.response.data.message); // 別のエラーメッセージがある場合
-      } else {
-        console.error("General error:", error);
-        setError("登録に失敗しました。もう一度お試しください。");
-      }
+      // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
+      login(user);
+    } catch (err: any) {
+      // 以前: エラーメッセージは err.response.data.errors など、複数の可能性がありました。
+      // 今回: apiClientから来るエラーメッセージを直接表示します。シンプル！
+      setError(err.message || "登録に失敗しました。");
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +76,7 @@ export default function Register() {
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
       <form
         onSubmit={handleSubmit}
-        className="bg-card p-8 rounded-lg shadow-lg w-full max-w-md border border-border"
+        className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
         <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-card-foreground">
           ユーザー登録
@@ -120,7 +104,7 @@ export default function Register() {
             autoComplete="email"
             required
             aria-required="true"
-            aria-invalid={error ? "true" : "false"}
+            aria-describedby="error-message"
             className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <input
@@ -129,6 +113,7 @@ export default function Register() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="パスワード"
+            aria-describedby="error-message"
             autoComplete="new-password"
             required
             className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -149,14 +134,29 @@ export default function Register() {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
             {isLoading ? "登録中..." : "登録"}
           </button>
         </div>
-        {error && <p className="text-destructive mt-4 text-center">{error}</p>}
+        {error && (
+          <p
+            id="error-message"
+            className="text-destructive mt-4 text-center"
+            aria-live="assertive"
+          >
+            {error}
+          </p>
+        )}
+        {/* 4. ログインページへの案内リンク */}
+        <div className="mt-6 text-center text-sm">
+          <p className="text-muted-foreground">
+            すでにアカウントをお持ちですか？
+          </p>
+          <a href="/login" className="font-medium text-primary hover:underline">
+            ログインする
+          </a>
+        </div>
       </form>
     </div>
   );

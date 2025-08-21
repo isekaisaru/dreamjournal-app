@@ -1,82 +1,126 @@
 # syntax=docker/dockerfile:1
 
-# Rubyのバージョンを定義
+# ========================================
+# 🚀 夢ログ バックエンド最適化Dockerfile v3
+# ========================================
+# 
+# 最適化ポイント:
+# 1. レイヤーキャッシュを最大活用する順序
+# 2. マルチステージビルドでイメージ軽量化
+# 3. 開発/本番環境の適切な切り分け
+# 4. セキュリティ強化（non-rootユーザー）
+
 ARG RUBY_VERSION=3.3.0
-FROM ruby:${RUBY_VERSION}-bullseye AS Builder
+ARG RAILS_ENV=production
 
-# 環境変数の設定
-ENV RAILS_ENV=production \
-    BUNDLE_WITHOUT="development test" \
-    BUNDLE_FROZEN=true \
-    DEBIAN_FRONTEND=noninteractive
+# ========================================
+# 📦 Base Stage: 共通基盤
+# ========================================
+FROM ruby:${RUBY_VERSION}-bullseye AS base
 
-# 作業ディレクトリの設定
+# 環境変数設定
+ENV RAILS_ENV=${RAILS_ENV} \
+    BUNDLE_PATH=/usr/local/bundle \
+    BUNDLE_JOBS=4 \
+    BUNDLE_RETRY=3
+
+# 基本的なランタイム依存関係のインストール
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+# Install gems
+      libvips \
+      postgresql-client \
+      # ヘルスチェック用
+      curl \
+      # タイムゾーンデータ
+      tzdata \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+# Copy application code
 WORKDIR /app
 
-# 必要なパッケージとDebianアーカイブキーのインストール
+# ========================================
+# 🔨 Builder Stage: ビルド専用
+# ========================================
+FROM base AS builder
+
+# ビルド時依存関係のインストール
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
-    gnupg \
-    curl \
-    ca-certificates \
-    debian-archive-keyring \
+      # コンパイルツール
+      build-essential \
+      # PostgreSQL開発ライブラリ
+      libpq-dev \
+      # Git（Gemfile内のgit参照対応）
+      git \
     && rm -rf /var/lib/apt/lists/*
 
-# Debianリポジトリの設定
-RUN echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian bullseye-updates main" >> /etc/apt/sources.list && \
-    echo "deb http://security.debian.org/debian-security bullseye-security main" >> /etc/apt/sources.list
-
-# 必要なビルドパッケージのインストール
-RUN apt-get update -qq && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    libvips-dev \
-    postgresql-client \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Gemfileをコピーして依存関係をインストール
+# 🎯 最重要最適化: Gemfile関連を先にコピー
+# これによりGemfileが変更されない限りbundle installはキャッシュされる
 COPY Gemfile Gemfile.lock ./
-RUN bundle config set without 'development test' && \
-    bundle install --jobs 4 --retry 3
 
-# アプリケーションコードをコピー
-COPY . ./
+# 環境に応じたGemインストール（開発用gemも含む or 本番のみ）
+RUN echo "🚀 Rails環境: $RAILS_ENV でGemインストール開始" && \
+    if [ "$RAILS_ENV" = "production" ]; then \
+      echo "📦 本番用Gemインストール中..." && \
+      bundle config set --local without 'development test' && \
+      bundle install --jobs $BUNDLE_JOBS --retry $BUNDLE_RETRY; \
+    else \
+      echo "📦 開発用Gemインストール中（全環境）..." && \
+      bundle install --jobs $BUNDLE_JOBS --retry $BUNDLE_RETRY; \
+    fi && \
+    echo "✅ Gemインストール完了" && \
+    bundle clean --force
 
-# アセットのプリコンパイル
-ARG SECRET_KEY_BASE
-ARG RAILS_MASTER_KEY
-ENV SECRET_KEY_BASE=${SECRET_KEY_BASE} \
-    RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
-RUN if [ -n "$SECRET_KEY_BASE" ] && [ -n "$RAILS_MASTER_KEY" ]; then \
-    bundle exec rails assets:precompile; \
-fi
+# アプリケーションコードをコピー（Gemインストール後）
+COPY . .
 
-# 不要なファイルを削除してイメージを軽量化
-RUN rm -rf node_modules tmp/cache app/assets vendor/assets spec
+# 本番環境でのアセットプリコンパイル（必要に応じて）
+RUN if [ "$RAILS_ENV" = "production" ]; then \
+      echo "🎨 アセットプリコンパイル実行中..." && \
+      bundle exec rails assets:precompile && \
+      echo "✅ アセットプリコンパイル完了"; \
+    fi
 
-# 本番環境用の軽量イメージを構築
-FROM ruby:${RUBY_VERSION}-bullseye
+# ========================================
+# 🏃 Final Stage: 実行環境
+# ========================================
+FROM base AS final
 
-# 必要なランタイムパッケージをインストール
-RUN apt-get update -qq && apt-get install -y --no-install-recommends \
-    libpq5 \
-    libvips42 \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# セキュリティ: non-rootユーザー作成
+RUN groupadd -r rails && \
+    useradd --no-log-init -r -g rails rails && \
+    mkdir -p /app/tmp /app/log && \
+    chown -R rails:rails /app
 
-# アプリケーションデータをコピー
-COPY --from=Builder /usr/local/bundle/ /usr/local/bundle/
-COPY --from=Builder /app /app
-WORKDIR /app
+# ビルドステージから必要なファイルのみコピー
+COPY --from=builder --chown=rails:rails /usr/local/bundle/ /usr/local/bundle/
+COPY --from=builder --chown=rails:rails /app /app
 
-# 非rootユーザーを作成
-RUN groupadd -r rails && useradd --no-log-init -r -g rails rails \
-    && chown -R rails:rails /usr/local/bundle /app
-USER rails
+# エントリーポイントスクリプトの準備
+COPY --chown=rails:rails entrypoint.sh /usr/bin/entrypoint.sh
+RUN chmod +x /usr/bin/entrypoint.sh && \
+    # Windows環境での改行コード対応
+    sed -i 's/\r$//' /usr/bin/entrypoint.sh
 
-# Railsサーバーのポートを公開
-EXPOSE 3000
+# セキュリティ: railsユーザーに切り替え
+USER rails:rails
 
-# コンテナ起動時にRailsサーバーを実行
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
+# ポート公開
+EXPOSE 3001
+
+# ヘルスチェック設定
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# 起動設定
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]
+CMD ["bundle", "exec", "rails", "server", "-p", "3001", "-b", "0.0.0.0"]
+
+# ========================================
+# 📊 ビルド情報
+# ========================================
+LABEL \
+  org.opencontainers.image.title="Dream Journal Backend" \
+  org.opencontainers.image.description="Rails API for Dream Journal Application" \
+  org.opencontainers.image.version="3.0" \
+  org.opencontainers.image.source="https://github.com/your-org/dream-journal" \
+  maintainer="Dream Journal Team"

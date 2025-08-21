@@ -1,10 +1,10 @@
 "use client";
 
-import axios from "axios";
+import apiClient from "@/lib/apiClient";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
-import Loading from "../loading";
+import { User } from "@/app/types";
 
 export default function TrialPage() {
   const [dreams, setDreams] = useState<
@@ -26,7 +26,7 @@ export default function TrialPage() {
       console.log("API URL:", apiUrl);
 
       // トライアルユーザーのデータを送信
-      const response = await axios.post(`${apiUrl}/trial_users`, {
+      const response = await apiClient.post<{ user: User }>("/trial_users", {
         trial_user: {
           name: "Test User",
           email: "test@example.com",
@@ -34,11 +34,17 @@ export default function TrialPage() {
           password_confirmation: "password123",
         },
       });
-      const { access_token, refresh_token, user: userData } = response.data;
-      if (access_token && refresh_token && userData) {
-        login(access_token, refresh_token, userData);
+      const userData = response.user;
+      if (userData) {
+        // login関数はidがstringであることを期待しているため、変換します
+        login({
+          ...userData,
+          id: String(userData.id),
+        });
       } else {
-        throw new Error("トライアルユーザー作成時のレスポンスに必要なデータが含まれていません。");
+        throw new Error(
+          "トライアルユーザー作成時のレスポンスに必要なデータが含まれていません。"
+        );
       }
       setErrorMessage(null);
     } catch (error) {
@@ -135,11 +141,15 @@ export default function TrialPage() {
             </button>
           </form>
 
-          <h3 className="text-xl font-semibold mb-2 text-foreground">記録された夢</h3>
+          <h3 className="text-xl font-semibold mb-2 text-foreground">
+            記録された夢
+          </h3>
           <ul className="list-disc pl-5">
             {dreams.map((dream, index) => (
               <li key={index} className="mb-2">
-                <h4 className="text-lg font-bold text-foreground">{dream.title}</h4>
+                <h4 className="text-lg font-bold text-foreground">
+                  {dream.title}
+                </h4>
                 <p className="text-muted-foreground">{dream.description}</p>
               </li>
             ))}

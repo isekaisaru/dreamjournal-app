@@ -1,74 +1,57 @@
 require "active_support/core_ext/integer/time"
 
 Rails.application.configure do
-  # Settings specified here will take precedence over those in config/application.rb.
-
-  # In the development environment your application's code is reloaded any time
-  # it changes. This slows down response time but is perfect for development
-  # since you don't have to restart the web server when you make code changes.
+  # コード変更のたびにリロード（開発向け）
   config.enable_reloading = true
-
-  # Do not eager load code on boot.
   config.eager_load = false
 
-  # Show full error reports.
+  # エラー画面は詳細表示
   config.consider_all_requests_local = true
 
-  # Enable server timing
+  # Server-Timing
   config.server_timing = true
 
-  # Enable/disable caching. By default caching is disabled.
-  # Run rails dev:cache to toggle caching.
+  # キャッシュ切替（rails dev:cache でトグル）
   if Rails.root.join("tmp/caching-dev.txt").exist?
     config.action_controller.perform_caching = true
     config.action_controller.enable_fragment_cache_logging = true
-
     config.cache_store = :memory_store
     config.public_file_server.headers = {
       "Cache-Control" => "public, max-age=#{2.days.to_i}"
     }
   else
     config.action_controller.perform_caching = false
-
     config.cache_store = :null_store
   end
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
+  # Active Storage
   config.active_storage.service = :local
 
-  # Don't care if the mailer can't send.
+  # メール
   config.action_mailer.raise_delivery_errors = false
-
   config.action_mailer.perform_caching = false
 
-  # Print deprecation notices to the Rails logger.
+  # Deprecation
   config.active_support.deprecation = :log
-
-  # Raise exceptions for disallowed deprecations.
   config.active_support.disallowed_deprecation = :raise
-
-  # Tell Active Support which deprecation messages to disallow.
   config.active_support.disallowed_deprecation_warnings = []
 
-  # Raise an error on page load if there are pending migrations.
+  # マイグレーション未実行でページロード時にエラー
   config.active_record.migration_error = :page_load
 
-  # Highlight code that triggered database queries in logs.
+  # ログ（SQLやJobの箇所をハイライト）
   config.active_record.verbose_query_logs = true
-
-  # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
-  # Suppress logger output for asset requests.
+  # ログレベル（開発は :debug 推奨）
+  config.log_level = :debug
 
-  # Raises error for missing translations.
-  # config.i18n.raise_on_missing_translations = true
+  # Docker からの web-console を許可（172.18.0.0/16 など、実際のブリッジに合わせる）
+  if defined?(WebConsole)
+    config.web_console.permissions = '172.18.0.0/16'
+  end
 
-  # Annotate rendered view with file names.
-  # config.action_view.annotate_rendered_view_with_filenames = true
-
-  # Uncomment if you wish to allow Action Cable access from any origin.
-  # config.action_cable.disable_request_forgery_protection = true
-
-  # Raise error when a before_action's only/except options reference missing actions
+  # 必要ならホスト許可（Docker 経由アクセス用）
+  # フロントエンドコンテナ(backend)からのリクエストを許可
+  config.hosts << "backend"
 end

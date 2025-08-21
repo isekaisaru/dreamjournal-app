@@ -1,0 +1,195 @@
+# ========================================
+# 🚀 夢ログ 本番環境設定
+# ========================================
+# 
+# 使用方法:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# 
+# 本番環境での最適化:
+# - セキュリティ強化
+# - パフォーマンス最適化
+# - ログ集約・監視対応
+# - 高可用性設定
+
+services:
+  # =========================
+  # 🗄️ PostgreSQL 本番設定
+  # =========================
+  db:
+    # 本番用パフォーマンス設定
+    command: >
+      postgres
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+    
+    environment:
+      # 本番用設定（環境変数から注入）
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    
+    # 🔒 セキュリティ強化
+    networks:
+      - backend_network  # フロントエンドからの直接接続を禁止
+    
+    # 📊 本番用ヘルスチェック
+    healthcheck:
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    
+    # 🚀 リソース制限
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # =========================
+  # ⚡ Rails API 本番設定
+  # =========================
+  backend:
+    build:
+      args:
+        RAILS_ENV: production
+    
+    # 🔒 本番セキュリティ設定
+    read_only: true                              # ファイルシステム読み取り専用
+    tmpfs:
+      - /tmp                                     # テンポラリファイル用
+      - /app/tmp                                 # Rails用テンポラリ
+    
+    # 🔧 本番環境変数
+    environment:
+      - RAILS_ENV=production
+      - RAILS_LOG_LEVEL=info                     # 本番用ログレベル
+      - RAILS_LOG_TO_STDOUT=true
+      - RAILS_SERVE_STATIC_FILES=true            # 静的ファイル配信
+      - RAILS_MAX_THREADS=5                      # 本番用並行性
+      - WEB_CONCURRENCY=2                        # Pumaワーカー数
+      
+      # 🔒 セキュリティ設定
+      - RAILS_FORCE_SSL=true                     # HTTPS強制
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+      
+      # 📊 外部サービス
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME:-3600}
+
+    # 🌐 ネットワーク分離
+    networks:
+      - frontend_network
+      - backend_network
+    
+    # 🩺 本番用ヘルスチェック
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # 🚀 リソース制限・自動再起動
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # 📊 ログ設定
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # =========================
+  # 🎨 Next.js 本番設定
+  # =========================
+  frontend:
+    build:
+      args:
+        NODE_ENV: production
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    
+    # 🔧 本番環境変数
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - INTERNAL_API_URL=http://backend:3001
+      
+      # 🚀 本番最適化
+      - NEXT_TELEMETRY_DISABLED=1
+    
+    # 🌐 ネットワーク設定
+    networks:
+      - frontend_network
+    
+    # 🚀 リソース制限
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    
+    # 📊 ログ設定
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# =========================
+# 📁 本番用Named Volumes
+# =========================
+volumes:
+  # データベース永続化（バックアップ対応）
+  pg_data_prod:
+    name: dream_journal_prod_db
+    driver: local
+    driver_opts:
+      type: none
+      device: /opt/dream-journal/data/postgres
+      o: bind
+
+# =========================
+# 🌐 本番用ネットワーク分離
+# =========================
+networks:
+  # フロントエンド用（外部公開）
+  frontend_network:
+    name: dream_journal_frontend
+    driver: bridge
+    
+  # バックエンド用（内部専用）
+  backend_network:
+    name: dream_journal_backend
+    driver: bridge
+    internal: true  # 外部アクセス禁止

@@ -1,0 +1,72 @@
+source "https://rubygems.org"
+
+ruby "3.3.0"
+
+# Rails
+gem "rails", "~> 7.1.0"
+
+# PostgreSQL as the database
+gem "pg", "~> 1.3"
+
+# Puma as the web server
+gem "puma", "~> 5.0"
+
+# JavaScript with ESM import maps
+gem "importmap-rails"
+
+# Hotwire for modern web UIs
+gem "turbo-rails"
+gem "stimulus-rails"
+
+# Building JSON APIs
+gem "jbuilder"
+
+# Add CORS to accept requests from different origins
+gem 'rack-cors'
+
+# JSON Web Tokens for authentication
+gem 'jwt'
+# Use bcrypt for secure password hashing
+gem 'bcrypt', '~> 3.1.18'
+
+# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+gem "tzinfo-data", platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+
+# Reduces boot times through caching
+gem "bootsnap", require: false
+gem "dotenv-rails"
+
+# OpenAI API integration
+gem "ruby-openai", "~> 5.0"
+gem 'faraday', '~> 2.12'
+gem 'faraday-multipart'
+gem 'faraday-net_http'
+gem 'multipart-post'
+gem 'json', '~> 2.8'
+gem 'net-http'
+gem 'uri'
+gem 'event_stream_parser'
+
+group :development, :test do
+  # Debugging
+  gem "debug", platforms: [:mri, :mingw, :x64_mingw]
+  gem "pry-byebug"
+  gem "pry-rails"
+
+  # Testing
+  gem "capybara"
+  gem "selenium-webdriver"
+
+  
+end
+
+group :development do
+  # Console on exceptions pages
+  gem "web-console"
+
+  # Annota for schema documentation
+  gem "annotate"
+
+  # For vulnerability scanning
+  gem "bundler-audit", require: false
+end

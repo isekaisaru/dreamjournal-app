@@ -1,0 +1,10 @@
+.git
+.env*
+log
+tmp
+node_modules
+vendor/bundle
+coverage
+spec
+*.log
+Dockerfile*

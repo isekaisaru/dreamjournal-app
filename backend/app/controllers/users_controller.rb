@@ -17,12 +17,9 @@ class UsersController < ApplicationController
         return
       end
 
-      # フロントエンドが必要とする形式で返す
-      render json: {
-        user: result[:user].as_json(only: [:id, :email, :username]), # パスワードなどは含めない
-        access_token: result[:access_token],
-        refresh_token: result[:refresh_token]
-      }, status: :created # status: 201 Created
+      # ログイン時と同様にCookieを設定
+      set_token_cookies(result[:access_token], result[:refresh_token])
+      render json: { user: result[:user].as_json(only: [:id, :email, :username]) }, status: :created
     rescue AuthService::RegistrationError => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
@@ -30,12 +27,12 @@ class UsersController < ApplicationController
 
   # ユーザー削除
   def destroy
-    if @user == current_user
-      if @user.destroy
-        render json: { message: "ユーザーが正常に削除されました" }, status: :ok
-      else
-        render json: { error: "ユーザーの削除に失敗しました。" }, status: :unprocessable_entity
-      end
+    # 削除対象は常に現在のユーザーに限定する
+    if current_user.destroy
+      # ログアウト処理も忘れずに行う
+      cookies.delete(:access_token)
+      cookies.delete(:refresh_token, path: '/')
+      render json: { message: "ユーザーアカウントが正常に削除されました" }, status: :ok
     else
       render json: { error: "許可されていない操作です。" }, status: :unauthorized
     end

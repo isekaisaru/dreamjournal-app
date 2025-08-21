@@ -16,21 +16,14 @@ module App
     config.load_defaults 7.0
     config.autoload_paths << Rails.root.join('app/services')
 
-    # 環境変数 POSTGRES_PASSWORD が設定されているか確認
-    if ENV['POSTGRES_PASSWORD'].blank?
-      raise "POSTGRES_PASSWORD environment variable is not set."
-    end
-
-    # CORS設定を追加
-    config.middleware.insert_before 0, Rack::Cors do
-      allow do
-        origins 'http://localhost:3000'
-        resource '*', headers: :any, methods: [:get, :post, :put, :patch, :delete, :options, :head]
-      end
-    end
-
     config.autoload_paths << Rails.root.join('lib')
     config.debug_exception_response_format = :api
+    
+    # セキュリティヘッダーの追加
+    config.force_ssl = false # 開発環境ではfalse、本番環境ではtrueに設定
+    
+    # セキュリティミドルウェアの設定
+    config.middleware.use Rack::Deflater
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.

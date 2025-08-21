@@ -1,14 +1,12 @@
-"use client";
-
-import { useEffect, useState, useCallback } from "react";
+import { Suspense } from "react";
 import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
-import axios from "axios";
-import { Dream, User } from "@/app/types";
-import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { Dream } from "@/app/types";
+import { cookies } from "next/headers";
+import { getMyDreams, getMe } from "@/lib/apiClient";
+import type { User } from "@/app/types";
+import { redirect } from "next/navigation";
 import Loading from "../loading";
 
 /**
@@ -24,11 +22,10 @@ import Loading from "../loading";
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
-      const date = new Date(dream.created_at); // 夢の日付をDateオブジェクトに変換
-      const yearMonth = `${date.getFullYear()}-${(
-        "0" +
-        (date.getMonth() + 1)
-      ).slice(-2)}`; //"2024-01"の形式
+      const date = new Date(dream.created_at);
+      const yearMonth = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}`;
 
       if (!groupedDreams[yearMonth]) {
         groupedDreams[yearMonth] = [];
@@ -41,92 +38,45 @@ function groupDreamsByMonth(dreams: Dream[]) {
   );
 }
 
-export default function HomePage() {
-  const router = useRouter();
-  const { isLoggedIn, userId, getValidAccessToken } = useAuth(); // ユーザーの認証状態を取得
-  const [dreams, setDreams] = useState<Dream[]>([]); //夢データの状態管理
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
-  const [user, setUser] = useState<User | null>(null); // ユーザーデータの状態管理
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
 
-  // ユーザーデータと夢データを取得する関数
-  const fetchUserData = useCallback(
-    async (query = "", startDate = "", endDate = "") => {
-    try {
-      const token = await getValidAccessToken(); // 有効なアクセストークンを取得
-      if (!token || token === "null" || token === "undefined") {
-        console.warn(
-          "HomePage: No valid token for fetching data. AuthContext should have redirected if initial check failed."
-        );
-        return;
-      }
+  if (!token) {
+    redirect("/login");
+  }
 
-      // ユーザー情報と夢データを取得するAPIエンドポイントにGETリクエストを送信
-      const userResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (userResponse.data && userResponse.data.user) {
-        setUser(userResponse.data.user);
-      } else {
-        console.warn(
-          "User data not found in /auth/me response:",
-          userResponse.data
-        );
-      }
+  const resolvedSearchParams = await searchParams;
+  const queryParams = new URLSearchParams();
+  if (resolvedSearchParams.query)
+    queryParams.set("query", String(resolvedSearchParams.query));
+  if (resolvedSearchParams.startDate)
+    queryParams.set("start_date", String(resolvedSearchParams.startDate));
+  if (resolvedSearchParams.endDate)
+    queryParams.set("end_date", String(resolvedSearchParams.endDate));
 
-      const params: Record<string, string> = {};
-      if (query) params.query = query;
-      if (startDate) params.start_date = startDate;
-      if (endDate) params.end_date = endDate;
+  let dreams: Dream[] = [];
+  let user: User | null = null;
+  let errorMessage: string | null = null;
 
-      // 夢データ取得APIエンドポイントにGETリクエストを送信
-      const dreamsResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/dreams/my_dreams`,
-        { headers: { Authorization: `Bearer ${token}` }, params }
-      );
-      setDreams(dreamsResponse.data); //夢データの状態を更新
-      setErrorMessage(null);
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-
-      if (axios.isAxiosError(error)) {
-        if (error.response?.data.message) {
-          setErrorMessage(error.response.data.message);
-        } else if (error.response?.data.error) {
-          setErrorMessage(error.response.data.error);
-        } else {
-          setErrorMessage("夢のデータの取得に失敗しました。");
-        }
-      } else {
-        setErrorMessage("予期しないエラーが発生しました。");
-      }
+  try {
+    [dreams, user] = await Promise.all([
+      getMyDreams(token, queryParams),
+      getMe(token),
+    ]);
+  } catch (error) {
+    // fetch に失敗した場合、特にトークンが無効(401)な場合は、
+    // ログインページにリダイレクトするのが安全。
+    if (error instanceof Error && error.message.includes("401")) {
+      redirect("/login");
     }
-    },
-    [getValidAccessToken]);
-
-  // isLoggedinが変更されたときにユーザーデータを取得
-  useEffect(() => {
-    if (isLoggedIn && userId) {
-      fetchUserData();
-    } else if (isLoggedIn === false) {
-      setDreams([]); // 夢データを空に設定
-      setUser(null); // ユーザーデータを空に設定
-      setErrorMessage(null); // エラーメッセージをリセット
-    }
-  }, [isLoggedIn, userId, fetchUserData]);
-
-  useEffect(() => {
-    if (isLoggedIn === true) {
-      const registrationSuccess = sessionStorage.getItem("registrationSuccess");
-      if (registrationSuccess === "true") {
-        toast.success("ようこそ！ユーザー登録が完了しました。");
-        sessionStorage.removeItem("registrationSuccess");
-      }
-    }
-  }, [isLoggedIn]);
-
-  if (isLoggedIn === null) {
-    return <Loading />;
+    console.error("Error fetching data on server:", error);
+    errorMessage =
+      "データの取得に失敗しました。ページを再読み込みしてください。";
   }
 
   // 夢データを月ごとにグループ化
@@ -139,7 +89,9 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold text-foreground">
           {user ? `${user.username}さんの夢` : "夢リスト"}
         </h1>
-        <SearchBar onSearch={fetchUserData} />
+        <Suspense fallback={<Loading />}>
+          <SearchBar />
+        </Suspense>
         {/* エラーメッセージがある場合は表示 */}
         {errorMessage && (
           <div className="text-destructive mb-4">{errorMessage}</div>

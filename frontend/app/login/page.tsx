@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import { clientLogin } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
@@ -27,25 +27,21 @@ export default function Login() {
       return;
     }
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        { email, password }
-      );
-     const { access_token, refresh_token, user } = response.data;
-     if (access_token && refresh_token && user) {
-        login(access_token, refresh_token, user);
-     } else {
-      console.error("Login response missing tokens or user data:", response.data);
-      setPageError("ログイン情報の取得に失敗しました。");
-     }
+      // 以前: 汎用のapiClient.postを使っていました。
+      // 今回: ログイン専用の `clientLogin` 関数を呼び出します。コードが何をしたいのか分かりやすくなりますね！
+      const { user } = await clientLogin({ email, password });
+      // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
+      login(user);
     } catch (apiError: any) {
       console.error("ログインAPI呼び出しエラー:", apiError);
-      const backendErrorMessage: string = apiError.response?.data?.error || apiError.response?.data?.message || "ログインに失敗しました。もう一度お試しください。";
-      setPageError(backendErrorMessage);
+      // 以前: エラーメッセージは深い階層にありました (apiError.response.data.error)。
+      // 今回: 新しいapiFetch関数のおかげで、エラーメッセージが apiError.message に直接入っています。シンプル！
+      setPageError(
+        apiError.message || "ログインに失敗しました。もう一度お試しください。"
+      );
     } finally {
       setIsLoading(false);
     }
-  
   };
 
   return (
@@ -91,7 +87,9 @@ export default function Login() {
             {isLoading ? "ログイン中..." : "ログイン"} {}
           </button>
         </div>
-        {pageError && <p className="text-destructive mt-4 text-center">{pageError}</p>}
+        {pageError && (
+          <p className="text-destructive mt-4 text-center">{pageError}</p>
+        )}
       </form>
     </div>
   );

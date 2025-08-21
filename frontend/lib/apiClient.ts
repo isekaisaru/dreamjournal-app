@@ -1,88 +1,184 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY, attemptTokenRefresh, performLogout } from '../services/authService';
+/**
+ * A centralized fetch function for API communication.
+ * It handles URL creation, JSON content type, and error handling.
+ * For client-side requests, it includes credentials (cookies).
+ * For server-side, the token must be passed explicitly in the options.
+ *
+ * @param endpoint APIエンドポイント (例: '/dreams/my_dreams')
+ * @param options 追加のfetchオプション。サーバーサイドで認証が必要な場合は `token` を含める。
+ * @returns APIからのJSONレスポンス
+ */
+import { createApiUrl } from "./api-config";
+import type {
+  Dream,
+  Emotion,
+  BackendUser,
+  User,
+  LoginCredentials,
+  RegisterCredentials,
+} from "@/app/types";
 
-const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-});
+type ApiFetchOptions = RequestInit & { token?: string };
 
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-      if (token && config.headers) {
-        config.headers['Authorization'] = `Bearer ${token}`;
-      }
+export async function apiFetch<T>(
+  endpoint: string,
+  options: ApiFetchOptions = {}
+): Promise<T> {
+  const url = createApiUrl(endpoint);
+  const { token, ...fetchOptions } = options;
+
+  const defaultHeaders: HeadersInit = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+
+  const isServer = typeof window === "undefined";
+
+  const finalOptions: RequestInit = {
+    ...fetchOptions,
+    headers: {
+      ...defaultHeaders,
+      ...fetchOptions.headers,
+    },
+  };
+
+  if (isServer) {
+    // Server-side: Manually add cookie and disable cache
+    if (token) {
+      (finalOptions.headers as Record<string, string>)["Cookie"] =
+        `access_token=${token}`;
     }
-    return config;
-  },
-  (error: AxiosError) => {
-    return Promise.reject(error);
+    finalOptions.cache = "no-store";
+  } else {
+    // Client-side: Browser handles credentials
+    finalOptions.credentials = "include";
   }
-);
 
-let isRefreshing = false;
-let failedQueue: Array<{ resolve: (value?: any) => void; reject: (reason?: any) => void }> = [];
+  const response = await fetch(url, finalOptions);
 
-const processQueue = (error: AxiosError | null, token: string | null = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+  if (!response.ok) {
+    let errorMessage = `API request to ${endpoint} failed with status ${response.status}.`;
+    try {
+      const errorData = await response.json();
+      // Railsのエラー形式に合わせて調整
+      errorMessage =
+        errorData.error ||
+        (Array.isArray(errorData.errors)
+          ? errorData.errors.join(", ")
+          : errorData.message) ||
+        errorMessage;
+    } catch {
+      // JSONのパースに失敗した場合
+      console.error(`Could not parse error response for ${endpoint}:`);
     }
+    throw new Error(errorMessage);
+  }
+
+  // Handle responses with no content
+  if (response.status === 204) {
+    return null as T;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+// --- Server Component Data Fetching ---
+
+/**
+ * 現在のユーザーの夢を取得します。
+ * @param token ユーザーのアクセストークン
+ * @param searchParams 夢をフィルタリングするための検索パラメータ
+ * @returns 夢の配列を解決するPromise
+ */
+export async function getMyDreams(
+  token: string,
+  searchParams: URLSearchParams
+): Promise<Dream[]> {
+  const endpoint = `/dreams/my_dreams?${searchParams.toString()}`;
+  return apiFetch(endpoint, { token });
+}
+
+/**
+ * 現在認証されているユーザーのデータを取得します。
+ * @param token ユーザーのアクセストークン
+ * @returns The user object.
+ */
+export async function getMe(token: string): Promise<User> {
+  const data = await apiFetch<{ user: BackendUser }>("/auth/me", { token });
+  return { ...data.user, id: String(data.user.id) };
+}
+
+// --- Client Component Functions ---
+
+export async function clientLogin(
+  credentials: LoginCredentials
+): Promise<{ user: User }> {
+  const response = await apiFetch<{ user: BackendUser }>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(credentials),
   });
-  failedQueue = [];
-};
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as
-    InternalAxiosRequestConfig & { _retry?: boolean };
+  return {
+    user: { ...response.user, id: String(response.user.id) },
+  };
+}
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-        .then(token => {
-          if (originalRequest.headers) {
-            originalRequest.headers['Authorization'] = 'Bearer ' + token;
-          }
-          return apiClient(originalRequest);
-        })
-        .catch(err => {
-          return Promise.reject(err);
-        });
-      }
+export async function clientRegister(
+  credentials: RegisterCredentials
+): Promise<{ user: User }> {
+  // Rails often expects parameters nested under a model key
+  const response = await apiFetch<{ user: BackendUser }>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ user: credentials }),
+  });
+  return {
+    user: { ...response.user, id: String(response.user.id) },
+  };
+}
 
-      originalRequest._retry = true;
-      isRefreshing = true;
+export async function clientLogout(): Promise<null> {
+  return apiFetch("/auth/logout", {
+    method: "POST",
+  });
+}
 
-      try {
-        const newAccessToken = await attemptTokenRefresh();
-        if (newAccessToken) {
-          if (originalRequest.headers) {
-            originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
-          }
-          processQueue(null, newAccessToken);
-          return apiClient(originalRequest);
-        } else {
-          processQueue(error, null);
-          await performLogout();
-          return Promise.reject(error);
-        }
-      } catch (refreshError) {
-        processQueue(refreshError as AxiosError, null);
-        await performLogout();
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+export async function getEmotions(): Promise<Emotion[]> {
+  return apiFetch("/emotions");
+}
+
+export async function verifyAuth(): Promise<{ user: User } | null> {
+  try {
+    const response = await apiFetch<{ user: BackendUser }>("/auth/verify");
+    if (!response || !response.user) return null;
+    return {
+      user: { ...response.user, id: String(response.user.id) },
+    };
+  } catch (error) {
+    // 401エラーの場合は認証されていないとみなし、nullを返す
+    if (error instanceof Error && error.message.includes("401")) {
+      return null;
     }
-    return Promise.reject(error);
+    // その他のエラーは再スロー
+    throw error;
   }
-);
+}
+
+const apiClient = {
+  get: <T>(url: string, options?: ApiFetchOptions) =>
+    apiFetch<T>(url, { ...options, method: "GET" }),
+  post: <T>(url: string, data?: any, options?: ApiFetchOptions) =>
+    apiFetch<T>(url, {
+      ...options,
+      method: "POST",
+      body: data ? JSON.stringify(data) : null,
+    }),
+  put: <T>(url: string, data?: any, options?: ApiFetchOptions) =>
+    apiFetch<T>(url, {
+      ...options,
+      method: "PUT",
+      body: data ? JSON.stringify(data) : null,
+    }),
+  delete: <T>(url: string, options?: ApiFetchOptions) =>
+    apiFetch<T>(url, { ...options, method: "DELETE" }),
+};
 
 export default apiClient;

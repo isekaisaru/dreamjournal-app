@@ -1,21 +1,14 @@
 // app/page.tsx
-"use client";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { useAuth } from "@/context/AuthContext";
-import HomePage from "./home/page";
-import TrialPage from "./trial/page";
-import Loading from "./loading";
+export default async function IndexPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
 
-export default function IndexPage() {
-  const { isLoggedIn } = useAuth();
-
-  if (isLoggedIn === null) {
-    return <Loading />;
-  }
-
-  if (isLoggedIn) {
-    return <HomePage />;
+  if (token) {
+    redirect("/home");
   } else {
-    return <TrialPage />;
+    redirect("/trial");
   }
 }

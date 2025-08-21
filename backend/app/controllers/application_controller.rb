@@ -1,6 +1,7 @@
 require_relative '../services/auth_service'
 
 class ApplicationController < ActionController::API
+  include ActionController::Cookies
   before_action :authorize_request
   attr_reader :current_user
 
@@ -8,45 +9,46 @@ class ApplicationController < ActionController::API
 
   # リクエストを認証する
   def authorize_request
-    header = request.headers['Authorization']
-    token = header&.split(' ')&.last
+    token = cookies[:access_token]
 
-    Rails.logger.info "受け取った Authorization ヘッダー: Bearer [FILTERED]" if Rails.env.development?
-    Rails.logger.info "トークンを受け取り、認証処理を実行" if Rails.env.development?
+    Rails.logger.info "Cookieからアクセストークンを受け取り、認証処理を実行" if Rails.env.development?
 
     if token.nil?
-      Rails.logger.warn "トークンが見つかりません"
-      render json: { error: 'トークンが見つかりません' }, status: :unauthorized
+      Rails.logger.warn "Cookieにアクセストークンが見つかりません"
+      render json: { error: '認証されていません。ログインしてください。' }, status: :unauthorized
       return
     end
 
-    decoded_token = AuthService.decode_token(token)
+    begin
+      decoded_token = AuthService.decode_token(token)
+      raise StandardError, 'Invalid token' unless decoded_token && decoded_token['user_id']
 
-    # decode_tokenn が nil または想定外の型である場合
-    if decoded_token.nil?
-      Rails.logger.warn "トークンのデコードに失敗しました (nil)"
-      render json: { error: 'トークンの解析に失敗しました。トークンが不正です。'}, status: :unauthorized
-      return
+      user_id = decoded_token['user_id']
+      @current_user = User.find_by(id: user_id)
+
+      raise StandardError, "User not found for ID: #{user_id}" unless @current_user
+
+      Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
+    rescue => e
+      Rails.logger.warn "認証失敗: #{e.class} - #{e.message}"
+      render json: { error: '認証に失敗しました。再度ログインしてください。' }, status: :unauthorized
     end
+  end
 
-    # decoce_token が Hash であることを確認
-    unless decoded_token.is_a?(Hash)
-      Rails.logger.warn "無効なトークン: #{decoded_token.inspect}"
-      render json: { error: '無効なトークンです。トークンの形式が正しくありません。'}, status: :unauthorized
-      return
-    end
-
-    # トークンの有効期限が切れているか確認
-
-    user_id = decoded_token['user_id']
-    @current_user = User.find_by(id: user_id)
-
-    if @current_user.nil?
-      Rails.logger.warn "認証されたユーザーが見つかりません。 ID: #{user_id} | トークン: #{token}"
-      render json: { error: '認証エラー: 指定されたユーザーIDのユーザーが見つかりません。' }, status: :unauthorized
-      return
-    end
-
-    Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
+  def set_token_cookies(access_token, refresh_token)
+    cookies[:access_token] = {
+      value: access_token,
+      httponly: true,
+      secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
+      same_site: :lax, # 開発環境でも安定したlax設定を使用
+      path: '/' # 全てのパスでCookieが利用可能になるよう設定
+    }
+    cookies[:refresh_token] = {
+      value: refresh_token,
+      httponly: true,
+      secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
+      same_site: :lax,
+      path: '/'
+    }
   end
 end

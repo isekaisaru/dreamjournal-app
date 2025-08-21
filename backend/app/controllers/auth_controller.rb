@@ -1,5 +1,5 @@
 class AuthController < ApplicationController
-  skip_before_action :authorize_request, only: [:login, :refresh, :logout, :verify] # verify も認証不要にする
+  skip_before_action :authorize_request, only: [:login, :refresh, :logout]
 
   # ユーザーのログイン
   def login
@@ -16,11 +16,8 @@ class AuthController < ApplicationController
         return
       end
 
-      render json: {
-        access_token: result[:access_token],
-        refresh_token: result[:refresh_token],
-        user: result[:user].as_json(only: [:id, :email, :username])
-      }, status: :ok
+      set_token_cookies(result[:access_token], result[:refresh_token])
+      render json: { user: result[:user].as_json(only: [:id, :email, :username]) }, status: :ok
     rescue AuthService::InvalidCredentialsError => e
       render json: { error: e.message }, status: :unauthorized
     rescue StandardError => e # その他の予期せぬエラー
@@ -36,8 +33,7 @@ class AuthController < ApplicationController
 
   # トークンをリフレッシュする
   def refresh
-    # リクエストボディやパラメータからリフレッシュトークンを取得
-    refresh_token = params[:refresh_token]
+    refresh_token = cookies[:refresh_token]
 
     Rails.logger.info "受け取ったリフレッシュトークン: #{refresh_token.present? ? '[FILTERED]' : '[なし]'}" if Rails.env.development?
     if refresh_token.nil?
@@ -49,11 +45,8 @@ class AuthController < ApplicationController
     begin
       result = AuthService.refresh_token(refresh_token)
       Rails.logger.info "新しいアクセストークンを発行: #{result[:access_token]}" if Rails.env.development?
-      # 新しいアクセストークンとリフレッシュトークンを返す
-      render json: {
-        access_token: result[:access_token],
-        refresh_token: result[:refresh_token] # 新しいリフレッシュトークンも返す
-      }, status: :ok
+      set_token_cookies(result[:access_token], result[:refresh_token]) 
+      render json: { message: "トークンを更新しました" }, status: :ok
     rescue AuthService::InvalidRefreshTokenError => e
       Rails.logger.warn "無効なリフレッシュトークン: #{e.message}"
       render json: { error: e.message }, status: :unauthorized
@@ -66,7 +59,7 @@ class AuthController < ApplicationController
   # ログアウト
   # リフレッシュトークンを受け取り、それを無効化する方式に変更
   def logout
-    refresh_token = params[:refresh_token] # リクエストボディやパラメータから取得
+    refresh_token = cookies[:refresh_token]
 
     unless refresh_token
       Rails.logger.warn "ログアウトリクエストにリフレッシュトークンが含まれていません"
@@ -79,6 +72,8 @@ class AuthController < ApplicationController
       user = AuthService.find_user_by_refresh_token(refresh_token)
       # バリデーションとコールバックをスキップしてリフレッシュトークンのみを無効化
       user.update_column(:refresh_token, nil)
+      cookies.delete(:access_token)
+      cookies.delete(:refresh_token, path: '/')
       render json: { message: "ログアウトしました" }, status: :ok
     rescue AuthService::InvalidRefreshTokenError => e
       # 無効なリフレッシュトークンが指定された場合 (既にログアウト済み、または不正なトークン)
@@ -94,37 +89,6 @@ class AuthController < ApplicationController
 
   # トークンの検証
   def verify
-    header = request.headers['Authorization']
-    return render json: { error: 'Authorization ヘッダーが必要です。'}, status: :bad_request unless header
-
-    token = header.split(' ').last
-    decoded = AuthService.decode_token(token)
-
-    if decoded.nil?
-      Rails.logger.warn "トークンのデコードに失敗しました (nil)"
-      render json: { error: 'トークンの解析に失敗しました。トークンが不正です。'}, status: :unauthorized
-      return
-    end
-
-    unless decoded.is_a?(Hash)
-      Rails.logger.warn "無効なトークン: #{decoded.inspect}"
-      render json: { error: '無効なトークンです。トークンの形式が正しくありません。'}, status: :unauthorized
-      return
-    end
-    if decoded['user_id']
-      user = User.find_by(id: decoded['user_id'])
-      if user
-        render json: { message: 'トークンは有効です。', user: user.as_json(only: [:id, :email, :username]) }, status: :ok
-      else
-        Rails.logger.warn "トークンは有効だが、該当ユーザーが見つかりません: #{decoded['user_id']}"
-        render json: { error: '指定されたユーザーIDのユーザーが見つかりません。'}, status: :unauthorized
-      end
-    else
-      Rails.logger.warn "無効なトークン: #{token}"
-      render json: { error: '無効なトークンです。トークンにユーザーIDが含まれていません。'}, status: :unauthorized
-    end
-  rescue StandardError => e # その他の予期せぬエラー
-    Rails.logger.error "トークン検証中に予期せぬエラーが発生: #{e.message}\n#{e.backtrace.join("\n")}"
-    render json: { error: 'トークン検証中にエラーが発生しました' }, status: :internal_server_error
+    render json: { authenticated: true, user: @current_user.as_json(only: [:id, :email, :username]) }, status: :ok
   end
 end
