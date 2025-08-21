@@ -20,24 +20,24 @@
 
 ## インストール手順
 
-1. このリポジトリをクローンします。
+1.  **リポジトリをクローン**
 
     ```
     git clone [リポジトリURL]
+    cd dream-journal-app
     ```
 
-2. Docker環境をセットアップします。（Dockerfileとdocker-compose.ymlの指示に従ってください）
+2.  **環境変数を設定**
 
+    バックエンド用の `.env` ファイルをテンプレートから作成し、中身を編集します。
+    ```bash
+    cp backend/.env.example backend/.env
     ```
-    docker-compose build
-    docker-compose up
-    ```
+    `backend/.env` ファイルを開き、`POSTGRES_PASSWORD` や `SECRET_KEY_BASE` などの必須項目をあなたの値に設定してください。
 
-3. データベースのセットアップを行います。
-
+3.  **Dockerコンテナを起動**
     ```
-    docker-compose run web rake db:create
-    docker-compose run web rake db:migrate
+    make dev-up
     ```
 
 ## 使用方法

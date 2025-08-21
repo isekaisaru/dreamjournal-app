@@ -47,9 +47,11 @@ Rails.application.configure do
   config.log_level = :debug
 
   # Docker からの web-console を許可（172.18.0.0/16 など、実際のブリッジに合わせる）
-  config.web_console.permissions = '172.18.0.0/16'
+  if defined?(WebConsole)
+    config.web_console.permissions = '172.18.0.0/16'
+  end
 
   # 必要ならホスト許可（Docker 経由アクセス用）
-  # config.hosts << "localhost"
-  # config.hosts << "host.docker.internal"
+  # フロントエンドコンテナ(backend)からのリクエストを許可
+  config.hosts << "backend"
 end

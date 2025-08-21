@@ -27,12 +27,12 @@ class UsersController < ApplicationController
 
   # ユーザー削除
   def destroy
-    if @user == current_user
-      if @user.destroy
-        render json: { message: "ユーザーが正常に削除されました" }, status: :ok
-      else
-        render json: { error: "ユーザーの削除に失敗しました。" }, status: :unprocessable_entity
-      end
+    # 削除対象は常に現在のユーザーに限定する
+    if current_user.destroy
+      # ログアウト処理も忘れずに行う
+      cookies.delete(:access_token)
+      cookies.delete(:refresh_token, path: '/')
+      render json: { message: "ユーザーアカウントが正常に削除されました" }, status: :ok
     else
       render json: { error: "許可されていない操作です。" }, status: :unauthorized
     end

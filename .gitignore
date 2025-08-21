@@ -12,11 +12,18 @@
 /log/
 /tmp/
 
-# 環境変数
+# 環境変数（機密情報保護）
 *.env
 *.env.*
 !*.env.example
 !*.env.erb
+
+# 追加の機密ファイル保護
+backend/.env
+frontend/.env.local
+.env.local
+.env.production
+.env.staging
 
 # === Frontend (Next.js) ===
 /frontend/node_modules/

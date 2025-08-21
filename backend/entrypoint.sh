@@ -28,6 +28,21 @@ rm -f /app/tmp/pids/server.pid
 echo "✅ PIDファイル削除完了"
 
 # ========================================
+# 🔑 環境変数チェック: 必須変数の確認
+# ========================================
+#
+# なぜ必要か？
+# - 起動に必要な情報が欠けていると、後続の処理で予期せぬエラーが発生する
+# - 早期に問題を検知し、分かりやすいエラーメッセージで開発者を助ける
+
+echo "🔑 必須の環境変数を確認中..."
+[ -z "$POSTGRES_PASSWORD" ] && { echo "❌ エラー: POSTGRES_PASSWORDが設定されていません。"; exit 1; }
+# デフォルト値を設定
+export POSTGRES_USER="${POSTGRES_USER:-postgres}"
+export POSTGRES_DB="${POSTGRES_DB:-dream_journal_development}"
+echo "✅ 必須の環境変数OK (User: $POSTGRES_USER, DB: $POSTGRES_DB)"
+
+# ========================================
 # 📦 依存関係チェック: Gemの確認とインストール
 # ========================================
 # 
@@ -59,7 +74,7 @@ max_attempts=30
 attempt=1
 
 while [ $attempt -le $max_attempts ]; do
-    if bundle exec rails runner "ActiveRecord::Base.connection.active?" 2>/dev/null; then
+    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1;" >/dev/null 2>&1; then
         echo "✅ データベース接続成功 (${attempt}回目の試行)"
         break
     fi
@@ -125,4 +140,4 @@ echo "🚀 コマンド実行: $*"
 # - Dockerの シグナル処理が正常に動作
 # - PID 1でRailsが動作してgraceful shutdownが可能
 
-exec "$@"
+exec bundle exec "$@"

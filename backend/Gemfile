@@ -14,6 +14,9 @@ gem "puma", "~> 6.0"
 # JavaScript with ESM import maps
 gem "importmap-rails"
 
+# Use Sprockets for asset pipeline
+gem "sprockets-rails"
+
 # Hotwire for modern web UIs
 gem "turbo-rails"
 gem "stimulus-rails"

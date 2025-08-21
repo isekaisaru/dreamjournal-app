@@ -19,47 +19,34 @@ class ApplicationController < ActionController::API
       return
     end
 
-    decoded_token = AuthService.decode_token(token)
+    begin
+      decoded_token = AuthService.decode_token(token)
+      raise StandardError, 'Invalid token' unless decoded_token && decoded_token['user_id']
 
-    # decode_tokenn が nil または想定外の型である場合
-    if decoded_token.nil?
-      Rails.logger.warn "トークンのデコードに失敗しました (nil)"
-      render json: { error: 'トークンの解析に失敗しました。トークンが不正です。'}, status: :unauthorized
-      return
+      user_id = decoded_token['user_id']
+      @current_user = User.find_by(id: user_id)
+
+      raise StandardError, "User not found for ID: #{user_id}" unless @current_user
+
+      Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
+    rescue => e
+      Rails.logger.warn "認証失敗: #{e.class} - #{e.message}"
+      render json: { error: '認証に失敗しました。再度ログインしてください。' }, status: :unauthorized
     end
-
-    # decoce_token が Hash であることを確認
-    unless decoded_token.is_a?(Hash)
-      Rails.logger.warn "無効なトークン: #{decoded_token.inspect}"
-      render json: { error: '無効なトークンです。トークンの形式が正しくありません。'}, status: :unauthorized
-      return
-    end
-
-    # トークンの有効期限が切れているか確認
-
-    user_id = decoded_token['user_id']
-    @current_user = User.find_by(id: user_id)
-
-    if @current_user.nil?
-      Rails.logger.warn "認証されたユーザーが見つかりません。 ID: #{user_id}"
-      render json: { error: '認証エラー: 指定されたユーザーIDのユーザーが見つかりません。' }, status: :unauthorized
-      return
-    end
-
-    Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
   end
 
   def set_token_cookies(access_token, refresh_token)
     cookies[:access_token] = {
       value: access_token,
       httponly: true,
-      secure: Rails.env.production?,
-      same_site: :lax
+      secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
+      same_site: :lax, # 開発環境でも安定したlax設定を使用
+      path: '/' # 全てのパスでCookieが利用可能になるよう設定
     }
     cookies[:refresh_token] = {
       value: refresh_token,
       httponly: true,
-      secure: Rails.env.production?,
+      secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
       same_site: :lax,
       path: '/'
     }

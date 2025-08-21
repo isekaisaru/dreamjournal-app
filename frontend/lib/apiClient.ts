@@ -126,7 +126,7 @@ export async function clientRegister(
   credentials: RegisterCredentials
 ): Promise<{ user: User }> {
   // Rails often expects parameters nested under a model key
-  const response = await apiFetch<{ user: BackendUser }>("/auth/register/", {
+  const response = await apiFetch<{ user: BackendUser }>("/auth/register", {
     method: "POST",
     body: JSON.stringify({ user: credentials }),
   });
@@ -136,8 +136,8 @@ export async function clientRegister(
 }
 
 export async function clientLogout(): Promise<null> {
-  return apiFetch("/auth/logout/", {
-    method: "DELETE",
+  return apiFetch("/auth/logout", {
+    method: "POST",
   });
 }
 

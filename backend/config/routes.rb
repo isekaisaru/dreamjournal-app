@@ -15,16 +15,13 @@ Rails.application.routes.draw do
     end
     resources :emotions, only: [:index]
     # 認証関連
-    namespace :auth do
-      post 'login'
-      get 'me'
-      get 'verify'
-      post 'refresh'
-      post 'logout'
+    scope '/auth' do
+      post 'login', to: 'auth#login'
+      post 'register', to: 'users#register'  # ユーザー登録
+      get 'me', to: 'auth#me'
+      get 'verify', to: 'auth#verify'
+      post 'refresh', to: 'auth#refresh'
+      post 'logout', to: 'auth#logout'
     end
-
-
-    # ユーザー関連
-    post '/register', to: 'users#register' # ユーザー登録
     delete 'users/:id', to: 'users#destroy'    # ユーザー削除
 end

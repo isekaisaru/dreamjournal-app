@@ -95,6 +95,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+
+    const publicPaths = ["/login", "/register", "/trial"];
+    if (publicPaths.includes(pathname)) {
+      // ログイン/登録ページなど、認証が不要なページではAPIコールをスキップ
+      setIsLoggedIn(false);
+      return;
+    }
     const checkAuthStatus = async () => {
       console.log("AuthContext: useEffect - Checking auth status...", {
         pathname,
@@ -130,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       isMounted = false;
     };
-  }, [pathname]);
+  }, [pathname]); // 依存配列は変更なし
 
   return (
     <AuthContext.Provider
