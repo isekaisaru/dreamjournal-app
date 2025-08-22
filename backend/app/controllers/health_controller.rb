@@ -14,7 +14,7 @@ require 'uri'
 
 class HealthController < ApplicationController
   # 認証をスキップ（外部監視ツールからのアクセスを許可）
-  skip_before_action :authenticate_request, only: [:check, :detailed_check]
+  skip_before_action :authorize_request, only: [:check, :detailed_check], raise: false
   
   # ========================================
   # 🔍 基本的なヘルスチェック
@@ -95,23 +95,6 @@ class HealthController < ApplicationController
   end
 
   private
-
-  # ========================================
-  # 🗄️ データベース接続確認（基本版）
-  # ========================================
-  def check_database
-    start_time = Time.current
-    ActiveRecord::Base.connection.execute("SELECT 1")
-    {
-      status: 'OK',
-      response_time_ms: ((Time.current - start_time) * 1000).round(2)
-    }
-  rescue StandardError => e
-    {
-      status: 'ERROR',
-      message: e.message
-    }
-  end
 
   # ========================================
   # 🗄️ 拡張データベース接続確認
