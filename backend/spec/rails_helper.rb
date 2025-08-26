@@ -20,7 +20,7 @@ require 'rspec/rails'
 # directory. Alternatively, in the individual `*_spec.rb` files, manually
 # require only the support files necessary.
 #
-# Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
+Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
 # Checks for pending migrations and applies them before tests are run.
 # If you are not using ActiveRecord, you can remove these lines.
@@ -38,12 +38,33 @@ RSpec.configure do |config|
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false
   # instead of true.
-  config.use_transactional_fixtures = true
+  config.use_transactional_fixtures = false
   
   # API テストでCSRF保護を無効化
   config.before(:each, type: :request) do
     ActionController::Base.allow_forgery_protection = false
   end
+  
+  # --- Database Cleaner Configuration ---
+  config.before(:suite) do
+    # Docker環境で 'db' ホストがリモートと誤認されるのを防ぐため、
+    # テスト環境でのみリモートDBのURLを許可する
+    DatabaseCleaner.allow_remote_database_url = true
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
+  end
+
+  # FactoryBot設定
+  config.include FactoryBot::Syntax::Methods
+  
+  # 認証ヘルパー設定
+  config.include AuthHelpers, type: :request
 
   # You can uncomment this line to turn off ActiveRecord support entirely.
   # config.use_active_record = false

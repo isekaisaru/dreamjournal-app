@@ -4,24 +4,12 @@ class DreamsController < ApplicationController
 
   # GET /dreams
   def index
-    if current_user.nil?
-      Rails.logger.warn "DreamsController#index: current_user が nil です。"
-      render json: { error: "認証されたユーザーがいません" }, status: :unauthorized
-      return
-    end
-    # 現在のユーザーの夢を取得
-    @dreams = current_user.dreams
-    # クエリパラメーターが存在する場合、タイトルでフィルタリング
-    if params[:query].present?
-      @dreams = @dreams.where("title LIKE ?", "%#{params[:query]}%")
-    end
-    
-    # 日付パラメーターが存在する場合、作成日でフィルタリング
-    if params[:start_date].present? && params[:end_date].present?
-      @dreams = @dreams.where(created_at: params[:start_date]..params[:end_date])
-    end
-
-    render json: @dreams.as_json(only: [:id, :title,:created_at]) 
+    # DreamFilterQueryを使用して、フィルタリングとソートを一元管理
+    initial_scope = current_user.dreams.order(created_at: :desc)
+    filter_params = params.permit(:query, :start_date, :end_date, emotion_ids: [])
+    @dreams = DreamFilterQuery.new(initial_scope, filter_params).call
+    # my_dreamsと同様に、感情(emotions)も一緒に返す
+    render json: @dreams, include: [:emotions]
   end
 
   # GET /dreams/:id
@@ -35,7 +23,7 @@ class DreamsController < ApplicationController
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
-      render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end
   end
 
@@ -44,7 +32,7 @@ class DreamsController < ApplicationController
     if @dream.update(dream_params)
       render json: @dream
     else
-      render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end
   end
 
@@ -54,7 +42,7 @@ class DreamsController < ApplicationController
       Rails.logger.info "Dream deleted successfully."
       head :no_content
     else
-      render json: { error: @dream.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end
   end
   # GET /dreams/month/:yaer_month
@@ -75,34 +63,13 @@ class DreamsController < ApplicationController
       render json: { error: "無効な日付フォーマットです。YYYY-MM 形式で指定してください。" }, status: :bad_request
     end
   end
-  # GET /my_dreams
-  def my_dreams
-    @dreams = current_user.dreams.order(created_at: :desc)
-
-    if params[:query].present?
-      @dreams = @dreams.where("title LIKE :query OR content LIKE :query", query: "%#{params[:query]}%")
-    end
-
-    if params[:start_date].present?
-      @dreams = @dreams.where("created_at >= ?", params[:start_date])
-    end
-
-    if params[:end_date].present?
-      @dreams = @dreams.where("created_at <= ?", Date.parse(params[:end_date]).end_of_day)
-    end
-
-    if params[:emotion_ids].present?
-      @dreams = @dreams.joins(:emotions).where(emotions: { id: params[:emotion_ids] }).distinct
-    end
-    render json: @dreams, include: [:emotions]
-  end
 
   # POST /dreams/analyze
   def analyze
     Rails.logger.info "DreamsController#analyze called for dream ID: #{@dream.id}" if Rails.env.development?
 
     unless @dream.content.present?
-      return render json: { error: "分析対象の夢の内容がありません。" }, status: :unprocessable_entity
+      return render json: { error: "分析対象の夢の内容がありません。" }, status: :unprocessable_content
     end
 
     result = DreamAnalysisService.analyze(@dream.content)
@@ -111,7 +78,7 @@ class DreamsController < ApplicationController
       render json: { analysis: result[:analysis] }, status: :ok
     else
       error_message = result[:error] || "分析処理中に不明なエラーが発生しました。"
-      render json: { error: error_message }, status: :unprocessable_entity
+      render json: { error: error_message }, status: :unprocessable_content
     end
   end
 
