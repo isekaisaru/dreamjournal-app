@@ -63,5 +63,6 @@ Rails.application.configure do
   config.action_controller.raise_on_missing_callback_actions = true
 
   # Disable host authorization completely in test environment
-  config.hosts = []
+  # This allows requests from any host, which is useful for request specs.
+  config.hosts.clear
 end

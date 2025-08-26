@@ -1,13 +1,6 @@
 require 'rails_helper'
 
 RSpec.describe 'Dreams API', type: :request do
-  # テスト前にデータベースをクリーンアップ
-  before(:each) do
-    User.destroy_all
-    Dream.destroy_all
-    Emotion.destroy_all
-  end
-
   let!(:user) { create(:user) }
   let!(:other_user) { create(:user) }
   let!(:emotions) do
@@ -16,82 +9,6 @@ RSpec.describe 'Dreams API', type: :request do
       create(:emotion, :sadness),
       create(:emotion, :fear)
     ]
-  end
-
-  describe 'GET /dreams/my_dreams' do
-    context '認証済みユーザーの場合' do
-      let!(:user_dreams) { create_list(:dream, 3, user: user) }
-      let!(:other_user_dreams) { create_list(:dream, 2, user: other_user) }
-
-      it '自分の夢一覧のみを取得できる' do
-        authenticated_get('/dreams/my_dreams', user)
-
-        expect(response).to have_http_status(:ok)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response).to be_an(Array)
-        expect(json_response.length).to eq(3)
-        
-        # 自分の夢のみが含まれることを確認
-        json_response.each do |dream|
-          expect(dream['user_id']).to eq(user.id) if dream['user_id']
-        end
-      end
-
-      it 'emotion_idsパラメーターでフィルタリングできる' do
-        # 特定の感情を持つ夢を作成
-        dream_with_emotion = create(:dream, user: user)
-        dream_with_emotion.emotions = [emotions.first]
-        
-        authenticated_get('/dreams/my_dreams', user, params: { emotion_ids: [emotions.first.id] })
-
-        expect(response).to have_http_status(:ok)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response.length).to be >= 1
-        
-        # emotionsが含まれているか確認
-        expect(json_response.first).to have_key('emotions')
-      end
-
-      it 'queryパラメーターでタイトルと内容を検索できる' do
-        search_dream = create(:dream, user: user, title: '特別な夢', content: '検索対象の内容')
-        
-        authenticated_get('/dreams/my_dreams', user, params: { query: '特別' })
-
-        expect(response).to have_http_status(:ok)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response.length).to be >= 1
-        expect(json_response.first['title']).to include('特別')
-      end
-
-      it '日付範囲でフィルタリングできる' do
-        # 今日作成した夢
-        today_dream = create(:dream, user: user, title: '今日の夢')
-        
-        authenticated_get('/dreams/my_dreams', user, params: { 
-          start_date: Date.current.beginning_of_day.iso8601,
-          end_date: Date.current.end_of_day.iso8601
-        })
-
-        expect(response).to have_http_status(:ok)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response.length).to be >= 1
-      end
-    end
-
-    context '認証されていない場合' do
-      it '401エラーを返す' do
-        get '/dreams/my_dreams'
-        
-        expect(response).to have_http_status(:unauthorized)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response).to have_key('error')
-      end
-    end
   end
 
   describe 'POST /dreams' do
@@ -138,7 +55,7 @@ RSpec.describe 'Dreams API', type: :request do
           authenticated_post('/dreams', user, params: invalid_dream_params)
         }.not_to change(Dream, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         
         json_response = JSON.parse(response.body)
         expect(json_response).to have_key('error')
@@ -151,7 +68,7 @@ RSpec.describe 'Dreams API', type: :request do
         
         authenticated_post('/dreams', user, params: params)
         
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it '内容が1000文字を超える場合失敗する' do
@@ -160,16 +77,12 @@ RSpec.describe 'Dreams API', type: :request do
         
         authenticated_post('/dreams', user, params: params)
         
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        post '/dreams', params: valid_dream_params, headers: { 'Content-Type' => 'application/json' }
-        
-        expect(response).to have_http_status(:unauthorized)
-      end
+      it_behaves_like 'unauthorized request', :post, '/dreams', { dream: { title: 'test' } }
     end
   end
 
@@ -211,11 +124,7 @@ RSpec.describe 'Dreams API', type: :request do
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        get "/dreams/#{user_dream.id}"
-        
-        expect(response).to have_http_status(:unauthorized)
-      end
+      it_behaves_like 'unauthorized request', :get, '/dreams/1' # IDはダミーでOK
     end
   end
 
@@ -271,7 +180,7 @@ RSpec.describe 'Dreams API', type: :request do
       it '無効なパラメーターで更新に失敗する' do
         authenticated_put("/dreams/#{user_dream.id}", user, params: invalid_update_params)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         
         json_response = JSON.parse(response.body)
         expect(json_response).to have_key('error')
@@ -291,11 +200,7 @@ RSpec.describe 'Dreams API', type: :request do
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        put "/dreams/#{user_dream.id}", params: update_params, headers: { 'Content-Type' => 'application/json' }
-        
-        expect(response).to have_http_status(:unauthorized)
-      end
+      it_behaves_like 'unauthorized request', :put, '/dreams/1', { dream: { title: 'test' } }
     end
   end
 
@@ -344,19 +249,16 @@ RSpec.describe 'Dreams API', type: :request do
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        delete "/dreams/#{user_dream.id}"
-        
-        expect(response).to have_http_status(:unauthorized)
-      end
+      it_behaves_like 'unauthorized request', :delete, '/dreams/1'
     end
   end
 
   describe 'GET /dreams (index)' do
-    let!(:user_dreams) { create_list(:dream, 3, user: user) }
-
     context '認証済みユーザーの場合' do
-      it '自分の夢一覧を取得できる（簡略版）' do
+      it '自分の夢一覧を取得できる' do
+        create_list(:dream, 3, user: user)
+        create(:dream, user: other_user) # 他のユーザーの夢
+
         authenticated_get('/dreams', user)
 
         expect(response).to have_http_status(:ok)
@@ -364,35 +266,53 @@ RSpec.describe 'Dreams API', type: :request do
         json_response = JSON.parse(response.body)
         expect(json_response).to be_an(Array)
         expect(json_response.length).to eq(3)
-        
-        # 簡略版なので特定のフィールドのみ含まれる
-        json_response.each do |dream|
-          expect(dream).to have_key('id')
-          expect(dream).to have_key('title')
-          expect(dream).to have_key('created_at')
-          expect(dream).not_to have_key('content') # indexでは内容は含まれない
-        end
       end
 
-      it 'queryパラメーターでタイトルをフィルタリングできる' do
-        special_dream = create(:dream, user: user, title: '特別な夢のタイトル')
-        
-        authenticated_get('/dreams', user, params: { query: '特別' })
+      context 'フィルタリング' do
+        it 'emotion_idsパラメーターでフィルタリングできる' do
+          dream_with_emotion = create(:dream, user: user)
+          dream_with_emotion.emotions = [emotions.first]
+          create(:dream, user: user) # フィルタリングされない夢
+          
+          authenticated_get('/dreams', user, params: { emotion_ids: [emotions.first.id] })
 
-        expect(response).to have_http_status(:ok)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response.length).to be >= 1
-        expect(json_response.any? { |dream| dream['title'].include?('特別') }).to be true
+          expect(response).to have_http_status(:ok)
+          json_response = JSON.parse(response.body)
+          expect(json_response.length).to eq(1)
+          expect(json_response.first['id']).to eq(dream_with_emotion.id)
+        end
+
+        it 'queryパラメーターでタイトルと内容を検索できる' do
+          search_dream = create(:dream, user: user, title: '特別な夢', content: '検索対象の内容')
+          create(:dream, user: user, title: '普通の夢') # フィルタリングされない夢
+
+          authenticated_get('/dreams', user, params: { query: '特別' })
+
+          expect(response).to have_http_status(:ok)
+          json_response = JSON.parse(response.body)
+          expect(json_response.length).to eq(1)
+          expect(json_response.first['id']).to eq(search_dream.id)
+        end
+
+        it '日付範囲でフィルタリングできる' do
+          today_dream = create(:dream, user: user, created_at: Time.current)
+          create(:dream, user: user, created_at: 2.days.ago) # フィルタリングされない夢
+
+          authenticated_get('/dreams', user, params: { 
+            start_date: Date.current.beginning_of_day.iso8601,
+            end_date: Date.current.end_of_day.iso8601
+          })
+
+          expect(response).to have_http_status(:ok)
+          json_response = JSON.parse(response.body)
+          expect(json_response.length).to eq(1)
+          expect(json_response.first['id']).to eq(today_dream.id)
+        end
       end
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        get '/dreams'
-        
-        expect(response).to have_http_status(:unauthorized)
-      end
+      it_behaves_like 'unauthorized request', :get, '/dreams'
     end
   end
 end

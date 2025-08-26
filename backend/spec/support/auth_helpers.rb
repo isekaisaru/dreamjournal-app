@@ -4,7 +4,7 @@ module AuthHelpers
     post '/auth/login', params: {
       email: user.email,
       password: 'password123'
-    }, headers: { 'Content-Type' => 'application/json', 'HOST' => 'backend' }
+    }.to_json, headers: { 'Content-Type' => 'application/json', 'HOST' => 'backend' }
     
     expect(response).to have_http_status(:ok)
     response.cookies['access_token']
@@ -22,11 +22,11 @@ module AuthHelpers
   end
 
   def authenticated_post(path, user, params: {})
-    post path, params: params, headers: auth_headers(user).merge({ 'Content-Type' => 'application/json' })
+    post path, params: params.to_json, headers: auth_headers(user).merge({ 'Content-Type' => 'application/json' })
   end
 
   def authenticated_put(path, user, params: {})
-    put path, params: params, headers: auth_headers(user).merge({ 'Content-Type' => 'application/json' })
+    put path, params: params.to_json, headers: auth_headers(user).merge({ 'Content-Type' => 'application/json' })
   end
 
   def authenticated_delete(path, user)

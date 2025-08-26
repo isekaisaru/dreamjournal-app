@@ -1,11 +1,6 @@
 require 'rails_helper'
 
 RSpec.describe 'Authentication API', type: :request do
-  # テスト前にデータベースをクリーンアップ
-  before(:each) do
-    User.destroy_all
-  end
-  
   # FactoryBotを使用してテスト用のユーザーを作成
   let!(:user) { create(:user, email: 'test@example.com', username: 'testuser', password: 'password123') }
   
@@ -27,7 +22,7 @@ RSpec.describe 'Authentication API', type: :request do
   describe 'POST /auth/login' do
     context '正しい認証情報の場合' do
       it 'ログインが成功し、Cookieが設定される' do
-        post '/auth/login', params: valid_credentials, headers: { 'Content-Type' => 'application/json', 'HOST' => 'backend' }
+        post '/auth/login', params: valid_credentials.to_json, headers: { 'Content-Type' => 'application/json', 'HOST' => 'backend' }
         
         # ステータスコード確認
         expect(response).to have_http_status(:ok)
@@ -50,7 +45,7 @@ RSpec.describe 'Authentication API', type: :request do
 
     context '間違った認証情報の場合' do
       it 'ログインが失敗し、Cookieが設定されない' do
-        post '/auth/login', params: invalid_credentials, headers: { 'HOST' => 'backend' }
+        post '/auth/login', params: invalid_credentials.to_json, headers: { 'Content-Type' => 'application/json', 'HOST' => 'backend' }
         
         # ステータスコード確認
         expect(response).to have_http_status(:unauthorized)
@@ -71,7 +66,7 @@ RSpec.describe 'Authentication API', type: :request do
         post '/auth/login', params: {
           email: 'nonexistent@example.com',
           password: 'password123'
-        }, headers: { 'HOST' => 'backend' }
+        }.to_json, headers: { 'Content-Type' => 'application/json', 'HOST' => 'backend' }
         
         expect(response).to have_http_status(:unauthorized)
         
@@ -99,15 +94,7 @@ RSpec.describe 'Authentication API', type: :request do
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        get '/auth/me', headers: { 'HOST' => 'backend' }
-        
-        expect(response).to have_http_status(:unauthorized)
-        
-        json_response = JSON.parse(response.body)
-        expect(json_response).to have_key('error')
-        expect(json_response['error']).to include('認証')
-      end
+      it_behaves_like 'unauthorized request', :get, '/auth/me'
     end
 
     context '無効なトークンの場合' do
@@ -138,19 +125,15 @@ RSpec.describe 'Authentication API', type: :request do
     end
 
     context '認証されていない場合' do
-      it '401エラーを返す' do
-        get '/auth/verify'
-        
-        expect(response).to have_http_status(:unauthorized)
-      end
+      it_behaves_like 'unauthorized request', :get, '/auth/verify'
     end
   end
 
   describe 'POST /auth/logout' do
     context '認証済みユーザーの場合' do
       it 'ログアウトが成功し、Cookieが削除される' do
-        # 認証ヘルパーでログイン状態をセットアップ
-        login(user)
+        # 認証ヘルパーでログイン状態をセットアップ。メソッド名を修正。
+        login_user(user)
         
         post '/auth/logout'
         
@@ -158,6 +141,10 @@ RSpec.describe 'Authentication API', type: :request do
         
         json_response = JSON.parse(response.body)
         expect(json_response['message']).to include('ログアウト')
+
+        # Cookieが実際に削除されたことを確認
+        expect(response.cookies['access_token']).to be_blank
+        expect(response.cookies['refresh_token']).to be_blank
       end
     end
   end
