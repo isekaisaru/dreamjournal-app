@@ -116,9 +116,11 @@ fi
 # - OR 条件でシードエラーを無視（既にデータが存在する場合）
 
 if [ "$RAILS_ENV" != "production" ]; then
-    echo "🌱 初期データ投入中..."
-    bundle exec rails db:seed || echo "ℹ️  シードデータは既に存在しています"
-    echo "✅ 初期データ準備完了"
+    if [ "$RAILS_ENV" = "development" ]; then
+        echo "🌱 開発環境の初期データ投入中..."
+        bundle exec rails db:seed || echo "ℹ️  シードデータは既に存在しています"
+        echo "✅ 初期データ準備完了"
+    fi
 fi
 
 # ========================================

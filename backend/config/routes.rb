@@ -28,7 +28,10 @@ Rails.application.routes.draw do
     post 'refresh', to: 'auth#refresh'
     get 'me', to: 'auth#me'
     get 'verify', to: 'auth#verify'
-    post 'register', to: 'users#register'
+    post 'register', to: 'users#create'
     post 'trial_login', to: 'trial_users#create'
   end
+
+  # パスワードリセット関連
+  resources :password_resets, only: [:create, :update]
 end

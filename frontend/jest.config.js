@@ -10,9 +10,6 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-  testMatch: [
-    '**/?(*.)+(spec|test).[jt]s?(x)',
-  ],
 }
 
 module.exports = createJestConfig(customJestConfig)

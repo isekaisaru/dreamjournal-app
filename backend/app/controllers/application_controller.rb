@@ -1,7 +1,9 @@
-require_relative '../services/auth_service'
-
 class ApplicationController < ActionController::API
   include ActionController::Cookies
+  # ActionController::API を継承する場合、CSRF保護はデフォルトで無効になります。
+  # これにより、APIへのJSONリクエストがCSRFチェックでブロックされる問題が根本的に解決します。
+  # 必要なモジュールは、上記のように個別に include します。
+
   before_action :authorize_request
   attr_reader :current_user
 

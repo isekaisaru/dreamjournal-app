@@ -1,11 +1,11 @@
 class UsersController < ApplicationController
   # ユーザー登録以外のアクションで認証が必要な場合は authorize_request を有効にする
-  skip_before_action :authorize_request, only: [:register] # register アクションは認証不要
+  skip_before_action :authorize_request, only: [:create] # 'register' から 'create' に変更
   before_action :set_user, only: [:destroy]
 
   # ユーザー登録
-  # POST /users (RESTful な命名規則に合わせるのが一般的)
-  def register
+  # POST /auth/register (routes.rb で定義)
+  def create
     begin
       # Strong Parameters を使用して安全にパラメータを受け取る
       result = AuthService.register(user_params)
