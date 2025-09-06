@@ -30,6 +30,7 @@ services:
 
   # =========================
   backend:
+    <<: &backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -64,6 +65,20 @@ services:
     restart: unless-stopped
     mem_limit: 1g
 
+  # =========================
+  # 🧪 Rails API (Test)
+  # =========================
+  backend-test:
+    <<: *backend # backendサービスの設定を継承
+    environment:
+      - RAILS_ENV=test # テスト環境を明示
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/dream_journal_test
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=dream_journal_test
+    command: ["tail", "-f", "/dev/null"] # コンテナを起動したままにする
+    healthcheck:
+      disable: true # ヘルスチェックは不要
   # =========================
   # 🎨 Next.js (Frontend)
   # =========================

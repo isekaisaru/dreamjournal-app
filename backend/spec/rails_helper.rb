@@ -1,64 +1,31 @@
-# This file is copied to spec/ when you run 'rails generate rspec:install'
+# このファイルは 'rails generate rspec:install' を実行した際に spec/ にコピーされます。
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
 require_relative '../config/environment'
-# Prevent database truncation if the environment is production
+# production環境でのデータベース切り捨てを防止します。
 abort("The Rails environment is running in production mode!") if Rails.env.production?
 require 'rspec/rails'
-# Add additional requires below this line. Rails is not loaded until this point!
-
-# Requires supporting ruby files with custom matchers and macros, etc, in
-# spec/support/ and its subdirectories. Files matching `spec/**/*_spec.rb` are
-# run as spec files by default. This means that files in spec/support that end
-# in _spec.rb will both be required and run as specs, causing the specs to be
-# run twice. It is recommended that you do not name files matching this glob to
-# end with _spec.rb. You can configure this pattern with the --pattern
-# option on the command line or in ~/.rspec, .rspec or `.rspec-local`.
-#
-# The following line is provided for convenience purposes. It has the downside
-# of increasing the boot-up time by auto-requiring all files in the support
-# directory. Alternatively, in the individual `*_spec.rb` files, manually
-# require only the support files necessary.
-#
+# spec/support/ 以下のヘルパーファイルをすべて読み込みます。
 Rails.root.glob('spec/support/**/*.rb').sort_by(&:to_s).each { |f| require f }
 
-# Checks for pending migrations and applies them before tests are run.
-# If you are not using ActiveRecord, you can remove these lines.
+# テスト実行前に、未適用のマイグレーションがないかチェックし、あれば適用します。
+# ActiveRecordを使用していない場合は、この行を削除できます。
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
   abort e.to_s.strip
 end
 RSpec.configure do |config|
-  # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
+  # ActiveRecordやフィクスチャを使用しない場合は、この行を削除してください。
   config.fixture_paths = [
     Rails.root.join('spec/fixtures')
   ]
 
-  # If you're not using ActiveRecord, or you'd prefer not to run each of your
-  # examples within a transaction, remove the following line or assign false
-  # instead of true.
-  config.use_transactional_fixtures = false
-  
-  # API テストでCSRF保護を無効化
-  config.before(:each, type: :request) do
-    ActionController::Base.allow_forgery_protection = false
-  end
-  
-  # --- Database Cleaner Configuration ---
-  config.before(:suite) do
-    # Docker環境で 'db' ホストがリモートと誤認されるのを防ぐため、
-    # テスト環境でのみリモートDBのURLを許可する
-    DatabaseCleaner.allow_remote_database_url = true
-    DatabaseCleaner.strategy = :transaction
-    DatabaseCleaner.clean_with(:truncation)
-  end
-
-  config.around(:each) do |example|
-    DatabaseCleaner.cleaning do
-      example.run
-    end
-  end
+  # この設定を `true` にすることで、各テストはデータベーストランザクション内で実行されます。
+  # テスト終了後、トランザクションは自動的にロールバックされ、データベースは元の状態に戻ります。
+  # これはRailsのテストにおける最も標準的で、高速かつ安定したデータクリーンアップ方法です。
+  # これにより、DatabaseCleanerの複雑な設定は一切不要になります。
+  config.use_transactional_fixtures = true
 
   # FactoryBot設定
   config.include FactoryBot::Syntax::Methods
@@ -66,31 +33,33 @@ RSpec.configure do |config|
   # 認証ヘルパー設定
   config.include AuthHelpers, type: :request
 
-  # You can uncomment this line to turn off ActiveRecord support entirely.
+  # APIヘルパー設定
+  config.include ApiHelpers, type: :request
+
+  # ActiveRecordのサポートを完全に無効にする場合は、以下の行のコメントを解除してください。
   # config.use_active_record = false
 
-  # RSpec Rails can automatically mix in different behaviours to your tests
-  # based on their file location, for example enabling you to call `get` and
-  # `post` in specs under `spec/controllers`.
-  #
-  # You can disable this behaviour by removing the line below, and instead
-  # explicitly tag your specs with their type, e.g.:
-  #
+  # RSpec Railsは、ファイルの場所に基づいてテストに異なる振る舞いを自動的にミックスインします。
+  # 例えば、spec/controllers以下のスペックで `get` や `post` を呼び出せるようになります。
+  # 
+  # この振る舞いを無効にするには、以下の行を削除し、代わりにスペックに明示的に
+  # typeをタグ付けしてください。例：
+  # 
   #     RSpec.describe UsersController, type: :controller do
   #       # ...
   #     end
-  #
-  # The different available types are documented in the features, such as in
+  # 
+  # 利用可能なさまざまなタイプについては、RSpec Railsのドキュメントに記載されています。
   # https://rspec.info/features/6-0/rspec-rails
   config.infer_spec_type_from_file_location!
 
-  # Filter lines from Rails gems in backtraces.
+  # バックトレースからRails gemに由来する行をフィルタリングします。
   config.filter_rails_from_backtrace!
-  # arbitrary gems may also be filtered via:
+  # 任意のgemも同様にフィルタリングできます:
   # config.filter_gems_from_backtrace("gem name")
 end
 
-# Shoulda Matchers configuration
+# Shoulda Matchers の設定
 Shoulda::Matchers.configure do |config|
   config.integrate do |with|
     with.test_framework :rspec
