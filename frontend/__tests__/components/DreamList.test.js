@@ -32,12 +32,22 @@ const makeDream = (overrides = {}) => ({
 
 describe('DreamList (integration with DreamCard)', () => {
   let DreamList
+  let consoleErrorSpy
 
   beforeEach(() => {
+    // このテストブロックが実行される前に、console.errorを一時的に何もしない関数に置き換えます。
+    // これにより、意図的にエラーを発生させるテストで、コンソールがエラーメッセージで汚れなくなります。
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     jest.resetModules()
     jest.isolateModules(() => {
       DreamList = require('@/app/components/DreamList').default
     })
+  })
+
+  afterEach(() => {
+    // 各テストの後に、置き換えたconsole.errorを元の状態に戻します。
+    // これをしないと、他のテストスイートでの実際のエラーが見えなくなってしまいます。
+    consoleErrorSpy.mockRestore()
   })
 
   it('renders multiple items as links with correct aria-labels', () => {
@@ -168,4 +178,3 @@ describe('DreamList (props forwarding to DreamCard)', () => {
     expect(mockDreamCard).toHaveBeenNthCalledWith(2, { dream: dreams[1] }, {})
   })
 })
-

@@ -8,6 +8,7 @@ Rails.application.routes.draw do
   resources :dreams, only: [:index, :show, :create, :update, :destroy] do
     member do
       post :analyze
+      get :analysis
     end
     collection do
       # /dreams/month/2023-05 のような形式でアクセス

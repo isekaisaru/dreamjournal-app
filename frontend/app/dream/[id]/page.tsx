@@ -2,6 +2,7 @@
 
 import DreamForm from "../../components/DreamForm";
 import DeleteButton from "../../components/DeleteButton";
+import DreamAnalysis from "../../components/DreamAnalysis";
 import { useDream, DreamInput } from "../../../hooks/useDream";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -31,8 +32,6 @@ export default function EditDreamPage() {
   } = useDream(idFromPath);
 
   const router = useRouter();
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -50,32 +49,6 @@ export default function EditDreamPage() {
     const success = await hookUpdateDream(formData);
     if (success) {
       router.push("/home");
-    }
-  };
-
-  const handleAnalyze = async () => {
-    if (!idFromPath) return;
-    if (!dream || !dream.content || dream.content.trim() === "") {
-      setAnalysisResult("分析対象の夢の内容がありません。");
-      return;
-    }
-    setIsAnalyzing(true);
-    setAnalysisResult("");
-    try {
-      const response = await apiClient.post<{ analysis: string }>(
-        `/dreams/${idFromPath}/analyze`,
-        {}
-      );
-      setAnalysisResult(response.analysis);
-    } catch (err) {
-      console.error("分析エラー:", err);
-      let errorMessage = "分析中にエラーが発生しました。";
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      setAnalysisResult(errorMessage);
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -135,38 +108,12 @@ export default function EditDreamPage() {
         isLoading={isUpdating}
       />
 
-      <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm">
-        <h2 className="text-2xl font-semibold mb-4 text-card-foreground">
-          夢の分析
-        </h2>
-        {dream.content && dream.content.trim() !== "" ? (
-          <button
-            onClick={handleAnalyze}
-            disabled={isAnalyzing || isUpdating}
-            className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${
-              isAnalyzing || isUpdating
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-            }`}
-          >
-            {isAnalyzing ? "分析中..." : "この夢を分析する"}
-          </button>
-        ) : (
-          <p className="text-muted-foreground text-center py-2">
-            夢の内容が記録されていません。分析するには、編集フォームで内容を入力・保存してください。
-          </p>
-        )}
-        {analysisResult && (
-          <div className="mt-6 p-4 bg-background rounded-md border border-border shadow-inner">
-            <h3 className="text-xl font-bold mb-3 text-foreground">分析結果</h3>
-            <div className="max-h-80 overflow-y-auto p-3 bg-muted/50 rounded border border-border">
-              <p className="text-foreground whitespace-pre-wrap text-base leading-relaxed">
-                {analysisResult}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+      {idFromPath && (
+        <DreamAnalysis
+          dreamId={idFromPath}
+          hasContent={!!dream.content?.trim()}
+        />
+      )}
 
       <div className="mt-8 pt-6 border-t border-border flex justify-end">
         {dream.id && <DeleteButton onClick={handleDeleteClick} />}
