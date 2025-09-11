@@ -11,6 +11,7 @@ Rails.application.routes.draw do
       get :analysis
     end
     collection do
+      get :my_dreams
       # /dreams/month/2023-05 のような形式でアクセス
       get 'month/:year_month', to: 'dreams#by_month_index', as: :by_month
     end

@@ -18,6 +18,14 @@ import type {
   RegisterCredentials,
 } from "@/app/types";
 
+export class ApiError extends Error {
+  status!: number;
+  data?: any;
+  constructor(message: string) {
+    super(message);
+  }
+}
+
 type ApiFetchOptions = RequestInit & { token?: string };
 
 export async function apiFetch<T>(
@@ -57,21 +65,25 @@ export async function apiFetch<T>(
   const response = await fetch(url, finalOptions);
 
   if (!response.ok) {
-    let errorMessage = `API request to ${endpoint} failed with status ${response.status}.`;
+    const error = new ApiError(
+      `API request to ${endpoint} failed with status ${response.status}.`
+    );
+    error.status = response.status;
     try {
       const errorData = await response.json();
       // Railsのエラー形式に合わせて調整
-      errorMessage =
+      error.message =
         errorData.error ||
         (Array.isArray(errorData.errors)
           ? errorData.errors.join(", ")
           : errorData.message) ||
-        errorMessage;
+        error.message;
+      error.data = errorData;
     } catch {
       // JSONのパースに失敗した場合
       console.error(`Could not parse error response for ${endpoint}:`);
     }
-    throw new Error(errorMessage);
+    throw error;
   }
 
   // Handle responses with no content
@@ -154,7 +166,7 @@ export async function verifyAuth(): Promise<{ user: User } | null> {
     };
   } catch (error) {
     // 401エラーの場合は認証されていないとみなし、nullを返す
-    if (error instanceof Error && error.message.includes("401")) {
+    if (error instanceof ApiError && error.status === 401) {
       return null;
     }
     // その他のエラーは再スロー

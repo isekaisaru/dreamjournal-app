@@ -17,10 +17,7 @@ const customJestConfig = {
     '<rootDir>/tests/e2e/',
     // このファイルはテストのヘルパーであり、テスト自体ではないため除外する
     '<rootDir>/__tests__/utils/mockFactory.js',
-    // __tests__ にテストを集中させるため、app配下の空ファイルは無視する
-    '<rootDir>/app/components/DreamAnalysis.test.tsx',
   ],
 }
 
-module.exports = createJestConfig(customJestConfig)
 module.exports = createJestConfig(customJestConfig)

@@ -3,6 +3,11 @@ import type { NextRequest } from "next/server";
 import { createApiUrl } from "./lib/api-config";
 
 export async function middleware(request: NextRequest) {
+  // E2Eテスト実行時は、認証チェックをバイパスして後続の処理に進む
+  if (process.env.NEXT_PUBLIC_E2E === '1') {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("access_token")?.value;
 
   const { pathname } = request.nextUrl;
