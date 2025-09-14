@@ -36,4 +36,9 @@ Rails.application.routes.draw do
 
   # パスワードリセット関連
   resources :password_resets, only: [:create, :update]
+
+  # 開発環境専用: パスワードリセットトークン取得用エンドポイント（E2E用）
+  if Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
+    get '/dev/password_resets/token', to: 'password_resets#dev_token'
+  end
 end

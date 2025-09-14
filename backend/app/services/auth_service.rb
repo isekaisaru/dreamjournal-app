@@ -5,7 +5,12 @@ class AuthService
   class InvalidRefreshTokenError < StandardError; end
   class RegistrationError < StandardError; end
 
-  SECRET_KEY = ENV['JWT_SECRET_KEY']
+  # JWTシークレットキー
+  # - 本番: 必須（未設定なら起動時に例外）
+  # - 開発/テスト: フォールバックを用意してE2Eやローカル実行を安定化
+  SECRET_KEY = ENV['JWT_SECRET_KEY'].presence || (
+    (Rails.env.development? || Rails.env.test?) ? 'dev-test-secret-change-me' : nil
+  )
   if SECRET_KEY.blank? && Rails.env.production?
     raise 'JWT_SECRET_KEY environment variable is not set for production.'
   end

@@ -72,9 +72,11 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
   const startAnalysis = async () => {
     setIsRequesting(true);
     setError(null);
+    // UX/E2E安定性: 解析開始直後に保留状態を表示
+    setAnalysisStatus("pending");
     try {
       await apiClient.post(`/dreams/${dreamId}/analyze`);
-      setAnalysisStatus("pending");
+      // 成功時も pending 維持（サーバー側ポーリング完了でdoneに遷移）
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "分析の開始に失敗しました。";
@@ -121,17 +123,19 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
       </h2>
       {hasContent ? (
         <>
-          <button
-            onClick={startAnalysis}
-            disabled={isRequesting || analysisStatus === "pending"}
-            className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${isRequesting || analysisStatus === "pending" ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"}`}
-          >
-            {isRequesting
-              ? "リクエスト中..."
-              : analysisStatus === "pending"
-                ? "分析中..."
-                : "この夢を分析する"}
-          </button>
+          {analysisStatus !== "done" && (
+            <button
+              onClick={startAnalysis}
+              disabled={isRequesting || analysisStatus === "pending"}
+              className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${isRequesting || analysisStatus === "pending" ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"}`}
+            >
+              {isRequesting
+                ? "リクエスト中..."
+                : analysisStatus === "pending"
+                  ? "分析中..."
+                  : "この夢を分析する"}
+            </button>
+          )}
           {error && <p className="text-destructive mt-2">{error}</p>}
         </>
       ) : (
