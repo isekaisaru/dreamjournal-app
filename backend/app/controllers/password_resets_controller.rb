@@ -1,6 +1,6 @@
 class PasswordResetsController < ApplicationController
   # 認証チェックをスキップする
-  skip_before_action :authorize_request, only: [:create, :update]
+  skip_before_action :authorize_request, only: [:create, :update, :dev_token]
 
   # POST /password_resets
   # パスワードリセットトークンを生成し、メールを送信する
@@ -33,6 +33,21 @@ class PasswordResetsController < ApplicationController
       end
     else
       render json: { error: '無効または期限切れのトークンです。' }, status: :unprocessable_content
+    end
+  end
+
+  # 開発環境専用: 指定メールアドレスの最新リセットトークンを返す
+  # GET /dev/password_resets/token?email=...
+  def dev_token
+    unless Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
+      head :forbidden and return
+    end
+
+    user = User.find_by(email: params[:email])
+    if user&.reset_password_token.present?
+      render json: { token: user.reset_password_token }, status: :ok
+    else
+      render json: { error: 'Token not found' }, status: :not_found
     end
   end
 

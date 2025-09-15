@@ -1,6 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe 'Dreams API', type: :request do
+  # ActiveJobのテストヘルパーをインクルード
+  include ActiveJob::TestHelper
+
   let!(:user) { create(:user) }
   let!(:other_user) { create(:user) }
   let!(:emotions) do
@@ -313,6 +316,103 @@ RSpec.describe 'Dreams API', type: :request do
 
     context '認証されていない場合' do
       it_behaves_like 'unauthorized request', :get, '/dreams'
+    end
+  end
+
+  describe 'POST /dreams/:id/analyze' do
+    let!(:dream) { create(:dream, user: user, content: 'A dream to be analyzed.') }
+    # contentのバリデーションをスキップして、内容が空のテストデータを作成する
+    let!(:dream_without_content) do
+      dream = build(:dream, user: user, content: '')
+      dream.save(validate: false)
+      dream
+    end
+
+    context '認証済みユーザーの場合' do
+      it '夢の分析ジョブをキューに入れ、202 Acceptedを返す' do
+        # perform_enqueued_jobs ブロック内でジョブがキューに入ることを確認
+        assert_enqueued_with(job: AnalyzeDreamJob, args: [dream.id]) do
+          authenticated_post "/dreams/#{dream.id}/analyze", user
+        end
+
+        expect(response).to have_http_status(:accepted)
+        expect(response.location).to eq(analysis_dream_url(dream))
+        expect(dream.reload.analysis_pending?).to be true
+      end
+
+      it '内容がない夢の場合は 422 Unprocessable Content を返す' do
+        authenticated_post "/dreams/#{dream_without_content.id}/analyze", user
+        expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it 'すでに分析中の場合は、ジョブを重複させずに 202 Accepted を返す' do
+        dream.analysis_pending! # ステータスを 'pending' に設定
+
+        # ジョブがキューに追加されないことを確認
+        assert_no_enqueued_jobs do
+          authenticated_post "/dreams/#{dream.id}/analyze", user
+        end
+
+        expect(response).to have_http_status(:accepted)
+      end
+
+      it '他人の夢は分析できない' do
+        other_dream = create(:dream, user: other_user, content: 'secret')
+        authenticated_post "/dreams/#{other_dream.id}/analyze", user
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :post, '/dreams/1/analyze'
+    end
+  end
+
+  describe 'GET /dreams/:id/analysis' do
+    let!(:dream) { create(:dream, user: user) }
+
+    context '認証済みユーザーの場合' do
+      it 'ステータスが "pending" の場合にその状態を返す' do
+        dream.analysis_pending!
+        authenticated_get "/dreams/#{dream.id}/analysis", user
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response['status']).to eq('pending')
+      end
+
+      it 'ステータスが "done" の場合に結果と共に返す' do
+        analysis_data = { text: 'Your dream means you are a hero.' }
+        dream.mark_done!(analysis_data)
+        authenticated_get "/dreams/#{dream.id}/analysis", user
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response['status']).to eq('done')
+        expect(json_response['result']['text']).to eq(analysis_data[:text])
+        expect(json_response['analyzed_at']).not_to be_nil
+      end
+
+      it 'ステータスが "failed" の場合にエラーメッセージと共に返す' do
+        error_message = 'Analysis failed.'
+        dream.mark_failed!(error_message)
+        authenticated_get "/dreams/#{dream.id}/analysis", user
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response['status']).to eq('failed')
+        expect(json_response['result']['error']).to eq(error_message)
+      end
+
+      it '他人の夢の分析結果は取得できない' do
+        other_dream = create(:dream, user: other_user)
+        authenticated_get "/dreams/#{other_dream.id}/analysis", user
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :get, '/dreams/1/analysis'
     end
   end
 end

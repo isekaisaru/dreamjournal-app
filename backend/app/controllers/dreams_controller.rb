@@ -1,5 +1,5 @@
 class DreamsController < ApplicationController
-  before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze]
+  before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis]
   
 
   # GET /dreams
@@ -64,22 +64,36 @@ class DreamsController < ApplicationController
     end
   end
 
-  # POST /dreams/analyze
+  # POST /dreams/:id/analyze
+  # このアクションは分析ジョブをキューに入れるだけです。
   def analyze
     Rails.logger.info "DreamsController#analyze called for dream ID: #{@dream.id}" if Rails.env.development?
 
     unless @dream.content.present?
       return render json: { error: "分析対象の夢の内容がありません。" }, status: :unprocessable_content
     end
-
-    result = DreamAnalysisService.analyze(@dream.content)
-
-    if result[:analysis]
-      render json: { analysis: result[:analysis] }, status: :ok
-    else
-      error_message = result[:error] || "分析処理中に不明なエラーが発生しました。"
-      render json: { error: error_message }, status: :unprocessable_content
+    
+    # 同じ夢に対する複数の分析リクエストをガード
+    if @dream.analysis_pending?
+      return render json: { message: 'すでに解析中です。' }, status: :accepted, location: analysis_dream_url(@dream)
     end
+    
+    @dream.start_analysis! # モデルのメソッドでステータスを 'pending' に
+    AnalyzeDreamJob.perform_later(@dream.id) # ジョブをIDで非同期実行
+    
+    render json: { message: '夢の分析リクエストを受け付けました。' },
+           status: :accepted,
+           location: analysis_dream_url(@dream) # ポーリング用のURLを返す
+  end
+  
+  # GET /dreams/:id/analysis
+  # このアクションは分析のステータスと結果を返します。
+  def analysis
+    render json: {
+      status: @dream.analysis_status,
+      result: @dream.analysis_json,
+      analyzed_at: @dream.analyzed_at
+    }, status: :ok
   end
 
   private

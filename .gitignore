@@ -44,3 +44,7 @@ frontend/.env.local
 # データベースのデータディレクトリ全体を無視
 /data/
 /postgres_backup/
+
+# Playwright test results
+/test-results/
+/playwright-report/

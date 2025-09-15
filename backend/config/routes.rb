@@ -8,8 +8,10 @@ Rails.application.routes.draw do
   resources :dreams, only: [:index, :show, :create, :update, :destroy] do
     member do
       post :analyze
+      get :analysis
     end
     collection do
+      get :my_dreams
       # /dreams/month/2023-05 のような形式でアクセス
       get 'month/:year_month', to: 'dreams#by_month_index', as: :by_month
     end
@@ -34,4 +36,9 @@ Rails.application.routes.draw do
 
   # パスワードリセット関連
   resources :password_resets, only: [:create, :update]
+
+  # 開発環境専用: パスワードリセットトークン取得用エンドポイント（E2E用）
+  if Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
+    get '/dev/password_resets/token', to: 'password_resets#dev_token'
+  end
 end
