@@ -2,10 +2,10 @@ name: E2E Tests
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -16,21 +16,20 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
-        run:
-          cd frontend
-          yarn install --frozen-lockfile
+        working-directory: ./frontend
+        run: yarn install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run:
-          cd frontend
-          npx playwright install --with-deps
-      
+        working-directory: ./frontend
+        run: npx playwright install --with-deps
+
       - name: Run E2E tests
-        run:
-          cd frontend
-          npx playwright test
+        working-directory: ./frontend
+        run: npx playwright test
         env:
           BASE_URL: http://localhost:3000
+          # テスト実行時にバックエンドAPIのURLを渡す
+          NEXT_PUBLIC_API_URL: http://localhost:3001
