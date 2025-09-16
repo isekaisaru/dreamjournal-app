@@ -57,8 +57,8 @@ test.describe("Dream Analysis", () => {
     // これにより、ログインフローやDBのseedデータに依存せず、UIの振る舞いを独立して検証できます。
 
     // 分析APIのエンドポイントをモックします。
-    // 1つのrouteハンドラでGETとPOSTを両方扱うことで、コードが明確になります。
-    await page.route("**/dreams/1/analysis", async (route, request) => {
+    // このテストでは、コンポーネントマウント時の初期ステータスチェック（GET）の挙動を上書きします。
+    await page.route("**/dreams/1/analysis", async (route, request) => { // POSTのモックはbeforeEachで共通化されているため、ここではGETのみを扱う
       if (request.method() === "GET") {
         // コンポーネントマウント時の初期ステータスチェック
         await route.fulfill({
