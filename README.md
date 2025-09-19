@@ -1,69 +1,144 @@
 # 夢の記録アプリケーション
 
-夢の記録アプリケーションは、ユーザーが夢を記録し、分析することができるウェブアプリケーションです。また、親子や友人同士で夢を共有する機能も提供します。神話のキャラクター「モルペウス」をマスコットとして採用し、魅力的なユーザーインターフェイスを提供します。
+夢の記録アプリケーションは、神話のキャラクター「モルペウス」をガイドに、夢の記録・分析・共有を支援するフルスタック Web アプリケーションです。Rails 製 API と Next.js 製フロントエンドを Docker Compose で統合し、日々の夢を安全に保存しながら感情や傾向を可視化します。
 
-## 機能
+## 目次
+- [プロジェクト概要](#プロジェクト概要)
+- [主な機能](#主な機能)
+- [アーキテクチャ](#アーキテクチャ)
+- [ディレクトリ構成](#ディレクトリ構成)
+- [セットアップ](#セットアップ)
+  - [前提条件](#前提条件)
+  - [クイックスタート-Docker](#クイックスタート-docker)
+  - [環境変数](#環境変数)
+- [よく使うコマンド](#よく使うコマンド)
+- [開発ワークフローのヒント](#開発ワークフローのヒント)
+- [テスト](#テスト)
+- [APIとヘルスチェック](#apiとヘルスチェック)
+- [トラブルシューティング](#トラブルシューティング)
+- [開発に参加する](#開発に参加する)
+- [ライセンス](#ライセンス)
+- [貢献者](#貢献者)
 
-- **夢の記録**: ユーザーは自分の夢を日付、内容、感情などの詳細と共に記録できます。
-- **夢の分析**: 記録された夢をキーワードや感情に基づいて分析し、パターンを見つけ出します。
-- **夢の共有**: ユーザーは親子、友人同士で夢を共有し、解釈を助け合うことができます。
-- **モルペウスのガイド**: ユーザーインターフェイスに組み込まれたマスコットキャラクターが、アプリの使用方法を案内します。
+## プロジェクト概要
+日々の夢を日記のように残し、キーワードや感情の推移を分析して自分自身を深く理解することを目的としたアプリケーションです。家族や友人との夢の共有機能も備えており、コミュニケーションのきっかけ作りにも役立ちます。
 
-## 技術スタック
+## 主な機能
+- **夢の記録**: 夢のタイトル・本文・感情タグ・睡眠情報などを保存できます。
+- **夢の分析**: 感情スコアや頻出キーワードを抽出し、過去の夢の傾向を可視化します。
+- **夢の共有**: 親子や友人と夢を共有するワークスペースを作成できます。
+- **AI ガイド**: モルペウスがアプリの使い方やインサイトを紹介します。
+- **トライアルモード**: 体験用アカウントで素早くアプリに触れられます。
 
-- **フロントエンド**: React + TypeScript + Next.js
-- **バックエンド**: Ruby on Rails
-- **データベース**: PostgreSQL
-- **インフラ**: Docker, Heroku/AWS
-- **テスト**: RSpec (バックエンド), Jest + React Testing Library (フロントエンド)
+## アーキテクチャ
+- **フロントエンド**: Next.js (React + TypeScript)。`frontend/` 以下で UI を構築し、Playwright を用いた E2E テストにも対応。
+- **バックエンド**: Ruby on Rails API。JWT 認証と OpenAI API による夢分析機能を提供 (`backend/`)。
+- **データベース**: PostgreSQL。docker 上で永続化ボリュームを利用。
+- **インフラ**: Docker Compose によるローカル開発。`Caddyfile` でのリバースプロキシ構成や `Makefile` での運用補助コマンドを用意。
 
-## インストール手順
+## ディレクトリ構成
+```
+.
+├── backend/          # Rails API サーバー
+├── frontend/         # Next.js クライアントアプリ
+├── docker-compose.yml
+├── docker-compose.dev.yml
+├── docker-compose.prod.yml
+├── Makefile          # Docker ライフサイクルのエントリーポイント
+├── scripts/          # モニタリングや補助ツール
+└── data/             # Postgres の永続化データ (ローカル)
+```
 
-1.  **リポジトリをクローン**
+## セットアップ
 
-    ```
-    git clone [リポジトリURL]
-    cd dream-journal-app
-    ```
+### 前提条件
+- Docker Desktop (24 以降推奨)
+- Docker Compose v2
+- Make コマンド (macOS は標準インストール済み)
+- Node.js 18+ と npm (フロントエンド単体で開発する場合)
 
-2.  **環境変数を設定**
+### クイックスタート-Docker
+```bash
+git clone <repository-url>
+cd dream-journal-app
+cp backend/.env.example backend/.env
+make dev-up
+```
 
-    バックエンド用の `.env` ファイルをテンプレートから作成し、中身を編集します。
+起動後のエンドポイント:
+- フロントエンド: http://localhost:3000
+- バックエンド API: http://localhost:3001
+- Postgres: localhost:5432 (ユーザー名は `postgres`)
 
-    ```bash
-    cp backend/.env.example backend/.env
-    ```
+### 環境変数
+`backend/.env` に以下の最低限の値を設定します。詳細は `backend/.env.example` を参照してください。
 
-    `backend/.env` ファイルを開き、`POSTGRES_PASSWORD` や `SECRET_KEY_BASE` などの必須項目をあなたの値に設定してください。
+| 変数名 | 説明 | メモ |
+| ------ | ---- | ---- |
+| `POSTGRES_PASSWORD` | Postgres のパスワード | 16 文字以上推奨 |
+| `RAILS_MASTER_KEY` | Rails credentials 用キー | `config/master.key` と一致 |
+| `SECRET_KEY_BASE` | Rails セッション暗号化キー | `rails secret` で生成 |
+| `JWT_SECRET_KEY` | 認証トークン署名キー | `openssl rand -hex 64` 推奨 |
+| `OPENAI_API_KEY` | 夢分析に利用する OpenAI API | 任意機能、未設定の場合は AI 分析を無効化 |
 
-3.  **Docker コンテナを起動**
-    ```
-    make dev-up
-    ```
+## よく使うコマンド
+`Makefile` から主なコマンドを呼び出せます。
 
-## 使用方法
+| コマンド | 説明 |
+| -------- | ---- |
+| `make dev-up` | 開発用の各サービスをバックグラウンド起動 |
+| `make dev-down` | 開発用コンテナを停止・削除 |
+| `make dev-logs` | 開発モードの複合ログをストリーム表示 |
+| `make status` | 現在起動中のコンテナ一覧を確認 |
+| `make health` | バックエンド/フロントエンドのヘルスチェック |
+| `make db-setup` | 初期 DB セットアップ (マイグレーション + シード) |
+| `make clean` | 未使用の Docker リソースをクリーンアップ |
 
-アプリケーションを起動した後、ブラウザで`http://localhost:3000`にアクセスしてください。アカウントを作成し、ログインすると、夢の記録と分析、共有を開始できます。
+## 開発ワークフローのヒント
+- Rails コンソール: `make dev-rails-console`
+- バックエンド内シェル: `make dev-shell-backend`
+- フロントエンド内シェル: `make dev-shell-frontend`
+- 監視スクリプト: `make monitor` または `make monitor-watch` で状態監視を自動化
+- `docker-compose.dev.yml` にはホットリロード設定が含まれています。コード変更後はブラウザの再読み込みのみで反映されます。
+
+## テスト
+- **バックエンド (RSpec)**: `docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec backend bundle exec rspec`
+- **バックエンド (Rails Test)**: `make test` で `rails test` を実行できます。
+- **フロントエンド (Jest)**: `cd frontend && npm install && npm test`
+- **E2E (Playwright)**: `cd frontend && npm run e2e`
+
+テスト前に `make dev-up` で依存サービスを起動しておくことを推奨します。
+
+## APIとヘルスチェック
+- 軽量ヘルスチェック: `GET /health`
+- 詳細ヘルスチェック: `GET /health/detailed`
+- 主要リソース:
+  - `dreams` (CRUD + `/dreams/:id/analyze`, `/dreams/:id/analysis`, `/dreams/my_dreams`, `/dreams/month/:year_month`)
+  - `emotions` (感情マスタ取得)
+  - `auth` (ログイン/ログアウト/リフレッシュ、トライアルログイン、`GET /auth/me` など)
+  - `password_resets` (パスワードリセットフロー)
+
+開発環境では `ENABLE_DEV_ENDPOINTS=true` を設定すると `/dev/password_resets/token` が利用可能です。
+
+## トラブルシューティング
+- コンテナの再ビルドが必要な場合は `make dev-down` → `docker-compose build --no-cache`。
+- DB 関連の問題は `make db-reset` で初期化できます。
+- `make logs-errors` で直近 1 時間のエラーログを抽出できます。
+- OpenAI 連携を無効化したい場合は `OPENAI_API_KEY` を未設定にするか、アプリ側で機能フラグを切り替えてください。
 
 ## 開発に参加する
+1. GitHub でリポジトリをフォークしてクローンします。
+2. ブランチを作成します (例: `feature/add-dream-tags`)。
+3. lint・テストを通し、必要に応じて `frontend/README.md` や API ドキュメントも更新します。
+4. 変更内容とテスト結果を記載した Pull Request を送信してください。
 
-このプロジェクトに貢献したい場合は、以下の手順に従ってください。
-
-1. プロジェクトをフォークし、自分の GitHub アカウントにクローンします。
-2. 新しいブランチを作成します（例: `feature/your-new-feature`）。
-3. 変更をコミットし、ブランチにプッシュします。
-4. プルリクエストを作成します。
+Issue やアイデアの提案も歓迎です。議論したいテーマがある場合は Draft PR から相談してください。
 
 ## ライセンス
-
-このプロジェクトは[MIT ライセンス](LICENSE)の下で公開されています。
+このプロジェクトは [MIT ライセンス](LICENSE) の下で公開されています。
 
 ## 貢献者
-
 - 名前 1 (@GitHub アカウント 1)
 - 名前 2 (@GitHub アカウント 2)
 
----
-
 プロジェクトへのご関心とサポートに感謝します！
-## Week3完了: CI/CD基盤構築
