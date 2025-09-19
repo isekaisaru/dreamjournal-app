@@ -6,6 +6,7 @@ on:
     branches: [main]
 jobs:
   test:
+    name: RSpec
     runs-on: ubuntu-latest
     env:
       RAILS_ENV: test
