@@ -2,11 +2,10 @@
 
 import DreamForm from "../../components/DreamForm";
 import DeleteButton from "../../components/DeleteButton";
-import DreamAnalysis from "../../components/DreamAnalysis";
-import { useDream, DreamInput } from "../../../hooks/useDream";
-import { useRouter, usePathname } from "next/navigation";
+import { useDream, type DreamInput } from "../../../hooks/useDream";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import apiClient from "@/lib/apiClient";
+import dynamic from "next/dynamic";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,10 +17,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export default function EditDreamPage() {
-  const pathname = usePathname();
-  const idFromPath = pathname.split("/").pop();
+// DreamAnalysis を動的インポート化
+const DreamAnalysis = dynamic(() => import("../../components/DreamAnalysis"), {
+  loading: () => (
+    <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm animate-pulse">
+      <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+      <div className="h-10 bg-muted rounded w-full"></div>
+    </div>
+  ),
+  ssr: false, // サーバーサイドレンダリングを無効化
+});
 
+export default function EditDreamPage({ params }: { params: { id: string } }) {
+  const { id: dreamId } = params;
   const {
     dream,
     error,
@@ -29,23 +37,21 @@ export default function EditDreamPage() {
     isUpdating,
     updateDream: hookUpdateDream,
     deleteDream: hookDeleteDream,
-  } = useDream(idFromPath);
+  } = useDream(dreamId);
 
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (dream) {
-      console.log("Fetched dream data:", dream);
-    }
     if (error) {
-      alert(`エラー: ${error}`);
+      console.error("夢データの取得に失敗しました:", error); // TODO: alertの代わりにトースト通知などのUIでエラーを表示することを推奨します
+      // 例: toast.error(`エラー: ${error}`);
     }
-  }, [dream, error]);
+  }, [error]);
 
   const handleUpdateSubmit = async (formData: DreamInput) => {
-    if (!idFromPath) return;
+    if (!dreamId) return;
     const success = await hookUpdateDream(formData);
     if (success) {
       router.push("/home");
@@ -67,7 +73,8 @@ export default function EditDreamPage() {
         }
       } catch (err) {
         console.error("削除処理中にエラー:", err);
-        alert("削除中にエラーが発生しました。");
+        // TODO: alertの代わりにトースト通知などのUIでエラーを表示することを推奨します
+        // 例: toast.error("削除中にエラーが発生しました。");
       } finally {
         setIsDeleting(false);
       }
@@ -108,11 +115,8 @@ export default function EditDreamPage() {
         isLoading={isUpdating}
       />
 
-      {idFromPath && (
-        <DreamAnalysis
-          dreamId={idFromPath}
-          hasContent={!!dream.content?.trim()}
-        />
+      {dreamId && (
+        <DreamAnalysis dreamId={dreamId} hasContent={!!dream.content?.trim()} />
       )}
 
       <div className="mt-8 pt-6 border-t border-border flex justify-end">

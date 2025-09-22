@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import apiClient from "@/lib/apiClient";
 
 interface DreamAnalysisProps {
-  
   dreamId: string;
   hasContent: boolean;
 }

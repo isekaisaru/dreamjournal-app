@@ -9,13 +9,23 @@
  * - Client-side (browser): Uses localhost:3001
  */
 export function getApiUrl(): string {
+  const API_PREFIX_PATTERN = /\/api\/v1\/?$/;
+
+  function normalizeBaseUrl(url: string): string {
+    return url.replace(API_PREFIX_PATTERN, "");
+  }
+
   // Check if we're running on the server side
   if (typeof window === "undefined") {
     // Server-side: Use Docker internal network
-    return process.env.INTERNAL_API_URL || "http://backend:3001";
+    return normalizeBaseUrl(
+      process.env.INTERNAL_API_URL || "http://backend:3001"
+    );
   } else {
     // Client-side: Use localhost (accessible from browser)
-    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return normalizeBaseUrl(
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+    );
   }
 }
 
