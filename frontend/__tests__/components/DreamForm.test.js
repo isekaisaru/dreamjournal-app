@@ -9,14 +9,14 @@ jest.mock('@/lib/apiClient', () => ({
   getEmotions: jest.fn(),
 }))
 
-jest.mock('react-hot-toast', () => ({
+jest.mock('@/lib/toast', () => ({
   toast: {
     error: jest.fn(),
   },
 }))
 
 const { getEmotions } = require('@/lib/apiClient')
-const { toast } = require('react-hot-toast')
+const { toast } = require('@/lib/toast')
 
 describe('DreamForm', () => {
   beforeEach(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -153,9 +154,12 @@ export default function Register() {
           <p className="text-muted-foreground">
             すでにアカウントをお持ちですか？
           </p>
-          <a href="/login" className="font-medium text-primary hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-primary hover:underline"
+          >
             ログインする
-          </a>
+          </Link>
         </div>
       </form>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 import { Button } from "./ui/button";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
@@ -20,7 +20,6 @@ const TrialUserButton: React.FC = () => {
       }
       toast.success("お試しユーザーとしてログインしました！");
     } catch (error: any) {
-      console.error("Trial user creation failed:", error);
       const errorMessage = error.response?.data?.error
         ? error.response.data.error
         : "お試しユーザーの作成に失敗しました。";

@@ -40,26 +40,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   const logout = useCallback(async () => {
-    console.log("AuthContext: logout initiated");
     try {
       // バックエンドがHttpOnly Cookieをクリアします
       await apiClient.post(`/auth/logout`);
-      console.log("AuthContext: Server logout successful");
     } catch (error) {
-      console.warn("AuthContext: Server logout API call failed:", error);
+      console.error("AuthContext: Server logout API call failed:", error);
     } finally {
       setIsLoggedIn(false);
       setUser(null);
       setUserId(null);
       setError(null);
-      console.log("AuthContext: Local cleanup done, redirecting to /login");
       router.push("/login");
       router.refresh();
     }
   }, [router]);
 
   const deleteUser = useCallback(async () => {
-    console.log("AuthContext: deleteUser initiated");
     if (!userId) {
       console.error("AuthContext: User ID not found for deletion.");
       setError("ユーザーIDが見つからないため、アカウントを削除できません。");
@@ -68,7 +64,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       await apiClient.delete(`/users/${userId}`);
-      console.log("AuthContext: User deletion successful on server.");
       // ログアウト処理を呼び出して状態をクリアし、リダイレクト
       await logout();
     } catch (error) {
@@ -86,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserId(userData.id);
       setIsLoggedIn(true);
       setError(null);
-      console.log("AuthContext: Login successful, state updated.");
       router.push("/home");
       router.refresh();
     },
@@ -103,9 +97,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     const checkAuthStatus = async () => {
-      console.log("AuthContext: useEffect - Checking auth status...", {
-        pathname,
-      });
       // ページ遷移時に認証状態を確認するAPIを叩く
       try {
         // apiClient.getにレスポンスの型<{ user: ... }>を指定します
@@ -124,9 +115,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         if (isMounted) {
-          console.log(
-            "AuthContext: Verification failed, user is not authenticated."
-          );
           setIsLoggedIn(false);
           setUser(null);
           setUserId(null);

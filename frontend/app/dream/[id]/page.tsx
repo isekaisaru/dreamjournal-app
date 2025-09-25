@@ -4,7 +4,7 @@ import DreamForm from "../../components/DreamForm";
 import DeleteButton from "../../components/DeleteButton";
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import dynamic from "next/dynamic";
 import {
   AlertDialog,
@@ -28,8 +28,19 @@ const DreamAnalysis = dynamic(() => import("../../components/DreamAnalysis"), {
   ssr: false, // サーバーサイドレンダリングを無効化
 });
 
-export default function EditDreamPage({ params }: { params: { id: string } }) {
-  const { id: dreamId } = params;
+// 夢解析機能の有効/無効を環境変数で切り替える
+const DREAM_ANALYSIS_ENABLED =
+  process.env.NEXT_PUBLIC_DREAM_ANALYSIS_ENABLED === "true";
+
+// Next.jsの新しいバージョンでは、Page Propsの`params`はPromiseになりました。
+// Client Componentでこれを利用するには、Reactの`use`フックを使います。
+export default function EditDreamPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // `use`フックでPromiseを解決し、`id`を取得します
+  const { id: dreamId } = use(params);
   const {
     dream,
     error,
@@ -115,7 +126,7 @@ export default function EditDreamPage({ params }: { params: { id: string } }) {
         isLoading={isUpdating}
       />
 
-      {dreamId && (
+      {DREAM_ANALYSIS_ENABLED && dreamId && (
         <DreamAnalysis dreamId={dreamId} hasContent={!!dream.content?.trim()} />
       )}
 

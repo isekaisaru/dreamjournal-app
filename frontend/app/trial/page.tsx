@@ -23,7 +23,6 @@ export default function TrialPage() {
       if (!apiUrl) {
         throw new Error("NEXT_PUBLIC_API_URL is not defined");
       }
-      console.log("API URL:", apiUrl);
 
       // トライアルユーザーのデータを送信
       const response = await apiClient.post<{ user: User }>("/trial_users", {
@@ -49,7 +48,6 @@ export default function TrialPage() {
       setErrorMessage(null);
     } catch (error) {
       setErrorMessage("トライアルユーザーの作成に失敗しました。");
-      console.error("Error creating trial user:", error);
     }
   };
 

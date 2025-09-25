@@ -16,9 +16,6 @@ export async function attemptTokenRefresh(): Promise<string | null> {
   }
 
   try {
-    console.log(
-      "authService: バックエンドでアクセストークンのリフレッシュを試みます..."
-    );
     const response = await apiFetch<{
       access_token: string;
       refresh_token?: string; // Railsのレスポンスに合わせてキーを修正
@@ -33,9 +30,6 @@ export async function attemptTokenRefresh(): Promise<string | null> {
       if (newRefreshToken) {
         localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
       }
-      console.log(
-        "authService: アクセストークンが正常にリフレッシュされました。"
-      );
       return access_token;
     } else {
       console.error(
@@ -55,11 +49,9 @@ export async function attemptTokenRefresh(): Promise<string | null> {
 }
 
 export async function performLogout(): Promise<void> {
-  console.log("authService:  ログアウト処理を実行します。");
   try {
     // Call the backend to invalidate the session/token
     await clientLogout();
-    console.log("authService: バックエンドでのログアウト処理が完了しました。");
   } catch (error) {
     // Even if the backend call fails, we must clear the client-side state
     console.error(

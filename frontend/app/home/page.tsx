@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import Link from "next/link";
@@ -7,7 +6,6 @@ import { cookies } from "next/headers";
 import { getMyDreams, getMe } from "@/lib/apiClient";
 import type { User } from "@/app/types";
 import { redirect } from "next/navigation";
-import Loading from "../loading";
 
 /**
  * HomePageコンポーネント
@@ -51,6 +49,7 @@ export default async function HomePage({
   }
 
   const resolvedSearchParams = await searchParams;
+
   const queryParams = new URLSearchParams();
   if (resolvedSearchParams.query)
     queryParams.set("query", String(resolvedSearchParams.query));
@@ -89,9 +88,11 @@ export default async function HomePage({
         <h1 className="text-2xl font-bold text-foreground">
           {user ? `${user.username}さんの夢` : "夢リスト"}
         </h1>
-        <Suspense fallback={<Loading />}>
-          <SearchBar />
-        </Suspense>
+        <SearchBar
+          query={resolvedSearchParams.query}
+          startDate={resolvedSearchParams.startDate}
+          endDate={resolvedSearchParams.endDate}
+        />
         {/* エラーメッセージがある場合は表示 */}
         {errorMessage && (
           <div className="text-destructive mb-4">{errorMessage}</div>
