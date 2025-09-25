@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { clientLogin } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
@@ -86,6 +87,14 @@ export default function Login() {
           >
             {isLoading ? "ログイン中..." : "ログイン"} {}
           </button>
+          <div className="text-right">
+            <Link
+              href="/forgot-password"
+              className="text-sm text-primary hover:underline"
+            >
+              パスワードをお忘れの方
+            </Link>
+          </div>
         </div>
         {pageError && (
           <p className="text-destructive mt-4 text-center">{pageError}</p>

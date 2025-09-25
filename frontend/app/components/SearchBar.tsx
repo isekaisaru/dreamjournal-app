@@ -1,51 +1,31 @@
-"use client";
-import React, { useState, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React from "react";
 
-const SearchBar = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+type SearchBarProps = {
+  query?: string | string[] | undefined;
+  startDate?: string | string[] | undefined;
+  endDate?: string | string[] | undefined;
+};
 
-  // URLのクエリパラメータから初期値を取得し、フォームに表示
-  const [query, setQuery] = useState(searchParams.get("query") || "");
-  const [startDate, setStartDate] = useState(
-    searchParams.get("startDate") || ""
-  );
-  const [endDate, setEndDate] = useState(searchParams.get("endDate") || "");
+function normalizeParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+  return value ?? "";
+}
 
-  const handleSearchSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams(searchParams.toString());
-    if (query) {
-      params.set("query", query.trim());
-    } else {
-      params.delete("query");
-    }
-    if (startDate) {
-      params.set("startDate", startDate.trim());
-    } else {
-      params.delete("startDate");
-    }
-    if (endDate) {
-      params.set("endDate", endDate.trim());
-    } else {
-      params.delete("endDate");
-    }
-    // URLを更新して、サーバーコンポーネントに再レンダリングをトリガーさせる
-    router.push(`/home?${params.toString()}`);
-  };
-
-  const handleReset = () => {
-    setQuery("");
-    setStartDate("");
-    setEndDate("");
-    // クエリパラメータなしでホームページに遷移
-    router.push("/home");
-  };
+export default function SearchBar({
+  query,
+  startDate,
+  endDate,
+}: SearchBarProps) {
+  const normalizedQuery = normalizeParam(query);
+  const normalizedStartDate = normalizeParam(startDate);
+  const normalizedEndDate = normalizeParam(endDate);
 
   return (
     <form
-      onSubmit={handleSearchSubmit}
+      action="/home"
+      method="get"
       className="p-4 mb-6 bg-card border border-border rounded-lg w-full"
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
@@ -58,9 +38,9 @@ const SearchBar = () => {
           </label>
           <input
             id="search-query"
+            name="query"
             type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            defaultValue={normalizedQuery}
             placeholder="キーワード、感情タグなどで検索"
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
@@ -74,9 +54,9 @@ const SearchBar = () => {
           </label>
           <input
             id="start-date"
+            name="startDate"
             type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            defaultValue={normalizedStartDate}
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -89,21 +69,20 @@ const SearchBar = () => {
           </label>
           <input
             id="end-date"
+            name="endDate"
             type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            defaultValue={normalizedEndDate}
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-4">
-        <button
-          type="button"
-          onClick={handleReset}
-          className="bg-muted hover:bg-muted/80 text-muted-foreground p-2 rounded text-sm"
+        <a
+          href="/home"
+          className="inline-flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground p-2 rounded text-sm"
         >
           リセット
-        </button>
+        </a>
         <button
           type="submit"
           className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded text-sm"
@@ -113,6 +92,4 @@ const SearchBar = () => {
       </div>
     </form>
   );
-};
-
-export default SearchBar;
+}

@@ -73,4 +73,7 @@ group :development do
 
   # Annota for schema documentation
   gem "annotate"
+
+  # インブラウザでメール内容を確認
+  gem "letter_opener"
 end

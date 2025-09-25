@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Dream, Emotion } from "../types";
 import { getEmotions } from "@/lib/apiClient";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 import { getEmotionColors } from "@/lib/emotionUtils";
 
 interface DreamFormData {
@@ -44,8 +44,7 @@ export default function DreamForm({
         // 今回: 感情リスト取得専用の `getEmotions` 関数を使います。
         const emotionsData = await getEmotions();
         setEmotions(emotionsData);
-      } catch (error) {
-        console.error("感情一覧の取得に失敗しました:", error);
+      } catch {
         toast.error("感情一覧の取得に失敗しました。");
       } finally {
         setIsFetchingEmotions(false);

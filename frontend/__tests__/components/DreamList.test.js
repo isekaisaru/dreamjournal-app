@@ -14,11 +14,6 @@ jest.mock('next/link', () => {
   )
 })
 
-jest.mock('date-fns', () => {
-  const actual = jest.requireActual('date-fns')
-  return { ...actual, format: jest.fn(() => '2025-01-01') }
-})
-
 const makeDream = (overrides = {}) => ({
   id: 1,
   title: '夢1',

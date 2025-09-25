@@ -4,7 +4,7 @@
  * For client-side requests, it includes credentials (cookies).
  * For server-side, the token must be passed explicitly in the options.
  *
- * @param endpoint APIエンドポイント (例: '/dreams/my_dreams')
+ * @param endpoint APIエンドポイント (例: '/dreams')
  * @param options 追加のfetchオプション。サーバーサイドで認証が必要な場合は `token` を含める。
  * @returns APIからのJSONレスポンス
  */
@@ -71,13 +71,26 @@ export async function apiFetch<T>(
     error.status = response.status;
     try {
       const errorData = await response.json();
-      // Railsのエラー形式に合わせて調整
-      error.message =
-        errorData.error ||
-        (Array.isArray(errorData.errors)
-          ? errorData.errors.join(", ")
-          : errorData.message) ||
-        error.message;
+      // Railsのエラー形式に合わせて調整 (より堅牢な形式)
+      if (errorData.error) {
+        error.message = errorData.error;
+      } else if (Array.isArray(errorData.errors)) {
+        error.message = errorData.errors.join(", ");
+      } else if (
+        typeof errorData.errors === "object" &&
+        errorData.errors !== null
+      ) {
+        // { "email": ["has already been taken"], "password": ["is too short"] } のような形式に対応
+        error.message = Object.entries(errorData.errors)
+          .map(
+            ([key, messages]) =>
+              `${key} ${Array.isArray(messages) ? messages.join(", ") : messages}`
+          )
+          .join("; ");
+      } else if (errorData.message) {
+        error.message = errorData.message;
+      }
+
       error.data = errorData;
     } catch {
       // JSONのパースに失敗した場合
@@ -106,7 +119,8 @@ export async function getMyDreams(
   token: string,
   searchParams: URLSearchParams
 ): Promise<Dream[]> {
-  const endpoint = `/dreams/my_dreams?${searchParams.toString()}`;
+  const queryString = searchParams.toString();
+  const endpoint = queryString ? `/dreams?${queryString}` : "/dreams";
   return apiFetch(endpoint, { token });
 }
 

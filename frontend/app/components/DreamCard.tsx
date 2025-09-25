@@ -1,8 +1,17 @@
 import React from "react";
 import { Dream } from "@/app/types";
 import Link from "next/link";
-import { format } from "date-fns";
 import { getEmotionColors } from "@/lib/emotionUtils";
+
+function formatDate(dateInput: string | number | Date | undefined): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 type DreamCardProps = {
   dream: Dream;
@@ -25,7 +34,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           {dream.title}
         </h2>
         <p className="text-muted-foreground mb-2">
-          {format(new Date(dream.created_at), "yyyy-MM-dd")}
+          {formatDate(dream.created_at)}
         </p>
         <p className="text-lg md:text-xl font-bold group-hover:text-primary/90 pb-4 h-16 overflow-hidden">
           {displayContent || (

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { clientLogout } from "@/lib/apiClient";
-import { toast } from "react-hot-toast";
+import { toast } from "@/lib/toast";
 
 interface AuthNavProps {
   isAuthenticated: boolean;
@@ -19,7 +19,6 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
       // Refresh the current route to re-run Server Components and update auth state
       router.refresh();
     } catch (error: any) {
-      console.error("Logout failed:", error);
       toast.error(error.message || "ログアウトに失敗しました。");
     }
   };
