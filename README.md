@@ -1,4 +1,7 @@
 # 夢の記録アプリケーション
+## 🌐 デプロイURL
+**本番環境**: https://dreamjournal-8u8f7y2lu-isekaisarus-projects.vercel.app/
+
 
 夢の記録アプリケーションは、神話のキャラクター「モルペウス」をガイドに、夢の記録・分析・共有を支援するフルスタック Web アプリケーションです。Rails 製 API と Next.js 製フロントエンドを Docker Compose で統合し、日々の夢を安全に保存しながら感情や傾向を可視化します。
 
