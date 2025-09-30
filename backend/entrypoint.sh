@@ -36,11 +36,16 @@ echo "✅ PIDファイル削除完了"
 # - 早期に問題を検知し、分かりやすいエラーメッセージで開発者を助ける
 
 echo "🔑 必須の環境変数を確認中..."
-[ -z "$POSTGRES_PASSWORD" ] && { echo "❌ エラー: POSTGRES_PASSWORDが設定されていません。"; exit 1; }
-# デフォルト値を設定
-export POSTGRES_USER="${POSTGRES_USER:-postgres}"
-export POSTGRES_DB="${POSTGRES_DB:-dream_journal_development}"
-echo "✅ 必須の環境変数OK (User: $POSTGRES_USER, DB: $POSTGRES_DB)"
+# Render環境ではDATABASE_URLを使用するため、POSTGRES_PASSWORDチェックを条件分岐
+if [ -n "$DATABASE_URL" ]; then
+    echo "✅ DATABASE_URLを検出 - Render環境として起動します"
+else
+    # ローカルDocker環境向けのチェック
+    [ -z "$POSTGRES_PASSWORD" ] && { echo "❌ エラー: POSTGRES_PASSWORDが設定されていません。"; exit 1; }
+    export POSTGRES_USER="${POSTGRES_USER:-postgres}"
+    export POSTGRES_DB="${POSTGRES_DB:-dream_journal_development}"
+    echo "✅ 必須の環境変数OK (User: $POSTGRES_USER, DB: $POSTGRES_DB)"
+fi
 
 # ========================================
 # 📦 依存関係チェック: Gemの確認とインストール
@@ -70,23 +75,28 @@ fi
 # - 接続エラーでの起動失敗を防ぐためのリトライ機構
 
 echo "🔌 データベース接続待機中..."
-max_attempts=30
-attempt=1
+if [ -n "$DATABASE_URL" ]; then
+    echo "✅ DATABASE_URL使用 - 接続待機をスキップします"
+else
+    # ローカルDocker環境向けの接続待機
+    max_attempts=30
+    attempt=1
 
-while [ $attempt -le $max_attempts ]; do
-    if PGPASSWORD="$POSTGRES_PASSWORD" psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1;" >/dev/null 2>&1; then
-        echo "✅ データベース接続成功 (${attempt}回目の試行)"
-        break
+    while [ $attempt -le $max_attempts ]; do
+        if PGPASSWORD="$POSTGRES_PASSWORD" psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ データベース接続成功 (${attempt}回目の試行)"
+            break
+        fi
+        
+        echo "⏳ データベース接続待機... (${attempt}/${max_attempts})"
+        sleep 1
+        attempt=$((attempt + 1))
+    done
+
+    if [ $attempt -gt $max_attempts ]; then
+        echo "❌ データベース接続タイムアウト - 30秒以内に接続できませんでした"
+        exit 1
     fi
-    
-    echo "⏳ データベース接続待機... (${attempt}/${max_attempts})"
-    sleep 1
-    attempt=$((attempt + 1))
-done
-
-if [ $attempt -gt $max_attempts ]; then
-    echo "❌ データベース接続タイムアウト - 30秒以内に接続できませんでした"
-    exit 1
 fi
 
 # ========================================
