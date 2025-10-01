@@ -2,7 +2,19 @@
 
 ## 🌐 デプロイ URL
 
-**本番環境**: https://dreamjournal-8u8f7y2lu-isekaisarus-projects.vercel.app/
+**フロントエンド**: https://dreamjournal-8u8f7y2lu-isekaisarus-projects.vercel.app/
+**バックエンド**: https://dreamjournal-app.onrender.com
+
+### 動作確認方法
+
+**バックエンドAPI:**
+```bash
+curl https://dreamjournal-app.onrender.com/health
+# 期待される応答: OK
+```
+**フロントエンド:**
+
+ブラウザでURLにアクセスし、ログイン画面が表示されることを確認
 
 夢の記録アプリケーションは、神話のキャラクター「モルペウス」をガイドに、夢の記録・分析・共有を支援するフルスタック Web アプリケーションです。Rails 製 API と Next.js 製フロントエンドを Docker Compose で統合し、日々の夢を安全に保存しながら感情や傾向を可視化します。
 
