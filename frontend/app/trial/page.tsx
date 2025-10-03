@@ -25,14 +25,17 @@ export default function TrialPage() {
       }
 
       // トライアルユーザーのデータを送信
-      const response = await apiClient.post<{ user: User }>("/trial_users", {
-        trial_user: {
-          name: "Test User",
-          email: "test@example.com",
-          password: "password123",
-          password_confirmation: "password123",
-        },
-      });
+      const response = await apiClient.post<{ user: User }>(
+        "/auth/trial_login",
+        {
+          trial_user: {
+            name: "Test User",
+            email: "test@example.com",
+            password: "password123",
+            password_confirmation: "password123",
+          },
+        }
+      );
       const userData = response.user;
       if (userData) {
         // login関数はidがstringであることを期待しているため、変換します
