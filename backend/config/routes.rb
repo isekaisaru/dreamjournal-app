@@ -41,4 +41,6 @@ Rails.application.routes.draw do
   if Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
     get '/dev/password_resets/token', to: 'password_resets#dev_token'
   end
+
+  post 'trial_users', to: 'trial_users#create'
 end
