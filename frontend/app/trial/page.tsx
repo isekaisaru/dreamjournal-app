@@ -30,7 +30,7 @@ export default function TrialPage() {
         {
           trial_user: {
             username: `Test User ${Date.now()}`,
-            email: "test@example.com",
+            email: `test${Date.now()}@example.com`,
             password: "password123",
             password_confirmation: "password123",
           },
