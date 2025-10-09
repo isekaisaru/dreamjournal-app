@@ -42,14 +42,14 @@ class ApplicationController < ActionController::API
       value: access_token,
       httponly: true,
       secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
-      same_site: :lax, # 開発環境でも安定したlax設定を使用
+      same_site: :none,
       path: '/' # 全てのパスでCookieが利用可能になるよう設定
     }
     cookies[:refresh_token] = {
       value: refresh_token,
       httponly: true,
       secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
-      same_site: :lax,
+      same_site: :none,
       path: '/'
     }
   end
