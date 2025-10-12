@@ -10,6 +10,16 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "https://dreamjournal-app.onrender.com/:path*",
+      },
+    ];
+  }, 
 };
+
+
 
 export default nextConfig;

@@ -1,12 +1,12 @@
 /**
  * API URL configuration for different environments
- * Handles client-side vs server-side API communication in Docker environment
+ * Handles client-side vs server-side API communication
  */
 
 /**
  * Get the appropriate API URL based on the environment
- * - Server-side (Next.js container): Uses Docker service name 'backend:3001'
- * - Client-side (browser): Uses localhost:3001
+ * - Server-side (Next.js container): Direct connection to the backend (Render or Docker service)
+ * - Client-side (browser): Uses relative path for Vercel Rewrites
  */
 export function getApiUrl(): string {
   const API_PREFIX_PATTERN = /\/api\/v1\/?$/;
@@ -17,15 +17,18 @@ export function getApiUrl(): string {
 
   // Check if we're running on the server side
   if (typeof window === "undefined") {
-    // Server-side: Use Docker internal network
+    // Server-side: Use the full backend URL.
+    // In production (Vercel), this will be the Render URL.
+    // In local Docker, this will be the internal service name.
     return normalizeBaseUrl(
-      process.env.INTERNAL_API_URL || "http://backend:3001"
+      process.env.INTERNAL_API_URL || "https://dreamjournal-app.onrender.com"
     );
   } else {
-    // Client-side: Use localhost (accessible from browser)
-    return normalizeBaseUrl(
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-    );
+    // Client-side: Use a relative path to leverage Vercel Rewrites.
+    // This makes the browser request to the same origin, solving cookie issues.
+    // In local dev, next.config.js rewrites this to http://localhost:3001.
+    // In production, Vercel rewrites this to the Render URL.
+    return "/api";
   }
 }
 
