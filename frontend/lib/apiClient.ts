@@ -5,7 +5,8 @@
  * For server-side, the token must be passed explicitly in the options.
  *
  * @param endpoint APIエンドポイント (例: '/dreams')
- * @param options 追加のfetchオプション。サーバーサイドで認証が必要な場合は `token` を含める。
+
+* @param options 追加のfetchオプション。サーバーサイドで認証が必要な場合は `token` を含める。
  * @returns APIからのJSONレスポンス
  */
 import { createApiUrl } from "./api-config";
