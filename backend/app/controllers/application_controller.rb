@@ -38,18 +38,22 @@ class ApplicationController < ActionController::API
   end
 
   def set_token_cookies(access_token, refresh_token)
+    # 環境に応じてSameSiteとSecure属性を調整
+    same_site_policy = Rails.env.production? ? :none : :lax
+    secure_flag = Rails.env.production? # 本番環境のみHTTPSを想定
+
     cookies[:access_token] = {
       value: access_token,
       httponly: true,
-      secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
-      same_site: :none,
+      secure: secure_flag,
+      same_site: same_site_policy,
       path: '/' # 全てのパスでCookieが利用可能になるよう設定
     }
     cookies[:refresh_token] = {
       value: refresh_token,
       httponly: true,
-      secure: Rails.env.production?, # HTTPSが利用可能な本番環境のみsecureを有効化
-      same_site: :none,
+      secure: secure_flag,
+      same_site: same_site_policy,
       path: '/'
     }
   end

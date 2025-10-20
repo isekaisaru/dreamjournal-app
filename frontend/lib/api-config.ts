@@ -28,7 +28,7 @@ export function getApiUrl(): string {
     // This makes the browser request to the same origin, solving cookie issues.
     // In local dev, next.config.js rewrites this to http://localhost:3001.
     // In production, Vercel rewrites this to the Render URL.
-    return "/api";
+    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
   }
 }
 
