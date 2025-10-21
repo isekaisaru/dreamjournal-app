@@ -49,6 +49,7 @@ export async function apiFetch<T>(
       ...defaultHeaders,
       ...fetchOptions.headers,
     },
+    credentials: "include",
   };
 
   if (isServer) {

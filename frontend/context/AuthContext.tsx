@@ -81,10 +81,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUserId(userData.id);
       setIsLoggedIn(true);
       setError(null);
-      router.push("/home");
-      router.refresh();
     },
-    [router, setUser, setUserId, setIsLoggedIn, setError]
+    [setUser, setUserId, setIsLoggedIn, setError]
   );
 
   useEffect(() => {
