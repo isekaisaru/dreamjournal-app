@@ -11,7 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [pageError, setPageError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isLoggedIn, error: authError } = useAuth();
+  const { login, error: authError } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -19,12 +19,6 @@ export default function Login() {
       setPageError(authError);
     }
   }, [authError]);
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      router.push("/");
-    }
-  }, [isLoggedIn, router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -41,8 +35,9 @@ export default function Login() {
       const { user } = await clientLogin({ email, password });
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
       login(user);
-      // ログイン状態の更新を待ってからリダイレクトするため、useEffectに任せます
-      // router.push("/home"); // ここで直接呼ぶ代わりにuseEffectを使う
+      // ログイン成功後、直接リダイレクト＋refresh
+      router.push("/");
+      router.refresh(); // サーバーコンポーネントを再取得してUIを更新
     } catch (apiError: any) {
       console.error("ログインAPI呼び出しエラー:", apiError);
       // 以前: エラーメッセージは深い階層にありました (apiError.response.data.error)。
