@@ -36,6 +36,24 @@
     --ring: 0 0% 3.9%;
 
     --radius: 0.5rem;
+
+    /* Night sky palette from proposal 2 */
+    --night-sky-inner: 225 70% 25%; /* #1e3a8a */
+    --night-sky-mid: 222 45% 11%; /* #0b1120 */
+    --night-sky-outer: 220 81% 5%; /* #020617 */
+    --night-card-bg: 222 48% 11% / 0.72; /* rgba(15, 23, 42, 0.72) */
+    --night-card-border: 216 22% 65% / 0.35; /* rgba(148, 163, 184, 0.35) */
+    --night-text-primary: 220 20% 91%; /* #e2e8f0 */
+    --night-heading: 210 20% 98%; /* #f8fafc */
+    --night-link: 203 92% 60%; /* #38bdf8 */
+    --night-link-hover: 212 93% 78%; /* #93c5fd */
+    --night-button: 203 92% 60%; /* #38bdf8 */
+    --night-button-hover: 199 89% 48%; /* #0ea5e9 */
+    --night-button-text: 222 45% 11%; /* #0b1120 */
+    --night-input-bg: 222 48% 11%; /* #0f172a */
+    --night-input-border: 222 60% 41%; /* #1d4ed8 */
+    --night-input-focus: 203 92% 60%; /* #38bdf8 */
+    --night-header-bg: 222 48% 11% / 0.78; /* rgba(15, 23, 42, 0.78) */
   }
 
   .dark {
@@ -69,6 +87,113 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
+
+    /* Override with night sky theme */
+    --background: 222 45% 11%; /* --night-sky-mid */
+    --foreground: 220 20% 91%; /* --night-text-primary */
+    --card: var(--night-card-bg);
+    --card-foreground: var(--night-heading);
+    --popover: var(--night-card-bg);
+    --popover-foreground: var(--night-heading);
+    --primary: 203 92% 60%; /* --night-link */
+    --primary-foreground: 222 45% 11%; /* --night-button-text */
+    --secondary: var(--night-link-hover);
+    --secondary-foreground: var(--night-button-text);
+    --muted: 222 48% 11%; /* --night-input-bg */
+    --muted-foreground: 216 22% 65%; /* a bit lighter than card-border */
+    --accent: var(--night-link);
+    --accent-foreground: var(--night-button-text);
+    --border: var(--night-card-border);
+    --input: var(--night-input-border);
+    --ring: var(--night-input-focus);
+  }
+
+  .dark body {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(
+        120% 120% at 50% 0%,
+        hsla(var(--night-sky-inner) / 0.28) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        circle at 20% -10%,
+        hsla(212 93% 78% / 0.22),
+        transparent 45%
+      ),
+      linear-gradient(
+        180deg,
+        hsl(var(--night-sky-inner)) 0%,
+        hsl(var(--night-sky-mid)) 55%,
+        hsl(var(--night-sky-outer)) 100%
+      );
+    background-attachment: fixed;
+  }
+
+  .dark body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(2px 2px at 15% 20%, hsla(50, 98%, 65%, 0.7), transparent),
+      radial-gradient(
+        1.5px 1.5px at 70% 35%,
+        hsla(210, 20%, 98%, 0.8),
+        transparent
+      ),
+      radial-gradient(
+        1.8px 1.8px at 40% 60%,
+        hsla(53, 96%, 75%, 0.75),
+        transparent
+      );
+    opacity: 0.55;
+    animation: twinkle 20s infinite linear;
+  }
+
+  @keyframes twinkle {
+    0% {
+      transform: translate(0, 0);
+    }
+    25% {
+      transform: translate(5px, 10px);
+    }
+    50% {
+      transform: translate(-5px, -5px);
+    }
+    75% {
+      transform: translate(10px, -10px);
+    }
+    100% {
+      transform: translate(0, 0);
+    }
+  }
+
+  .dark header {
+    background: hsla(var(--night-header-bg));
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  }
+
+  .dark h1,
+  .dark h2,
+  .dark h3,
+  .dark h4,
+  .dark h5,
+  .dark h6 {
+    color: hsl(210 20% 98%);
+    text-shadow: 0 2px 12px rgba(14, 116, 144, 0.25);
+  }
+
+  .dark .card,
+  .dark .glass-panel {
+    background: linear-gradient(
+      145deg,
+      hsla(var(--night-card-bg)),
+      hsla(var(--night-card-bg) / 0.65)
+    );
+    box-shadow: 0 20px 45px rgba(6, 12, 28, 0.55);
   }
 }
 

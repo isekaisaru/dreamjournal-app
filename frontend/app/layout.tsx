@@ -19,9 +19,9 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): React.ReactElement {
   return (
-    <html lang="ja" className="min-h-full">
+    <html lang="ja" className="dark min-h-full">
       <body
         className={`${notoSansJP.className} px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}
       >
