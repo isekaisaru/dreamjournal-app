@@ -82,10 +82,33 @@ const config = {
             height: "0",
           },
         },
+        "morpheus-entry": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(24px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
+        "morpheus-float": {
+          "0%": {
+            transform: "translateY(0)",
+          },
+          "50%": {
+            transform: "translateY(-4px)",
+          },
+          "100%": {
+            transform: "translateY(0)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "morpheus-entry": "morpheus-entry 0.8s ease-out both",
+        "morpheus-float": "morpheus-float 6s ease-in-out infinite",
       },
     },
   },

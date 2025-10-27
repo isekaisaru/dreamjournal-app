@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { getMyDreams, getMe } from "@/lib/apiClient";
 import type { User } from "@/app/types";
 import { redirect } from "next/navigation";
+import MorpheusAssistant from "./MorpheusAssistant";
 
 /**
  * HomePageコンポーネント
@@ -127,6 +128,7 @@ export default async function HomePage({
           ))}
         </ul>
       </aside>
+      <MorpheusAssistant />
     </div>
   );
 }
