@@ -27,6 +27,7 @@
     "delayed-stream": "^1.0.0",
     "eslint-plugin-jsx-a11y": "^6.9.0",
     "form-data": "^4.0.4",
+    "framer-motion": "^12.23.24",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.503.0",
     "micromatch": "^4.0.8",
