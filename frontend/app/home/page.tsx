@@ -7,6 +7,7 @@ import { getMyDreams, getMe } from "@/lib/apiClient";
 import type { User } from "@/app/types";
 import { redirect } from "next/navigation";
 import MorpheusAssistant from "./MorpheusAssistant";
+import VoiceRecorderClient from "./VoiceRecorderClient";
 
 /**
  * HomePageコンポーネント
@@ -129,6 +130,7 @@ export default async function HomePage({
         </ul>
       </aside>
       <MorpheusAssistant />
+      <VoiceRecorderClient />
     </div>
   );
 }

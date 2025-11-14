@@ -25,16 +25,17 @@ ENV RAILS_ENV=${RAILS_ENV} \
     BUNDLE_RETRY=3
 
 # 基本的なランタイム依存関係のインストール
+# apt-get clean と rm を同じRUNレイヤーで実行し、イメージサイズを最適化
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
-# Install gems
       libvips \
       postgresql-client \
       # ヘルスチェック用
       curl \
+      # Whisperでの音声ファイル変換用
+      ffmpeg \
       # タイムゾーンデータ
       tzdata \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 # Copy application code
 WORKDIR /app
 

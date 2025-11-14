@@ -19,7 +19,14 @@ class DreamsController < ApplicationController
 
   # POST /dreams
   def create
-    @dream = current_user.dreams.build(dream_params)
+    # 音声ファイルがあるかどうかで処理を分岐
+    if params[:dream][:audio].present?
+      @dream = current_user.dreams.build(title: "音声入力された夢 #{Time.current.strftime('%Y-%m-%d %H:%M')}")
+      @dream.audio.attach(params[:dream][:audio])
+    else
+      @dream = current_user.dreams.build(dream_params)
+    end
+
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
@@ -29,6 +36,12 @@ class DreamsController < ApplicationController
 
   # PATCH/PUT /dreams/:id
   def update
+    # 音声ファイルが添付された更新リクエストの場合
+    if params[:dream][:audio].present?
+      @dream.audio.attach(params[:dream][:audio])
+      # ここでジョブを起動することも可能
+    end
+
     if @dream.update(dream_params)
       render json: @dream
     else
@@ -73,6 +86,13 @@ class DreamsController < ApplicationController
       return render json: { error: "分析対象の夢の内容がありません。" }, status: :unprocessable_content
     end
     
+    # 音声ファイルがあり、まだテキストがない場合は音声分析ジョブを起動
+    if @dream.audio.attached? && @dream.content.blank?
+      @dream.start_analysis!
+      AnalyzeAudioDreamJob.perform_later(@dream.id)
+      return render json: { message: '音声夢の分析リクエストを受け付けました。' }, status: :accepted, location: analysis_dream_url(@dream)
+    end
+
     # 同じ夢に対する複数の分析リクエストをガード
     if @dream.analysis_pending?
       return render json: { message: 'すでに解析中です。' }, status: :accepted, location: analysis_dream_url(@dream)
@@ -100,7 +120,7 @@ class DreamsController < ApplicationController
    
     # 認可されたパラメーターを取得する
     def dream_params
-      params.require(:dream).permit(:title, :content, emotion_ids: [])
+      params.require(:dream).permit(:title, :content, :audio, emotion_ids: [])
     end
 
     def set_dream_and_authorize_user

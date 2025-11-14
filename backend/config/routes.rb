@@ -5,6 +5,9 @@ Rails.application.routes.draw do
   # 詳細ヘルスチェック（監視ツール用）
   get "/health/detailed", to: "health#detailed_check"
 
+  # 音声解析用エンドポイント
+  post "/analyze_audio_dream", to: "audio_dreams#create"
+
   resources :dreams, only: [:index, :show, :create, :update, :destroy] do
     member do
       post :analyze
