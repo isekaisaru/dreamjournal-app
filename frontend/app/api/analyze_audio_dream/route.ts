@@ -7,12 +7,29 @@ const BACKEND_URL =
 
 export async function POST(req: NextRequest) {
   try {
+    const MIN_FILE_SIZE = 2048; // 2KB
     const formData = await req.formData();
-    const audioFile = formData.get("file");
+    // フロントエンドの実装に合わせて "audio" を優先し、なければ "file" をフォールバック
+    const audioFile = (formData.get("audio") ||
+      formData.get("file")) as File | null;
 
-    if (!(audioFile instanceof Blob)) {
+    if (!audioFile) {
       return NextResponse.json(
-        { error: "音声ファイルが正しく送信されませんでした。" },
+        { error: "音声ファイルが見つかりません。" },
+        { status: 400 }
+      );
+    }
+
+    if (audioFile.size < MIN_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "音声ファイルが小さすぎるか、無音の可能性があります。" },
+        { status: 422 }
+      );
+    }
+
+    if (!audioFile.type.startsWith("audio/")) {
+      return NextResponse.json(
+        { error: "無効なファイルタイプです。" },
         { status: 400 }
       );
     }
@@ -26,9 +43,10 @@ export async function POST(req: NextRequest) {
     }
 
     const relayFormData = new FormData();
-    // ファイル名がない場合を考慮してデフォルト値を設定
     const filename =
-      (audioFile as File).name || `dream-audio-${Date.now()}.webm`;
+      audioFile.name && audioFile.name !== "blob"
+        ? audioFile.name
+        : `dream-audio-${Date.now()}.webm`;
     relayFormData.append("file", audioFile, filename);
 
     let backendResponse: Response;
