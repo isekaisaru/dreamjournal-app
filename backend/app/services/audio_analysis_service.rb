@@ -46,8 +46,11 @@ class AudioAnalysisService
     response = @client.audio.transcribe(parameters: {
       model: "whisper-1",
       file: @uploaded_file.tempfile,
-      response_format: "json"
+      response_format: "json",
+      language: "ja"
     })
+
+    Rails.logger.info "Whisper Response: #{response.inspect}"
 
     transcript = response["text"]&.strip
     # 文字起こし結果が空の場合、専用のエラーを発生させる

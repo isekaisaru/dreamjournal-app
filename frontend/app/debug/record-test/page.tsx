@@ -21,7 +21,7 @@ export default function RecordTestPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
-  const mimeTypeRef = useRef<string>("");
+  const mimeTypeRef = useRef<string>("audio/webm");
 
   const cleanupStream = useCallback(() => {
     if (streamRef.current) {
@@ -46,7 +46,7 @@ export default function RecordTestPage() {
     const target = realMics[0] ?? inputs[0];
 
     if (!target) {
-      throw new Error("利用できるマイクが見つかりません。");
+      throw new Error("利用できるマイク入力デバイスが見つかりません。");
     }
 
     return navigator.mediaDevices.getUserMedia({
@@ -74,41 +74,33 @@ export default function RecordTestPage() {
       }
 
       const [track] = tracks;
-
       setTimeout(() => {
         if (track.muted) {
           track.stop();
-          setError("無音デバイスを検出しました。別のマイクでお試しください。");
+          setError(
+            "マイクから音声が取得できません（無音デバイスの可能性があります）。"
+          );
           setRecording(false);
           cleanupStream();
         }
       }, 500);
 
       let mimeType = "";
-
-      if (typeof MediaRecorder !== "undefined") {
-        if (typeof MediaRecorder.isTypeSupported === "function") {
-          if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-            mimeType = "audio/webm;codecs=opus";
-          } else if (MediaRecorder.isTypeSupported("audio/webm")) {
-            mimeType = "audio/webm";
-          } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
-            mimeType = "audio/ogg;codecs=opus";
-          } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-            mimeType = "audio/mp4"; // Safari fallback
-          } else if (MediaRecorder.isTypeSupported("audio/aac")) {
-            mimeType = "audio/aac";
-          }
+      if (typeof MediaRecorder.isTypeSupported === "function") {
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+          mimeType = "audio/webm;codecs=opus";
+        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+          mimeType = "audio/webm";
+        } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
+          mimeType = "audio/ogg;codecs=opus";
         }
       }
-
       mimeTypeRef.current = mimeType || "audio/webm";
 
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+      const recorder = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
       mediaRecorderRef.current = recorder;
 
       chunksRef.current = [];
-
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) {
           chunksRef.current.push(e.data);
@@ -119,11 +111,13 @@ export default function RecordTestPage() {
         const duration = recordingStartedAtRef.current
           ? performance.now() - recordingStartedAtRef.current
           : 0;
+        const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
 
-        const blob = new Blob(chunksRef.current, {
-          type: mimeTypeRef.current,
-        });
-
+        console.log(
+          `Blob created. Size: ${blob.size} bytes, Duration: ${duration.toFixed(
+            2
+          )} ms, Type: ${blob.type}`
+        );
         setLastBlobInfo({
           size: blob.size,
           duration,
@@ -131,9 +125,17 @@ export default function RecordTestPage() {
         });
 
         if (blob.size < MIN_BLOB_SIZE || duration < MIN_DURATION_MS) {
-          setError(`録音が短すぎる/無音の可能性があります`);
+          setError(
+            `録音が短すぎるか無音です (サイズ: ${blob.size} B, 時間: ${Math.round(
+              duration
+            )} ms)`
+          );
         } else {
-          setAudioURL(URL.createObjectURL(blob));
+          if (audioURL) {
+            URL.revokeObjectURL(audioURL);
+          }
+          const url = URL.createObjectURL(blob);
+          setAudioURL(url);
         }
 
         cleanupStream();
@@ -144,8 +146,12 @@ export default function RecordTestPage() {
       recorder.start();
       setRecording(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "録音開始に失敗しました");
+      console.error("Recording failed to start:", err);
+      setError(
+        err instanceof Error ? err.message : "録音の開始に失敗しました。"
+      );
       cleanupStream();
+      setRecording(false);
     }
   };
 
@@ -159,31 +165,50 @@ export default function RecordTestPage() {
   useEffect(() => {
     return () => {
       cleanupStream();
-      if (audioURL) URL.revokeObjectURL(audioURL);
+      if (audioURL) {
+        URL.revokeObjectURL(audioURL);
+      }
     };
   }, [cleanupStream, audioURL]);
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
       <h1>Minimal Recorder Test</h1>
+      <p style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>
+        1. 録音開始 → 2〜3秒しゃべる → 停止 → 下の audio で再生して確認
+      </p>
 
-      <button onClick={startRecording} disabled={recording}>
-        🎙 録音開始
-      </button>
-      <button onClick={stopRecording} disabled={!recording}>
-        ⏹ 停止
-      </button>
+      <div style={{ marginBottom: "1rem" }}>
+        <button onClick={startRecording} disabled={recording}>
+          🎙 録音開始
+        </button>
+        <button
+          onClick={stopRecording}
+          disabled={!recording}
+          style={{ marginLeft: "0.5rem" }}
+        >
+          ⏹ 停止
+        </button>
+      </div>
 
-      {error && <p style={{ color: "red" }}>エラー: {error}</p>}
-
-      {lastBlobInfo && (
-        <p>
-          Blob: {lastBlobInfo.size} bytes / {lastBlobInfo.duration.toFixed(0)}{" "}
-          ms / {lastBlobInfo.mimeType}
+      {error && (
+        <p style={{ color: "red", border: "1px solid red", padding: "8px" }}>
+          エラー: {error}
         </p>
       )}
 
-      {audioURL && <audio controls src={audioURL} />}
+      {lastBlobInfo && (
+        <p style={{ marginTop: "0.5rem" }}>
+          Blob: {lastBlobInfo.size} bytes /{" "}
+          {lastBlobInfo.duration.toFixed(0)} ms / {lastBlobInfo.mimeType}
+        </p>
+      )}
+
+      {audioURL && (
+        <div style={{ marginTop: "1rem" }}>
+          <audio controls src={audioURL} />
+        </div>
+      )}
     </div>
   );
 }

@@ -40,3 +40,10 @@ export type RegisterCredentials = {
   password: string;
   password_confirmation: string;
 };
+
+// 音声解析結果（Whisper → Rails → Next API のレスポンス）
+export type AnalysisResult = {
+  transcript: string;
+  analysis: string;
+  emotion_tags: string[];
+};
