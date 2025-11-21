@@ -3,10 +3,15 @@
 class AudioDreamsController < ApplicationController
 
   def create
-    # アップロードされたファイルでサービスオブジェクトを呼び出す
+    # 1.音声解析サービスの呼び出し
+    # result には Whisperからの応答テキスト（"transcript"）や、AI分析の結果などが含まれる
     result = AudioAnalysisService.new(params[:file]).call
+
+    # 2. 結果をJSONで返す (DB保存は行わない)
+    # フロントエンドがこの結果を受け取り、確認画面を経て /dreams (DreamsController#create) にPOSTする
     render json: result, status: :ok
-  # サービスからの特定の、予期されるエラーを処理する
+
+  # サービスからの特定の、予期されるエラーを処理するg
   rescue ArgumentError => e
     render json: { error: e.message }, status: :bad_request
   rescue AudioAnalysisService::TranscriptionError => e
