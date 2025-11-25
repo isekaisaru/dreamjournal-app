@@ -11,6 +11,13 @@ interface DreamFormData {
   title: string;
   content?: string;
   emotion_ids?: number[];
+  analysis_json?: {
+    analysis: string;
+    text?: string;
+    emotion_tags: string[];
+  };
+  analysis_status?: string;
+  analyzed_at?: string;
 }
 
 interface DreamFormProps {
@@ -121,10 +128,22 @@ export default function DreamForm({
       toast.error("タイトルを入力してください。");
       return;
     }
+
+    const analysisPayload =
+      analysisText || suggestedEmotionNames.length > 0
+        ? {
+            analysis: analysisText || "",
+            emotion_tags: suggestedEmotionNames,
+          }
+        : undefined;
+
     onSubmit({
       title: title.trim(),
       content: content.trim(),
       emotion_ids: selectedEmotionIds,
+      analysis_json: analysisPayload,
+      analysis_status: analysisPayload ? "done" : undefined,
+      analyzed_at: analysisPayload ? new Date().toISOString() : undefined,
     });
   };
 

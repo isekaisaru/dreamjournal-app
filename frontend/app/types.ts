@@ -28,6 +28,13 @@ export interface Dream {
   created_at: string;
   updated_at: string;
   emotions?: Emotion[];
+  analysis_json?: {
+    analysis: string;
+    text?: string;
+    emotion_tags: string[];
+  };
+  analysis_status?: string;
+  analyzed_at?: string;
 }
 export type LoginCredentials = {
   email: string;

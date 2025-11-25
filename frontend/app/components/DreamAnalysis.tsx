@@ -6,27 +6,48 @@ import apiClient from "@/lib/apiClient";
 interface DreamAnalysisProps {
   dreamId: string;
   hasContent: boolean;
+  initialAnalysis?: {
+    analysis_json?: {
+      analysis: string;
+      text?: string;
+      emotion_tags: string[];
+    };
+    analysis_status?: string | null;
+    analyzed_at?: string | null;
+  };
 }
 
 interface AnalysisResponse {
   status: "pending" | "done" | "failed" | null;
   result: {
+    analysis?: string;
     text?: string;
+    emotion_tags?: string[];
     error?: string;
   } | null;
   analyzed_at: string | null;
 }
 
-const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
-  const [analysisStatus, setAnalysisStatus] =
-    useState<AnalysisResponse["status"]>(null);
-  const [analysisResult, setAnalysisResult] =
-    useState<AnalysisResponse["result"]>(null);
+const DreamAnalysis = ({
+  dreamId,
+  hasContent,
+  initialAnalysis,
+}: DreamAnalysisProps) => {
+  const [analysisStatus, setAnalysisStatus] = useState<
+    AnalysisResponse["status"]
+  >(
+    (initialAnalysis?.analysis_status as AnalysisResponse["status"]) || null
+  );
+  const [analysisResult, setAnalysisResult] = useState<
+    AnalysisResponse["result"]
+  >(initialAnalysis?.analysis_json || null);
   const [isRequesting, setIsRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // マウント時に現在の分析ステータスを確認
+  // マウント時に現在の分析ステータスを確認（初期データがない場合のみ）
   useEffect(() => {
+    if (initialAnalysis?.analysis_status) return;
+
     const initialCheck = async () => {
       try {
         const data = await apiClient.get<AnalysisResponse>(
@@ -41,7 +62,7 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
       }
     };
     initialCheck();
-  }, [dreamId]);
+  }, [dreamId, initialAnalysis]);
 
   // 'pending'状態の場合、ポーリングを開始
   useEffect(() => {
@@ -68,21 +89,20 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
     return () => clearInterval(intervalId);
   }, [analysisStatus, dreamId]);
 
-  const startAnalysis = async () => {
+  const handleReAnalyze = async () => {
     setIsRequesting(true);
     setError(null);
-    // UX/E2E安定性: 解析開始直後に保留状態を表示
     setAnalysisStatus("pending");
     try {
       await apiClient.post(`/dreams/${dreamId}/analyze`);
-      // 成功時も pending 維持（サーバー側ポーリング完了でdoneに遷移）
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.message || "分析の開始に失敗しました。";
       setError(errorMessage);
       if (err.response?.status === 202) {
-        // すでに解析中の場合
         setAnalysisStatus("pending");
+      } else {
+        setAnalysisStatus("failed");
       }
     } finally {
       setIsRequesting(false);
@@ -90,14 +110,35 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
   };
 
   const renderResult = () => {
-    if (analysisStatus === "done" && analysisResult?.text) {
+    if (analysisStatus === "done" && analysisResult) {
+      const analysisText = analysisResult.analysis || analysisResult.text;
+      const tags = analysisResult.emotion_tags || [];
+
       return (
         <div className="mt-6 p-4 bg-background rounded-md border border-border shadow-inner">
-          <h3 className="text-xl font-bold mb-3 text-foreground">分析結果</h3>
+          <h3 className="text-xl font-bold mb-3 text-foreground">
+            --- AIによる夢の分析 ---
+          </h3>
           <div className="max-h-80 overflow-y-auto p-3 bg-muted/50 rounded border border-border">
-            <p className="text-foreground whitespace-pre-wrap text-base leading-relaxed">
-              {analysisResult.text}
-            </p>
+            {analysisText ? (
+              <p className="text-foreground whitespace-pre-wrap text-base leading-relaxed">
+                {analysisText}
+              </p>
+            ) : (
+              <p className="text-muted-foreground">分析データはありません</p>
+            )}
+            {tags.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       );
@@ -122,19 +163,26 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
       </h2>
       {hasContent ? (
         <>
-          {analysisStatus !== "done" && (
+          {renderResult()}
+          
+          <div className="mt-6">
             <button
-              onClick={startAnalysis}
+              onClick={handleReAnalyze}
               disabled={isRequesting || analysisStatus === "pending"}
-              className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${isRequesting || analysisStatus === "pending" ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"}`}
+              className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${
+                isRequesting || analysisStatus === "pending"
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+              }`}
             >
               {isRequesting
                 ? "リクエスト中..."
                 : analysisStatus === "pending"
-                  ? "分析中..."
-                  : "この夢を分析する"}
+                ? "分析中..."
+                : "もう一度分析する"}
             </button>
-          )}
+          </div>
+
           {error && <p className="text-destructive mt-2">{error}</p>}
         </>
       ) : (
@@ -147,7 +195,6 @@ const DreamAnalysis = ({ dreamId, hasContent }: DreamAnalysisProps) => {
           <p>分析結果を取得中です。しばらくお待ちください...</p>
         </div>
       )}
-      {renderResult()}
     </div>
   );
 };

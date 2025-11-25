@@ -126,8 +126,27 @@ export default function EditDreamPage({
         isLoading={isUpdating}
       />
 
-      {DREAM_ANALYSIS_ENABLED && dreamId && (
-        <DreamAnalysis dreamId={dreamId} hasContent={!!dream.content?.trim()} />
+      {dreamId && (
+        <>
+          {/* デバッグ用: analysis_json の確認 */}
+          {console.log("Dream Data for Analysis:", {
+            json: dream.analysis_json,
+            status: dream.analysis_status,
+          })}
+          <DreamAnalysis
+            dreamId={dreamId}
+            hasContent={!!dream.content?.trim()}
+            initialAnalysis={{
+              analysis_json: {
+                analysis: dream.analysis_json?.analysis || "",
+                text: dream.analysis_json?.text || "",
+                emotion_tags: dream.analysis_json?.emotion_tags || [],
+              },
+              analysis_status: dream.analysis_status || null,
+              analyzed_at: dream.analyzed_at || null,
+            }}
+          />
+        </>
       )}
 
       <div className="mt-8 pt-6 border-t border-border flex justify-end">
