@@ -24,7 +24,10 @@ class DreamsController < ApplicationController
     
     # 音声ファイルがあるかどうかで処理を分岐
     if params[:dream][:audio].present?
-      @dream = current_user.dreams.build(title: "音声入力された夢 #{Time.current.strftime('%Y-%m-%d %H:%M')}")
+      @dream = current_user.dreams.build(
+        title: "音声入力された夢 #{Time.current.strftime('%Y-%m-%d %H:%M')}",
+        content: "音声ファイルがアップロードされました。解析待ちです。"
+      )
       @dream.audio.attach(params[:dream][:audio])
     else
       @dream = current_user.dreams.build(dream_params)
