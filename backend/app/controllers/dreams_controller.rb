@@ -95,39 +95,22 @@ class DreamsController < ApplicationController
     end
 
     # 2. ステータスを pending に更新
+    # 同じ夢に対する複数の分析リクエストをガード
+    if @dream.analysis_pending?
+      return render json: { message: 'すでに解析中です。' }, status: :accepted, location: analysis_dream_url(@dream)
+    end
+
     @dream.update!(
       analysis_status: "pending",
       analyzed_at: nil,
       analysis_json: nil
     )
 
-    # 3. 分析サービスの呼び出し (同期実行)
-    # AudioDreamsController と同じロジックを持つ DreamAnalysisService を使用
-    analysis_result = DreamAnalysisService.analyze(@dream.content)
+    # 3. 非同期ジョブをエンキュー
+    AnalyzeDreamJob.perform_later(@dream.id)
 
-    # 4. 結果のハンドリング
-    if analysis_result[:error]
-      # 分析失敗
-      @dream.update!(analysis_status: "failed")
-      render json: {
-        status: "failed",
-        result: { error: analysis_result[:error] }
-      }, status: :ok # クライアント側でエラー表示するため 200 OK で返す
-    else
-      # 分析成功
-      current_time = Time.current
-      @dream.update!(
-        analysis_status: "done",
-        analysis_json: analysis_result,
-        analyzed_at: current_time
-      )
-
-      render json: {
-        status: "done",
-        result: analysis_result,
-        analyzed_at: current_time
-      }, status: :ok
-    end
+    # 4. レスポンス (202 Accepted)
+    render json: { status: "pending" }, status: :accepted, location: analysis_dream_url(@dream)
   end
   
   # GET /dreams/:id/analysis
