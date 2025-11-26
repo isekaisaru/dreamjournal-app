@@ -35,9 +35,7 @@ const DreamAnalysis = ({
 }: DreamAnalysisProps) => {
   const [analysisStatus, setAnalysisStatus] = useState<
     AnalysisResponse["status"]
-  >(
-    (initialAnalysis?.analysis_status as AnalysisResponse["status"]) || null
-  );
+  >((initialAnalysis?.analysis_status as AnalysisResponse["status"]) || null);
   const [analysisResult, setAnalysisResult] = useState<
     AnalysisResponse["result"]
   >(initialAnalysis?.analysis_json || null);
@@ -164,7 +162,7 @@ const DreamAnalysis = ({
       {hasContent ? (
         <>
           {renderResult()}
-          
+
           <div className="mt-6">
             <button
               onClick={handleReAnalyze}
@@ -178,8 +176,8 @@ const DreamAnalysis = ({
               {isRequesting
                 ? "リクエスト中..."
                 : analysisStatus === "pending"
-                ? "分析中..."
-                : "もう一度分析する"}
+                  ? "分析中..."
+                  : "もう一度分析する"}
             </button>
           </div>
 

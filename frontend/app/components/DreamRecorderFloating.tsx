@@ -56,9 +56,10 @@ const DreamRecorderFloating: React.FC = () => {
     [handleAnalysisResult]
   );
 
-  const { isRecording, error, startRecording, stopRecording } = useVoiceRecorder({
-    onBlobReady: handleBlobReady,
-  });
+  const { isRecording, error, startRecording, stopRecording } =
+    useVoiceRecorder({
+      onBlobReady: handleBlobReady,
+    });
 
   useEffect(() => {
     // 必要ならここで error をトースト表示してもよい（hook 内でも出しているので今は表示しない）
@@ -93,9 +94,7 @@ const DreamRecorderFloating: React.FC = () => {
           isRecording
             ? "bg-red-500 hover:bg-red-600 text-white"
             : "bg-blue-600 hover:bg-blue-700 text-white"
-        } ${
-          isProcessing ? "cursor-not-allowed opacity-70" : "cursor-pointer"
-        }`}
+        } ${isProcessing ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
         aria-label={isRecording ? "録音を停止" : "録音を開始"}
       >
         {isProcessing ? (
@@ -109,8 +108,8 @@ const DreamRecorderFloating: React.FC = () => {
         {isProcessing
           ? "AIが夢を解析中..."
           : isRecording
-          ? "録音停止"
-          : "夢を声で記録"}
+            ? "録音停止"
+            : "夢を声で記録"}
       </span>
     </div>
   );

@@ -28,10 +28,6 @@ const DreamAnalysis = dynamic(() => import("../../components/DreamAnalysis"), {
   ssr: false, // サーバーサイドレンダリングを無効化
 });
 
-// 夢解析機能の有効/無効を環境変数で切り替える
-const DREAM_ANALYSIS_ENABLED =
-  process.env.NEXT_PUBLIC_DREAM_ANALYSIS_ENABLED === "true";
-
 // Next.jsの新しいバージョンでは、Page Propsの`params`はPromiseになりました。
 // Client Componentでこれを利用するには、Reactの`use`フックを使います。
 export default function EditDreamPage({

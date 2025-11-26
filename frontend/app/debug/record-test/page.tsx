@@ -97,7 +97,9 @@ export default function RecordTestPage() {
       }
       mimeTypeRef.current = mimeType || "audio/webm";
 
-      const recorder = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mimeTypeRef.current,
+      });
       mediaRecorderRef.current = recorder;
 
       chunksRef.current = [];
@@ -199,8 +201,8 @@ export default function RecordTestPage() {
 
       {lastBlobInfo && (
         <p style={{ marginTop: "0.5rem" }}>
-          Blob: {lastBlobInfo.size} bytes /{" "}
-          {lastBlobInfo.duration.toFixed(0)} ms / {lastBlobInfo.mimeType}
+          Blob: {lastBlobInfo.size} bytes / {lastBlobInfo.duration.toFixed(0)}{" "}
+          ms / {lastBlobInfo.mimeType}
         </p>
       )}
 
