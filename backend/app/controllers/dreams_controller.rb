@@ -14,12 +14,25 @@ class DreamsController < ApplicationController
 
   # GET /dreams/:id
   def show
-    render json: @dream.as_json(only: [:id, :title, :created_at, :content])
+    render json: @dream.as_json(only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at])
   end
 
   # POST /dreams
   def create
-    @dream = current_user.dreams.build(dream_params)
+    Rails.logger.info "DreamsController#create called"
+    Rails.logger.info "Params: #{params.inspect}"
+    
+    # 音声ファイルがあるかどうかで処理を分岐
+    if params[:dream][:audio].present?
+      @dream = current_user.dreams.build(
+        title: "音声入力された夢 #{Time.current.strftime('%Y-%m-%d %H:%M')}",
+        content: "音声ファイルがアップロードされました。解析待ちです。"
+      )
+      @dream.audio.attach(params[:dream][:audio])
+    else
+      @dream = current_user.dreams.build(dream_params)
+    end
+
     if @dream.save
       render json: @dream, status: :created, location: @dream
     else
@@ -29,6 +42,12 @@ class DreamsController < ApplicationController
 
   # PATCH/PUT /dreams/:id
   def update
+    # 音声ファイルが添付された更新リクエストの場合
+    if params[:dream][:audio].present?
+      @dream.audio.attach(params[:dream][:audio])
+      # ここでジョブを起動することも可能
+    end
+
     if @dream.update(dream_params)
       render json: @dream
     else
@@ -66,24 +85,35 @@ class DreamsController < ApplicationController
 
   # POST /dreams/:id/analyze
   # このアクションは分析ジョブをキューに入れるだけです。
+  # POST /dreams/:id/analyze
   def analyze
-    Rails.logger.info "DreamsController#analyze called for dream ID: #{@dream.id}" if Rails.env.development?
+    Rails.logger.info "DreamsController#analyze called for dream ID: #{@dream.id}"
 
+    # 1. 夢の内容チェック
     unless @dream.content.present?
-      return render json: { error: "分析対象の夢の内容がありません。" }, status: :unprocessable_content
+      return render json: {
+        status: "failed",
+        result: { error: "夢の内容がありません。分析できません。" }
+      }, status: :unprocessable_content
     end
-    
+
+    # 2. ステータスを pending に更新
     # 同じ夢に対する複数の分析リクエストをガード
     if @dream.analysis_pending?
       return render json: { message: 'すでに解析中です。' }, status: :accepted, location: analysis_dream_url(@dream)
     end
-    
-    @dream.start_analysis! # モデルのメソッドでステータスを 'pending' に
-    AnalyzeDreamJob.perform_later(@dream.id) # ジョブをIDで非同期実行
-    
-    render json: { message: '夢の分析リクエストを受け付けました。' },
-           status: :accepted,
-           location: analysis_dream_url(@dream) # ポーリング用のURLを返す
+
+    @dream.update!(
+      analysis_status: "pending",
+      analyzed_at: nil,
+      analysis_json: nil
+    )
+
+    # 3. 非同期ジョブをエンキュー
+    AnalyzeDreamJob.perform_later(@dream.id)
+
+    # 4. レスポンス (202 Accepted)
+    render json: { status: "pending" }, status: :accepted, location: analysis_dream_url(@dream)
   end
   
   # GET /dreams/:id/analysis
@@ -100,7 +130,15 @@ class DreamsController < ApplicationController
    
     # 認可されたパラメーターを取得する
     def dream_params
-      params.require(:dream).permit(:title, :content, emotion_ids: [])
+      params.require(:dream).permit(
+        :title, 
+        :content, 
+        :audio, 
+        :analysis_status,
+        :analyzed_at,
+        emotion_ids: [],
+        analysis_json: [:analysis, :text, { emotion_tags: [] }]
+      )
     end
 
     def set_dream_and_authorize_user

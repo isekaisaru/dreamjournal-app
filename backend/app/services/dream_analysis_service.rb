@@ -2,50 +2,53 @@
 require 'openai'
 
 class DreamAnalysisService
-  # OpenAI APIキーを設定
-  OpenAI.configure do |config|
-    config.access_token = ENV.fetch('OPENAI_API_KEY')
-  end
-
   # 夢の内容を分析するクラスメソッド
   def self.analyze(dream_content)
-    # プロンプトを通常の文字列で定義
-    prompt = "以下の夢の内容を分析し、心理学的な観点や象徴的な意味合いを踏まえて、夢を見た人へのアドバイスや気づきを与えてください。結果は簡潔かつ分かりやすく記述してください。\n\n夢の内容:\n#{dream_content}\n\n分析結果とアドバイス:"
+    client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
+
+    system_prompt = <<~'PROMPT'
+      あなたは心理学者の夢分析AIです。出力は必ず以下のJSONフォーマットに従ってください。
+      {
+        "analysis": "心理学的な分析とアドバイスを丁寧に。",
+        "emotion_tags": ["感情1", "感情2", "感情3"]
+      }
+      emotion_tags には夢から読み取れる主要な感情を日本語で1〜3個だけ含めてください。省略記号やプレースホルダーは出力しないでください。
+    PROMPT
 
     begin
-      # OpenAI API (Chat Completion) を呼び出す
-      client = OpenAI::Client.new
-      response = client.chat(
-        parameters: {
-          model: "gpt-3.5-turbo",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-          max_tokens: 300
-        }
-      )
+      response = client.chat(parameters: {
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: system_prompt },
+          { role: "user", content: "夢の内容: #{dream_content}" }
+        ],
+        temperature: 0.7,
+        max_tokens: 600,
+        response_format: { type: "json_object" }
+      })
 
-      # レスポンスから分析結果を取得
-      analysis_result = response.dig("choices", 0, "message", "content")&.strip
+      content = response.dig("choices", 0, "message", "content")
+      parsed = JSON.parse(content)
 
-      if analysis_result
-        { analysis: analysis_result }
-      else
-        Rails.logger.error "OpenAI APIからのレスポンス形式が不正です: #{response.inspect}"
-        { error: "分析結果を取得できませんでした。" }
+      unless parsed.is_a?(Hash)
+        Rails.logger.error "AI analysis result is not a hash: #{parsed.inspect}"
+        return { error: "AIによる分析結果の解析に失敗しました。" }
       end
 
-    rescue Faraday::ConnectionFailed => e
-      Rails.logger.error "OpenAI APIへの接続に失敗しました: #{e.message}"
-      { error: "分析サービスへの接続に失敗しました。時間をおいて再度お試しください。" }
-    rescue Faraday::TimeoutError => e
-      Rails.logger.error "OpenAI APIへの接続がタイムアウトしました: #{e.message}"
-      { error: "分析サービスが時間内に応答しませんでした。時間をおいて再度お試しください。" }
+      {
+        analysis: parsed["analysis"].to_s.presence || "AI分析結果を取得できませんでした。",
+        emotion_tags: parsed["emotion_tags"].is_a?(Array) ? parsed["emotion_tags"].map(&:to_s) : []
+      }
+
+    rescue JSON::ParserError => e
+      Rails.logger.error "JSON parsing failed: #{e.message}"
+      { error: "AIからの応答が不正な形式でした。" }
     rescue OpenAI::Error => e
-      Rails.logger.error "OpenAI APIエラーが発生しました: #{e.message}"
-      { error: "夢の分析中にエラーが発生しました。(#{e.message})" }
+      Rails.logger.error "OpenAI API error: #{e.class} - #{e.message}"
+      { error: "AIサービスとの通信に失敗しました。" }
     rescue StandardError => e
-      Rails.logger.error "予期せぬエラーが発生しました: #{e.message}\n#{e.backtrace.join("\n")}"
+      Rails.logger.error "Unexpected error in DreamAnalysisService: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
       { error: "分析中に予期せぬエラーが発生しました。" }
-    end # begin...rescue...end の end
-  end # def self.analyze の end
-end # class DreamAnalysisService の end
+    end
+  end
+end

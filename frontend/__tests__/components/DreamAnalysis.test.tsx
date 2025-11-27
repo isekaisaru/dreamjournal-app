@@ -18,7 +18,12 @@ const mockedApi = apiClient as jest.Mocked<typeof apiClient>;
 
 beforeEach(() => {
   jest.useFakeTimers();
-  jest.clearAllMocks();
+  jest.resetAllMocks();
+  mockedApi.get.mockResolvedValue({
+    status: null,
+    result: null,
+    analyzed_at: null,
+  });
 });
 
 afterEach(() => {
@@ -34,19 +39,15 @@ it("loads initial status and shows done result", async () => {
 
   render(<DreamAnalysis dreamId="1" hasContent={true} />);
 
-  expect(await screen.findByText("分析結果")).toBeInTheDocument();
+  expect(await screen.findByText("--- AIによる夢の分析 ---")).toBeInTheDocument();
   expect(screen.getByText("Initial analysis result.")).toBeInTheDocument();
 });
 
 it("starts analysis, shows pending, then shows done result", async () => {
   const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
-  // 1) 初期は未解析
-  mockedApi.get.mockResolvedValueOnce({
-    status: null,
-    result: null,
-    analyzed_at: null,
-  });
+  // 1) 初期は未解析 (エラーにして強制的にnull状態にする)
+  mockedApi.get.mockRejectedValueOnce(new Error("Initial check failed"));
   // 2) 解析開始のPOST（ボディなし想定）
   mockedApi.post.mockResolvedValueOnce(null);
   // 3) 最初のポーリング: pending
@@ -64,7 +65,7 @@ it("starts analysis, shows pending, then shows done result", async () => {
 
   render(<DreamAnalysis dreamId="1" hasContent={true} />);
   await user.click(
-    await screen.findByRole("button", { name: "この夢を分析する" })
+    await screen.findByRole("button", { name: "もう一度分析する" })
   );
 
   // ボタンが押され、ポーリングが開始されると "pending" 状態のテキストが表示されるのを待つ
@@ -85,11 +86,7 @@ it("starts analysis, shows pending, then shows done result", async () => {
 it("starts analysis, shows pending, then shows failed result", async () => {
   const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
-  mockedApi.get.mockResolvedValueOnce({
-    status: null,
-    result: null,
-    analyzed_at: null,
-  });
+  mockedApi.get.mockRejectedValueOnce(new Error("Initial check failed"));
   mockedApi.post.mockResolvedValueOnce(null);
   mockedApi.get.mockResolvedValueOnce({
     status: "pending",
@@ -104,7 +101,7 @@ it("starts analysis, shows pending, then shows failed result", async () => {
 
   render(<DreamAnalysis dreamId="1" hasContent={true} />);
   await user.click(
-    await screen.findByRole("button", { name: "この夢を分析する" })
+    await screen.findByRole("button", { name: "もう一度分析する" })
   );
 
   // "pending" 状態のテキストが表示されるのを待つ

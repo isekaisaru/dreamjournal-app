@@ -8,6 +8,13 @@ export interface DreamInput {
   title: string;
   content?: string;
   emotion_ids?: number[];
+  analysis_json?: {
+    analysis: string;
+    text?: string;
+    emotion_tags: string[];
+  };
+  analysis_status?: string;
+  analyzed_at?: string;
 }
 
 export const useDream = (id?: string) => {

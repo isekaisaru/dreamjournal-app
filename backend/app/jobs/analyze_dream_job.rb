@@ -14,6 +14,15 @@ class AnalyzeDreamJob < ApplicationJob
     end
 
     result = DreamAnalysisService.analyze(dream.content)
-    result[:analysis] ? dream.mark_done!(text: result[:analysis]) : dream.mark_failed!(result[:error] || '不明なエラー')
+
+    if result[:error]
+      dream.update!(analysis_status: "failed", analysis_json: { error: result[:error] })
+    else
+      dream.update!(
+        analysis_status: "done",
+        analysis_json: result,
+        analyzed_at: Time.current
+      )
+    end
   end
 end

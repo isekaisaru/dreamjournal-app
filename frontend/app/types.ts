@@ -28,6 +28,13 @@ export interface Dream {
   created_at: string;
   updated_at: string;
   emotions?: Emotion[];
+  analysis_json?: {
+    analysis: string;
+    text?: string;
+    emotion_tags: string[];
+  };
+  analysis_status?: string;
+  analyzed_at?: string;
 }
 export type LoginCredentials = {
   email: string;
@@ -39,4 +46,11 @@ export type RegisterCredentials = {
   username: string;
   password: string;
   password_confirmation: string;
+};
+
+// 音声解析結果（Whisper → Rails → Next API のレスポンス）
+export type AnalysisResult = {
+  transcript: string;
+  analysis: string;
+  emotion_tags: string[];
 };
