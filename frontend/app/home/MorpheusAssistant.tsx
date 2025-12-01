@@ -53,13 +53,13 @@ export default function MorpheusAssistant() {
   }, []);
 
   return (
-    <div className="pointer-events-none fixed bottom-10 right-8 hidden sm:flex flex-col items-end gap-3 z-50 animate-morpheus-entry">
+    <div className="fixed bottom-44 right-8 hidden sm:flex flex-col items-end gap-1 z-50 animate-morpheus-entry">
       <button
         type="button"
         aria-haspopup="dialog"
         aria-expanded={isBubbleOpen}
         onClick={() => setIsBubbleOpen((prev) => !prev)}
-        className="pointer-events-auto group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-400 focus-visible:ring-offset-transparent"
+        className="group relative flex flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-400 focus-visible:ring-offset-transparent"
       >
         <span className="sr-only">モルペウスからメッセージを開く</span>
         <Image
@@ -70,6 +70,9 @@ export default function MorpheusAssistant() {
           priority
           className="h-40 w-40 sm:h-44 sm:w-44 md:h-52 md:w-52 lg:h-56 lg:w-56 opacity-90 transition-transform duration-500 ease-out group-hover:opacity-100 group-hover:scale-[1.08] drop-shadow-[0_16px_35px_rgba(56,189,248,0.35)] animate-morpheus-float group-hover:animate-none"
         />
+        <span className="mt-1 rounded-full bg-slate-900/60 px-3 py-1 text-xs font-bold text-sky-200 backdrop-blur-sm transition-opacity group-hover:bg-slate-900/80">
+          夢案内人 モルペウス
+        </span>
       </button>
 
       <AnimatePresence>
@@ -92,7 +95,7 @@ export default function MorpheusAssistant() {
             role="dialog"
             onClick={() => setIsBubbleOpen(false)}
             aria-live="polite"
-            className="pointer-events-auto relative max-w-xs cursor-pointer rounded-2xl bg-slate-900/85 p-4 text-sm text-slate-100 shadow-xl ring-1 ring-white/15 backdrop-blur before:absolute before:-right-3 before:bottom-6 before:h-0 before:w-0 before:border-y-[10px] before:border-y-transparent before:border-l-[12px] before:border-l-slate-900/85 before:content-['']"
+            className="relative max-w-xs cursor-pointer rounded-2xl bg-slate-900/85 p-4 text-sm text-slate-100 shadow-xl ring-1 ring-white/15 backdrop-blur before:absolute before:-right-3 before:bottom-6 before:h-0 before:w-0 before:border-y-[10px] before:border-y-transparent before:border-l-[12px] before:border-l-slate-900/85 before:content-['']"
           >
             <button
               type="button"
