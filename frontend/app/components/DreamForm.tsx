@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Dream, Emotion } from "../types";
+import { Dream, Emotion, DreamDraftData } from "../types";
 import { getEmotions } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { getEmotionColors } from "@/lib/emotionUtils";
@@ -53,23 +53,41 @@ export default function DreamForm({
   }, [initialData]);
 
   useEffect(() => {
-    // 編集画面（initialDataがある）や、URLにパラメータがない場合は何もしない
-    if (initialData || !searchParams) {
+    // 編集画面（initialDataがある）の場合は何もしない
+    if (initialData) {
       return;
     }
 
-    const transcript = searchParams.get("transcript");
-    const analysis = searchParams.get("analysis");
-    const emotionTags = searchParams.getAll("emotion_tags");
+    // sessionStorage からドラフトデータを読み込む
+    const draftJson = sessionStorage.getItem("dream_draft_data");
+    if (draftJson) {
+      try {
+        const draftData: DreamDraftData = JSON.parse(draftJson);
 
-    if (transcript || analysis || emotionTags.length > 0) {
-      setTitle(transcript || "");
-      setContent(transcript || ""); // 内容も文字起こし結果で初期化
-      setAnalysisText(analysis || "");
-      setSuggestedEmotionNames(emotionTags);
-      setIsDraftApplied(true);
+        if (draftData.transcript) {
+          setTitle(draftData.transcript);
+          setContent(draftData.transcript);
+        }
+        if (draftData.analysis) {
+          setAnalysisText(draftData.analysis);
+        }
+        if (draftData.emotion_tags && draftData.emotion_tags.length > 0) {
+          setSuggestedEmotionNames(draftData.emotion_tags);
+        }
+
+        setIsDraftApplied(true);
+        toast.success("録音データを復元しました。");
+
+        // 読み込み完了後、データを削除（二重読み込み防止）
+        sessionStorage.removeItem("dream_draft_data");
+      } catch (e) {
+        console.error("Failed to parse draft data", e);
+      }
+    } else {
+      // URLパラメータからの読み込み（後方互換性のため残す場合はここ、今回は完全移行なら削除でも可だが念のため残すなら以下）
+      // 今回は完全移行としてURLパラメータ読み込みは削除し、sessionStorageのみにする
     }
-  }, [initialData, searchParams]);
+  }, [initialData]);
 
   useEffect(() => {
     const fetchEmotions = async () => {
