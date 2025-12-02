@@ -12,34 +12,35 @@ import { Mic, Square, Loader2 } from "lucide-react";
 const DreamRecorderFloating: React.FC = () => {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
-  // idle: 待機中, preparing: 準備中(マイク許可待ち等), recording: 録音中
-  const [status, setStatus] = useState<"idle" | "preparing" | "recording">("idle");
+
+  // idle: 待機中, preparing: マイク準備中, recording: 録音中
+  const [status, setStatus] = useState<"idle" | "preparing" | "recording">(
+    "idle"
+  );
 
   // Whisper 解析結果 → DreamForm へ受け渡し
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
       const params = new URLSearchParams();
 
-      if (result.transcript) {
-        params.set("transcript", result.transcript);
-      }
-      if (result.analysis) {
-        params.set("analysis", result.analysis);
-      }
+      if (result.transcript) params.set("transcript", result.transcript);
+      if (result.analysis) params.set("analysis", result.analysis);
+
       if (Array.isArray(result.emotion_tags)) {
         result.emotion_tags
-          .filter((tag) => !!tag)
+          .filter(Boolean)
           .forEach((tag) => params.append("emotion_tags", tag));
       }
 
       toast.success("音声解析が完了しました。フォームに転送します。");
+
       const qs = params.toString();
       router.push(qs ? `/dream/new?${qs}` : "/dream/new");
     },
     [router]
   );
 
-  // useVoiceRecorder から受け取る Blob を Whisper API に送る
+  // Blob → Whisper API
   const handleBlobReady = useCallback(
     async (blob: Blob) => {
       setIsProcessing(true);
@@ -48,11 +49,11 @@ const DreamRecorderFloating: React.FC = () => {
         handleAnalysisResult(result);
       } catch (err) {
         console.error("Failed to analyze audio dream", err);
-        const msg =
+        toast.error(
           err instanceof Error
             ? err.message
-            : "音声の解析に失敗しました。時間をおいて再度お試しください。";
-        toast.error(msg);
+            : "音声の解析に失敗しました。時間をおいて再度お試しください。"
+        );
       } finally {
         setIsProcessing(false);
       }
@@ -65,46 +66,39 @@ const DreamRecorderFloating: React.FC = () => {
       onBlobReady: handleBlobReady,
     });
 
-  // useVoiceRecorder の isRecording 状態をローカルの status に同期
-  // (preparing から recording への遷移を検知するため)
+  // isRecording の変化だけで status を同期する
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isRecording) {
       setStatus("recording");
     } else if (!isProcessing && status === "recording") {
       setStatus("idle");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRecording, isProcessing]);
 
   useEffect(() => {
-    if (error) {
-       setStatus("idle");
-    }
+    if (error) setStatus("idle");
   }, [error]);
 
   const handleToggleRecording = async () => {
     if (isProcessing) return;
 
-    // バイブレーション (対応環境のみ)
-    if (typeof navigator !== "undefined" && navigator.vibrate) {
-      navigator.vibrate(200);
-    }
+    if (navigator?.vibrate) navigator.vibrate(200);
 
     if (status === "recording") {
       stopRecording();
-      // 停止後の status 変更は useEffect に任せる
     } else {
       setStatus("preparing");
       try {
         await startRecording();
-        // 成功すれば useEffect で status が recording になる
-      } catch (e) {
+      } catch {
         setStatus("idle");
       }
     }
   };
 
   const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
-    // タッチイベントの場合はデフォルトのクリック発火を防ぐ（ゴーストクリック防止）
     if (e.type === "touchstart") {
       e.preventDefault();
       e.stopPropagation();
@@ -137,8 +131,11 @@ const DreamRecorderFloating: React.FC = () => {
         aria-label={status === "recording" ? "録音を停止" : "録音を開始"}
         animate={
           status === "recording"
-            ? { scale: [1, 1.05, 1], boxShadow: "0 0 20px rgba(239, 68, 68, 0.6)" }
-            : { scale: 1, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)" }
+            ? {
+                scale: [1, 1.05, 1],
+                boxShadow: "0 0 20px rgba(239, 68, 68, 0.6)",
+              }
+            : { scale: 1, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }
         }
         transition={
           status === "recording"
@@ -149,9 +146,13 @@ const DreamRecorderFloating: React.FC = () => {
           status === "recording"
             ? "bg-red-500 hover:bg-red-600 text-white"
             : status === "preparing"
-            ? "bg-yellow-500 text-white cursor-wait"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-        } ${isProcessing ? "cursor-not-allowed opacity-70 bg-slate-500" : "cursor-pointer"}`}
+              ? "bg-yellow-500 text-white cursor-wait"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+        } ${
+          isProcessing
+            ? "cursor-not-allowed opacity-70 bg-slate-500"
+            : "cursor-pointer"
+        }`}
       >
         {isProcessing ? (
           <>
