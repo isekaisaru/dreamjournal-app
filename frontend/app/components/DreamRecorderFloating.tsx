@@ -6,36 +6,41 @@ import { toast } from "@/lib/toast";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
 import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
 import type { AnalysisResult } from "@/app/types";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mic, Square, Loader2 } from "lucide-react";
 
 const DreamRecorderFloating: React.FC = () => {
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // idle: 待機中, preparing: マイク準備中, recording: 録音中
+  const [status, setStatus] = useState<"idle" | "preparing" | "recording">(
+    "idle"
+  );
 
   // Whisper 解析結果 → DreamForm へ受け渡し
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
       const params = new URLSearchParams();
 
-      if (result.transcript) {
-        params.set("transcript", result.transcript);
-      }
-      if (result.analysis) {
-        params.set("analysis", result.analysis);
-      }
+      if (result.transcript) params.set("transcript", result.transcript);
+      if (result.analysis) params.set("analysis", result.analysis);
+
       if (Array.isArray(result.emotion_tags)) {
         result.emotion_tags
-          .filter((tag) => !!tag)
+          .filter(Boolean)
           .forEach((tag) => params.append("emotion_tags", tag));
       }
 
       toast.success("音声解析が完了しました。フォームに転送します。");
+
       const qs = params.toString();
       router.push(qs ? `/dream/new?${qs}` : "/dream/new");
     },
     [router]
   );
 
-  // useVoiceRecorder から受け取る Blob を Whisper API に送る
+  // Blob → Whisper API
   const handleBlobReady = useCallback(
     async (blob: Blob) => {
       setIsProcessing(true);
@@ -44,11 +49,11 @@ const DreamRecorderFloating: React.FC = () => {
         handleAnalysisResult(result);
       } catch (err) {
         console.error("Failed to analyze audio dream", err);
-        const msg =
+        toast.error(
           err instanceof Error
             ? err.message
-            : "音声の解析に失敗しました。時間をおいて再度お試しください。";
-        toast.error(msg);
+            : "音声の解析に失敗しました。時間をおいて再度お試しください。"
+        );
       } finally {
         setIsProcessing(false);
       }
@@ -61,56 +66,116 @@ const DreamRecorderFloating: React.FC = () => {
       onBlobReady: handleBlobReady,
     });
 
+  // isRecording の変化だけで status を同期する
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    // 必要ならここで error をトースト表示してもよい（hook 内でも出しているので今は表示しない）
-    if (error) {
-      // toast.error(error);
+    if (isRecording) {
+      setStatus("recording");
+    } else if (!isProcessing && status === "recording") {
+      setStatus("idle");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording, isProcessing]);
+
+  useEffect(() => {
+    if (error) setStatus("idle");
   }, [error]);
 
-  const handleToggleRecording = () => {
+  const handleToggleRecording = async () => {
     if (isProcessing) return;
 
-    if (isRecording) {
+    if (navigator?.vibrate) navigator.vibrate(200);
+
+    if (status === "recording") {
       stopRecording();
     } else {
-      void startRecording();
+      setStatus("preparing");
+      try {
+        await startRecording();
+      } catch {
+        setStatus("idle");
+      }
     }
+  };
+
+  const handleInteraction = (e: React.MouseEvent | React.TouchEvent) => {
+    if (e.type === "touchstart") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    handleToggleRecording();
   };
 
   return (
     <div className="fixed bottom-24 right-4 z-[9999] flex flex-col items-end gap-3">
-      {error && (
-        <div className="max-w-xs rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground shadow">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="max-w-xs rounded-md border border-destructive bg-destructive/10 px-3 py-2 text-sm text-destructive-foreground shadow"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <button
+      <motion.button
         type="button"
-        onClick={handleToggleRecording}
+        onTouchStart={handleInteraction}
+        onClick={handleInteraction}
         disabled={isProcessing}
-        className={`flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${
-          isRecording
+        role="switch"
+        aria-checked={status === "recording"}
+        aria-label={status === "recording" ? "録音を停止" : "録音を開始"}
+        animate={
+          status === "recording"
+            ? {
+                scale: [1, 1.05, 1],
+                boxShadow: "0 0 20px rgba(239, 68, 68, 0.6)",
+              }
+            : { scale: 1, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }
+        }
+        transition={
+          status === "recording"
+            ? { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
+            : {}
+        }
+        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${
+          status === "recording"
             ? "bg-red-500 hover:bg-red-600 text-white"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-        } ${isProcessing ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-        aria-label={isRecording ? "録音を停止" : "録音を開始"}
+            : status === "preparing"
+              ? "bg-yellow-500 text-white cursor-wait"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+        } ${
+          isProcessing
+            ? "cursor-not-allowed opacity-70 bg-slate-500"
+            : "cursor-pointer"
+        }`}
       >
         {isProcessing ? (
-          <span className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          <>
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-lg font-bold">解析中...</span>
+          </>
+        ) : status === "recording" ? (
+          <>
+            <Square className="h-6 w-6 fill-current" />
+            <span className="text-lg font-bold">停止する</span>
+          </>
+        ) : status === "preparing" ? (
+          <>
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span className="text-lg font-bold">準備中...</span>
+          </>
         ) : (
-          <span className="text-2xl">🎤</span>
+          <>
+            <Mic className="h-6 w-6" />
+            <span className="text-lg font-bold">録音する</span>
+          </>
         )}
-      </button>
-
-      <span className="rounded bg-card px-3 py-1 text-sm text-card-foreground shadow">
-        {isProcessing
-          ? "AIが夢を解析中..."
-          : isRecording
-            ? "録音停止"
-            : "夢を声で記録"}
-      </span>
+      </motion.button>
     </div>
   );
 };
