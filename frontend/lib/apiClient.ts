@@ -17,6 +17,7 @@ import type {
   User,
   LoginCredentials,
   RegisterCredentials,
+  DreamInput,
 } from "@/app/types";
 
 export class ApiError extends Error {
@@ -171,6 +172,13 @@ export async function clientLogout(): Promise<null> {
 
 export async function getEmotions(): Promise<Emotion[]> {
   return apiFetch("/emotions");
+}
+
+export async function createDream(dream: DreamInput): Promise<Dream> {
+  return apiFetch<Dream>("/dreams", {
+    method: "POST",
+    body: JSON.stringify({ dream }),
+  });
 }
 
 export async function verifyAuth(): Promise<{ user: User } | null> {
