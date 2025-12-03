@@ -31,7 +31,6 @@ export default function DreamForm({
   onSubmit,
   isLoading = false,
 }: DreamFormProps) {
-  const searchParams = useSearchParams();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [emotions, setEmotions] = useState<Emotion[]>([]);
