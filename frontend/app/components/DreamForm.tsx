@@ -150,9 +150,9 @@ export default function DreamForm({
     const analysisPayload =
       analysisText || suggestedEmotionNames.length > 0
         ? {
-            analysis: analysisText || "",
-            emotion_tags: suggestedEmotionNames,
-          }
+          analysis: analysisText || "",
+          emotion_tags: suggestedEmotionNames,
+        }
         : undefined;
 
     onSubmit({
@@ -272,11 +272,10 @@ export default function DreamForm({
 
       <button
         type="submit"
-        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${
-          isLoading
+        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${isLoading
             ? "bg-muted text-muted-foreground cursor-not-allowed"
             : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-        }`}
+          }`}
         disabled={isLoading}
       >
         {isLoading ? "保存中..." : "保存"}
