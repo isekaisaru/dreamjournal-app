@@ -54,3 +54,11 @@ export type AnalysisResult = {
   analysis: string;
   emotion_tags: string[];
 };
+
+// sessionStorage に一時保存するドラフトデータの型
+export interface DreamDraftData {
+  transcript: string;
+  analysis: string | null;
+  emotion_tags: string[] | null;
+  timestamp?: number;
+}

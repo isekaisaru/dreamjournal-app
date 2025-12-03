@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
 import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
-import type { AnalysisResult } from "@/app/types";
+import type { AnalysisResult, DreamDraftData } from "@/app/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2 } from "lucide-react";
 
@@ -21,21 +21,22 @@ const DreamRecorderFloating: React.FC = () => {
   // Whisper 解析結果 → DreamForm へ受け渡し
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
-      const params = new URLSearchParams();
+      // sessionStorage に保存するデータを作成
+      const draftData: DreamDraftData = {
+        transcript: result.transcript,
+        analysis: result.analysis || null,
+        emotion_tags: result.emotion_tags || null,
+        timestamp: Date.now(),
+      };
 
-      if (result.transcript) params.set("transcript", result.transcript);
-      if (result.analysis) params.set("analysis", result.analysis);
-
-      if (Array.isArray(result.emotion_tags)) {
-        result.emotion_tags
-          .filter(Boolean)
-          .forEach((tag) => params.append("emotion_tags", tag));
+      try {
+        sessionStorage.setItem("dream_draft_data", JSON.stringify(draftData));
+        toast.success("音声解析が完了しました。フォームに転送します。");
+        router.push("/dream/new");
+      } catch (e) {
+        console.error("Failed to save draft to sessionStorage", e);
+        toast.error("データの保存に失敗しました。");
       }
-
-      toast.success("音声解析が完了しました。フォームに転送します。");
-
-      const qs = params.toString();
-      router.push(qs ? `/dream/new?${qs}` : "/dream/new");
     },
     [router]
   );
