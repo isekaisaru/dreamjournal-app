@@ -1,24 +1,18 @@
 "use client";
 
 import DreamForm from "../../components/DreamForm";
-import { useDream, DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import Loading from "../../loading";
+import { createDream } from "@/lib/apiClient";
+import { toast } from "@/lib/toast";
+import { DreamInput } from "@/app/types";
 
 export default function NewDreamPage() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
-
-  const { createDream: hookCreateDream, isUpdating, error } = useDream();
-
-  useEffect(() => {
-    if (error) {
-      alert(`エラー: ${error}`);
-      console.error("Error from useDream:", error);
-    }
-  }, [error]);
+  const [isSaving, setIsSaving] = useState(false);
 
   if (isLoggedIn === null) {
     return <Loading />;
@@ -30,11 +24,17 @@ export default function NewDreamPage() {
       router.push("/login");
       return;
     }
-    const success = await hookCreateDream(formData);
-    if (success) {
+
+    setIsSaving(true);
+    try {
+      await createDream(formData);
+      toast.success("夢を保存しました！");
       router.push("/home");
-    } else {
-      console.error("夢の作成に失敗しました。 エラーメッセージ:", error);
+    } catch (error) {
+      console.error("Failed to save dream:", error);
+      toast.error("保存に失敗しました。");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -48,7 +48,7 @@ export default function NewDreamPage() {
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">新しい夢を記録</h1>
-      <DreamForm onSubmit={handleCreateSubmit} isLoading={isUpdating} />
+      <DreamForm onSubmit={handleCreateSubmit} isLoading={isSaving} />
     </div>
   );
 }

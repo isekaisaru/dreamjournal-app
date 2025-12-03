@@ -62,3 +62,17 @@ export interface DreamDraftData {
   emotion_tags: string[] | null;
   timestamp?: number;
 }
+
+// 夢の作成・更新用データ（フロントエンド→バックエンド）
+export interface DreamInput {
+  title: string;
+  content?: string;
+  emotion_ids?: number[];
+  analysis_json?: {
+    analysis: string;
+    text?: string;
+    emotion_tags: string[];
+  };
+  analysis_status?: string;
+  analyzed_at?: string;
+}
