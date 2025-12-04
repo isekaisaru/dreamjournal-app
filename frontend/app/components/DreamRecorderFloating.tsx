@@ -133,27 +133,32 @@ const DreamRecorderFloating: React.FC = () => {
         animate={
           status === "recording"
             ? {
-                scale: [1, 1.05, 1],
-                boxShadow: "0 0 20px rgba(239, 68, 68, 0.6)",
-              }
+              scale: [1, 1.08, 1],
+              boxShadow: [
+                "0 0 0 0 rgba(239, 68, 68, 0.4)",
+                "0 0 0 12px rgba(239, 68, 68, 0)",
+              ],
+            }
             : { scale: 1, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }
         }
         transition={
           status === "recording"
-            ? { repeat: Infinity, duration: 1.5, ease: "easeInOut" }
+            ? {
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }
             : {}
         }
-        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${
-          status === "recording"
+        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${status === "recording"
             ? "bg-red-500 hover:bg-red-600 text-white"
             : status === "preparing"
               ? "bg-yellow-500 text-white cursor-wait"
               : "bg-blue-600 hover:bg-blue-700 text-white"
-        } ${
-          isProcessing
+          } ${isProcessing
             ? "cursor-not-allowed opacity-70 bg-slate-500"
             : "cursor-pointer"
-        }`}
+          }`}
       >
         {isProcessing ? (
           <>
