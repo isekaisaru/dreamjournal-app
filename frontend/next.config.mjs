@@ -17,9 +17,7 @@ const nextConfig = {
         destination: "https://dreamjournal-app.onrender.com/:path*",
       },
     ];
-  }, 
+  },
 };
-
-
 
 export default nextConfig;

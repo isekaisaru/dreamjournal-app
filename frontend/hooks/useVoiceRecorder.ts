@@ -107,7 +107,9 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
       }
       mimeTypeRef.current = mime || "audio/webm";
 
-      const recorder = new MediaRecorder(stream, { mimeType: mimeTypeRef.current });
+      const recorder = new MediaRecorder(stream, {
+        mimeType: mimeTypeRef.current,
+      });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
@@ -134,7 +136,10 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
 
         if (blob.size < MIN_BLOB_SIZE || duration < MIN_DURATION_MS) {
           const msg = "録音が短すぎるか、無音の可能性があります。";
-          console.warn("Debug: Recording too short or silent", { blobSize: blob.size, duration });
+          console.warn("Debug: Recording too short or silent", {
+            blobSize: blob.size,
+            duration,
+          });
           setError(msg);
           toast.error(msg);
         } else {
@@ -148,7 +153,9 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
       startedAtRef.current = performance.now();
       recorder.start();
       setIsRecording(true);
-      toast.success("録音を開始しました。話し終わったら再度タップしてください。");
+      toast.success(
+        "録音を開始しました。話し終わったら再度タップしてください。"
+      );
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "録音開始に失敗しました。";

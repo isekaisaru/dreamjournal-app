@@ -5,7 +5,15 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const getGreeting = () => {
+const getGreeting = (isFirstVisit: boolean) => {
+  if (isFirstVisit) {
+    return {
+      title: "はじめまして、夢の番人です。",
+      message:
+        "私はモルペウス。あなたの夢の世界を案内するAIです。見た夢を私に話してくれませんか？深層心理を紐解くお手伝いをします。",
+    };
+  }
+
   const hour = new Date().getHours();
 
   if (hour >= 4 && hour < 10) {
@@ -45,12 +53,46 @@ const defaultGreeting = {
 };
 
 export default function MorpheusAssistant() {
-  const [isBubbleOpen, setIsBubbleOpen] = useState(true);
+  const [isBubbleOpen, setIsBubbleOpen] = useState(false); // 初期値はfalseにしてuseEffectで制御
   const [greeting, setGreeting] = useState(defaultGreeting);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setGreeting(getGreeting());
+    setIsMounted(true);
+
+    // 初回訪問チェック
+    const visited = localStorage.getItem("morpheus_visited");
+    const isFirstVisit = !visited;
+
+    // 挨拶の決定
+    setGreeting(getGreeting(isFirstVisit));
+
+    // 吹き出しの開閉状態の復元
+    // 初回訪問時は必ず開く
+    if (isFirstVisit) {
+      setIsBubbleOpen(true);
+      localStorage.setItem("morpheus_visited", "true");
+      localStorage.setItem("morpheus_open_state", "true");
+    } else {
+      const savedState = localStorage.getItem("morpheus_open_state");
+      // 保存された状態があればそれを使う、なければデフォルト(true)
+      setIsBubbleOpen(savedState === null ? true : savedState === "true");
+    }
   }, []);
+
+  const toggleBubble = () => {
+    const newState = !isBubbleOpen;
+    setIsBubbleOpen(newState);
+    localStorage.setItem("morpheus_open_state", String(newState));
+  };
+
+  const closeBubble = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsBubbleOpen(false);
+    localStorage.setItem("morpheus_open_state", "false");
+  };
+
+  if (!isMounted) return null;
 
   return (
     <div className="fixed bottom-44 right-8 hidden sm:flex flex-col items-end gap-1 z-50 animate-morpheus-entry">
@@ -58,7 +100,7 @@ export default function MorpheusAssistant() {
         type="button"
         aria-haspopup="dialog"
         aria-expanded={isBubbleOpen}
-        onClick={() => setIsBubbleOpen((prev) => !prev)}
+        onClick={toggleBubble}
         className="group relative flex flex-col items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-400 focus-visible:ring-offset-transparent"
       >
         <span className="sr-only">モルペウスからメッセージを開く</span>
@@ -93,17 +135,14 @@ export default function MorpheusAssistant() {
               duration: 0.2,
             }}
             role="dialog"
-            onClick={() => setIsBubbleOpen(false)}
+            onClick={toggleBubble}
             aria-live="polite"
             className="relative max-w-xs cursor-pointer rounded-2xl bg-slate-900/85 p-4 text-sm text-slate-100 shadow-xl ring-1 ring-white/15 backdrop-blur before:absolute before:-right-3 before:bottom-6 before:h-0 before:w-0 before:border-y-[10px] before:border-y-transparent before:border-l-[12px] before:border-l-slate-900/85 before:content-['']"
           >
             <button
               type="button"
               aria-label="閉じる"
-              onClick={(e) => {
-                e.stopPropagation(); // 親要素のonClickが発火しないようにする
-                setIsBubbleOpen(false);
-              }}
+              onClick={closeBubble}
               className="absolute top-2 right-2 p-1 rounded-full text-slate-300 hover:bg-slate-700/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
             >
               <X className="h-4 w-4" />
