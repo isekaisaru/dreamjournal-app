@@ -30,7 +30,10 @@ const DreamCard = ({ dream }: DreamCardProps) => {
       <div className="h-full shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col p-5 rounded-xl bg-card text-card-foreground border border-border/50 group-hover:border-primary/30 group-hover:bg-accent/5">
         {/* Header: Date & Title */}
         <div className="mb-3">
-          <p className="text-xs text-muted-foreground mb-1 font-medium" suppressHydrationWarning>
+          <p
+            className="text-xs text-muted-foreground mb-1 font-medium"
+            suppressHydrationWarning
+          >
             {formatDate(dream.created_at)}
           </p>
           <h2 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
