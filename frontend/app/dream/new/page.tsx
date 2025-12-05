@@ -8,6 +8,7 @@ import Loading from "../../loading";
 import { createDream } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { DreamInput } from "@/app/types";
+import { triggerDreamConfetti } from "@/lib/confetti";
 
 export default function NewDreamPage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function NewDreamPage() {
     setIsSaving(true);
     try {
       await createDream(formData);
+      triggerDreamConfetti(); // 星屑の祝福を発火
       toast.success("夢を保存しました！");
       router.push("/home");
     } catch (error) {

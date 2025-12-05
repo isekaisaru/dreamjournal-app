@@ -36,20 +36,18 @@ test.describe("Dream Analysis", () => {
     });
 
     // ミドルウェアのE2Eバイパス用クッキーと、ダミーのアクセストークンを設定
-    await page
-      .context()
-      .addCookies([
-        {
-          name: "access_token",
-          value: "fake-e2e-token",
-          url: "http://localhost:3000",
-        },
-        {
-          name: "__e2e__",
-          value: "1",
-          url: "http://localhost:3000",
-        },
-      ]);
+    await page.context().addCookies([
+      {
+        name: "access_token",
+        value: "fake-e2e-token",
+        url: "http://localhost:3000",
+      },
+      {
+        name: "__e2e__",
+        value: "1",
+        url: "http://localhost:3000",
+      },
+    ]);
   });
 
   test("clicking analyze button shows pending state", async ({ page }) => {

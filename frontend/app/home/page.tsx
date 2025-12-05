@@ -55,8 +55,21 @@ export default async function HomePage({
   const queryParams = new URLSearchParams();
   if (resolvedSearchParams.query)
     queryParams.set("query", String(resolvedSearchParams.query));
-  if (resolvedSearchParams.startDate)
+
+  // デフォルトで過去1ヶ月分を表示（パラメータがない場合）
+  if (resolvedSearchParams.startDate) {
     queryParams.set("start_date", String(resolvedSearchParams.startDate));
+  } else if (!resolvedSearchParams.query && !resolvedSearchParams.endDate) {
+    // 検索条件が何もない場合のみ、デフォルト期間を設定
+    // ここでは「全期間」を表示するためにあえて絞り込みをしない（API仕様によるが、通常は全件取得になるはず）
+    // もし明示的に1ヶ月前にしたい場合は以下を有効化
+    /*
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    queryParams.set("start_date", oneMonthAgo.toISOString().split('T')[0]);
+    */
+  }
+
   if (resolvedSearchParams.endDate)
     queryParams.set("end_date", String(resolvedSearchParams.endDate));
 

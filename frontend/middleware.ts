@@ -6,8 +6,8 @@ export async function middleware(request: NextRequest) {
   // E2Eテスト実行時は、認証チェックをバイパスして後続の処理に進む
   // 1) 環境変数 (PlaywrightがwebServer起動時に設定)
   // 2) クッキー __e2e__=1 （既存サーバー再利用時のためのフォールバック）
-  const e2eByEnv = process.env.NEXT_PUBLIC_E2E === '1';
-  const e2eByCookie = request.cookies.get("__e2e__")?.value === '1';
+  const e2eByEnv = process.env.NEXT_PUBLIC_E2E === "1";
+  const e2eByCookie = request.cookies.get("__e2e__")?.value === "1";
   if (e2eByEnv || e2eByCookie) {
     return NextResponse.next();
   }

@@ -36,7 +36,7 @@ export default defineConfig({
     timeout: 120 * 1000, // サーバー起動のタイムアウトを120秒に設定
     // E2Eテスト実行中であることをNext.jsアプリケーションに伝えるための環境変数
     env: {
-      NEXT_PUBLIC_E2E: '1',
+      NEXT_PUBLIC_E2E: "1",
     },
   },
 });

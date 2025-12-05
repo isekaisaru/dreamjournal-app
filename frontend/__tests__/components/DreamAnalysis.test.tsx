@@ -39,7 +39,9 @@ it("loads initial status and shows done result", async () => {
 
   render(<DreamAnalysis dreamId="1" hasContent={true} />);
 
-  expect(await screen.findByText("--- AIによる夢の分析 ---")).toBeInTheDocument();
+  expect(
+    await screen.findByText("--- AIによる夢の分析 ---")
+  ).toBeInTheDocument();
   expect(screen.getByText("Initial analysis result.")).toBeInTheDocument();
 });
 
