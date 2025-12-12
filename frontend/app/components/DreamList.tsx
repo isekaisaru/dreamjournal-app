@@ -3,11 +3,13 @@
 import { Dream } from "@/app/types";
 import React from "react";
 import DreamCard from "./DreamCard";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
-type DreamListProps = {
+
+interface DreamListProps {
   dreams: Dream[];
-};
+  onDelete?: (id: number) => void;
+}
 
 const container = {
   hidden: { opacity: 0 },
@@ -25,19 +27,22 @@ const item = {
 };
 
 const DreamList = ({ dreams }: DreamListProps) => {
+  console.log(`[DreamList] Received ${dreams.length} dreams`);
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
-    >
-      {dreams.map((dream) => (
-        <motion.div key={dream.id} variants={item}>
-          <DreamCard dream={dream} />
-        </motion.div>
-      ))}
-    </motion.div>
+    <>
+      <motion.div
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
+      >
+        {dreams.map((dream) => (
+          <motion.div key={dream.id} variants={item}>
+            <DreamCard dream={dream} />
+          </motion.div>
+        ))}
+      </motion.div>
+    </>
   );
 };
 

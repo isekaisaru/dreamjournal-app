@@ -18,25 +18,18 @@ const DreamRecorderFloating: React.FC = () => {
     "idle"
   );
 
-  // Whisper 解析結果 → DreamForm へ受け渡し
+  // Whisper 解析結果 → 一覧画面へ遷移（非同期処理のため）
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
-      // sessionStorage に保存するデータを作成
-      const draftData: DreamDraftData = {
-        transcript: result.transcript,
-        analysis: result.analysis || null,
-        emotion_tags: result.emotion_tags || null,
-        timestamp: Date.now(),
-      };
+      // 成功メッセージを表示
+      toast.success(result.message || "音声を受け付けました。解析を開始します。");
 
-      try {
-        sessionStorage.setItem("dream_draft_data", JSON.stringify(draftData));
-        toast.success("音声解析が完了しました。フォームに転送します。");
-        router.push("/dream/new");
-      } catch (e) {
-        console.error("Failed to save draft to sessionStorage", e);
-        toast.error("データの保存に失敗しました。");
-      }
+      // 一覧画面へリダイレクト（新しい夢が作成されているはず）
+      // 即時にリストを更新して、pending状態のカードを表示する
+      // 即時にリストを更新して、pending状態のカードを表示する
+      window.dispatchEvent(new Event("dream-created")); // PendingDreamsMonitorに通知
+      router.refresh();
+      router.push("/home");
     },
     [router]
   );
@@ -134,34 +127,32 @@ const DreamRecorderFloating: React.FC = () => {
         animate={
           status === "recording"
             ? {
-                scale: [1, 1.08, 1],
-                boxShadow: [
-                  "0 0 0 0 rgba(239, 68, 68, 0.4)",
-                  "0 0 0 12px rgba(239, 68, 68, 0)",
-                ],
-              }
+              scale: [1, 1.08, 1],
+              boxShadow: [
+                "0 0 0 0 rgba(239, 68, 68, 0.4)",
+                "0 0 0 12px rgba(239, 68, 68, 0)",
+              ],
+            }
             : { scale: 1, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }
         }
         transition={
           status === "recording"
             ? {
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }
             : { type: "spring", stiffness: 400, damping: 17 }
         }
-        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${
-          status === "recording"
-            ? "bg-red-500 hover:bg-red-600 text-white"
-            : status === "preparing"
-              ? "bg-yellow-500 text-white cursor-wait"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-        } ${
-          isProcessing
+        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${status === "recording"
+          ? "bg-red-500 hover:bg-red-600 text-white"
+          : status === "preparing"
+            ? "bg-yellow-500 text-white cursor-wait"
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+          } ${isProcessing
             ? "cursor-not-allowed opacity-70 bg-slate-500"
             : "cursor-pointer"
-        }`}
+          }`}
       >
         {isProcessing ? (
           <>

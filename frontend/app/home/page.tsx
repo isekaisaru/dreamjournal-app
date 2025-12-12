@@ -38,11 +38,22 @@ function groupDreamsByMonth(dreams: Dream[]) {
   );
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+import { unstable_noStore as noStore } from "next/cache";
+
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  // Ensure the component is treated as dynamic and opts out of strict caching
+  noStore();
+
+  console.log("[HomePage] Rendering at", new Date().toISOString());
+
   const cookieStore = await cookies();
   const token = cookieStore.get("access_token")?.value;
 
@@ -62,12 +73,6 @@ export default async function HomePage({
   } else if (!resolvedSearchParams.query && !resolvedSearchParams.endDate) {
     // 検索条件が何もない場合のみ、デフォルト期間を設定
     // ここでは「全期間」を表示するためにあえて絞り込みをしない（API仕様によるが、通常は全件取得になるはず）
-    // もし明示的に1ヶ月前にしたい場合は以下を有効化
-    /*
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    queryParams.set("start_date", oneMonthAgo.toISOString().split('T')[0]);
-    */
   }
 
   if (resolvedSearchParams.endDate)
@@ -76,6 +81,9 @@ export default async function HomePage({
   let dreams: Dream[] = [];
   let user: User | null = null;
   let errorMessage: string | null = null;
+
+  // Note: Removed local timestamp (_t) to prevent "Unpermitted parameter" warnings in Rails.
+  // noStore() + force-dynamic should be sufficient to ensure fresh data using cache: "no-store".
 
   try {
     [dreams, user] = await Promise.all([
@@ -103,6 +111,10 @@ export default async function HomePage({
         <h1 className="text-2xl font-bold text-foreground">
           {user ? `${user.username}さんの夢` : "夢リスト"}
         </h1>
+        {/* Debug: Server Rendering Time to verify router.refresh() */}
+        <p className="text-xs text-muted-foreground/50 mb-2">
+          Last updated: {new Date().toLocaleTimeString()}
+        </p>
         <SearchBar
           query={resolvedSearchParams.query}
           startDate={resolvedSearchParams.startDate}
@@ -113,7 +125,11 @@ export default async function HomePage({
           <div className="text-destructive mb-4">{errorMessage}</div>
         )}
         {/* 夢リストコンポーネント */}
-        <DreamList dreams={dreams} /> {/* 夢データをリストして表示 */}
+        {/* Key prop ensures re-mount when latest dream ID or count changes, fixing stale UI issue */}
+        <DreamList
+          dreams={dreams}
+          key={`${dreams[0]?.id}-${dreams.length}-${Date.now()}`}
+        /> {/* 夢データをリストして表示 */}
       </section>
 
       {/* サイドバー: 月ごとの夢リンクを動的に表示 */}

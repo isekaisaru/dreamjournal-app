@@ -4,12 +4,27 @@ class DreamsController < ApplicationController
 
   # GET /dreams
   def index
-    # DreamFilterQueryを使用して、フィルタリングとソートを一元管理
+    # N+1問題を解消し、軽量化。
+    # 感情タグはanalysis_jsonに含まれているため、emotionsテーブルの結合(N+1)は行わない。
     initial_scope = current_user.dreams.order(created_at: :desc)
     filter_params = params.permit(:query, :start_date, :end_date, emotion_ids: [])
     @dreams = DreamFilterQuery.new(initial_scope, filter_params).call
-    # my_dreamsと同様に、感情(emotions)も一緒に返す
-    render json: @dreams, include: [:emotions]
+    
+    render json: @dreams
+  end
+
+  # GET /dreams/statuses?ids=1,2,3
+  def statuses
+    ids = params[:ids].to_s.split(",").map(&:to_i)
+    # current_user の持つ夢だけを対象にする（セキュリティ）
+    dreams = current_user.dreams.where(id: ids).select(:id, :analysis_status)
+    
+    # { "1": "done", "2": "pending" } の形式で返す
+    status_map = dreams.each_with_object({}) do |dream, hash|
+      hash[dream.id.to_s] = dream.analysis_status
+    end
+
+    render json: status_map
   end
 
   # GET /dreams/:id

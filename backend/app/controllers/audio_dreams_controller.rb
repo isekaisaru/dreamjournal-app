@@ -3,29 +3,41 @@
 class AudioDreamsController < ApplicationController
 
   def create
-    # 1.音声解析サービスの呼び出し
-    # result には Whisperからの応答テキスト（"transcript"）や、AI分析の結果などが含まれる
-    result = AudioAnalysisService.new(params[:file]).call
+    # ユーザー認証: トークンからcurrent_userを取得するロジックが必要
+    # ApplicationControllerでcurrent_userがセットされている前提
+    # なければ User.first (仮: 開発用) またはエラーにする
+    user = current_user || User.first 
 
-    # 2. 結果をJSONで返す (DB保存は行わない)
-    # フロントエンドがこの結果を受け取り、確認画面を経て /dreams (DreamsController#create) にPOSTする
-    render json: result, status: :ok
+    # 1. Dreamレコードを作成 (ステータス: pending)
+    dream = user.dreams.new(
+      title: "音声記録 #{Time.current.strftime('%Y/%m/%d %H:%M')}",
+      content: "音声解析中...",
+      analysis_status: :pending
+    )
 
-  # サービスからの特定の、予期されるエラーを処理するg
-  rescue ArgumentError => e
-    render json: { error: e.message }, status: :bad_request
-  rescue AudioAnalysisService::TranscriptionError => e
-    # 警告をログに記録し、ユーザーフレンドリーなエラーを返す
-    Rails.logger.warn "Audio transcription failed: #{e.message}"
-    render json: { error: e.message }, status: :unprocessable_content # 422
-  rescue AudioAnalysisService::AnalysisError => e
-    Rails.logger.error "Audio analysis failed: #{e.message}"
-    render json: { error: e.message }, status: :bad_gateway # 502
-  rescue OpenAI::Error => e
-    Rails.logger.error "OpenAI API error: #{e.class} - #{e.message}"
-    render json: { error: "AIサービスの呼び出しに失敗しました。" }, status: :bad_gateway # 502
+    # 2. 音声ファイルを添付
+    if params[:file].present?
+      dream.audio.attach(params[:file])
+    else
+      render json: { error: "音声ファイルが必要です" }, status: :bad_request
+      return
+    end
+
+    if dream.save
+      # 3. ジョブをエンキュー (非同期処理)
+      AnalyzeDreamJob.perform_later(dream.id)
+
+      # 4. 即座にレスポンスを返す
+      render json: { 
+        id: dream.id, 
+        message: "音声を受け付けました。解析を開始します。",
+        status: "pending"
+      }, status: :ok
+    else
+      render json: { error: dream.errors.full_messages }, status: :unprocessable_entity
+    end
   rescue StandardError => e
-    Rails.logger.error "AudioDreamsController#create error: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
-    render json: { error: "音声解析処理中にエラーが発生しました。" }, status: :internal_server_error
+    Rails.logger.error "AudioDreamsController#create error: #{e.class} - #{e.message}"
+    render json: { error: "処理中にエラーが発生しました。" }, status: :internal_server_error
   end
 end

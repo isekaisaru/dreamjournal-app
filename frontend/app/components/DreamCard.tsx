@@ -1,6 +1,7 @@
 import React from "react";
 import { Dream } from "@/app/types";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { EmotionTag } from "./EmotionTag";
 
 function formatDate(dateInput: string | number | Date | undefined): string {
@@ -30,12 +31,26 @@ const DreamCard = ({ dream }: DreamCardProps) => {
       <div className="h-full shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col p-5 rounded-xl bg-card text-card-foreground border border-border/50 group-hover:border-primary/30 group-hover:bg-accent/5">
         {/* Header: Date & Title */}
         <div className="mb-3">
-          <p
-            className="text-xs text-muted-foreground mb-1 font-medium"
-            suppressHydrationWarning
-          >
-            {formatDate(dream.created_at)}
-          </p>
+          <div className="flex justify-between items-start">
+            <p
+              className="text-xs text-muted-foreground mb-1 font-medium"
+              suppressHydrationWarning
+            >
+              {formatDate(dream.created_at)}
+            </p>
+            {dream.analysis_status === "pending" && (
+              <div className="flex flex-col gap-1 w-24">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200/50">
+                  <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
+                  解析中...
+                </span>
+                {/* 擬似プログレスバー */}
+                <div className="h-1 w-full bg-amber-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 w-2/3 animate-pulse rounded-full"></div>
+                </div>
+              </div>
+            )}
+          </div>
           <h2 className="text-lg font-bold leading-tight group-hover:text-primary transition-colors line-clamp-2">
             {dream.title}
           </h2>
@@ -50,7 +65,19 @@ const DreamCard = ({ dream }: DreamCardProps) => {
 
         {/* Footer: Emotions & Action */}
         <div className="mt-auto pt-2 flex items-end justify-between gap-2">
-          {dream.emotions && dream.emotions.length > 0 ? (
+          {/* Prioritize lightweight JSON tags, fall back to DB relation if needed */}
+          {(dream.analysis_json?.emotion_tags && dream.analysis_json.emotion_tags.length > 0) ? (
+            <div className="flex flex-wrap gap-1.5">
+              {dream.analysis_json.emotion_tags.slice(0, 3).map((tag, i) => (
+                <EmotionTag key={`json-${i}`} label={tag} />
+              ))}
+              {dream.analysis_json.emotion_tags.length > 3 && (
+                <span className="text-xs text-muted-foreground self-center px-1">
+                  +{dream.analysis_json.emotion_tags.length - 3}
+                </span>
+              )}
+            </div>
+          ) : (dream.emotions && dream.emotions.length > 0) ? (
             <div className="flex flex-wrap gap-1.5">
               {dream.emotions.slice(0, 3).map((emotion) => (
                 <EmotionTag key={emotion.id} label={emotion.name} />
