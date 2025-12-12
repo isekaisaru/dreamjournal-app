@@ -34,10 +34,14 @@ export default function PendingDreamsMonitor() {
 
       // 前回のpendingIdsと比較して変更があれば更新
       setPendingIds((prev) => {
-        const isSame = prev.length === ids.length && prev.every((val, index) => val === ids[index]);
+        const isSame =
+          prev.length === ids.length &&
+          prev.every((val, index) => val === ids[index]);
         if (isSame) return prev;
 
-        console.log(`[PendingDreamsMonitor] Detected pending dreams: ${ids.join(", ")}`);
+        console.log(
+          `[PendingDreamsMonitor] Detected pending dreams: ${ids.join(", ")}`
+        );
         return ids;
       });
 
@@ -47,7 +51,10 @@ export default function PendingDreamsMonitor() {
       }
     } catch (error) {
       if (error instanceof Error && !error.message.includes("401")) {
-        console.warn("[PendingDreamsMonitor] Failed to fetch pending dreams:", error);
+        console.warn(
+          "[PendingDreamsMonitor] Failed to fetch pending dreams:",
+          error
+        );
       }
     }
   }, []);
@@ -73,12 +80,16 @@ export default function PendingDreamsMonitor() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
-        console.log("[PendingDreamsMonitor] Polling stopped (no pending dreams)");
+        console.log(
+          "[PendingDreamsMonitor] Polling stopped (no pending dreams)"
+        );
       }
       return;
     }
 
-    console.log(`[PendingDreamsMonitor] Starting polling for: ${pendingIds.join(", ")}`);
+    console.log(
+      `[PendingDreamsMonitor] Starting polling for: ${pendingIds.join(", ")}`
+    );
 
     const checkStatuses = async () => {
       if (document.hidden) return;
@@ -86,20 +97,28 @@ export default function PendingDreamsMonitor() {
       try {
         const idsParam = pendingIds.join(",");
         // Fix: 401 error by adding credentials and headers
-        const res = await fetch(`/api/dreams/statuses?ids=${idsParam}&t=${Date.now()}`, {
-          credentials: "include", // 必須: これがないとCookieが送られない
-          headers: {
-            "Accept": "application/json",
-          },
-          cache: "no-store"
-        });
+        const res = await fetch(
+          `/api/dreams/statuses?ids=${idsParam}&t=${Date.now()}`,
+          {
+            credentials: "include", // 必須: これがないとCookieが送られない
+            headers: {
+              Accept: "application/json",
+            },
+            cache: "no-store",
+          }
+        );
 
         if (!res.ok) {
           if (res.status === 401) {
-            console.warn("[PendingDreamsMonitor] 401 Unauthorized during polling. User might be logged out.");
+            console.warn(
+              "[PendingDreamsMonitor] 401 Unauthorized during polling. User might be logged out."
+            );
           }
           failedAttemptsRef.current += 1;
-          const backoff = Math.min(60000, 5000 * Math.pow(1.5, failedAttemptsRef.current));
+          const backoff = Math.min(
+            60000,
+            5000 * Math.pow(1.5, failedAttemptsRef.current)
+          );
           setPollInterval(backoff);
           return;
         }
@@ -107,25 +126,33 @@ export default function PendingDreamsMonitor() {
         const statusMap: Record<string, string> = await res.json();
 
         // 完了または失敗したものを抽出
-        const completedIds = pendingIds.filter(id => {
+        const completedIds = pendingIds.filter((id) => {
           const status = statusMap[id.toString()];
-          return status === 'done' || status === 'failed';
+          return status === "done" || status === "failed";
         });
 
         // まだ処理していないIDのみ対象にする
-        const newCompletedIds = completedIds.filter(id => !processedIdsRef.current.has(id));
+        const newCompletedIds = completedIds.filter(
+          (id) => !processedIdsRef.current.has(id)
+        );
 
         if (newCompletedIds.length > 0) {
-          console.log(`[PendingDreamsMonitor] Analysis completed for dreams: ${newCompletedIds.join(", ")}`);
+          console.log(
+            `[PendingDreamsMonitor] Analysis completed for dreams: ${newCompletedIds.join(", ")}`
+          );
 
           // 処理済みマーク
-          newCompletedIds.forEach(id => processedIdsRef.current.add(id));
+          newCompletedIds.forEach((id) => processedIdsRef.current.add(id));
 
           // 監視対象から外す
-          setPendingIds(prev => prev.filter(id => !newCompletedIds.includes(id)));
+          setPendingIds((prev) =>
+            prev.filter((id) => !newCompletedIds.includes(id))
+          );
 
           // 画面更新処理 (1回だけ実行)
-          console.log(`[PendingDreamsMonitor] Triggering router.refresh() for dreams: ${newCompletedIds.join(", ")}`);
+          console.log(
+            `[PendingDreamsMonitor] Triggering router.refresh() for dreams: ${newCompletedIds.join(", ")}`
+          );
 
           // refreshのみ実行 (replaceは不要、refreshでサーバーコンポーネントが再描画される)
           // 確実にサーバーデータを反映させるため、待機時間を延長 (Race Condition対策)
@@ -137,7 +164,6 @@ export default function PendingDreamsMonitor() {
           setPollInterval(5000);
           failedAttemptsRef.current = 0;
         }
-
       } catch (error) {
         console.error("[PendingDreamsMonitor] Polling error", error);
       }
@@ -150,7 +176,7 @@ export default function PendingDreamsMonitor() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // routerを依存配列から除外。pendingIdsかpollIntervalが変わった時だけ再設定。
-  }, [pendingIds, pollInterval]);
+  }, [pendingIds, pollInterval, router]);
 
   if (pendingIds.length === 0) return null;
 

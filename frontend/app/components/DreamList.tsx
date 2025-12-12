@@ -5,7 +5,6 @@ import React from "react";
 import DreamCard from "./DreamCard";
 import { motion, AnimatePresence } from "framer-motion";
 
-
 interface DreamListProps {
   dreams: Dream[];
   onDelete?: (id: number) => void;

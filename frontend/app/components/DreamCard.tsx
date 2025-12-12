@@ -66,7 +66,8 @@ const DreamCard = ({ dream }: DreamCardProps) => {
         {/* Footer: Emotions & Action */}
         <div className="mt-auto pt-2 flex items-end justify-between gap-2">
           {/* Prioritize lightweight JSON tags, fall back to DB relation if needed */}
-          {(dream.analysis_json?.emotion_tags && dream.analysis_json.emotion_tags.length > 0) ? (
+          {dream.analysis_json?.emotion_tags &&
+          dream.analysis_json.emotion_tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {dream.analysis_json.emotion_tags.slice(0, 3).map((tag, i) => (
                 <EmotionTag key={`json-${i}`} label={tag} />
@@ -77,7 +78,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
                 </span>
               )}
             </div>
-          ) : (dream.emotions && dream.emotions.length > 0) ? (
+          ) : dream.emotions && dream.emotions.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {dream.emotions.slice(0, 3).map((emotion) => (
                 <EmotionTag key={emotion.id} label={emotion.name} />

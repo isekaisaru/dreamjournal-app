@@ -51,11 +51,12 @@ export async function apiFetch<T>(
     },
     credentials: "include",
   };
-  
+
   // GET/HEAD 以外の場合は Content-Type を付与 (ユーザーが上書き可能)
-  const method = (fetchOptions.method || 'GET').toUpperCase();
-  if (!['GET', 'HEAD'].includes(method)) {
-     (finalOptions.headers as Record<string, string>)["Content-Type"] = "application/json";
+  const method = (fetchOptions.method || "GET").toUpperCase();
+  if (!["GET", "HEAD"].includes(method)) {
+    (finalOptions.headers as Record<string, string>)["Content-Type"] =
+      "application/json";
   }
 
   if (isServer) {

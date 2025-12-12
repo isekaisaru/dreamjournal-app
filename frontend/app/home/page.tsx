@@ -129,7 +129,8 @@ export default async function HomePage({
         <DreamList
           dreams={dreams}
           key={`${dreams[0]?.id}-${dreams.length}-${Date.now()}`}
-        /> {/* 夢データをリストして表示 */}
+        />{" "}
+        {/* 夢データをリストして表示 */}
       </section>
 
       {/* サイドバー: 月ごとの夢リンクを動的に表示 */}

@@ -8,7 +8,10 @@ export async function GET(req: NextRequest) {
   const ids = searchParams.get("ids");
 
   if (!ids) {
-    return NextResponse.json({ error: "ids parameter is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "ids parameter is required" },
+      { status: 400 }
+    );
   }
 
   if (!BACKEND_URL) {
@@ -20,14 +23,19 @@ export async function GET(req: NextRequest) {
 
   try {
     const cookieHeader = req.headers.get("cookie") ?? "";
-    console.log(`[API Proxy] /dreams/statuses req cookies present: ${!!cookieHeader}`);
+    console.log(
+      `[API Proxy] /dreams/statuses req cookies present: ${!!cookieHeader}`
+    );
 
-    const backendRes = await fetch(`${BACKEND_URL}/dreams/statuses?ids=${ids}`, {
-      method: "GET",
-      headers: {
-        cookie: cookieHeader,
-      },
-    });
+    const backendRes = await fetch(
+      `${BACKEND_URL}/dreams/statuses?ids=${ids}`,
+      {
+        method: "GET",
+        headers: {
+          cookie: cookieHeader,
+        },
+      }
+    );
 
     if (!backendRes.ok) {
       return NextResponse.json(

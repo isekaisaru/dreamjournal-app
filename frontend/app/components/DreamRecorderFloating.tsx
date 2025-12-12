@@ -22,7 +22,9 @@ const DreamRecorderFloating: React.FC = () => {
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
       // 成功メッセージを表示
-      toast.success(result.message || "音声を受け付けました。解析を開始します。");
+      toast.success(
+        result.message || "音声を受け付けました。解析を開始します。"
+      );
 
       // 一覧画面へリダイレクト（新しい夢が作成されているはず）
       // 即時にリストを更新して、pending状態のカードを表示する
@@ -127,32 +129,34 @@ const DreamRecorderFloating: React.FC = () => {
         animate={
           status === "recording"
             ? {
-              scale: [1, 1.08, 1],
-              boxShadow: [
-                "0 0 0 0 rgba(239, 68, 68, 0.4)",
-                "0 0 0 12px rgba(239, 68, 68, 0)",
-              ],
-            }
+                scale: [1, 1.08, 1],
+                boxShadow: [
+                  "0 0 0 0 rgba(239, 68, 68, 0.4)",
+                  "0 0 0 12px rgba(239, 68, 68, 0)",
+                ],
+              }
             : { scale: 1, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }
         }
         transition={
           status === "recording"
             ? {
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }
             : { type: "spring", stiffness: 400, damping: 17 }
         }
-        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${status === "recording"
-          ? "bg-red-500 hover:bg-red-600 text-white"
-          : status === "preparing"
-            ? "bg-yellow-500 text-white cursor-wait"
-            : "bg-blue-600 hover:bg-blue-700 text-white"
-          } ${isProcessing
+        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${
+          status === "recording"
+            ? "bg-red-500 hover:bg-red-600 text-white"
+            : status === "preparing"
+              ? "bg-yellow-500 text-white cursor-wait"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+        } ${
+          isProcessing
             ? "cursor-not-allowed opacity-70 bg-slate-500"
             : "cursor-pointer"
-          }`}
+        }`}
       >
         {isProcessing ? (
           <>
