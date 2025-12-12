@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     end
     collection do
       get :my_dreams
+      get :statuses # 一括ステータス取得用
       # /dreams/month/2023-05 のような形式でアクセス
       get 'month/:year_month', to: 'dreams#by_month_index', as: :by_month
     end

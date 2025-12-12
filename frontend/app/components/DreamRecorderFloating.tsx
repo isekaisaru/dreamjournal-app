@@ -18,25 +18,20 @@ const DreamRecorderFloating: React.FC = () => {
     "idle"
   );
 
-  // Whisper 解析結果 → DreamForm へ受け渡し
+  // Whisper 解析結果 → 一覧画面へ遷移（非同期処理のため）
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
-      // sessionStorage に保存するデータを作成
-      const draftData: DreamDraftData = {
-        transcript: result.transcript,
-        analysis: result.analysis || null,
-        emotion_tags: result.emotion_tags || null,
-        timestamp: Date.now(),
-      };
+      // 成功メッセージを表示
+      toast.success(
+        result.message || "音声を受け付けました。解析を開始します。"
+      );
 
-      try {
-        sessionStorage.setItem("dream_draft_data", JSON.stringify(draftData));
-        toast.success("音声解析が完了しました。フォームに転送します。");
-        router.push("/dream/new");
-      } catch (e) {
-        console.error("Failed to save draft to sessionStorage", e);
-        toast.error("データの保存に失敗しました。");
-      }
+      // 一覧画面へリダイレクト（新しい夢が作成されているはず）
+      // 即時にリストを更新して、pending状態のカードを表示する
+      // 即時にリストを更新して、pending状態のカードを表示する
+      window.dispatchEvent(new Event("dream-created")); // PendingDreamsMonitorに通知
+      router.refresh();
+      router.push("/home");
     },
     [router]
   );

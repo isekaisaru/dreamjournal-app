@@ -7,9 +7,9 @@ class AudioAnalysisService
   class TranscriptionError < StandardError; end
   class AnalysisError < StandardError; end
 
-  # @param uploaded_file [ActionDispatch::Http::UploadedFile] コントローラーから渡される音声ファイル
-  def initialize(uploaded_file)
-    @uploaded_file = uploaded_file
+  # @param file_source [ActionDispatch::Http::UploadedFile, File, String] 音声ファイル
+  def initialize(file_source)
+    @file_source = file_source
     # クライアントはサービスインスタンスごとに一度だけ初期化する
     @client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
   end
@@ -35,17 +35,35 @@ class AudioAnalysisService
   private
 
   def validate_file!
-    raise ArgumentError, "音声ファイルが見つかりませんでした。" unless @uploaded_file&.respond_to?(:tempfile)
+    # UploadedFile, File, Tempfile, またはファイルパス(String)のいずれかを受け入れる
+    is_valid = if @file_source.respond_to?(:tempfile)
+                 true
+               elsif @file_source.is_a?(File) || @file_source.class.name == 'Tempfile'
+                 true
+               elsif @file_source.is_a?(String) && File.exist?(@file_source)
+                 true
+               else
+                 false
+               end
+    raise ArgumentError, "有効な音声ファイルが見つかりませんでした。" unless is_valid
   end
 
   def transcribe_audio
-    # tempfileを読み取り可能な状態にする
-    @uploaded_file.tempfile.binmode
-    @uploaded_file.tempfile.rewind
+    # ファイルオブジェクトを取得
+    file_object = if @file_source.respond_to?(:tempfile)
+                    @file_source.tempfile
+                  elsif @file_source.is_a?(String)
+                    File.open(@file_source)
+                  else
+                    @file_source
+                  end
+
+    # もしFileオブジェクトなら rewind しておく(念のため)
+    file_object.rewind if file_object.respond_to?(:rewind)
 
     response = @client.audio.transcribe(parameters: {
       model: "whisper-1",
-      file: @uploaded_file.tempfile,
+      file: file_object,
       response_format: "json",
       language: "ja"
     })
