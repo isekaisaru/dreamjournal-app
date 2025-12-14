@@ -39,24 +39,34 @@ class AudioAnalysisService
   end
 
   def transcribe_audio
-    # tempfileを読み取り可能な状態にする
-    @uploaded_file.tempfile.binmode
-    @uploaded_file.tempfile.rewind
+    # OpenAI APIはファイル拡張子（.webm, .mp4, .m4a等）を必須とするため、
+    # アップロードされたファイルの拡張子を維持した一時ファイルを作成して渡す
+    original_filename = @uploaded_file.original_filename
+    extension = File.extname(original_filename)
+    
+    # 拡張子がない場合はデフォルトで .webm とする (安全策)
+    extension = ".webm" if extension.blank?
 
-    response = @client.audio.transcribe(parameters: {
-      model: "whisper-1",
-      file: @uploaded_file.tempfile,
-      response_format: "json",
-      language: "ja"
-    })
+    Tempfile.create(["upload", extension]) do |temp_file_with_ext|
+      temp_file_with_ext.binmode
+      IO.copy_stream(@uploaded_file.tempfile, temp_file_with_ext)
+      temp_file_with_ext.rewind
 
-    Rails.logger.info "Whisper Response: #{response.inspect}"
+      response = @client.audio.transcribe(parameters: {
+        model: "whisper-1",
+        file: temp_file_with_ext,
+        response_format: "json",
+        language: "ja"
+      })
 
-    transcript = response["text"]&.strip
-    # 文字起こし結果が空の場合、専用のエラーを発生させる
-    raise TranscriptionError, "音声の文字起こしに失敗しました。音声が短すぎるか無音の可能性があります。" if transcript.blank?
+      Rails.logger.info "Whisper Response: #{response.inspect}"
 
-    transcript
+      transcript = response["text"]&.strip
+      # 文字起こし結果が空の場合、専用のエラーを発生させる
+      raise TranscriptionError, "音声の文字起こしに失敗しました。音声が短すぎるか無音の可能性があります。" if transcript.blank?
+
+      transcript
+    end
   end
 
   def analyze_transcript(text)

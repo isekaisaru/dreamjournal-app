@@ -4,7 +4,20 @@ export async function uploadAndAnalyzeAudio(
   audioBlob: Blob
 ): Promise<AnalysisResult> {
   const formData = new FormData();
-  formData.append("file", audioBlob, `dream-recording-${Date.now()}.webm`);
+  
+  // Blobの型から拡張子を決定 (Safariは audio/mp4 や audio/aac になるため)
+  let ext = "webm";
+  if (audioBlob.type.includes("mp4") || audioBlob.type.includes("m4a")) {
+    ext = "mp4";
+  } else if (audioBlob.type.includes("aac")) {
+    ext = "aac";
+  } else if (audioBlob.type.includes("ogg")) {
+    ext = "ogg";
+  } else if (audioBlob.type.includes("wav")) {
+    ext = "wav";
+  }
+
+  formData.append("file", audioBlob, `dream-recording-${Date.now()}.${ext}`);
 
   const res = await fetch("/api/analyze_audio_dream", {
     method: "POST",
