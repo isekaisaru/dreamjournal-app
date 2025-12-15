@@ -42,34 +42,35 @@ class AudioAnalysisService
   end
 
   def transcribe_audio
-    uploaded_file =
-      if @file_source.respond_to?(:tempfile)
-        @file_source
-      elsif @file_source.is_a?(File)
-        @file_source
-      else
-        raise ArgumentError, "音声ファイルの形式が不正です"
-      end
-
-    original_filename =
-      uploaded_file.respond_to?(:original_filename) ?
-        uploaded_file.original_filename :
-        "audio.webm"
-
-    extension = File.extname(original_filename)
+    # ActiveStorageの open メソッドから渡されるオブジェクトや、
+    # UploadedFile, File オブジェクトなど、ソースの多様性を吸収する
+    
+    # 拡張子の決定ロジック
+    filename = if @file_source.respond_to?(:original_filename)
+                 @file_source.original_filename
+               elsif @file_source.respond_to?(:path)
+                 File.basename(@file_source.path)
+               else
+                 "audio.webm"
+               end
+    
+    extension = File.extname(filename)
     extension = ".webm" if extension.blank?
 
     Tempfile.create(["upload", extension]) do |temp_file|
       temp_file.binmode
 
-      source_io =
-        uploaded_file.respond_to?(:tempfile) ?
-          uploaded_file.tempfile :
-          uploaded_file
+      # IOストリームの取得ロジック
+      source_io = if @file_source.respond_to?(:tempfile)
+                    # ActionDispatch::Http::UploadedFile の場合
+                    @file_source.tempfile
+                  else
+                    # File, Tempfile, または IOライクなオブジェクトの場合
+                    @file_source
+                  end
 
       source_io.rewind if source_io.respond_to?(:rewind)
       IO.copy_stream(source_io, temp_file)
-
       temp_file.rewind
 
       response = @client.audio.transcribe(
