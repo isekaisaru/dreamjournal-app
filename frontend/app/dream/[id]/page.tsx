@@ -113,7 +113,7 @@ export default function EditDreamPage({
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
       <h1 className="text-3xl font-bold mb-6 text-foreground">
-        夢の詳細・編集
+        ゆめ の なおし
       </h1>
 
       <DreamForm
@@ -155,21 +155,21 @@ export default function EditDreamPage({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogTitle>ほんとうに けしちゃう？</AlertDialogTitle>
             <AlertDialogDescription>
-              夢「{dream.title}」を削除します。この操作は元に戻せません。
+              「{dream.title}」を ごみばこ に すてるよ？ もとには もどせないよ。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>
-              キャンセル
+              やめる
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "削除中..." : "削除する"}
+              {isDeleting ? "けしています..." : "けしてしまう"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

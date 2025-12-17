@@ -109,7 +109,7 @@ export default async function HomePage({
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full md:w-2/3 flex flex-col items-center px-3 md:px-6">
         <h1 className="text-2xl font-bold text-foreground">
-          {user ? `${user.username}さんの夢` : "夢リスト"}
+          {user ? `${user.username}ちゃんの ゆめ日記` : "ゆめ日記"}
         </h1>
         {/* Debug: Server Rendering Time to verify router.refresh() */}
         <p className="text-xs text-muted-foreground/50 mb-2">
@@ -136,9 +136,11 @@ export default async function HomePage({
       {/* サイドバー: 月ごとの夢リンクを動的に表示 */}
       <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 md:mt-0">
         <div className="bg-card text-card-foreground shadow-md rounded p-4 mb-6 border border-border">
-          <h3 className="font-bold text-card-foreground mb-2">前に見た夢</h3>
+          <h3 className="font-bold text-card-foreground mb-2">
+            まえに みた ゆめ
+          </h3>
           <p className="text-muted-foreground">
-            前に見た夢を振り返ってみましょう！
+            まえに みた ゆめ を見てみよう！
           </p>
         </div>
         <ul className="space-y-2">

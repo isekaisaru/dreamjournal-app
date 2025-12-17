@@ -42,7 +42,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
               <div className="flex flex-col gap-1 w-24">
                 <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200/50">
                   <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
-                  解析中...
+                  かんがえ中...
                 </span>
                 {/* 擬似プログレスバー */}
                 <div className="h-1 w-full bg-amber-100 rounded-full overflow-hidden">
@@ -67,7 +67,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
         <div className="mt-auto pt-2 flex items-end justify-between gap-2">
           {/* Prioritize lightweight JSON tags, fall back to DB relation if needed */}
           {dream.analysis_json?.emotion_tags &&
-          dream.analysis_json.emotion_tags.length > 0 ? (
+            dream.analysis_json.emotion_tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {dream.analysis_json.emotion_tags.slice(0, 3).map((tag, i) => (
                 <EmotionTag key={`json-${i}`} label={tag} />
@@ -94,7 +94,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           )}
 
           <span className="text-xs font-semibold text-primary/80 group-hover:text-primary whitespace-nowrap">
-            詳細 &rarr;
+            くわしく &rarr;
           </span>
         </div>
       </div>

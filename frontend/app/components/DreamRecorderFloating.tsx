@@ -23,7 +23,7 @@ const DreamRecorderFloating: React.FC = () => {
     (result: AnalysisResult) => {
       // 成功メッセージを表示
       toast.success(
-        result.message || "音声を受け付けました。解析を開始します。"
+        result.message || "こえを きいたよ！ ちょっと まっててね。"
       );
 
       // 一覧画面へリダイレクト（新しい夢が作成されているはず）
@@ -124,59 +124,57 @@ const DreamRecorderFloating: React.FC = () => {
         disabled={isProcessing}
         role="switch"
         aria-checked={status === "recording"}
-        aria-label={status === "recording" ? "録音を停止" : "録音を開始"}
+        aria-label={status === "recording" ? "とめる" : "おはなしする"}
         whileTap={{ scale: 0.9 }}
         animate={
           status === "recording"
             ? {
-                scale: [1, 1.08, 1],
-                boxShadow: [
-                  "0 0 0 0 rgba(239, 68, 68, 0.4)",
-                  "0 0 0 12px rgba(239, 68, 68, 0)",
-                ],
-              }
+              scale: [1, 1.08, 1],
+              boxShadow: [
+                "0 0 0 0 rgba(239, 68, 68, 0.4)",
+                "0 0 0 12px rgba(239, 68, 68, 0)",
+              ],
+            }
             : { scale: 1, boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }
         }
         transition={
           status === "recording"
             ? {
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }
             : { type: "spring", stiffness: 400, damping: 17 }
         }
-        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${
-          status === "recording"
-            ? "bg-red-500 hover:bg-red-600 text-white"
-            : status === "preparing"
-              ? "bg-yellow-500 text-white cursor-wait"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-        } ${
-          isProcessing
+        className={`flex h-16 w-48 items-center justify-center gap-3 rounded-full shadow-lg transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-primary/40 ${status === "recording"
+          ? "bg-red-500 hover:bg-red-600 text-white"
+          : status === "preparing"
+            ? "bg-yellow-500 text-white cursor-wait"
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+          } ${isProcessing
             ? "cursor-not-allowed opacity-70 bg-slate-500"
             : "cursor-pointer"
-        }`}
+          }`}
       >
         {isProcessing ? (
           <>
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-lg font-bold">解析中...</span>
+            <span className="text-lg font-bold">モルペウスが かんがえています...</span>
           </>
         ) : status === "recording" ? (
           <>
             <Square className="h-6 w-6 fill-current" />
-            <span className="text-lg font-bold">停止する</span>
+            <span className="text-lg font-bold">とめる</span>
           </>
         ) : status === "preparing" ? (
           <>
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-lg font-bold">準備中...</span>
+            <span className="text-lg font-bold">じゅんび してるよ...</span>
           </>
         ) : (
           <>
             <Mic className="h-6 w-6" />
-            <span className="text-lg font-bold">録音する</span>
+            <span className="text-lg font-bold">おはなしする</span>
           </>
         )}
       </motion.button>

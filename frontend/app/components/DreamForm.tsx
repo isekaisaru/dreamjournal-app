@@ -149,9 +149,9 @@ export default function DreamForm({
     const analysisPayload =
       analysisText || suggestedEmotionNames.length > 0
         ? {
-            analysis: analysisText || "",
-            emotion_tags: suggestedEmotionNames,
-          }
+          analysis: analysisText || "",
+          emotion_tags: suggestedEmotionNames,
+        }
         : undefined;
 
     onSubmit({
@@ -171,7 +171,7 @@ export default function DreamForm({
     >
       {isDraftApplied && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
-          音声入力の内容と分析結果を自動で読み込みました。必要に応じて編集してください。
+          こえの いちぶ と モルペウスの おへんじ が かいてあるよ。なおして いいよ。
         </div>
       )}
       <div className="mb-4">
@@ -179,7 +179,7 @@ export default function DreamForm({
           htmlFor="dream-title"
           className="block mb-2 font-semibold text-card-foreground"
         >
-          タイトル
+          ゆめの なまえ
         </label>
         <input
           id="dream-title"
@@ -196,21 +196,21 @@ export default function DreamForm({
           htmlFor="dream-content"
           className="block mb-2 font-semibold text-card-foreground"
         >
-          夢の内容
+          どんな おはなし？
         </label>
         <textarea
           id="dream-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="w-full p-2 border border-input bg-background text-foreground rounded focus:ring-2 focus:ring-ring focus:border-ring h-40"
-          placeholder="見た夢の内容をできるだけ詳しく書いてみましょう..."
+          placeholder="みた ゆめ の おはなしを、できるだけ くわしく かいてみよう..."
         ></textarea>
       </div>
 
       {analysisText && (
         <div className="mb-6">
           <label className="block mb-2 font-semibold text-card-foreground">
-            AIによる夢の分析
+            モルペウスの ゆめうらない
           </label>
           <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
             <p className="whitespace-pre-wrap">{analysisText}</p>
@@ -228,7 +228,7 @@ export default function DreamForm({
             )}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            分析内容と感情タグは編集や削除が可能です。あなたの体験に合わせて調整してください。
+            ないよう や タグ は、じぶんで なおせるよ。
           </p>
         </div>
       )}
@@ -271,14 +271,13 @@ export default function DreamForm({
 
       <button
         type="submit"
-        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${
-          isLoading
+        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${isLoading
             ? "bg-muted text-muted-foreground cursor-not-allowed"
             : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-        }`}
+          }`}
         disabled={isLoading}
       >
-        {isLoading ? "保存中..." : "保存"}
+        {isLoading ? "ゆめを のこしています..." : "ゆめを のこす"}
       </button>
     </form>
   );

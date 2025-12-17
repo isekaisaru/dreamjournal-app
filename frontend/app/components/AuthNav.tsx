@@ -29,12 +29,12 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
         <>
           <Link href="/dream/new">
             <Button variant="default" className="px-3 py-2 md:px-3 md:py-3">
-              夢の記録
+              ゆめをかく
             </Button>
           </Link>
           <Link href="/settings">
             <Button variant="outline" className="px-3 py-2 md:px-3 md:py-3">
-              設定
+              おとなのきまり
             </Button>
           </Link>
           <Button
@@ -42,7 +42,7 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
             variant="destructive"
             className="px-3 py-2 md:px-3 md:py-3"
           >
-            ログアウト
+            おしまい
           </Button>
         </>
       ) : (

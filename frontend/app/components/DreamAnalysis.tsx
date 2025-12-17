@@ -115,7 +115,7 @@ const DreamAnalysis = ({
       return (
         <div className="mt-6 p-4 bg-background rounded-md border border-border shadow-inner">
           <h3 className="text-xl font-bold mb-3 text-foreground">
-            --- AIによる夢の分析 ---
+            --- モルペウスからの おてがみ ---
           </h3>
           <div className="max-h-80 overflow-y-auto p-3 bg-muted/50 rounded border border-border">
             {analysisText ? (
@@ -123,7 +123,7 @@ const DreamAnalysis = ({
                 {analysisText}
               </p>
             ) : (
-              <p className="text-muted-foreground">分析データはありません</p>
+              <p className="text-muted-foreground">おへんじ は まだ ないよ</p>
             )}
             {tags.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -144,9 +144,9 @@ const DreamAnalysis = ({
     if (analysisStatus === "failed") {
       return (
         <div className="mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-md">
-          <h3 className="text-xl font-bold mb-2 text-destructive">分析失敗</h3>
+          <h3 className="text-xl font-bold mb-2 text-destructive">うまくいかなかったよ</h3>
           <p className="text-destructive-foreground">
-            {analysisResult?.error || "不明なエラーが発生しました。"}
+            {analysisResult?.error || "ちょっと むずかしかった みたい..."}
           </p>
         </div>
       );
@@ -157,7 +157,7 @@ const DreamAnalysis = ({
   return (
     <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm">
       <h2 className="text-2xl font-semibold mb-4 text-card-foreground">
-        夢の分析
+        モルペウスの ゆめうらない
       </h2>
       {hasContent ? (
         <>
@@ -167,17 +167,16 @@ const DreamAnalysis = ({
             <button
               onClick={handleReAnalyze}
               disabled={isRequesting || analysisStatus === "pending"}
-              className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${
-                isRequesting || analysisStatus === "pending"
+              className={`w-full py-3 px-4 font-semibold rounded-md transition-colors duration-150 ease-in-out ${isRequesting || analysisStatus === "pending"
                   ? "bg-muted text-muted-foreground cursor-not-allowed"
                   : "bg-primary text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-              }`}
+                }`}
             >
               {isRequesting
-                ? "リクエスト中..."
+                ? "おねがい中..."
                 : analysisStatus === "pending"
-                  ? "分析中..."
-                  : "もう一度分析する"}
+                  ? "かんがえ中..."
+                  : "もういちど きく"}
             </button>
           </div>
 
@@ -185,12 +184,12 @@ const DreamAnalysis = ({
         </>
       ) : (
         <p className="text-muted-foreground text-center py-2">
-          夢の内容が記録されていません。分析するには、編集フォームで内容を入力・保存してください。
+          ゆめの おはなし が ないと、モルペウスは こたえられないよ。
         </p>
       )}
       {analysisStatus === "pending" && (
         <div className="mt-6 text-center text-foreground">
-          <p>分析結果を取得中です。しばらくお待ちください...</p>
+          <p>モルペウスが かんがえています... ちょっと まっててね。</p>
         </div>
       )}
     </div>
