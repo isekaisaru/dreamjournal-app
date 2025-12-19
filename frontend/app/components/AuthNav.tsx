@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "./ui/button";
 import { clientLogout } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
-import { House, Mic, Book, Settings, LogOut, LogIn, UserPlus } from "lucide-react";
+import { House, Pencil, Book, Settings, LogOut, LogIn, UserPlus } from "lucide-react";
 
 interface AuthNavProps {
   isAuthenticated: boolean;
@@ -84,8 +84,7 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
       {/* 行動（左側）：毎日つかうもの */}
       <div className="flex items-center bg-secondary/30 p-1 rounded-full gap-1">
         <NavItem href="/" icon={House} label="おうち" />
-        <NavItem href="/dream/new" icon={Mic} label="こえをとる" />
-        <NavItem href="/home" icon={Book} label="ゆめのノート" />
+        <NavItem href="/dream/new" icon={Pencil} label="てでかく" />
       </div>
 
       {/* 管理（右側）：おわり・設定 */}

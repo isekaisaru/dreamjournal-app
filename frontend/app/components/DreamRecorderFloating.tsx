@@ -48,7 +48,7 @@ const DreamRecorderFloating: React.FC = () => {
         toast.error(
           err instanceof Error
             ? err.message
-            : "音声の解析に失敗しました。時間をおいて再度お試しください。"
+            : "ちょっと つかれちゃった みたい。あとで また はなしてね。"
         );
       } finally {
         setIsProcessing(false);
