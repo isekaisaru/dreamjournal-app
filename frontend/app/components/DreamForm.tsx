@@ -6,6 +6,7 @@ import { Dream, Emotion, DreamDraftData } from "../types";
 import { getEmotions } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { getEmotionColors } from "@/lib/emotionUtils";
+import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 
 interface DreamFormData {
   title: string;
@@ -235,20 +236,26 @@ export default function DreamForm({
 
       <div className="mb-6">
         <label className="block mb-2 font-semibold text-card-foreground">
-          感情タグ
+          この ゆめ の きもち は どれ？
         </label>
         {isFetchingEmotions ? (
           <div className="text-muted-foreground">読み込み中...</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {emotions.length > 0 ? (
               emotions.map((emotion) => {
                 const isSelected = selectedEmotionIds.includes(emotion.id);
-                const colors = getEmotionColors(emotion.name);
+                // Use the new mapping helper
+                const displayLabel = getChildFriendlyEmotionLabel(emotion.name);
+                // Simple color logic for selection state
+                const baseStyle = "border-2 transition-all duration-200";
+                const selectedStyle = "bg-primary/10 border-primary text-primary font-bold shadow-inner ring-2 ring-primary/20";
+                const unselectedStyle = "bg-card border-border hover:bg-accent hover:border-accent-foreground/50 text-foreground";
+
                 return (
                   <label
                     key={emotion.id}
-                    className={`flex items-center justify-center p-2 rounded-md border cursor-pointer transition-colors text-sm font-medium ${isSelected ? `${colors.bg} ${colors.border} ${colors.text}`.trim() : "bg-background border-input hover:bg-muted text-foreground"}`}
+                    className={`flex items-center justify-center p-4 rounded-xl cursor-pointer ${baseStyle} ${isSelected ? selectedStyle : unselectedStyle}`}
                   >
                     <input
                       type="checkbox"
@@ -256,7 +263,7 @@ export default function DreamForm({
                       checked={isSelected}
                       onChange={() => handleEmotionChange(emotion.id)}
                     />
-                    <span className="whitespace-nowrap">{emotion.name}</span>
+                    <span className="text-base select-none">{displayLabel}</span>
                   </label>
                 );
               })
@@ -277,7 +284,7 @@ export default function DreamForm({
           }`}
         disabled={isLoading}
       >
-        {isLoading ? "ゆめを のこしています..." : "ゆめを のこす"}
+        {isLoading ? "モルペウスが かんがえています..." : "ゆめを のこす"}
       </button>
     </form>
   );

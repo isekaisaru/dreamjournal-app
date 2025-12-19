@@ -35,11 +35,19 @@ const DreamList = ({ dreams }: DreamListProps) => {
         animate="show"
         className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
       >
-        {dreams.map((dream) => (
-          <motion.div key={dream.id} variants={item}>
-            <DreamCard dream={dream} />
-          </motion.div>
-        ))}
+        {dreams.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+            <div className="text-4xl mb-4">🌙</div>
+            <p className="text-lg font-bold mb-2">まだ ゆめ は ないよ</p>
+            <p className="text-sm">きょう みた ゆめ を おしえてね</p>
+          </div>
+        ) : (
+          dreams.map((dream) => (
+            <motion.div key={dream.id} variants={item}>
+              <DreamCard dream={dream} />
+            </motion.div>
+          ))
+        )}
       </motion.div>
     </>
   );
