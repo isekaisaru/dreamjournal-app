@@ -142,7 +142,7 @@ export default function DreamForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error("タイトルを入力してください。");
+      toast.error("たいとる を かいてね");
       return;
     }
 
@@ -171,7 +171,7 @@ export default function DreamForm({
     >
       {isDraftApplied && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
-          こえの いちぶ と モルペウスの おへんじ が かいてあるよ。なおして いいよ。
+          モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
         </div>
       )}
       <div className="mb-4">
@@ -203,7 +203,7 @@ export default function DreamForm({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="w-full p-2 border border-input bg-background text-foreground rounded focus:ring-2 focus:ring-ring focus:border-ring h-40"
-          placeholder="みた ゆめ の おはなしを、できるだけ くわしく かいてみよう..."
+          placeholder="どんな ゆめ だった？ おもいだせる だけ かいてみてね..."
         ></textarea>
       </div>
 
@@ -272,8 +272,8 @@ export default function DreamForm({
       <button
         type="submit"
         className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${isLoading
-            ? "bg-muted text-muted-foreground cursor-not-allowed"
-            : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+          ? "bg-muted text-muted-foreground cursor-not-allowed"
+          : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
           }`}
         disabled={isLoading}
       >

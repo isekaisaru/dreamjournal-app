@@ -9,9 +9,9 @@ function formatDate(dateInput: string | number | Date | undefined): string {
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return "";
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}月${day}日`;
 }
 
 type DreamCardProps = {
@@ -94,7 +94,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           )}
 
           <span className="text-xs font-semibold text-primary/80 group-hover:text-primary whitespace-nowrap">
-            くわしく &rarr;
+            よむ &rarr;
           </span>
         </div>
       </div>
