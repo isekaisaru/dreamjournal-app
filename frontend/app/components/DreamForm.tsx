@@ -242,36 +242,61 @@ export default function DreamForm({
           <div className="text-muted-foreground">読み込み中...</div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {emotions.length > 0 ? (
-              emotions.map((emotion) => {
-                const isSelected = selectedEmotionIds.includes(emotion.id);
-                // Use the new mapping helper
-                const displayLabel = getChildFriendlyEmotionLabel(emotion.name);
-                // Simple color logic for selection state
+            {(() => {
+              // 1. Group emotions by their display label to deduplicate visual options
+              const groupedEmotions: Record<string, { displayLabel: string; ids: number[]; representativeId: number }> = {};
+
+              emotions.forEach((emotion) => {
+                const label = getChildFriendlyEmotionLabel(emotion.name);
+                if (!groupedEmotions[label]) {
+                  groupedEmotions[label] = { displayLabel: label, ids: [], representativeId: emotion.id };
+                }
+                groupedEmotions[label].ids.push(emotion.id);
+              });
+
+              const uniqueGroups = Object.values(groupedEmotions);
+
+              if (uniqueGroups.length === 0) {
+                return (
+                  <div className="text-muted-foreground col-span-full">
+                    感情タグがありません。
+                  </div>
+                );
+              }
+
+              return uniqueGroups.map((group) => {
+                // If ANY of the IDs in this group are selected, the visual tag is selected
+                const isSelected = group.ids.some(id => selectedEmotionIds.includes(id));
+
                 const baseStyle = "border-2 transition-all duration-200";
                 const selectedStyle = "bg-primary/10 border-primary text-primary font-bold shadow-inner ring-2 ring-primary/20";
                 const unselectedStyle = "bg-card border-border hover:bg-accent hover:border-accent-foreground/50 text-foreground";
 
                 return (
                   <label
-                    key={emotion.id}
+                    key={group.displayLabel}
                     className={`flex items-center justify-center p-4 rounded-xl cursor-pointer ${baseStyle} ${isSelected ? selectedStyle : unselectedStyle}`}
                   >
                     <input
                       type="checkbox"
                       className="hidden"
                       checked={isSelected}
-                      onChange={() => handleEmotionChange(emotion.id)}
+                      onChange={() => {
+                        // Toggle logic: 
+                        // If selected, remove ALL ids belonging to this group (unselect 'Happy' and 'Joy')
+                        // If unselected, add the representative ID (just 'Happy')
+                        if (isSelected) {
+                          setSelectedEmotionIds(prev => prev.filter(id => !group.ids.includes(id)));
+                        } else {
+                          setSelectedEmotionIds(prev => [...prev, group.representativeId]);
+                        }
+                      }}
                     />
-                    <span className="text-base select-none">{displayLabel}</span>
+                    <span className="text-base select-none">{group.displayLabel}</span>
                   </label>
                 );
-              })
-            ) : (
-              <div className="text-muted-foreground col-span-full">
-                感情タグがありません。
-              </div>
-            )}
+              });
+            })()}
           </div>
         )}
       </div>

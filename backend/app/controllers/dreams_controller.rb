@@ -5,12 +5,12 @@ class DreamsController < ApplicationController
   # GET /dreams
   def index
     # N+1問題を解消し、軽量化。
-    # 感情タグはanalysis_jsonに含まれているため、emotionsテーブルの結合(N+1)は行わない。
+    # 感情タグはanalysis_jsonに含まれているため、emotionsテーブルの結合(N+1)は行わない...
+    # -> 修正: 手動記録のタグが表示されないため、emotionsを含めるように変更。
     initial_scope = current_user.dreams.order(created_at: :desc)
     filter_params = params.permit(:query, :start_date, :end_date, emotion_ids: [])
-    @dreams = DreamFilterQuery.new(initial_scope, filter_params).call
-    
-    render json: @dreams
+    @dreams = DreamFilterQuery.new(initial_scope, filter_params).call.includes(:emotions)
+    render json: @dreams.as_json(include: :emotions)
   end
 
   # GET /dreams/statuses?ids=1,2,3
@@ -29,7 +29,10 @@ class DreamsController < ApplicationController
 
   # GET /dreams/:id
   def show
-    render json: @dream.as_json(only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at])
+    render json: @dream.as_json(
+      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at],
+      include: :emotions
+    )
   end
 
   # POST /dreams
@@ -49,7 +52,8 @@ class DreamsController < ApplicationController
     end
 
     if @dream.save
-      render json: @dream, status: :created, location: @dream
+      @dream.reload
+      render json: @dream.as_json(include: :emotions), status: :created, location: @dream
     else
       render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end
@@ -62,9 +66,9 @@ class DreamsController < ApplicationController
       @dream.audio.attach(params[:dream][:audio])
       # ここでジョブを起動することも可能
     end
-
     if @dream.update(dream_params)
-      render json: @dream
+      @dream.reload
+      render json: @dream.as_json(include: :emotions)
     else
       render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end

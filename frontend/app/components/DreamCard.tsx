@@ -2,7 +2,7 @@ import React from "react";
 import { Dream } from "@/app/types";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { EmotionTag } from "./EmotionTag";
+import { EmotionTag, getChildFriendlyEmotionLabel } from "./EmotionTag";
 
 function formatDate(dateInput: string | number | Date | undefined): string {
   if (!dateInput) return "";
@@ -69,23 +69,31 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           {dream.analysis_json?.emotion_tags &&
             dream.analysis_json.emotion_tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {dream.analysis_json.emotion_tags.slice(0, 3).map((tag, i) => (
-                <EmotionTag key={`json-${i}`} label={tag} />
+              {Array.from(new Set(
+                (dream.analysis_json.emotion_tags || [])
+                  .map(tag => getChildFriendlyEmotionLabel(tag))
+              )).slice(0, 3).map((displayLabel, i) => (
+                <EmotionTag key={`json-${i}`} label={displayLabel /* Already mapped */} />
               ))}
-              {dream.analysis_json.emotion_tags.length > 3 && (
+              {/* Count unique mapped tags */}
+              {new Set((dream.analysis_json.emotion_tags || []).map(tag => getChildFriendlyEmotionLabel(tag))).size > 3 && (
                 <span className="text-xs text-muted-foreground self-center px-1">
-                  +{dream.analysis_json.emotion_tags.length - 3}
+                  +{new Set((dream.analysis_json.emotion_tags || []).map(tag => getChildFriendlyEmotionLabel(tag))).size - 3}
                 </span>
               )}
             </div>
           ) : dream.emotions && dream.emotions.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
-              {dream.emotions.slice(0, 3).map((emotion) => (
-                <EmotionTag key={emotion.id} label={emotion.name} />
+              {Array.from(new Set(
+                (dream.emotions && dream.emotions.length > 0 ? dream.emotions : [])
+                  .map(e => getChildFriendlyEmotionLabel(e.name))
+              )).slice(0, 3).map((displayLabel, i) => (
+                <EmotionTag key={i} label={displayLabel /* Already mapped */} />
               ))}
-              {dream.emotions.length > 3 && (
+              {/* Count unique mapped tags */}
+              {new Set((dream.emotions || []).map(e => getChildFriendlyEmotionLabel(e.name))).size > 3 && (
                 <span className="text-xs text-muted-foreground self-center px-1">
-                  +{dream.emotions.length - 3}
+                  +{new Set((dream.emotions || []).map(e => getChildFriendlyEmotionLabel(e.name))).size - 3}
                 </span>
               )}
             </div>
