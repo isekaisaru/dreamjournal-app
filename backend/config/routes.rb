@@ -14,6 +14,7 @@ Rails.application.routes.draw do
       get :analysis
     end
     collection do
+      post :preview_analysis
       get :my_dreams
       get :statuses # 一括ステータス取得用
       # /dreams/month/2023-05 のような形式でアクセス

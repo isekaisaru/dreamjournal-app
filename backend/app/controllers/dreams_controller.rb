@@ -145,6 +145,23 @@ class DreamsController < ApplicationController
     }, status: :ok
   end
 
+  # POST /dreams/preview_analysis
+  # DBに保存せずに分析のみ行い、結果を返します。
+  def preview_analysis
+    content = params[:content]
+    if content.blank?
+      return render json: { error: "ゆめの ないよう が ないよ" }, status: :unprocessable_content
+    end
+
+    result = DreamAnalysisService.analyze(content)
+    
+    if result[:error]
+      render json: { error: result[:error] }, status: :unprocessable_content
+    else
+      render json: result
+    end
+  end
+
   private
    
     # 認可されたパラメーターを取得する

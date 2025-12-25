@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 import { Dream, Emotion, DreamDraftData } from "../types";
-import { getEmotions } from "@/lib/apiClient";
+import { getEmotions, previewAnalysis } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { getEmotionColors } from "@/lib/emotionUtils";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
@@ -43,12 +43,18 @@ export default function DreamForm({
     []
   );
   const [isDraftApplied, setIsDraftApplied] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
       setContent(initialData.content || "");
       setSelectedEmotionIds(initialData.emotions?.map((e) => e.id) || []);
+      // Populate analysis state from initialData if available
+      if (initialData.analysis_json) {
+        setAnalysisText(initialData.analysis_json.analysis || initialData.analysis_json.text || "");
+        setSuggestedEmotionNames(initialData.analysis_json.emotion_tags || []);
+      }
     }
   }, [initialData]);
 
@@ -140,6 +146,26 @@ export default function DreamForm({
     );
   };
 
+  const handleAnalyze = async () => {
+    if (!content.trim()) {
+      toast.error("どんな ゆめ だったか おしえてね");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const result = await previewAnalysis(content);
+      setAnalysisText(result.analysis);
+      setSuggestedEmotionNames(result.emotion_tags);
+      toast.success("モルペウスが おへんじ したよ！");
+    } catch (error) {
+      console.error("Analysis failed:", error);
+      toast.error("モルペウスと おはなし できなかった...");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -206,33 +232,67 @@ export default function DreamForm({
           className="w-full p-2 border border-input bg-background text-foreground rounded focus:ring-2 focus:ring-ring focus:border-ring h-40"
           placeholder="どんな ゆめ だった？ おもいだせる だけ かいてみてね..."
         ></textarea>
+        {/* Analysis Button */}
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !content.trim()}
+            className={`
+                px-4 py-2 rounded-full font-bold text-sm transition-all shadow-md flex items-center gap-2
+                ${isAnalyzing
+                ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg hover:scale-105 active:scale-95"}
+              `}
+          >
+            {isAnalyzing ? (
+              <>
+                <span className="animate-spin text-lg">✨</span>
+                <span>かんがえ中...</span>
+              </>
+            ) : analysisText ? (
+              <>
+                <span className="text-lg">🔄</span>
+                <span>もういちど きく</span>
+              </>
+            ) : (
+              <>
+                <span className="text-lg">🔮</span>
+                <span>モルペウスに きく</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {analysisText && (
-        <div className="mb-6">
-          <label className="block mb-2 font-semibold text-card-foreground">
-            モルペウスの ゆめうらない
-          </label>
-          <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
-            <p className="whitespace-pre-wrap">{analysisText}</p>
-            {suggestedEmotionNames.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {suggestedEmotionNames.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            )}
+
+      {
+        analysisText && (
+          <div className="mb-6">
+            <label className="block mb-2 font-semibold text-card-foreground">
+              モルペウスの ゆめうらない
+            </label>
+            <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
+              <p className="whitespace-pre-wrap">{analysisText}</p>
+              {suggestedEmotionNames.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {suggestedEmotionNames.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              ないよう や タグ は、じぶんで なおせるよ。
+            </p>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            ないよう や タグ は、じぶんで なおせるよ。
-          </p>
-        </div>
-      )}
+        )
+      }
 
       <div className="mb-6">
         <label className="block mb-2 font-semibold text-card-foreground">
@@ -311,6 +371,6 @@ export default function DreamForm({
       >
         {isLoading ? "モルペウスが かんがえています..." : "ゆめを のこす"}
       </button>
-    </form>
+    </form >
   );
 }

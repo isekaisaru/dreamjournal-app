@@ -17,16 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// DreamAnalysis を動的インポート化
-const DreamAnalysis = dynamic(() => import("../../components/DreamAnalysis"), {
-  loading: () => (
-    <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm animate-pulse">
-      <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
-      <div className="h-10 bg-muted rounded w-full"></div>
-    </div>
-  ),
-  ssr: false, // サーバーサイドレンダリングを無効化
-});
+
 
 // Next.jsの新しいバージョンでは、Page Propsの`params`はPromiseになりました。
 // Client Componentでこれを利用するには、Reactの`use`フックを使います。
@@ -129,19 +120,6 @@ export default function EditDreamPage({
             json: dream.analysis_json,
             status: dream.analysis_status,
           })}
-          <DreamAnalysis
-            dreamId={dreamId}
-            hasContent={!!dream.content?.trim()}
-            initialAnalysis={{
-              analysis_json: {
-                analysis: dream.analysis_json?.analysis || "",
-                text: dream.analysis_json?.text || "",
-                emotion_tags: dream.analysis_json?.emotion_tags || [],
-              },
-              analysis_status: dream.analysis_status || null,
-              analyzed_at: dream.analyzed_at || null,
-            }}
-          />
         </>
       )}
 
