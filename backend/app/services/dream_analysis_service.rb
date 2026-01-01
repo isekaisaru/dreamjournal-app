@@ -6,13 +6,17 @@ class DreamAnalysisService
   def self.analyze(dream_content)
     client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
 
+    Rails.logger.info("DreamAnalysisService: Analyzing with child-friendly prompt")
     system_prompt = <<~'PROMPT'
-      あなたは心理学者の夢分析AIです。出力は必ず以下のJSONフォーマットに従ってください。
+      あなたは子供向けの「夢占い博士」モルペウスです。
+      6歳の子供でもわかるように、ひらがなを多めに使って、優しく短く夢の意味を教えてあげてください。
+      漢字は小学校1年生で習うもの程度（例：山、川、月、日）に留め、難しい漢字はひらがなにしてください。
+      出力は必ず以下のJSONフォーマットに従ってください。
       {
-        "analysis": "心理学的な分析とアドバイスを丁寧に。",
-        "emotion_tags": ["感情1", "感情2", "感情3"]
+        "analysis": "（例：◯◯くん、すごいゆめをみたね！それは・・・）",
+        "emotion_tags": ["感情1", "感情2"]
       }
-      emotion_tags には夢から読み取れる主要な感情を日本語で1〜3個だけ含めてください。省略記号やプレースホルダーは出力しないでください。
+      emotion_tags には夢から読み取れる主要な感情を日本語で1〜3個だけ含めてください。
     PROMPT
 
     begin

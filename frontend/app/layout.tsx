@@ -7,6 +7,7 @@ import Footer from "./Footer";
 import { Suspense } from "react";
 import Loading from "./loading";
 import { Providers } from "./providers";
+import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 
@@ -32,7 +33,9 @@ export default function RootLayout({
               <Suspense fallback={<Loading />}>{children}</Suspense>
             </main>
             <Footer />
+            {/* 全体で1つのインスタンスとしてマウント */}
           </div>
+          <PendingDreamsMonitor />
         </Providers>
       </body>
     </html>

@@ -34,14 +34,14 @@ export default function SearchBar({
             htmlFor="search-query"
             className="block text-sm font-medium text-card-foreground mb-1"
           >
-            キーワード
+            さがしたい ことば
           </label>
           <input
             id="search-query"
             name="query"
             type="text"
             defaultValue={normalizedQuery}
-            placeholder="キーワード、感情タグなどで検索"
+            placeholder="「ねこ」「こわい」など..."
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -50,7 +50,7 @@ export default function SearchBar({
             htmlFor="start-date"
             className="block text-sm font-medium text-card-foreground mb-1"
           >
-            開始日
+            いつから
           </label>
           <input
             id="start-date"
@@ -65,7 +65,7 @@ export default function SearchBar({
             htmlFor="end-date"
             className="block text-sm font-medium text-card-foreground mb-1"
           >
-            終了日
+            いつまで
           </label>
           <input
             id="end-date"
@@ -81,13 +81,13 @@ export default function SearchBar({
           href="/home"
           className="inline-flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground p-2 rounded text-sm"
         >
-          リセット
+          もどす
         </a>
         <button
           type="submit"
           className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded text-sm"
         >
-          検索
+          さがす
         </button>
       </div>
     </form>

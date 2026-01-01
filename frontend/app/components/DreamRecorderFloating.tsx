@@ -18,25 +18,20 @@ const DreamRecorderFloating: React.FC = () => {
     "idle"
   );
 
-  // Whisper 解析結果 → DreamForm へ受け渡し
+  // Whisper 解析結果 → 一覧画面へ遷移（非同期処理のため）
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
-      // sessionStorage に保存するデータを作成
-      const draftData: DreamDraftData = {
-        transcript: result.transcript,
-        analysis: result.analysis || null,
-        emotion_tags: result.emotion_tags || null,
-        timestamp: Date.now(),
-      };
+      // 成功メッセージを表示
+      toast.success(
+        result.message || "こえを きいたよ！ ちょっと まっててね。"
+      );
 
-      try {
-        sessionStorage.setItem("dream_draft_data", JSON.stringify(draftData));
-        toast.success("音声解析が完了しました。フォームに転送します。");
-        router.push("/dream/new");
-      } catch (e) {
-        console.error("Failed to save draft to sessionStorage", e);
-        toast.error("データの保存に失敗しました。");
-      }
+      // 一覧画面へリダイレクト（新しい夢が作成されているはず）
+      // 即時にリストを更新して、pending状態のカードを表示する
+      // 即時にリストを更新して、pending状態のカードを表示する
+      window.dispatchEvent(new Event("dream-created")); // PendingDreamsMonitorに通知
+      router.refresh();
+      router.push("/home");
     },
     [router]
   );
@@ -53,7 +48,7 @@ const DreamRecorderFloating: React.FC = () => {
         toast.error(
           err instanceof Error
             ? err.message
-            : "音声の解析に失敗しました。時間をおいて再度お試しください。"
+            : "ちょっと つかれちゃった みたい。あとで また はなしてね。"
         );
       } finally {
         setIsProcessing(false);
@@ -129,7 +124,7 @@ const DreamRecorderFloating: React.FC = () => {
         disabled={isProcessing}
         role="switch"
         aria-checked={status === "recording"}
-        aria-label={status === "recording" ? "録音を停止" : "録音を開始"}
+        aria-label={status === "recording" ? "とめる" : "おはなしする"}
         whileTap={{ scale: 0.9 }}
         animate={
           status === "recording"
@@ -166,22 +161,24 @@ const DreamRecorderFloating: React.FC = () => {
         {isProcessing ? (
           <>
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-lg font-bold">解析中...</span>
+            <span className="text-lg font-bold">
+              モルペウスが かんがえています...
+            </span>
           </>
         ) : status === "recording" ? (
           <>
             <Square className="h-6 w-6 fill-current" />
-            <span className="text-lg font-bold">停止する</span>
+            <span className="text-lg font-bold">とめる</span>
           </>
         ) : status === "preparing" ? (
           <>
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-lg font-bold">準備中...</span>
+            <span className="text-lg font-bold">じゅんび してるよ...</span>
           </>
         ) : (
           <>
             <Mic className="h-6 w-6" />
-            <span className="text-lg font-bold">録音する</span>
+            <span className="text-lg font-bold">おはなしする</span>
           </>
         )}
       </motion.button>

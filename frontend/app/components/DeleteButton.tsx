@@ -21,7 +21,7 @@ const DeleteButton = ({
       onClick={onClick}
       disabled={isLoading}
     >
-      削除
+      ごみばこへ
     </button>
   );
 };

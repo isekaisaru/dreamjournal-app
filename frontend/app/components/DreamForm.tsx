@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from "react";
 
 import { Dream, Emotion, DreamDraftData } from "../types";
-import { getEmotions } from "@/lib/apiClient";
+import { getEmotions, previewAnalysis } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { getEmotionColors } from "@/lib/emotionUtils";
+import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 
 interface DreamFormData {
   title: string;
@@ -42,12 +43,22 @@ export default function DreamForm({
     []
   );
   const [isDraftApplied, setIsDraftApplied] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title || "");
       setContent(initialData.content || "");
       setSelectedEmotionIds(initialData.emotions?.map((e) => e.id) || []);
+      // Populate analysis state from initialData if available
+      if (initialData.analysis_json) {
+        setAnalysisText(
+          initialData.analysis_json.analysis ||
+            initialData.analysis_json.text ||
+            ""
+        );
+        setSuggestedEmotionNames(initialData.analysis_json.emotion_tags || []);
+      }
     }
   }, [initialData]);
 
@@ -139,10 +150,30 @@ export default function DreamForm({
     );
   };
 
+  const handleAnalyze = async () => {
+    if (!content.trim()) {
+      toast.error("どんな ゆめ だったか おしえてね");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const result = await previewAnalysis(content);
+      setAnalysisText(result.analysis);
+      setSuggestedEmotionNames(result.emotion_tags);
+      toast.success("モルペウスが おへんじ したよ！");
+    } catch (error) {
+      console.error("Analysis failed:", error);
+      toast.error("モルペウスと おはなし できなかった...");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error("タイトルを入力してください。");
+      toast.error("ゆめの なまえ を かいてね");
       return;
     }
 
@@ -171,7 +202,7 @@ export default function DreamForm({
     >
       {isDraftApplied && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
-          音声入力の内容と分析結果を自動で読み込みました。必要に応じて編集してください。
+          モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
         </div>
       )}
       <div className="mb-4">
@@ -179,7 +210,7 @@ export default function DreamForm({
           htmlFor="dream-title"
           className="block mb-2 font-semibold text-card-foreground"
         >
-          タイトル
+          ゆめの なまえ
         </label>
         <input
           id="dream-title"
@@ -196,21 +227,54 @@ export default function DreamForm({
           htmlFor="dream-content"
           className="block mb-2 font-semibold text-card-foreground"
         >
-          夢の内容
+          どんな おはなし？
         </label>
         <textarea
           id="dream-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="w-full p-2 border border-input bg-background text-foreground rounded focus:ring-2 focus:ring-ring focus:border-ring h-40"
-          placeholder="見た夢の内容をできるだけ詳しく書いてみましょう..."
+          placeholder="どんな ゆめ だった？ おもいだせる だけ かいてみてね..."
         ></textarea>
+        {/* Analysis Button */}
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !content.trim()}
+            className={`
+                px-4 py-2 rounded-full font-bold text-sm transition-all shadow-md flex items-center gap-2
+                ${
+                  isAnalyzing
+                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg hover:scale-105 active:scale-95"
+                }
+              `}
+          >
+            {isAnalyzing ? (
+              <>
+                <span className="animate-spin text-lg">✨</span>
+                <span>かんがえ中...</span>
+              </>
+            ) : analysisText ? (
+              <>
+                <span className="text-lg">🔄</span>
+                <span>もういちど きく</span>
+              </>
+            ) : (
+              <>
+                <span className="text-lg">🔮</span>
+                <span>モルペウスに きく</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {analysisText && (
         <div className="mb-6">
           <label className="block mb-2 font-semibold text-card-foreground">
-            AIによる夢の分析
+            モルペウスの ゆめうらない
           </label>
           <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
             <p className="whitespace-pre-wrap">{analysisText}</p>
@@ -228,43 +292,96 @@ export default function DreamForm({
             )}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            分析内容と感情タグは編集や削除が可能です。あなたの体験に合わせて調整してください。
+            ないよう や タグ は、じぶんで なおせるよ。
           </p>
         </div>
       )}
 
       <div className="mb-6">
         <label className="block mb-2 font-semibold text-card-foreground">
-          感情タグ
+          この ゆめ の きもち は どれ？
         </label>
         {isFetchingEmotions ? (
           <div className="text-muted-foreground">読み込み中...</div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {emotions.length > 0 ? (
-              emotions.map((emotion) => {
-                const isSelected = selectedEmotionIds.includes(emotion.id);
-                const colors = getEmotionColors(emotion.name);
+          <div className="grid grid-cols-2 gap-3">
+            {(() => {
+              // 1. Group emotions by their display label to deduplicate visual options
+              const groupedEmotions: Record<
+                string,
+                {
+                  displayLabel: string;
+                  ids: number[];
+                  representativeId: number;
+                }
+              > = {};
+
+              emotions.forEach((emotion) => {
+                const label = getChildFriendlyEmotionLabel(emotion.name);
+                if (!groupedEmotions[label]) {
+                  groupedEmotions[label] = {
+                    displayLabel: label,
+                    ids: [],
+                    representativeId: emotion.id,
+                  };
+                }
+                groupedEmotions[label].ids.push(emotion.id);
+              });
+
+              const uniqueGroups = Object.values(groupedEmotions);
+
+              if (uniqueGroups.length === 0) {
+                return (
+                  <div className="text-muted-foreground col-span-full">
+                    感情タグがありません。
+                  </div>
+                );
+              }
+
+              return uniqueGroups.map((group) => {
+                // If ANY of the IDs in this group are selected, the visual tag is selected
+                const isSelected = group.ids.some((id) =>
+                  selectedEmotionIds.includes(id)
+                );
+
+                const baseStyle = "border-2 transition-all duration-200";
+                const selectedStyle =
+                  "bg-primary/10 border-primary text-primary font-bold shadow-inner ring-2 ring-primary/20";
+                const unselectedStyle =
+                  "bg-card border-border hover:bg-accent hover:border-accent-foreground/50 text-foreground";
+
                 return (
                   <label
-                    key={emotion.id}
-                    className={`flex items-center justify-center p-2 rounded-md border cursor-pointer transition-colors text-sm font-medium ${isSelected ? `${colors.bg} ${colors.border} ${colors.text}`.trim() : "bg-background border-input hover:bg-muted text-foreground"}`}
+                    key={group.displayLabel}
+                    className={`flex items-center justify-center p-4 rounded-xl cursor-pointer ${baseStyle} ${isSelected ? selectedStyle : unselectedStyle}`}
                   >
                     <input
                       type="checkbox"
                       className="hidden"
                       checked={isSelected}
-                      onChange={() => handleEmotionChange(emotion.id)}
+                      onChange={() => {
+                        // Toggle logic:
+                        // If selected, remove ALL ids belonging to this group (unselect 'Happy' and 'Joy')
+                        // If unselected, add the representative ID (just 'Happy')
+                        if (isSelected) {
+                          setSelectedEmotionIds((prev) =>
+                            prev.filter((id) => !group.ids.includes(id))
+                          );
+                        } else {
+                          setSelectedEmotionIds((prev) => [
+                            ...prev,
+                            group.representativeId,
+                          ]);
+                        }
+                      }}
                     />
-                    <span className="whitespace-nowrap">{emotion.name}</span>
+                    <span className="text-base select-none">
+                      {group.displayLabel}
+                    </span>
                   </label>
                 );
-              })
-            ) : (
-              <div className="text-muted-foreground col-span-full">
-                感情タグがありません。
-              </div>
-            )}
+              });
+            })()}
           </div>
         )}
       </div>
@@ -278,7 +395,7 @@ export default function DreamForm({
         }`}
         disabled={isLoading}
       >
-        {isLoading ? "保存中..." : "保存"}
+        {isLoading ? "モルペウスが かんがえています..." : "ゆめを のこす"}
       </button>
     </form>
   );

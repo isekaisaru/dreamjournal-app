@@ -73,8 +73,8 @@ describe("DreamCard", () => {
     render(<DreamCard dream={dream} />);
 
     // Assert
-    expect(screen.getByText("嬉しい")).toBeInTheDocument();
-    expect(screen.getByText("悲しい")).toBeInTheDocument();
+    expect(screen.getByText("😊 うれしい")).toBeInTheDocument();
+    expect(screen.getByText("😢 かなしい")).toBeInTheDocument();
   });
 
   test("AAA: 詳細ページへのリンクがあり、href に id が入っている（リンク/イベント）", async () => {

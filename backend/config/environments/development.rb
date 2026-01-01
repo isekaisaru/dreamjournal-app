@@ -45,6 +45,9 @@ Rails.application.configure do
   # ログ（SQLやJobの箇所をハイライト）
   config.active_record.verbose_query_logs = true
   config.active_job.verbose_enqueue_logs = true
+  
+  # 非同期ジョブのアダプター（開発環境はインメモリの非同期プール）
+  config.active_job.queue_adapter = :async
 
   # ログレベル（開発は :debug 推奨）
   config.log_level = :debug

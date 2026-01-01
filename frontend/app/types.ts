@@ -49,11 +49,16 @@ export type RegisterCredentials = {
 };
 
 // 音声解析結果（Whisper → Rails → Next API のレスポンス）
-export type AnalysisResult = {
-  transcript: string;
-  analysis: string;
-  emotion_tags: string[];
-};
+// 音声解析APIのレスポンス（非同期処理後）
+export interface AnalysisResult {
+  id: number;
+  message: string;
+  status: "pending" | "done" | "failed";
+  // 後方互換性のため（使う箇所があれば）
+  transcript?: string;
+  analysis?: string;
+  emotion_tags?: string[];
+}
 
 // sessionStorage に一時保存するドラフトデータの型
 export interface DreamDraftData {

@@ -17,17 +17,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// DreamAnalysis を動的インポート化
-const DreamAnalysis = dynamic(() => import("../../components/DreamAnalysis"), {
-  loading: () => (
-    <div className="mt-8 p-6 border border-border rounded-lg bg-card shadow-sm animate-pulse">
-      <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
-      <div className="h-10 bg-muted rounded w-full"></div>
-    </div>
-  ),
-  ssr: false, // サーバーサイドレンダリングを無効化
-});
-
 // Next.jsの新しいバージョンでは、Page Propsの`params`はPromiseになりました。
 // Client Componentでこれを利用するには、Reactの`use`フックを使います。
 export default function EditDreamPage({
@@ -113,7 +102,7 @@ export default function EditDreamPage({
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
       <h1 className="text-3xl font-bold mb-6 text-foreground">
-        夢の詳細・編集
+        ゆめ の なおし
       </h1>
 
       <DreamForm
@@ -129,19 +118,6 @@ export default function EditDreamPage({
             json: dream.analysis_json,
             status: dream.analysis_status,
           })}
-          <DreamAnalysis
-            dreamId={dreamId}
-            hasContent={!!dream.content?.trim()}
-            initialAnalysis={{
-              analysis_json: {
-                analysis: dream.analysis_json?.analysis || "",
-                text: dream.analysis_json?.text || "",
-                emotion_tags: dream.analysis_json?.emotion_tags || [],
-              },
-              analysis_status: dream.analysis_status || null,
-              analyzed_at: dream.analyzed_at || null,
-            }}
-          />
         </>
       )}
 
@@ -155,21 +131,19 @@ export default function EditDreamPage({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>本当に削除しますか？</AlertDialogTitle>
+            <AlertDialogTitle>ほんとうに けしちゃう？</AlertDialogTitle>
             <AlertDialogDescription>
-              夢「{dream.title}」を削除します。この操作は元に戻せません。
+              「{dream.title}」を ごみばこ に すてるよ？ もとには もどせないよ。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              キャンセル
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>やめる</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "削除中..." : "削除する"}
+              {isDeleting ? "けしています..." : "けしてしまう"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

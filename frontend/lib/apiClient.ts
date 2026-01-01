@@ -38,7 +38,6 @@ export async function apiFetch<T>(
   const { token, ...fetchOptions } = options;
 
   const defaultHeaders: HeadersInit = {
-    "Content-Type": "application/json",
     Accept: "application/json",
   };
 
@@ -53,17 +52,26 @@ export async function apiFetch<T>(
     credentials: "include",
   };
 
+  // GET/HEAD 以外の場合は Content-Type を付与 (ユーザーが上書き可能)
+  const method = (fetchOptions.method || "GET").toUpperCase();
+  if (!["GET", "HEAD"].includes(method)) {
+    (finalOptions.headers as Record<string, string>)["Content-Type"] =
+      "application/json";
+  }
+
   if (isServer) {
-    // Server-side: Manually add cookie and disable cache
+    // Server-side: Manually add cookie
     if (token) {
       (finalOptions.headers as Record<string, string>)["Cookie"] =
         `access_token=${token}`;
     }
-    finalOptions.cache = "no-store";
   } else {
     // Client-side: Browser handles credentials
     finalOptions.credentials = "include";
   }
+
+  // Always disable cache to ensure fresh data (Fix Stale Data Issue)
+  finalOptions.cache = "no-store";
 
   const response = await fetch(url, finalOptions);
 
@@ -124,7 +132,8 @@ export async function getMyDreams(
 ): Promise<Dream[]> {
   const queryString = searchParams.toString();
   const endpoint = queryString ? `/dreams?${queryString}` : "/dreams";
-  return apiFetch(endpoint, { token });
+  // 明示的にキャッシュを無効化 (User Request No.2)
+  return apiFetch(endpoint, { token, cache: "no-store" });
 }
 
 /**
@@ -181,6 +190,18 @@ export async function createDream(dream: DreamInput): Promise<Dream> {
   });
 }
 
+export async function previewAnalysis(
+  content: string
+): Promise<{ analysis: string; emotion_tags: string[] }> {
+  return apiFetch<{ analysis: string; emotion_tags: string[] }>(
+    "/dreams/preview_analysis",
+    {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }
+  );
+}
+
 export async function verifyAuth(): Promise<{ user: User } | null> {
   try {
     const response = await apiFetch<{ user: BackendUser }>("/auth/verify");
@@ -200,7 +221,7 @@ export async function verifyAuth(): Promise<{ user: User } | null> {
 
 const apiClient = {
   get: <T>(url: string, options?: ApiFetchOptions) =>
-    apiFetch<T>(url, { ...options, method: "GET" }),
+    apiFetch<T>(url, { ...options, method: "GET", cache: "no-store" }),
   post: <T>(url: string, data?: any, options?: ApiFetchOptions) =>
     apiFetch<T>(url, {
       ...options,
