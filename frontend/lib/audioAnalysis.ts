@@ -4,7 +4,7 @@ export async function uploadAndAnalyzeAudio(
   audioBlob: Blob
 ): Promise<AnalysisResult> {
   const formData = new FormData();
-  
+
   // Blobの型から拡張子を決定 (Safariは audio/mp4 や audio/aac になるため)
   let ext = "webm";
   if (audioBlob.type.includes("mp4") || audioBlob.type.includes("m4a")) {

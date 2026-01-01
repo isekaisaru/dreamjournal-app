@@ -20,11 +20,11 @@ const generateMathProblem = () => {
 const SettingsPage = () => {
   const { isLoggedIn, userId, logout, deleteUser } = useAuth();
   const router = useRouter();
-  
+
   // モーダルとロックの状態
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [step, setStep] = useState<"lock" | "confirm">("lock"); // lock: 計算, confirm: 最終確認
-  
+
   // ジュニアロック用
   const [mathProblem, setMathProblem] = useState({ question: "", answer: "" });
   const [userAnswer, setUserAnswer] = useState("");
@@ -81,8 +81,8 @@ const SettingsPage = () => {
       {/* ヘッダーエリア */}
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border/50">
         <div className="container max-w-2xl mx-auto px-4 h-16 flex items-center">
-          <Link 
-            href="/my-dreams" 
+          <Link
+            href="/my-dreams"
             className="flex items-center text-muted-foreground hover:text-primary transition-colors pr-4"
           >
             <ChevronLeft className="w-5 h-5 mr-1" />
@@ -95,30 +95,34 @@ const SettingsPage = () => {
       </header>
 
       <main className="container max-w-2xl mx-auto px-4 py-8 space-y-8">
-        
         {/* 安心感を与えるメッセージセクション */}
         <section className="space-y-4">
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-3 text-primary flex items-center">
-              <span className="text-2xl mr-2">🛡️</span> 
+              <span className="text-2xl mr-2">🛡️</span>
               あんしんして つかうために
             </h2>
             <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-              このアプリは、あなたの ゆめを 大切にしまっておく場所です。<br/>
-              かぞくみんなで、あんしんして つかえるように、<br />
+              このアプリは、あなたの ゆめを 大切にしまっておく場所です。
+              <br />
+              かぞくみんなで、あんしんして つかえるように、
+              <br />
               いくつかの おやくそくが あります。
             </p>
           </div>
 
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-3 text-secondary flex items-center">
-              <span className="text-2xl mr-2">🤫</span> 
+              <span className="text-2xl mr-2">🤫</span>
               ゆめは じぶんだけの ほうせき
             </h2>
             <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-              あなたが かいた ゆめは、あなただけのものです。<br/>
-              ほかのひとに かってに 見られたり、<br/>
-              どこかに いっちゃったり しないように、<br/>
+              あなたが かいた ゆめは、あなただけのものです。
+              <br />
+              ほかのひとに かってに 見られたり、
+              <br />
+              どこかに いっちゃったり しないように、
+              <br />
               しっかり まもられています。
             </p>
           </div>
@@ -129,14 +133,17 @@ const SettingsPage = () => {
           <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">
             アカウントの せってい
           </h3>
-          
+
           <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm">
             <div className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="font-bold text-base mb-1">アカウントをさくじょする</h4>
+                  <h4 className="font-bold text-base mb-1">
+                    アカウントをさくじょする
+                  </h4>
                   <p className="text-xs text-muted-foreground">
-                    これまでの ゆめが すべて きえてしまいます。<br/>
+                    これまでの ゆめが すべて きえてしまいます。
+                    <br />
                     もとには もどせません。
                   </p>
                 </div>
@@ -157,14 +164,12 @@ const SettingsPage = () => {
             Dream Journal for Families
           </p>
         </div>
-
       </main>
 
       {/* 削除確認モーダル */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl border border-border/50 overflow-hidden animate-in zoom-in-95 duration-200">
-            
             {/* Step 1: ジュニアロック (計算問題) */}
             {step === "lock" && (
               <div className="p-6 text-center space-y-6">
@@ -172,13 +177,18 @@ const SettingsPage = () => {
                   🔐
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-bold text-lg">おとなのひとに<br/>きいてみてね</h3>
+                  <h3 className="font-bold text-lg">
+                    おとなのひとに
+                    <br />
+                    きいてみてね
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    これは つぎに すすむための カギです。<br/>
+                    これは つぎに すすむための カギです。
+                    <br />
                     こたえは なにかな？
                   </p>
                 </div>
-                
+
                 <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
                   <div className="text-3xl font-mono font-bold tracking-wider text-center text-primary mb-4">
                     {mathProblem.question}
@@ -223,10 +233,14 @@ const SettingsPage = () => {
                   ⚠️
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-bold text-lg text-destructive">ほんとうに けしますか？</h3>
+                  <h3 className="font-bold text-lg text-destructive">
+                    ほんとうに けしますか？
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    アカウントを さくじょすると、<br/>
-                    これまでの ゆめ日記が<br/>
+                    アカウントを さくじょすると、
+                    <br />
+                    これまでの ゆめ日記が
+                    <br />
                     <strong>ぜんぶ きえてしまいます。</strong>
                   </p>
                   <p className="text-xs text-muted-foreground pt-2">
@@ -240,7 +254,9 @@ const SettingsPage = () => {
                     disabled={isDeleting}
                     className="w-full py-3 px-4 rounded-xl bg-destructive text-destructive-foreground font-bold hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-destructive/25"
                   >
-                    {isDeleting ? "さくじょ中..." : "はい、すべて さくじょします"}
+                    {isDeleting
+                      ? "さくじょ中..."
+                      : "はい、すべて さくじょします"}
                   </button>
                   <button
                     onClick={() => setIsDeleteModalOpen(false)}

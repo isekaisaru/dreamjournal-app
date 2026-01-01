@@ -52,7 +52,11 @@ export default function DreamForm({
       setSelectedEmotionIds(initialData.emotions?.map((e) => e.id) || []);
       // Populate analysis state from initialData if available
       if (initialData.analysis_json) {
-        setAnalysisText(initialData.analysis_json.analysis || initialData.analysis_json.text || "");
+        setAnalysisText(
+          initialData.analysis_json.analysis ||
+            initialData.analysis_json.text ||
+            ""
+        );
         setSuggestedEmotionNames(initialData.analysis_json.emotion_tags || []);
       }
     }
@@ -176,9 +180,9 @@ export default function DreamForm({
     const analysisPayload =
       analysisText || suggestedEmotionNames.length > 0
         ? {
-          analysis: analysisText || "",
-          emotion_tags: suggestedEmotionNames,
-        }
+            analysis: analysisText || "",
+            emotion_tags: suggestedEmotionNames,
+          }
         : undefined;
 
     onSubmit({
@@ -240,9 +244,11 @@ export default function DreamForm({
             disabled={isAnalyzing || !content.trim()}
             className={`
                 px-4 py-2 rounded-full font-bold text-sm transition-all shadow-md flex items-center gap-2
-                ${isAnalyzing
-                ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg hover:scale-105 active:scale-95"}
+                ${
+                  isAnalyzing
+                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg hover:scale-105 active:scale-95"
+                }
               `}
           >
             {isAnalyzing ? (
@@ -265,34 +271,31 @@ export default function DreamForm({
         </div>
       </div>
 
-
-      {
-        analysisText && (
-          <div className="mb-6">
-            <label className="block mb-2 font-semibold text-card-foreground">
-              モルペウスの ゆめうらない
-            </label>
-            <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
-              <p className="whitespace-pre-wrap">{analysisText}</p>
-              {suggestedEmotionNames.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {suggestedEmotionNames.map((tag) => (
-                    <span
-                      key={tag}
-                      className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              ないよう や タグ は、じぶんで なおせるよ。
-            </p>
+      {analysisText && (
+        <div className="mb-6">
+          <label className="block mb-2 font-semibold text-card-foreground">
+            モルペウスの ゆめうらない
+          </label>
+          <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
+            <p className="whitespace-pre-wrap">{analysisText}</p>
+            {suggestedEmotionNames.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {suggestedEmotionNames.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
-        )
-      }
+          <p className="mt-2 text-xs text-muted-foreground">
+            ないよう や タグ は、じぶんで なおせるよ。
+          </p>
+        </div>
+      )}
 
       <div className="mb-6">
         <label className="block mb-2 font-semibold text-card-foreground">
@@ -304,12 +307,23 @@ export default function DreamForm({
           <div className="grid grid-cols-2 gap-3">
             {(() => {
               // 1. Group emotions by their display label to deduplicate visual options
-              const groupedEmotions: Record<string, { displayLabel: string; ids: number[]; representativeId: number }> = {};
+              const groupedEmotions: Record<
+                string,
+                {
+                  displayLabel: string;
+                  ids: number[];
+                  representativeId: number;
+                }
+              > = {};
 
               emotions.forEach((emotion) => {
                 const label = getChildFriendlyEmotionLabel(emotion.name);
                 if (!groupedEmotions[label]) {
-                  groupedEmotions[label] = { displayLabel: label, ids: [], representativeId: emotion.id };
+                  groupedEmotions[label] = {
+                    displayLabel: label,
+                    ids: [],
+                    representativeId: emotion.id,
+                  };
                 }
                 groupedEmotions[label].ids.push(emotion.id);
               });
@@ -326,11 +340,15 @@ export default function DreamForm({
 
               return uniqueGroups.map((group) => {
                 // If ANY of the IDs in this group are selected, the visual tag is selected
-                const isSelected = group.ids.some(id => selectedEmotionIds.includes(id));
+                const isSelected = group.ids.some((id) =>
+                  selectedEmotionIds.includes(id)
+                );
 
                 const baseStyle = "border-2 transition-all duration-200";
-                const selectedStyle = "bg-primary/10 border-primary text-primary font-bold shadow-inner ring-2 ring-primary/20";
-                const unselectedStyle = "bg-card border-border hover:bg-accent hover:border-accent-foreground/50 text-foreground";
+                const selectedStyle =
+                  "bg-primary/10 border-primary text-primary font-bold shadow-inner ring-2 ring-primary/20";
+                const unselectedStyle =
+                  "bg-card border-border hover:bg-accent hover:border-accent-foreground/50 text-foreground";
 
                 return (
                   <label
@@ -342,17 +360,24 @@ export default function DreamForm({
                       className="hidden"
                       checked={isSelected}
                       onChange={() => {
-                        // Toggle logic: 
+                        // Toggle logic:
                         // If selected, remove ALL ids belonging to this group (unselect 'Happy' and 'Joy')
                         // If unselected, add the representative ID (just 'Happy')
                         if (isSelected) {
-                          setSelectedEmotionIds(prev => prev.filter(id => !group.ids.includes(id)));
+                          setSelectedEmotionIds((prev) =>
+                            prev.filter((id) => !group.ids.includes(id))
+                          );
                         } else {
-                          setSelectedEmotionIds(prev => [...prev, group.representativeId]);
+                          setSelectedEmotionIds((prev) => [
+                            ...prev,
+                            group.representativeId,
+                          ]);
                         }
                       }}
                     />
-                    <span className="text-base select-none">{group.displayLabel}</span>
+                    <span className="text-base select-none">
+                      {group.displayLabel}
+                    </span>
                   </label>
                 );
               });
@@ -363,14 +388,15 @@ export default function DreamForm({
 
       <button
         type="submit"
-        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${isLoading
-          ? "bg-muted text-muted-foreground cursor-not-allowed"
-          : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
-          }`}
+        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${
+          isLoading
+            ? "bg-muted text-muted-foreground cursor-not-allowed"
+            : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
+        }`}
         disabled={isLoading}
       >
         {isLoading ? "モルペウスが かんがえています..." : "ゆめを のこす"}
       </button>
-    </form >
+    </form>
   );
 }

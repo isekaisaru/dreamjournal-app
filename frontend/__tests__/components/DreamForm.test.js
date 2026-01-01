@@ -144,8 +144,12 @@ describe("DreamForm", () => {
     expect(screen.getByDisplayValue("初期タイトル")).toBeInTheDocument();
     expect(screen.getByDisplayValue("初期コンテンツ")).toBeInTheDocument();
 
-    const wonder = await screen.findByRole("checkbox", { name: "😵 わからない" });
-    const anxiety = await screen.findByRole("checkbox", { name: "😓 しんぱい" });
+    const wonder = await screen.findByRole("checkbox", {
+      name: "😵 わからない",
+    });
+    const anxiety = await screen.findByRole("checkbox", {
+      name: "😓 しんぱい",
+    });
     expect(wonder).toBeChecked();
     expect(anxiety).not.toBeChecked();
   });

@@ -14,7 +14,9 @@ export default async function Header() {
           className="flex items-center gap-2 text-primary hover:text-primary/90 transition-opacity"
         >
           <Moon className="text-blue-300" size={32} />
-          <span className="text-2xl font-extrabold tracking-tight">ユメログ</span>
+          <span className="text-2xl font-extrabold tracking-tight">
+            ユメログ
+          </span>
           <Sparkles className="text-yellow-300" size={24} />
         </Link>
       </div>

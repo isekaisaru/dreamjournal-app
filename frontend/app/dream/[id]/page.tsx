@@ -17,8 +17,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-
-
 // Next.jsの新しいバージョンでは、Page Propsの`params`はPromiseになりました。
 // Client Componentでこれを利用するには、Reactの`use`フックを使います。
 export default function EditDreamPage({
@@ -139,9 +137,7 @@ export default function EditDreamPage({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              やめる
-            </AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>やめる</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               disabled={isDeleting}

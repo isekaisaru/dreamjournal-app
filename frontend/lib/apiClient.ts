@@ -190,11 +190,16 @@ export async function createDream(dream: DreamInput): Promise<Dream> {
   });
 }
 
-export async function previewAnalysis(content: string): Promise<{ analysis: string; emotion_tags: string[] }> {
-  return apiFetch<{ analysis: string; emotion_tags: string[] }>("/dreams/preview_analysis", {
-    method: "POST",
-    body: JSON.stringify({ content }),
-  });
+export async function previewAnalysis(
+  content: string
+): Promise<{ analysis: string; emotion_tags: string[] }> {
+  return apiFetch<{ analysis: string; emotion_tags: string[] }>(
+    "/dreams/preview_analysis",
+    {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }
+  );
 }
 
 export async function verifyAuth(): Promise<{ user: User } | null> {

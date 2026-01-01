@@ -5,7 +5,15 @@ import { useRouter, usePathname } from "next/navigation";
 import { Button } from "./ui/button";
 import { clientLogout } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
-import { House, Pencil, Book, Settings, LogOut, LogIn, UserPlus } from "lucide-react";
+import {
+  House,
+  Pencil,
+  Book,
+  Settings,
+  LogOut,
+  LogIn,
+  UserPlus,
+} from "lucide-react";
 
 interface AuthNavProps {
   isAuthenticated: boolean;
@@ -35,7 +43,8 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
     label: string;
     variant?: "default" | "admin";
   }) => {
-    const isActive = pathname === href || (href !== "/" && pathname?.startsWith(href));
+    const isActive =
+      pathname === href || (href !== "/" && pathname?.startsWith(href));
     // おとなのきまり（admin）は少し目立たなく、通常（default）は子ども向けにわかりやすく
     const activeStyle =
       variant === "default"
@@ -50,8 +59,9 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
     return (
       <Link href={href}>
         <div
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition-all duration-200 ${isActive ? activeStyle : inactiveStyle
-            }`}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition-all duration-200 ${
+            isActive ? activeStyle : inactiveStyle
+          }`}
         >
           <Icon size={variant === "default" ? 20 : 18} />
           <span className={variant === "default" ? "text-sm" : "text-xs"}>
@@ -89,7 +99,12 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
 
       {/* 管理（右側）：おわり・設定 */}
       <div className="flex items-center gap-2 md:ml-auto">
-        <NavItem href="/settings" icon={Settings} label="おとなのきまり" variant="admin" />
+        <NavItem
+          href="/settings"
+          icon={Settings}
+          label="おとなのきまり"
+          variant="admin"
+        />
 
         <Button
           onClick={handleLogout}
