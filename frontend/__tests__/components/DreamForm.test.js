@@ -37,8 +37,8 @@ describe("DreamForm", () => {
     render(<DreamForm onSubmit={onSubmit} />);
 
     // Assert
-    const happy = await screen.findByRole("checkbox", { name: "嬉しい" });
-    const sad = await screen.findByRole("checkbox", { name: "悲しい" });
+    const happy = await screen.findByRole("checkbox", { name: "😊 うれしい" });
+    const sad = await screen.findByRole("checkbox", { name: "😢 かなしい" });
     expect(happy).toBeInTheDocument();
     expect(sad).toBeInTheDocument();
 
@@ -60,17 +60,19 @@ describe("DreamForm", () => {
     render(<DreamForm onSubmit={onSubmit} />);
 
     // Wait for emotions
-    const fun = await screen.findByRole("checkbox", { name: "楽しい" });
+    const fun = await screen.findByRole("checkbox", { name: "😆 たのしい" });
 
-    // Fill inputs
-    const titleInput = screen.getByLabelText("タイトル");
-    const contentInput = screen.getByLabelText("夢の内容");
+    // The previous error in DreamCard showed "😊 うれしい". This suggests sticking to the emoji versions.
+
+    // Let's update the selector to "ゆめの なまえ" and "どんな おはなし？".
+    const titleInput = screen.getByLabelText("ゆめの なまえ");
+    const contentInput = screen.getByLabelText("どんな おはなし？");
     await user.type(titleInput, "  テストタイトル  ");
     await user.type(contentInput, "  テスト内容  ");
     await user.click(fun);
 
     // Act
-    await user.click(screen.getByRole("button", { name: "保存" }));
+    await user.click(screen.getByRole("button", { name: "ゆめを のこす" }));
 
     // Assert
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -90,12 +92,14 @@ describe("DreamForm", () => {
     render(<DreamForm onSubmit={onSubmit} />);
 
     // Fill title with spaces to bypass HTML required check but fail trim validation
-    const titleInput = screen.getByLabelText("タイトル");
+    // Fill title with spaces to bypass HTML required check but fail trim validation
+    const titleInput = screen.getByLabelText("ゆめの なまえ");
     await user.type(titleInput, "   ");
-    await user.click(screen.getByRole("button", { name: "保存" }));
+    await user.click(screen.getByRole("button", { name: "ゆめを のこす" }));
 
     // Assert
-    expect(toast.error).toHaveBeenCalledWith("タイトルを入力してください。");
+    // Assert
+    expect(toast.error).toHaveBeenCalledWith("ゆめの なまえ を かいてね");
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -140,8 +144,8 @@ describe("DreamForm", () => {
     expect(screen.getByDisplayValue("初期タイトル")).toBeInTheDocument();
     expect(screen.getByDisplayValue("初期コンテンツ")).toBeInTheDocument();
 
-    const wonder = await screen.findByRole("checkbox", { name: "不思議" });
-    const anxiety = await screen.findByRole("checkbox", { name: "不安" });
+    const wonder = await screen.findByRole("checkbox", { name: "😵 わからない" });
+    const anxiety = await screen.findByRole("checkbox", { name: "😓 しんぱい" });
     expect(wonder).toBeChecked();
     expect(anxiety).not.toBeChecked();
   });

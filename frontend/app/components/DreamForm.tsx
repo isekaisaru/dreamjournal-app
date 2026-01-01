@@ -169,7 +169,7 @@ export default function DreamForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      toast.error("たいとる を かいてね");
+      toast.error("ゆめの なまえ を かいてね");
       return;
     }
 
