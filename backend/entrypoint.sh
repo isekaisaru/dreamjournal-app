@@ -109,11 +109,17 @@ fi
 # - 初回起動でも再起動でも同じコマンドで対応可能
 
 echo "🗄️ データベース準備中..."
-if bundle exec rails db:prepare; then
-    echo "✅ データベース準備完了"
+# 本番環境(Render)では Pre-Deploy Command でマイグレーションを行うため、
+# ここでは開発環境のみ実行するように変更（起動時の競合・タイムアウト回避）
+if [ "$RAILS_ENV" = "development" ]; then
+    if bundle exec rails db:prepare; then
+        echo "✅ [開発環境] データベース準備完了"
+    else
+        echo "❌ [開発環境] データベース準備エラー"
+        exit 1
+    fi
 else
-    echo "❌ データベース準備エラー"
-    exit 1
+    echo "ℹ️  [本番環境] entrypointでのdb:prepareをスキップします (Pre-Deploy Commandに委譲)"
 fi
 
 # ========================================
