@@ -110,7 +110,7 @@ fi
 
 echo "🗄️ データベース準備中..."
 # 本番環境(Render)では Pre-Deploy Command でマイグレーションを行うため、
-# ここでは開発環境のみ実行するように変更（起動時の競合・タイムアウト回避）
+# 基本はスキップするが、Freeプラン対策として RUN_MIGRATIONS=true の場合のみ実行する
 if [ "$RAILS_ENV" = "development" ]; then
     if bundle exec rails db:prepare; then
         echo "✅ [開発環境] データベース準備完了"
@@ -119,7 +119,17 @@ if [ "$RAILS_ENV" = "development" ]; then
         exit 1
     fi
 else
-    echo "ℹ️  [本番環境] entrypointでのdb:prepareをスキップします (Pre-Deploy Commandに委譲)"
+    if [ "$RUN_MIGRATIONS" = "true" ]; then
+        echo "🔄 [本番環境] RUN_MIGRATIONS=true を検出 - マイグレーションを実行します..."
+        if bundle exec rails db:migrate; then
+            echo "✅ [本番環境] マイグレーション完了"
+        else
+            echo "❌ [本番環境] マイグレーション失敗"
+            exit 1
+        fi
+    else
+        echo "ℹ️  [本番環境] 自動マイグレーションをスキップします (RUN_MIGRATIONS != true)"
+    fi
 fi
 
 # ========================================
