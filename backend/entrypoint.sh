@@ -77,16 +77,19 @@ fi
 echo "🔌 データベース接続待機中..."
 echo "🔌 データベース接続待機中..."
 # Render Free Tier対策: DATABASE_URLがあっても必ず接続確認を行う
-# 特にコールドスタート時はDB接続確立まで時間がかかるため
-max_attempts=30
+# 特にコールドスタート時はDB接続確立まで時間がかかるため(最大3分待機)
+max_attempts=90
 attempt=1
 
 while [ $attempt -le $max_attempts ]; do
     if [ -n "$DATABASE_URL" ]; then
         # pg_isready は接続文字列を受け取れる
-        if pg_isready -d "$DATABASE_URL" >/dev/null 2>&1; then
+        # 失敗時の理由を知るために stderr を表示する
+        if pg_isready -d "$DATABASE_URL"; then
              echo "✅ データベース接続成功 (${attempt}回目の試行)"
              break
+        else
+             echo "⚠️  接続トライ ${attempt}: pg_isready が失敗しました"
         fi
     else
         # ローカルDocker環境向け
