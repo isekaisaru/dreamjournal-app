@@ -75,28 +75,35 @@ fi
 # - 接続エラーでの起動失敗を防ぐためのリトライ機構
 
 echo "🔌 データベース接続待機中..."
-if [ -n "$DATABASE_URL" ]; then
-    echo "✅ DATABASE_URL使用 - 接続待機をスキップします"
-else
-    # ローカルDocker環境向けの接続待機
-    max_attempts=30
-    attempt=1
+echo "🔌 データベース接続待機中..."
+# Render Free Tier対策: DATABASE_URLがあっても必ず接続確認を行う
+# 特にコールドスタート時はDB接続確立まで時間がかかるため
+max_attempts=30
+attempt=1
 
-    while [ $attempt -le $max_attempts ]; do
+while [ $attempt -le $max_attempts ]; do
+    if [ -n "$DATABASE_URL" ]; then
+        # pg_isready は接続文字列を受け取れる
+        if pg_isready -d "$DATABASE_URL" >/dev/null 2>&1; then
+             echo "✅ データベース接続成功 (${attempt}回目の試行)"
+             break
+        fi
+    else
+        # ローカルDocker環境向け
         if PGPASSWORD="$POSTGRES_PASSWORD" psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1;" >/dev/null 2>&1; then
             echo "✅ データベース接続成功 (${attempt}回目の試行)"
             break
         fi
-        
-        echo "⏳ データベース接続待機... (${attempt}/${max_attempts})"
-        sleep 1
-        attempt=$((attempt + 1))
-    done
-
-    if [ $attempt -gt $max_attempts ]; then
-        echo "❌ データベース接続タイムアウト - 30秒以内に接続できませんでした"
-        exit 1
     fi
+    
+    echo "⏳ データベース接続待機... (${attempt}/${max_attempts})"
+    sleep 2 
+    attempt=$((attempt + 1))
+done
+
+if [ $attempt -gt $max_attempts ]; then
+    echo "❌ データベース接続タイムアウト - 接続できませんでした"
+    exit 1
 fi
 
 # ========================================
