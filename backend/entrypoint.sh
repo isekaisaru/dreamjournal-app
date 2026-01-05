@@ -76,37 +76,30 @@ fi
 
 echo "🔌 データベース接続待機中..."
 echo "🔌 データベース接続待機中..."
-# Render Free Tier対策: DATABASE_URLがあっても必ず接続確認を行う
-# 特にコールドスタート時はDB接続確立まで時間がかかるため(最大3分待機)
-max_attempts=90
-attempt=1
+# Render(Supabase)の場合、pg_isreadyが外部接続(SSL)に対応しきれず失敗することがあるため、
+# DATABASE_URLがある場合はチェックをスキップしてRailsに接続を任せる
+if [ -n "$DATABASE_URL" ]; then
+    echo "✅ DATABASE_URLを検出 - 外部DB(Supabase等)のため、entrypointでの接続確認をスキップします"
+else
+    # ローカルDocker環境向け: 開発用DBが起きるのを待つ
+    max_attempts=30
+    attempt=1
 
-while [ $attempt -le $max_attempts ]; do
-    if [ -n "$DATABASE_URL" ]; then
-        # pg_isready は接続文字列を受け取れる
-        # 失敗時の理由を知るために stderr を表示する
-        if pg_isready -d "$DATABASE_URL"; then
-             echo "✅ データベース接続成功 (${attempt}回目の試行)"
-             break
-        else
-             echo "⚠️  接続トライ ${attempt}: pg_isready が失敗しました"
-        fi
-    else
-        # ローカルDocker環境向け
+    while [ $attempt -le $max_attempts ]; do
         if PGPASSWORD="$POSTGRES_PASSWORD" psql -h db -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1;" >/dev/null 2>&1; then
             echo "✅ データベース接続成功 (${attempt}回目の試行)"
             break
         fi
-    fi
-    
-    echo "⏳ データベース接続待機... (${attempt}/${max_attempts})"
-    sleep 2 
-    attempt=$((attempt + 1))
-done
+        
+        echo "⏳ データベース接続待機... (${attempt}/${max_attempts})"
+        sleep 1
+        attempt=$((attempt + 1))
+    done
 
-if [ $attempt -gt $max_attempts ]; then
-    echo "❌ データベース接続タイムアウト - 接続できませんでした"
-    exit 1
+    if [ $attempt -gt $max_attempts ]; then
+        echo "❌ データベース接続タイムアウト - 30秒以内に接続できませんでした"
+        exit 1
+    fi
 fi
 
 # ========================================
