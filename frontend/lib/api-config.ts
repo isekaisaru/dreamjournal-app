@@ -29,8 +29,11 @@ export function getApiUrl(): string {
     // In local dev, use the environment variable or fallback to localhost.
     // In production on Vercel, use the relative path /api for rewrites.
     // For non-Vercel production (e.g., self-hosted), use NEXT_PUBLIC_API_URL.
-    const isVercel = process.env.NEXT_PUBLIC_VERCEL === "1" || typeof window !== "undefined" && window.location.hostname.includes("vercel.app");
-    
+    const isVercel =
+      process.env.NEXT_PUBLIC_VERCEL === "1" ||
+      (typeof window !== "undefined" &&
+        window.location.hostname.includes("vercel.app"));
+
     if (process.env.NODE_ENV === "production" && isVercel) {
       // Vercel本番環境: Rewritesを使用（同一オリジン化でCookie問題を解決）
       return "/api";
