@@ -59,9 +59,11 @@ curl https://dreamjournal-app.onrender.com/health
 
 個人開発ですが、継続的な運用と信頼性を担保するための体制を構築しています。
 
+- **エラー監視**: Sentryによるフルスタック（Frontend + Backend）エラー監視体制を構築
 - **品質**: Playwright による E2E Smoke Test を導入し、デプロイごとの品質を担保
 - **コスト管理**: OpenAI API のハードリミット設定によるインシデント回避と予算管理
-- **監視**: 本番環境（Render）のログ監視体制を確立済み
+- **ログ監視**: 本番環境（Render）のログ監視体制を確立済み
+
 
 ## 開発中の機能
 

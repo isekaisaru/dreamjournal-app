@@ -17,8 +17,8 @@ Sentry.init do |config|
   # プロファイリング（任意）
   # config.profiles_sample_rate = 1.0
 
-  # 本番環境でのみ有効化する場合（テスト完了後にコメントを外す）
-  # config.enabled_environments = %w[production staging]
+  # 本番環境と開発環境でのみ有効化（テスト環境は除外）
+  config.enabled_environments = %w[production development]
 
   # 送信前にイベントを加工・フィルタリングする場合
   config.before_send = lambda do |event, hint|
