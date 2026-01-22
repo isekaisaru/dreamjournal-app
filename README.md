@@ -42,6 +42,37 @@ curl https://dreamjournal-app.onrender.com/health
 - [ライセンス](#ライセンス)
 - [貢献者](#貢献者)
 
+# DreamJournal (ユメログ) - AI Dream Analysis App
+
+> **English Version Below** | 日本語版は下部にあります
+
+## 🌐 Production URL
+- **Frontend**: https://dreamjournal-8u8f7y2lu-isekaisarus-projects.vercel.app/
+- **Backend**: https://dreamjournal-app.onrender.com
+
+## 🛠 Tech Stack
+- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend:** Ruby on Rails 7 (API Mode)
+- **Database:** PostgreSQL (Supabase)
+- **Infrastructure:** Vercel (FE), Render (BE)
+- **Monitoring:** Sentry, Lighthouse CI
+- **DevOps:** Docker, GitHub Actions
+
+## 🔐 Security & Operations
+- **Authentication:** JWT (HttpOnly Cookie) based auth
+- **Database Security:** Supabase RLS (Row Level Security) enabled with "Default Deny" policy
+- **Performance:** Optimized for Core Web Vitals (Lighthouse Performance: 99/100)
+- **CORS:** Strictly configured for production environments
+- **Uptime:** 23 days of continuous production operation with zero critical incidents
+
+## 👨💻 Author
+Developed by a former Logistics Manager transitioning to Full-Stack Development.
+Focusing on **Reliability**, **Security**, and **User Experience**.
+
+---
+
+# 夢の記録アプリケーション（日本語版）
+
 ## プロジェクト概要
 
 日々の夢を日記のように残し、キーワード検索や簡単な分析で振り返ることを目的としたアプリケーションです。現状は個人利用を想定した設計で、家族内で使う場合は同じアカウントを共有する運用になります。
@@ -64,6 +95,18 @@ curl https://dreamjournal-app.onrender.com/health
 - **パフォーマンス**: Lighthouse Performance スコア 99点を達成（2026年1月測定）
 - **コスト管理**: OpenAI API のハードリミット設定によるインシデント回避と予算管理
 - **ログ監視**: 本番環境（Render）のログ監視体制を確立済み
+
+## 🔐 セキュリティ対策
+
+本番環境での安全性を確保するため、以下の対策を実施しています。
+
+- **認証**: JWT（HttpOnly Cookie）ベースの認証
+- **データベースセキュリティ**: Supabase RLS（Row Level Security）を有効化
+  - Default Deny（ポリシーなし）で完全封鎖
+  - Rails API以外からの直接DBアクセスを遮断
+- **CORS**: 本番環境用に厳格に設定
+  - フロントエンド（Vercel）とバックエンド（Render）の分離構成
+  - 環境変数による適切な接続管理
 
 
 ## 開発中の機能
