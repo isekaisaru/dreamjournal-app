@@ -1,8 +1,9 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: '利用規約 | ユメログ',
-  description: 'ユメログの利用規約',
+  title: "利用規約 | ユメログ",
+  description: "ユメログの利用規約",
 };
 
 export default function TermsPage() {
@@ -48,10 +49,13 @@ export default function TermsPage() {
             </h2>
             <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
               <p className="text-gray-700 mb-2">
-                <strong>13歳未満のお子さまが当サービスを利用する場合は、保護者の方の同意が必要です。</strong>
+                <strong>
+                  13歳未満のお子さまが当サービスを利用する場合は、保護者の方の同意が必要です。
+                </strong>
               </p>
               <p className="text-sm text-gray-600">
-                保護者の方へ: お子さまが安全に利用できるよう、一緒に設定や記録を確認してください。
+                保護者の方へ:
+                お子さまが安全に利用できるよう、一緒に設定や記録を確認してください。
               </p>
             </div>
           </section>
@@ -101,9 +105,18 @@ export default function TermsPage() {
             <div className="space-y-3 text-gray-700">
               <p>夢の記録に関するルール：</p>
               <ul className="list-disc list-inside space-y-2 ml-4">
-                <li><strong>著作権</strong>: 記録した夢の内容の著作権は、あなたに帰属します</li>
-                <li><strong>責任</strong>: 記録内容については、あなた自身が責任を持ってください</li>
-                <li><strong>公開範囲</strong>: 現在は非公開（自分だけが見られる）です</li>
+                <li>
+                  <strong>著作権</strong>:
+                  記録した夢の内容の著作権は、あなたに帰属します
+                </li>
+                <li>
+                  <strong>責任</strong>:
+                  記録内容については、あなた自身が責任を持ってください
+                </li>
+                <li>
+                  <strong>公開範囲</strong>:
+                  現在は非公開（自分だけが見られる）です
+                </li>
               </ul>
             </div>
           </section>
@@ -120,7 +133,8 @@ export default function TermsPage() {
                 <strong>医学的・心理学的な診断ではありません。</strong>
               </p>
               <p className="text-sm text-gray-600">
-                ※ 心配なことがある場合は、専門家（医師、カウンセラーなど）にご相談ください。
+                ※
+                心配なことがある場合は、専門家（医師、カウンセラーなど）にご相談ください。
               </p>
             </div>
           </section>
@@ -233,9 +247,13 @@ export default function TermsPage() {
                 利用規約について質問がある場合は、以下までご連絡ください：
               </p>
               <p className="text-gray-900 font-semibold">
-                📧 Email: <a href="mailto:support@dreamjournal.example.com" className="text-indigo-600 hover:underline">
+                📧 Email:{" "}
+                <Link
+                  href="mailto:support@dreamjournal.example.com"
+                  className="text-indigo-600 hover:underline"
+                >
                   support@dreamjournal.example.com
-                </a>
+                </Link>
               </p>
               <p className="text-sm text-gray-600 mt-4">
                 運営者: ユメログ開発チーム
@@ -246,12 +264,12 @@ export default function TermsPage() {
 
         {/* フッターボタン */}
         <div className="mt-12 text-center">
-          <a
+          <Link
             href="/"
             className="inline-block bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold px-8 py-3 rounded-full hover:shadow-lg transition-all duration-300 hover:scale-105"
           >
             ホームに戻る
-          </a>
+          </Link>
         </div>
       </div>
     </div>
