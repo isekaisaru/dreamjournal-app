@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -73,9 +73,7 @@ export default function Footer() {
             <p className="text-sm text-gray-400">
               © {currentYear} ユメログ (DreamJournal). All rights reserved.
             </p>
-            <p className="text-xs text-gray-500">
-              Made with ❤️ for families
-            </p>
+            <p className="text-xs text-gray-500">Made with ❤️ for families</p>
           </div>
         </div>
       </div>

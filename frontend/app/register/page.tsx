@@ -150,11 +150,19 @@ export default function Register() {
                 aria-label="利用規約とプライバシーポリシーに同意する"
               />
               <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                <Link href="/terms" target="_blank" className="text-primary hover:underline font-medium">
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  className="text-primary hover:underline font-medium"
+                >
                   利用規約
                 </Link>
                 と
-                <Link href="/privacy" target="_blank" className="text-primary hover:underline font-medium">
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="text-primary hover:underline font-medium"
+                >
                   プライバシーポリシー
                 </Link>
                 に同意します
