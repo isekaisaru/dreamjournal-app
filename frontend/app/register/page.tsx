@@ -12,6 +12,7 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login, isLoggedIn } = useAuth();
@@ -32,6 +33,11 @@ export default function Register() {
     // 2. 入力内容のチェックを強化
     if (!email || !username || !password || !passwordConfirmation) {
       setError("すべてのフィールドを入力してください。");
+      setIsLoading(false);
+      return;
+    }
+    if (!agreedToTerms) {
+      setError("利用規約とプライバシーポリシーに同意してください。");
       setIsLoading(false);
       return;
     }
@@ -132,6 +138,41 @@ export default function Register() {
             aria-invalid={error ? "true" : "false"}
             className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
+
+          {/* 利用規約への同意 */}
+          <div className="bg-muted/30 p-4 rounded-lg border border-border">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-5 h-5 rounded border-input text-primary focus:ring-2 focus:ring-ring cursor-pointer"
+                aria-label="利用規約とプライバシーポリシーに同意する"
+              />
+              <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  className="text-primary hover:underline font-medium"
+                >
+                  利用規約
+                </Link>
+                と
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="text-primary hover:underline font-medium"
+                >
+                  プライバシーポリシー
+                </Link>
+                に同意します
+              </span>
+            </label>
+            <p className="text-xs text-muted-foreground mt-2 ml-8">
+              ※ 13歳未満の方は、保護者の方と一緒に確認してください
+            </p>
+          </div>
+
           <button
             type="submit"
             disabled={isLoading}
