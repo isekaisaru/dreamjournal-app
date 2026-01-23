@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import Header from "./Header";
-import Footer from "./Footer";
+import Footer from "./components/Footer";
 import { Suspense } from "react";
 import Loading from "./loading";
 import { Providers } from "./providers";
