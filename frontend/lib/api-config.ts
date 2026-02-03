@@ -24,21 +24,22 @@ export function getApiUrl(): string {
       process.env.INTERNAL_API_URL || "https://dreamjournal-app.onrender.com"
     );
   } else {
-    // Client-side: Use a relative path to leverage Vercel Rewrites.
-    // This makes the browser request to the same origin, solving cookie issues.
-    // In local dev, use the environment variable or fallback to localhost.
-    // In production on Vercel, use the relative path /api for rewrites.
-    // For non-Vercel production (e.g., self-hosted), use NEXT_PUBLIC_API_URL.
+    // Client-side: Use NEXT_PUBLIC_API_URL if set, otherwise use default logic
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
+    }
+
+    // Fallback logic for when NEXT_PUBLIC_API_URL is not set
     const isVercel =
       process.env.NEXT_PUBLIC_VERCEL === "1" ||
       (typeof window !== "undefined" &&
         window.location.hostname.includes("vercel.app"));
 
     if (process.env.NODE_ENV === "production" && isVercel) {
-      // Vercel本番環境: Rewritesを使用（同一オリジン化でCookie問題を解決）
-      return "/api";
+      // Vercel本番環境: 直接Renderに接続
+      return "https://dreamjournal-app.onrender.com";
     }
-    return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    return "http://localhost:3001";
   }
 }
 
