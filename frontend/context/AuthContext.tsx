@@ -17,8 +17,11 @@ interface User {
   username?: string;
 }
 
+type AuthStatus = "checking" | "authenticated" | "unauthenticated";
+
 type AuthContextType = {
-  isLoggedIn: boolean | null;
+  authStatus: AuthStatus;
+  isLoggedIn: boolean;
   user: User | null;
   userId: string | null;
   login: (userData: User) => void;
@@ -31,10 +34,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
   const [user, setUser] = useState<User | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // isLoggedInは後方互換性のために残す
+  const isLoggedIn = authStatus === "authenticated";
 
   // ---------------------------
   // 初回マウント時のみ認証チェック
@@ -51,13 +57,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (res?.user) {
           setUser({ ...res.user, id: String(res.user.id) });
           setUserId(String(res.user.id));
-          setIsLoggedIn(true);
+          setAuthStatus("authenticated");
         } else {
-          setIsLoggedIn(false);
+          setAuthStatus("unauthenticated");
         }
       } catch (err) {
         if (mounted) {
-          setIsLoggedIn(false);
+          setAuthStatus("unauthenticated");
           setUser(null);
           setUserId(null);
         }
@@ -77,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback((userData: User) => {
     setUser(userData);
     setUserId(userData.id);
-    setIsLoggedIn(true);
+    setAuthStatus("authenticated");
   }, []);
 
   // ---------------------------
@@ -89,7 +95,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Logout API failed:", error);
     } finally {
-      setIsLoggedIn(false);
+      setAuthStatus("unauthenticated");
       setUser(null);
       setUserId(null);
       setError(null);
@@ -117,6 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider
       value={{
+        authStatus,
         isLoggedIn,
         user,
         userId,
