@@ -12,15 +12,15 @@ import { triggerDreamConfetti } from "@/lib/confetti";
 
 export default function NewDreamPage() {
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
+  const { authStatus } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
 
-  if (isLoggedIn === null) {
+  if (authStatus === "checking") {
     return <Loading />;
   }
 
   const handleCreateSubmit = async (formData: DreamInput) => {
-    if (!isLoggedIn) {
+    if (authStatus === "unauthenticated") {
       alert("ログインが必要です。");
       router.push("/login");
       return;
@@ -40,7 +40,7 @@ export default function NewDreamPage() {
     }
   };
 
-  if (!isLoggedIn) {
+  if (authStatus === "unauthenticated") {
     return (
       <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
         <p>このページを表示するにはログインが必要です。</p>

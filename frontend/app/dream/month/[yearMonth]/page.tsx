@@ -13,9 +13,9 @@ export default function DreamByMonthPage() {
   const yearMonth = params.yearMonth; // URLのパラメータからyearMonthを取得
   const [dreams, setDreams] = useState<Dream[]>([]); // 夢データを保存するための変数
   const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
-  const { isLoggedIn } = useAuth();
+  const { authStatus } = useAuth();
   const fetchDreamsByMonth = useCallback(async () => {
-    if (yearMonth && isLoggedIn) {
+    if (yearMonth && authStatus === "authenticated") {
       try {
         const response = await apiClient.get<Dream[]>(
           `/dreams/month/${yearMonth}`
@@ -27,18 +27,18 @@ export default function DreamByMonthPage() {
         setErrorMessage("夢の取得に失敗しました");
       }
     }
-  }, [yearMonth, isLoggedIn]);
+  }, [yearMonth, authStatus]);
 
   useEffect(() => {
-    if (isLoggedIn === true) {
+    if (authStatus === "authenticated") {
       fetchDreamsByMonth();
     }
-  }, [isLoggedIn, fetchDreamsByMonth]);
+  }, [authStatus, fetchDreamsByMonth]);
 
-  if (isLoggedIn === null) {
+  if (authStatus === "checking") {
     return <Loading />;
   }
-  if (!isLoggedIn) {
+  if (authStatus === "unauthenticated") {
     return (
       <div className="container mx-auto p-5 bg-background text-foreground">
         <p>このページを表示するにはログインが必要です。</p>
