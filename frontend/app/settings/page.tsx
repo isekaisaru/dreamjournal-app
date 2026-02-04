@@ -18,7 +18,7 @@ const generateMathProblem = () => {
 };
 
 const SettingsPage = () => {
-  const { isLoggedIn, userId, logout, deleteUser } = useAuth();
+  const { authStatus, userId, logout, deleteUser } = useAuth();
   const router = useRouter();
 
   // モーダルとロックの状態
@@ -72,7 +72,7 @@ const SettingsPage = () => {
     }
   };
 
-  if (isLoggedIn === null) {
+  if (authStatus === "checking") {
     return <Loading />;
   }
 

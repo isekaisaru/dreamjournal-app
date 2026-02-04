@@ -15,15 +15,15 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isLoggedIn } = useAuth();
+  const { login, authStatus } = useAuth();
   const router = useRouter();
 
   // 1. 既にログインしているユーザーをホームページに案内する機能
   useEffect(() => {
-    if (isLoggedIn) {
+    if (authStatus === "authenticated") {
       router.push("/home");
     }
-  }, [isLoggedIn, router]);
+  }, [authStatus, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
