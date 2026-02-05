@@ -54,12 +54,10 @@ export default async function HomePage({
 
   console.log("[HomePage] Rendering at", new Date().toISOString());
 
+  // クロスドメイン環境（Vercel × Render）では、Server側でCookieをチェックできない
+  // AuthContextで認証を管理するため、ここではチェックしない
   const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (!token) {
-    redirect("/login");
-  }
+  const token = cookieStore.get("access_token")?.value || "";
 
   const resolvedSearchParams = await searchParams;
 
@@ -91,11 +89,8 @@ export default async function HomePage({
       getMe(token),
     ]);
   } catch (error) {
-    // fetch に失敗した場合、特にトークンが無効(401)な場合は、
-    // ログインページにリダイレクトするのが安全。
-    if (error instanceof Error && error.message.includes("401")) {
-      redirect("/login");
-    }
+    // クロスドメイン環境では、Server側でリダイレクトせず、
+    // AuthContextに任せる
     console.error("Error fetching data on server:", error);
     errorMessage =
       "データの取得に失敗しました。ページを再読み込みしてください。";
