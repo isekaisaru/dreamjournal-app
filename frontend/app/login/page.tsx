@@ -11,8 +11,15 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [pageError, setPageError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, error: authError } = useAuth();
+  const { login, authStatus, error: authError } = useAuth();
   const router = useRouter();
+
+  // 既にログインしているユーザーをホームページに案内する
+  useEffect(() => {
+    if (authStatus === "authenticated") {
+      router.push("/home");
+    }
+  }, [authStatus, router]);
 
   useEffect(() => {
     if (authError) {
