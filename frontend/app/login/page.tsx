@@ -36,7 +36,7 @@ export default function Login() {
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
       login(user);
       // ログイン成功後、直接リダイレクト＋refresh
-      router.push("/");
+      router.push("/home");
       router.refresh(); // サーバーコンポーネントを再取得してUIを更新
     } catch (apiError: any) {
       console.error("ログインAPI呼び出しエラー:", apiError);
@@ -90,7 +90,7 @@ export default function Login() {
             disabled={isLoading}
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            {isLoading ? "ログイン中..." : "ログイン"} {}
+            {isLoading ? "ログイン中..." : "ログイン"}
           </button>
           <div className="text-right">
             <Link
