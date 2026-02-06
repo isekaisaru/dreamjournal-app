@@ -1,14 +1,6 @@
-// app/page.tsx
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import IndexRedirectClient from "./components/IndexRedirectClient";
 
-export default async function IndexPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-
-  if (token) {
-    redirect("/home");
-  } else {
-    redirect("/trial");
-  }
+export default function IndexPage() {
+  // Server Componentのまま、認証判定はClient側に委譲
+  return <IndexRedirectClient />;
 }
