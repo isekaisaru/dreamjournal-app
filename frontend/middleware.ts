@@ -3,6 +3,13 @@ import type { NextRequest } from "next/server";
 import { createApiUrl } from "./lib/api-config";
 
 export async function middleware(request: NextRequest) {
+  // クロスドメイン環境ではCookieがVercel Edgeから見えないため、
+  // 認証判定はClient側に委譲する（将来の同一ドメイン運用で復活可能）
+  const authMode = process.env.NEXT_PUBLIC_AUTH_MODE;
+  if (authMode === "client") {
+    return NextResponse.next();
+  }
+
   // E2Eテスト実行時は、認証チェックをバイパスして後続の処理に進む
   // 1) 環境変数 (PlaywrightがwebServer起動時に設定)
   // 2) クッキー __e2e__=1 （既存サーバー再利用時のためのフォールバック）
