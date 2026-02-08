@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 import { Dream, Emotion, DreamDraftData } from "../types";
 import { getEmotions, previewAnalysis } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
-import { getEmotionColors } from "@/lib/emotionUtils";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 
 interface DreamFormData {
@@ -142,13 +141,7 @@ export default function DreamForm({
     });
   }, [emotions, isDraftApplied, suggestedEmotionNames]);
 
-  const handleEmotionChange = (emotionId: number) => {
-    setSelectedEmotionIds((prevIds) =>
-      prevIds.includes(emotionId)
-        ? prevIds.filter((id) => id !== emotionId)
-        : [...prevIds, emotionId]
-    );
-  };
+  // handleEmotionChange は新しいUIで直接使用されなくなったため削除
 
   const handleAnalyze = async () => {
     if (!content.trim()) {

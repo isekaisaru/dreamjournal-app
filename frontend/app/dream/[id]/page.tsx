@@ -5,7 +5,6 @@ import DeleteButton from "../../components/DeleteButton";
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import dynamic from "next/dynamic";
 import {
   AlertDialog,
   AlertDialogAction,

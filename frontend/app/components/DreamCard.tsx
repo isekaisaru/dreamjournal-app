@@ -8,7 +8,6 @@ function formatDate(dateInput: string | number | Date | undefined): string {
   if (!dateInput) return "";
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return "";
-  const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
   return `${month}月${day}日`;
