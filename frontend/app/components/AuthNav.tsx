@@ -1,32 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
-import { clientLogout } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
+import { useAuth } from "@/context/AuthContext";
 import {
   House,
   Pencil,
-  Book,
   Settings,
   LogOut,
   LogIn,
   UserPlus,
+  Loader2,
 } from "lucide-react";
 
+// propsは互換性のために残すが、AuthContextを優先使用
 interface AuthNavProps {
-  isAuthenticated: boolean;
+  isAuthenticated?: boolean;
 }
 
-export default function AuthNav({ isAuthenticated }: AuthNavProps) {
-  const router = useRouter();
+export default function AuthNav(_props: AuthNavProps) {
   const pathname = usePathname();
+
+  // クロスドメイン環境ではServer側でCookieを読めないため、
+  // AuthContextで認証状態を取得する
+  const { authStatus, isLoggedIn, logout } = useAuth();
+
+  // AuthContextの状態を優先使用
+  const isAuthenticated = isLoggedIn;
 
   const handleLogout = async () => {
     try {
-      await clientLogout();
-      router.refresh();
+      await logout();
     } catch (error: any) {
       toast.error(error.message || "おしまいに できませんでした。");
     }
@@ -71,6 +77,18 @@ export default function AuthNav({ isAuthenticated }: AuthNavProps) {
       </Link>
     );
   };
+
+  // 認証確認中はローディング表示
+  if (authStatus === "checking") {
+    return (
+      <nav className="flex justify-center md:justify-end gap-3 w-full">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="animate-spin" size={18} />
+          <span className="text-sm">かくにんちゅう…</span>
+        </div>
+      </nav>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

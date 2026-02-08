@@ -3,7 +3,7 @@
 import { Dream } from "@/app/types";
 import React from "react";
 import DreamCard from "./DreamCard";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface DreamListProps {
   dreams: Dream[];

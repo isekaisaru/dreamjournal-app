@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "@/lib/toast";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
 import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
-import type { AnalysisResult, DreamDraftData } from "@/app/types";
+import type { AnalysisResult } from "@/app/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2 } from "lucide-react";
 

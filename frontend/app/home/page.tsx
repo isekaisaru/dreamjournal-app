@@ -5,7 +5,6 @@ import { Dream } from "@/app/types";
 import { cookies } from "next/headers";
 import { getMyDreams, getMe } from "@/lib/apiClient";
 import type { User } from "@/app/types";
-import { redirect } from "next/navigation";
 import MorpheusAssistant from "./MorpheusAssistant";
 import VoiceRecorderClient from "./VoiceRecorderClient";
 
