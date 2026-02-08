@@ -15,12 +15,14 @@ import {
   Loader2,
 } from "lucide-react";
 
-// propsは互換性のために残すが、AuthContextを優先使用
-interface AuthNavProps {
-  isAuthenticated?: boolean;
-}
+// AuthContextを使用するため、propsは不要
+// 将来の同一ドメイン化時にServer Componentに戻す場合に備えて、
+// interfaceは残しておく（使用時にコメントを外す）
+// interface AuthNavProps {
+//   isAuthenticated?: boolean;
+// }
 
-export default function AuthNav(_props: AuthNavProps) {
+export default function AuthNav() {
   const pathname = usePathname();
 
   // クロスドメイン環境ではServer側でCookieを読めないため、

@@ -1,23 +1,20 @@
-import DreamList from "@/app/components/DreamList";
-import SearchBar from "@/app/components/SearchBar";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Dream } from "@/app/types";
-import { cookies } from "next/headers";
-import { getMyDreams, getMe } from "@/lib/apiClient";
-import type { User } from "@/app/types";
+import { useAuth } from "@/context/AuthContext";
+import apiClient from "@/lib/apiClient";
+import DreamList from "@/app/components/DreamList";
+import SearchBar from "@/app/components/SearchBar";
 import MorpheusAssistant from "./MorpheusAssistant";
 import VoiceRecorderClient from "./VoiceRecorderClient";
+import Loading from "../loading";
 
-/**
- * HomePageコンポーネント
- * - 認証されたユーザーが見るホームページ
- */
 /**
  * 夢を月ごとにグループ化する関数
- * @param {Dream[]} dreams - 夢データの配列
- * @returns {Record<string, Dream[]>} 年月ごとの夢データのマッピング
  */
-
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
@@ -37,62 +34,87 @@ function groupDreamsByMonth(dreams: Dream[]) {
   );
 }
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
+/**
+ * HomePageコンポーネント
+ * - 認証されたユーザーが見るホームページ
+ * - クロスドメイン環境（Vercel × Render）のため、Client Componentで実装
+ */
+export default function HomePage() {
+  const { authStatus, user } = useAuth();
+  const searchParams = useSearchParams();
 
-import { unstable_noStore as noStore } from "next/cache";
+  const [dreams, setDreams] = useState<Dream[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  // Ensure the component is treated as dynamic and opts out of strict caching
-  noStore();
+  const fetchDreams = useCallback(async () => {
+    if (authStatus !== "authenticated") {
+      return;
+    }
 
-  console.log("[HomePage] Rendering at", new Date().toISOString());
+    setLoading(true);
+    setErrorMessage(null);
 
-  // クロスドメイン環境（Vercel × Render）では、Server側でCookieをチェックできない
-  // AuthContextで認証を管理するため、ここではチェックしない
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value || "";
+    try {
+      // 検索パラメータを構築
+      const queryParams = new URLSearchParams();
+      const query = searchParams.get("query");
+      const startDate = searchParams.get("startDate");
+      const endDate = searchParams.get("endDate");
 
-  const resolvedSearchParams = await searchParams;
+      if (query) queryParams.set("query", query);
+      if (startDate) queryParams.set("start_date", startDate);
+      if (endDate) queryParams.set("end_date", endDate);
 
-  const queryParams = new URLSearchParams();
-  if (resolvedSearchParams.query)
-    queryParams.set("query", String(resolvedSearchParams.query));
+      // APIから夢データを取得
+      const queryString = queryParams.toString();
+      const url = queryString ? `/dreams?${queryString}` : "/dreams";
+      const dreamsData = await apiClient.get<Dream[]>(url);
 
-  // デフォルトで過去1ヶ月分を表示（パラメータがない場合）
-  if (resolvedSearchParams.startDate) {
-    queryParams.set("start_date", String(resolvedSearchParams.startDate));
-  } else if (!resolvedSearchParams.query && !resolvedSearchParams.endDate) {
-    // 検索条件が何もない場合のみ、デフォルト期間を設定
-    // ここでは「全期間」を表示するためにあえて絞り込みをしない（API仕様によるが、通常は全件取得になるはず）
+      setDreams(dreamsData);
+    } catch (error) {
+      console.error("Error fetching dreams:", error);
+      setErrorMessage(
+        "データの取得に失敗しました。ページを再読み込みしてください。"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [authStatus, searchParams]);
+
+  // 初回マウント時と検索パラメータが変わった時にデータを取得
+  useEffect(() => {
+    if (authStatus === "authenticated") {
+      fetchDreams();
+    } else if (authStatus === "unauthenticated") {
+      setLoading(false);
+    }
+  }, [authStatus, fetchDreams]);
+
+  // dream-createdイベントをリッスン（夢が新規作成されたときにリストを更新）
+  useEffect(() => {
+    const handleDreamCreated = () => {
+      fetchDreams();
+    };
+
+    window.addEventListener("dream-created", handleDreamCreated);
+    return () => {
+      window.removeEventListener("dream-created", handleDreamCreated);
+    };
+  }, [fetchDreams]);
+
+  // 認証確認中
+  if (authStatus === "checking") {
+    return <Loading />;
   }
 
-  if (resolvedSearchParams.endDate)
-    queryParams.set("end_date", String(resolvedSearchParams.endDate));
-
-  let dreams: Dream[] = [];
-  let user: User | null = null;
-  let errorMessage: string | null = null;
-
-  // Note: Removed local timestamp (_t) to prevent "Unpermitted parameter" warnings in Rails.
-  // noStore() + force-dynamic should be sufficient to ensure fresh data using cache: "no-store".
-
-  try {
-    [dreams, user] = await Promise.all([
-      getMyDreams(token, queryParams),
-      getMe(token),
-    ]);
-  } catch (error) {
-    // クロスドメイン環境では、Server側でリダイレクトせず、
-    // AuthContextに任せる
-    console.error("Error fetching data on server:", error);
-    errorMessage =
-      "データの取得に失敗しました。ページを再読み込みしてください。";
+  // 未認証
+  if (authStatus === "unauthenticated") {
+    return (
+      <div className="container mx-auto p-5 bg-background text-foreground">
+        <p>このページを表示するにはログインが必要です。</p>
+      </div>
+    );
   }
 
   // 夢データを月ごとにグループ化
@@ -105,26 +127,28 @@ export default async function HomePage({
         <h1 className="text-2xl font-bold text-foreground">
           {user ? `${user.username}ちゃんの ゆめ日記` : "ゆめ日記"}
         </h1>
-        {/* Debug: Server Rendering Time to verify router.refresh() */}
-        <p className="text-xs text-muted-foreground/50 mb-2">
-          Last updated: {new Date().toLocaleTimeString()}
-        </p>
         <SearchBar
-          query={resolvedSearchParams.query}
-          startDate={resolvedSearchParams.startDate}
-          endDate={resolvedSearchParams.endDate}
+          query={searchParams.get("query") || undefined}
+          startDate={searchParams.get("startDate") || undefined}
+          endDate={searchParams.get("endDate") || undefined}
         />
+        {/* ローディング中 */}
+        {loading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">読み込み中...</div>
+          </div>
+        )}
         {/* エラーメッセージがある場合は表示 */}
         {errorMessage && (
           <div className="text-destructive mb-4">{errorMessage}</div>
         )}
         {/* 夢リストコンポーネント */}
-        {/* Key prop ensures re-mount when latest dream ID or count changes, fixing stale UI issue */}
-        <DreamList
-          dreams={dreams}
-          key={`${dreams[0]?.id}-${dreams.length}-${Date.now()}`}
-        />{" "}
-        {/* 夢データをリストして表示 */}
+        {!loading && !errorMessage && (
+          <DreamList
+            dreams={dreams}
+            key={`${dreams[0]?.id}-${dreams.length}`}
+          />
+        )}
       </section>
 
       {/* サイドバー: 月ごとの夢リンクを動的に表示 */}
@@ -139,13 +163,13 @@ export default async function HomePage({
         </div>
         <ul className="space-y-2">
           {/* 月ごとの夢リンクを表示 */}
-          {Object.entries(groupedDreams).map(([yearMonth, dreams]) => (
+          {Object.entries(groupedDreams).map(([yearMonth, monthDreams]) => (
             <li key={yearMonth}>
               <Link
                 href={`/dream/month/${yearMonth}`}
                 className="text-primary hover:text-primary/90 hover:underline"
               >
-                {new Date(dreams[0].created_at).toLocaleString("ja-JP", {
+                {new Date(monthDreams[0].created_at).toLocaleString("ja-JP", {
                   year: "numeric",
                   month: "long",
                 })}
