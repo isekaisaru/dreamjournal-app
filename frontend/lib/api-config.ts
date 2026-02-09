@@ -36,8 +36,9 @@ export function getApiUrl(): string {
         window.location.hostname.includes("vercel.app"));
 
     if (process.env.NODE_ENV === "production" && isVercel) {
-      // Vercel本番環境: 直接Renderに接続
-      return "https://dreamjournal-app.onrender.com";
+      // Vercel本番環境: Vercel Rewriteを使用（サードパーティCookie問題を回避）
+      // /api/* へのリクエストはnext.config.mjsのrewritesでRenderに転送される
+      return "/api";
     }
     return "http://localhost:3001";
   }
