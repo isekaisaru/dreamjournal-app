@@ -150,8 +150,12 @@ if [ "$RAILS_ENV" = "development" ]; then
     echo "✅ 初期データ準備完了"
 elif [ "$RUN_SEED" = "true" ]; then
     echo "🌱 [本番環境] RUN_SEED=true を検出 - シードデータを投入します..."
-    bundle exec rails db:seed || echo "ℹ️  シードデータは既に存在しています"
-    echo "✅ [本番環境] シードデータ投入完了"
+    if bundle exec rails db:seed; then
+        echo "✅ [本番環境] シードデータ投入完了"
+    else
+        echo "❌ [本番環境] シードデータ投入に失敗しました"
+        exit 1
+    fi
 else
     echo "ℹ️  [本番環境] シードデータ投入をスキップします (RUN_SEED != true)"
 fi
