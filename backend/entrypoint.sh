@@ -136,20 +136,28 @@ else
 fi
 
 # ========================================
-# 🌱 開発環境での初期データ投入
+# 🌱 初期データ投入
 # ========================================
 # 
 # シード実行の判定理由：
-# - 本番環境では既存データ保護のためスキップ
 # - 開発環境では一貫したテストデータで作業効率向上
+# - 本番環境ではRUN_SEED=trueの場合のみ実行（初回デプロイ用）
 # - OR 条件でシードエラーを無視（既にデータが存在する場合）
 
-if [ "$RAILS_ENV" != "production" ]; then
-    if [ "$RAILS_ENV" = "development" ]; then
-        echo "🌱 開発環境の初期データ投入中..."
-        bundle exec rails db:seed || echo "ℹ️  シードデータは既に存在しています"
-        echo "✅ 初期データ準備完了"
+if [ "$RAILS_ENV" = "development" ]; then
+    echo "🌱 開発環境の初期データ投入中..."
+    bundle exec rails db:seed || echo "ℹ️  シードデータは既に存在しています"
+    echo "✅ 初期データ準備完了"
+elif [ "$RUN_SEED" = "true" ]; then
+    echo "🌱 [本番環境] RUN_SEED=true を検出 - シードデータを投入します..."
+    if bundle exec rails db:seed; then
+        echo "✅ [本番環境] シードデータ投入完了"
+    else
+        echo "❌ [本番環境] シードデータ投入に失敗しました"
+        exit 1
     fi
+else
+    echo "ℹ️  [本番環境] シードデータ投入をスキップします (RUN_SEED != true)"
 fi
 
 # ========================================
