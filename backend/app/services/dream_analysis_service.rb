@@ -32,6 +32,12 @@ class DreamAnalysisService
       })
 
       content = response.dig("choices", 0, "message", "content")
+
+      if content.nil?
+        Rails.logger.error "OpenAI API returned nil content. Response: #{response.to_json}"
+        return { error: "AIからの応答が空でした。APIキーを確認してください。" }
+      end
+
       parsed = JSON.parse(content)
 
       unless parsed.is_a?(Hash)
