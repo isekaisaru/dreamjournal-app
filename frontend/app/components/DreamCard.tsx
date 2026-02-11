@@ -9,15 +9,11 @@ function formatDate(dateInput: string | number | Date | undefined): string {
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return "";
   // Vercelサーバー（UTC）でも日本時間で正しく表示するためtimeZoneを明示指定
-  const month = date.toLocaleString("ja-JP", {
-    month: "numeric",
-    timeZone: "Asia/Tokyo",
-  });
-  const day = date.toLocaleString("ja-JP", {
+  return date.toLocaleDateString("ja-JP", {
+    month: "long",
     day: "numeric",
     timeZone: "Asia/Tokyo",
   });
-  return `${month}月${day}日`;
 }
 
 type DreamCardProps = {
