@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 
 // サーバーサイド（コンテナ間通信）ではINTERNAL_BACKEND_URLを優先し、
 // 未設定の場合はNEXT_PUBLIC_BACKEND_URL（ホストマシンからのアクセス用）を使用する
-// Vercel本番環境ではどちらも未設定の場合、RenderのURLをフォールバックとして使用する
+// Vercel本番環境（NODE_ENV=production）でのみRenderのURLをフォールバックとして使用する
+const PRODUCTION_FALLBACK =
+  process.env.NODE_ENV === "production"
+    ? "https://dreamjournal-app.onrender.com"
+    : undefined;
+
 const BACKEND_URL =
   process.env.INTERNAL_BACKEND_URL ||
   process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://dreamjournal-app.onrender.com";
+  PRODUCTION_FALLBACK;
 
 export async function POST(req: NextRequest) {
   try {
