@@ -8,8 +8,9 @@ function formatDate(dateInput: string | number | Date | undefined): string {
   if (!dateInput) return "";
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return "";
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+  // Vercelサーバー（UTC）でも日本時間で正しく表示するためtimeZoneを明示指定
+  const month = date.toLocaleString("ja-JP", { month: "numeric", timeZone: "Asia/Tokyo" });
+  const day = date.toLocaleString("ja-JP", { day: "numeric", timeZone: "Asia/Tokyo" });
   return `${month}月${day}日`;
 }
 
@@ -66,7 +67,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
         <div className="mt-auto pt-2 flex items-end justify-between gap-2">
           {/* Prioritize lightweight JSON tags, fall back to DB relation if needed */}
           {dream.analysis_json?.emotion_tags &&
-          dream.analysis_json.emotion_tags.length > 0 ? (
+            dream.analysis_json.emotion_tags.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {Array.from(
                 new Set(
@@ -88,15 +89,15 @@ const DreamCard = ({ dream }: DreamCardProps) => {
                   getChildFriendlyEmotionLabel(tag)
                 )
               ).size > 3 && (
-                <span className="text-xs text-muted-foreground self-center px-1">
-                  +
-                  {new Set(
-                    (dream.analysis_json.emotion_tags || []).map((tag) =>
-                      getChildFriendlyEmotionLabel(tag)
-                    )
-                  ).size - 3}
-                </span>
-              )}
+                  <span className="text-xs text-muted-foreground self-center px-1">
+                    +
+                    {new Set(
+                      (dream.analysis_json.emotion_tags || []).map((tag) =>
+                        getChildFriendlyEmotionLabel(tag)
+                      )
+                    ).size - 3}
+                  </span>
+                )}
             </div>
           ) : dream.emotions && dream.emotions.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
@@ -121,15 +122,15 @@ const DreamCard = ({ dream }: DreamCardProps) => {
                   getChildFriendlyEmotionLabel(e.name)
                 )
               ).size > 3 && (
-                <span className="text-xs text-muted-foreground self-center px-1">
-                  +
-                  {new Set(
-                    (dream.emotions || []).map((e) =>
-                      getChildFriendlyEmotionLabel(e.name)
-                    )
-                  ).size - 3}
-                </span>
-              )}
+                  <span className="text-xs text-muted-foreground self-center px-1">
+                    +
+                    {new Set(
+                      (dream.emotions || []).map((e) =>
+                        getChildFriendlyEmotionLabel(e.name)
+                      )
+                    ).size - 3}
+                  </span>
+                )}
             </div>
           ) : (
             <div /> /* Spacer */
