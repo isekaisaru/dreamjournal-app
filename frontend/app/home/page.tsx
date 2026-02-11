@@ -19,9 +19,16 @@ function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
       const date = new Date(dream.created_at);
-      const yearMonth = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(2, "0")}`;
+      // Vercelサーバー（UTC）でも日本時間で正しくグループ化するためtimeZoneを明示指定
+      const year = date.toLocaleString("ja-JP", {
+        year: "numeric",
+        timeZone: "Asia/Tokyo",
+      });
+      const month = date.toLocaleString("ja-JP", {
+        month: "2-digit",
+        timeZone: "Asia/Tokyo",
+      });
+      const yearMonth = `${year}-${month}`;
 
       if (!groupedDreams[yearMonth]) {
         groupedDreams[yearMonth] = [];
@@ -172,6 +179,7 @@ export default function HomePage() {
                 {new Date(monthDreams[0].created_at).toLocaleString("ja-JP", {
                   year: "numeric",
                   month: "long",
+                  timeZone: "Asia/Tokyo",
                 })}
                 の夢
               </Link>

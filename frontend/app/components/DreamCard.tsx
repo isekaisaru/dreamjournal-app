@@ -8,9 +8,12 @@ function formatDate(dateInput: string | number | Date | undefined): string {
   if (!dateInput) return "";
   const date = new Date(dateInput);
   if (Number.isNaN(date.getTime())) return "";
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  return `${month}月${day}日`;
+  // Vercelサーバー（UTC）でも日本時間で正しく表示するためtimeZoneを明示指定
+  return date.toLocaleDateString("ja-JP", {
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Tokyo",
+  });
 }
 
 type DreamCardProps = {
