@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Vercel本番環境ではどちらも未設定の場合、RenderのURLをフォールバックとして使用する
 const BACKEND_URL =
-  process.env.INTERNAL_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+  process.env.INTERNAL_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://dreamjournal-app.onrender.com";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
