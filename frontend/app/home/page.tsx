@@ -110,6 +110,24 @@ export default function HomePage() {
     };
   }, [fetchDreams]);
 
+  // dream-analysis-completedイベントをリッスン（夢分析完了時にリストを更新）
+  useEffect(() => {
+    const handleDreamAnalysisCompleted = () => {
+      fetchDreams();
+    };
+
+    window.addEventListener(
+      "dream-analysis-completed",
+      handleDreamAnalysisCompleted
+    );
+    return () => {
+      window.removeEventListener(
+        "dream-analysis-completed",
+        handleDreamAnalysisCompleted
+      );
+    };
+  }, [fetchDreams]);
+
   // 認証確認中
   if (authStatus === "checking") {
     return <Loading />;

@@ -159,6 +159,8 @@ export default function PendingDreamsMonitor() {
           setTimeout(() => {
             router.refresh();
             console.log("[PendingDreamsMonitor] router.refresh() executed");
+
+            window.dispatchEvent(new Event("dream-analysis-completed"));
           }, 2000); // DB書き込みとAPI反映のラグを考慮して2秒待機
 
           setPollInterval(5000);
