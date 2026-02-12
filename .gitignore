@@ -48,3 +48,26 @@ frontend/.env.local
 # Playwright test results
 /test-results/
 /playwright-report/
+
+# 個人情報を含むドキュメント（転職活動・日報・面談メモ）
+docs/self-introduction.md
+docs/career-memo-*.md
+docs/workport-*.md
+docs/daily-log-*.md
+docs/operation-retrospective-*.md
+docs/sprint-retrospective-*.md
+docs/sprint-plan-*.md
+docs/supabase-pause-strategy.md
+docs/supabase-security-notes.md
+
+# Cookie / トークンファイル（認証情報漏洩防止）
+cookies.txt
+backend/cookies.txt
+
+# PostgreSQLデータ（個人データ・認証情報）
+backend/data/
+postgres_backup/
+
+# Playwrightレポート（ログ・画面情報を含む）
+playwright-report/
+frontend/playwright-report/
