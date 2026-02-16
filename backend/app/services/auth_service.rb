@@ -110,10 +110,10 @@ class AuthService
 
       decoded
     rescue JWT::ExpiredSignature
-      Rails.logger.warn "JWT トークンが期限切れです: #{token}"
+      Rails.logger.warn "JWT トークンが期限切れです (token_prefix=#{token.to_s[0..7]}...)"
       return nil
     rescue JWT::DecodeError => e
-      Rails.logger.warn "JWT トークンのデコードに失敗しました。: #{token}, Error: #{e.message}"
+      Rails.logger.warn "JWT トークンのデコードに失敗しました。Error: #{e.message} (token_prefix=#{token.to_s[0..7]}...)"
       return nil
     end
   end
@@ -140,10 +140,10 @@ class AuthService
 
     user = User.find_by(refresh_token: refresh_token)
 
-    Rails.logger.info "User.find_by(refresh_token: ...)の結果: #{user.inspect}" if Rails.env.development?
+    Rails.logger.info "User.find_by(refresh_token: ...)の結果: #{user&.id || 'nil'}" if Rails.env.development?
 
     if user.nil?
-      Rails.logger.warn "リフレッシュトークンがデータベースに存在しません: #{refresh_token}"
+      Rails.logger.warn "リフレッシュトークンがデータベースに存在しません (token_prefix=#{refresh_token.to_s[0..7]}...)"
       raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
     end
 
