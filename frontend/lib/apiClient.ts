@@ -43,37 +43,71 @@ export async function apiFetch<T>(
 
   const isServer = typeof window === "undefined";
 
+  // ① credentials はクライアントのみ（サーバーではCookieを手動転送）
   const finalOptions: RequestInit = {
     ...fetchOptions,
     headers: {
       ...defaultHeaders,
       ...fetchOptions.headers,
     },
-    credentials: "include",
+    ...(isServer ? {} : { credentials: "include" as RequestCredentials }),
   };
 
-  // GET/HEAD 以外の場合は Content-Type を付与 (ユーザーが上書き可能)
+  // ② Content-Type は bodyがある非GET/HEAD リクエストのみ付与
   const method = (fetchOptions.method || "GET").toUpperCase();
-  if (!["GET", "HEAD"].includes(method)) {
+  const hasBody = finalOptions.body !== undefined && finalOptions.body !== null;
+  if (!["GET", "HEAD"].includes(method) && hasBody) {
     (finalOptions.headers as Record<string, string>)["Content-Type"] =
       "application/json";
   }
 
   if (isServer) {
-    // Server-side: Manually add cookie
-    if (token) {
+    // Server-side: Cookieヘッダーを手動で設定
+    // 既に上位でCookieが設定されている場合はそれを尊重
+    const existingCookie = (fetchOptions.headers as Record<string, string>)
+      ?.Cookie;
+    if (!existingCookie && token) {
       (finalOptions.headers as Record<string, string>)["Cookie"] =
-        `access_token=${token}`;
+        `access_token=${encodeURIComponent(token)}`;
     }
-  } else {
-    // Client-side: Browser handles credentials
-    finalOptions.credentials = "include";
   }
 
   // Always disable cache to ensure fresh data (Fix Stale Data Issue)
   finalOptions.cache = "no-store";
 
-  const response = await fetch(url, finalOptions);
+  // ③ Renderコールドスタート対策: 15秒でタイムアウト（無限ハングを防止）
+  const TIMEOUT_MS = 15_000;
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
+
+  // 呼び出し元のsignalがあれば、タイムアウトsignalと組み合わせる（上書きしない）
+  const callerSignal = fetchOptions.signal;
+  if (typeof AbortSignal.any === "function") {
+    const signals = callerSignal
+      ? [callerSignal, timeoutController.signal]
+      : [timeoutController.signal];
+    finalOptions.signal = AbortSignal.any(signals);
+  } else {
+    // AbortSignal.any未対応環境ではタイムアウトsignalのみ使用
+    finalOptions.signal = timeoutController.signal;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, finalOptions);
+  } catch (fetchError) {
+    // ④ AbortError判定: Node環境ではDOMExceptionが無い場合があるため name で判定
+    if ((fetchError as Error)?.name === "AbortError") {
+      const error = new ApiError(
+        `API request to ${endpoint} timed out after ${TIMEOUT_MS / 1000}s.`
+      );
+      error.status = 504;
+      throw error;
+    }
+    throw fetchError;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const error = new ApiError(

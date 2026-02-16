@@ -58,6 +58,11 @@ export async function POST(req: NextRequest) {
     relayFormData.append("file", audioFile, filename);
 
     let backendResponse: Response;
+    // Renderコールドスタート対策: 15秒でタイムアウト
+    const TIMEOUT_MS = 15_000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
     try {
       backendResponse = await fetch(`${BACKEND_URL}/analyze_audio_dream`, {
         method: "POST",
@@ -66,13 +71,26 @@ export async function POST(req: NextRequest) {
         headers: {
           cookie: req.headers.get("cookie") ?? "",
         },
+        signal: controller.signal,
       });
     } catch (networkError) {
+      if ((networkError as Error)?.name === "AbortError") {
+        console.error("Backend request timed out (cold start?)");
+        return NextResponse.json(
+          {
+            error:
+              "音声分析サービスへの接続がタイムアウトしました。再度お試しください。",
+          },
+          { status: 504 }
+        );
+      }
       console.error("Failed to fetch backend:", networkError);
       return NextResponse.json(
         { error: "音声分析サービスへの接続に失敗しました。" },
         { status: 503 } // 503 Service Unavailable
       );
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     if (!backendResponse.ok) {

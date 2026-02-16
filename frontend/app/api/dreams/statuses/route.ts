@@ -35,15 +35,31 @@ export async function GET(req: NextRequest) {
       `[API Proxy] /dreams/statuses req cookies present: ${!!cookieHeader}`
     );
 
-    const backendRes = await fetch(
-      `${BACKEND_URL}/dreams/statuses?ids=${ids}`,
-      {
+    // Renderコールドスタート対策: 15秒でタイムアウト
+    const TIMEOUT_MS = 15_000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    let backendRes: Response;
+    try {
+      backendRes = await fetch(`${BACKEND_URL}/dreams/statuses?ids=${ids}`, {
         method: "GET",
         headers: {
           cookie: cookieHeader,
         },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if ((fetchError as Error)?.name === "AbortError") {
+        return NextResponse.json(
+          { error: "Backend request timed out. Please retry." },
+          { status: 504 }
+        );
       }
-    );
+      throw fetchError;
+    }
 
     if (!backendRes.ok) {
       return NextResponse.json(
