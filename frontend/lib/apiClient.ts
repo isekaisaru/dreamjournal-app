@@ -77,9 +77,20 @@ export async function apiFetch<T>(
 
   // ③ Renderコールドスタート対策: 15秒でタイムアウト（無限ハングを防止）
   const TIMEOUT_MS = 15_000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  finalOptions.signal = controller.signal;
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
+
+  // 呼び出し元のsignalがあれば、タイムアウトsignalと組み合わせる（上書きしない）
+  const callerSignal = fetchOptions.signal;
+  if (typeof AbortSignal.any === "function") {
+    const signals = callerSignal
+      ? [callerSignal, timeoutController.signal]
+      : [timeoutController.signal];
+    finalOptions.signal = AbortSignal.any(signals);
+  } else {
+    // AbortSignal.any未対応環境ではタイムアウトsignalのみ使用
+    finalOptions.signal = timeoutController.signal;
+  }
 
   let response: Response;
   try {
