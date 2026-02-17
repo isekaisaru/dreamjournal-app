@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   const backendUrl =
-    process.env.INTERNAL_BACKEND_URL ?? process.env.NEXT_PUBLIC_BACKEND_URL;
+    process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 
   if (!backendUrl) {
     return Response.json({ error: "BACKEND_URL_NOT_SET" }, { status: 500 });

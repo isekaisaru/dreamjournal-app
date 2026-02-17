@@ -4,6 +4,13 @@ class CheckoutController < ApplicationController
 
   def create
     begin
+      # FRONTEND_URL must be absolute URL for Stripe redirect
+      frontend_url = ENV['FRONTEND_URL']
+      if frontend_url.blank?
+        Rails.logger.error "FRONTEND_URL is not set. Cannot create Stripe session."
+        return render json: { error: 'FRONTEND_URLが設定されていません。' }, status: :internal_server_error
+      end
+
       # Stripe Checkout Session を作成
       # これは「決済画面のURL」を生成するリクエスト
       session = Stripe::Checkout::Session.create(
@@ -27,10 +34,10 @@ class CheckoutController < ApplicationController
         mode: 'payment',
         
         # 決済成功後のリダイレクト先（フロントエンドのURL）
-        success_url: "#{ENV['FRONTEND_URL']}/donation/success",
+        success_url: "#{frontend_url}/donation/success",
         
         # キャンセル時のリダイレクト先
-        cancel_url: "#{ENV['FRONTEND_URL']}/donation/cancel",
+        cancel_url: "#{frontend_url}/donation/cancel",
       )
 
       # 生成された決済画面のURLをフロントエンドに返す
