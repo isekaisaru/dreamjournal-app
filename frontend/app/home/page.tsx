@@ -11,6 +11,7 @@ import SearchBar from "@/app/components/SearchBar";
 import MorpheusAssistant from "./MorpheusAssistant";
 import VoiceRecorderClient from "./VoiceRecorderClient";
 import Loading from "../loading";
+import DonationButton from "@/app/components/DonationButton";
 
 /**
  * 夢を月ごとにグループ化する関数
@@ -157,6 +158,12 @@ export default function HomePage() {
           startDate={searchParams.get("startDate") || undefined}
           endDate={searchParams.get("endDate") || undefined}
         />
+
+        {/* 寄付ボタン */}
+        <div className="my-6">
+          <DonationButton />
+        </div>
+
         {/* ローディング中 */}
         {loading && (
           <div className="flex items-center justify-center py-8">

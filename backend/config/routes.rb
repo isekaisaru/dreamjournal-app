@@ -39,6 +39,9 @@ Rails.application.routes.draw do
     post 'trial_login', to: 'trial_users#create'
   end
 
+  # Stripe決済関連
+  post '/checkout', to: 'checkout#create'
+
   # パスワードリセット関連
   resources :password_resets, only: [:create, :update]
 

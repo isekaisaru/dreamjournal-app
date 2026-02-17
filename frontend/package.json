@@ -21,6 +21,7 @@
     "@radix-ui/react-alert-dialog": "^1.1.11",
     "@radix-ui/react-slot": "^1.2.0",
     "@sentry/nextjs": "^10",
+    "@stripe/stripe-js": "^8.7.0",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
