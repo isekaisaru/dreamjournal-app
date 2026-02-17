@@ -9,9 +9,7 @@ export default function DonationSuccessPage() {
         <div className="icon">✨</div>
         <h1>ありがとうございます！</h1>
         <p>あなたの応援が、ユメログの開発を支えてくれています。</p>
-        <p className="sub-text">
-          引き続き、素敵な夢の記録をお楽しみください。
-        </p>
+        <p className="sub-text">引き続き、素敵な夢の記録をお楽しみください。</p>
         <Link href="/" className="home-link">
           ホームに戻る
         </Link>

@@ -1,7 +1,7 @@
 // Sentry OpenTelemetry との互換性のため、Node.js Runtime を使用
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+export async function POST() {
   const backendUrl =
     process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 
