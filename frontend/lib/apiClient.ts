@@ -75,8 +75,10 @@ export async function apiFetch<T>(
   // Always disable cache to ensure fresh data (Fix Stale Data Issue)
   finalOptions.cache = "no-store";
 
-  // ③ Renderコールドスタート対策: 15秒でタイムアウト（無限ハングを防止）
-  const TIMEOUT_MS = 15_000;
+  // ③ Renderコールドスタート対策: タイムアウト（無限ハングを防止）
+  // 開発環境: 30秒（Turbopack初回コンパイル待ちを考慮）
+  // 本番環境: 15秒（Renderコールドスタート対策）
+  const TIMEOUT_MS = process.env.NODE_ENV === "development" ? 30_000 : 15_000;
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
 
