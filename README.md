@@ -217,6 +217,56 @@ make dev-up
 
 開発環境では `ENABLE_DEV_ENDPOINTS=true` を設定すると `/dev/password_resets/token` が利用可能です。
 
+## 💳 Stripe 決済（ローカルでの動かし方）
+
+> ⚠️ **テストモードでは実課金は発生しません。** 以下の手順はすべてStripeのテストモード環境で動作します。
+
+### 手順
+
+1. `make dev-up` でローカル起動
+2. ブラウザで http://localhost:3000/home を開く
+3. 「💝 500円で応援する」ボタンをクリック
+4. Stripe のチェックアウト画面へリダイレクトされる
+5. テストカードで決済を完了する
+
+### テストカード情報
+
+| 項目 | 値 |
+|------|-----|
+| カード番号 | `4242 4242 4242 4242` |
+| 有効期限 | 未来の任意の日付（例: `12/29`） |
+| CVC | 任意の3桁（例: `123`） |
+| 郵便番号 | 任意の数字 |
+
+### データフロー（3行で）
+
+```
+Browser → Next.js /api/checkout → Rails /checkout → Stripe Checkout URL
+```
+
+### よくあるエラーと対処法
+
+| エラー | 原因 | 対処 |
+|--------|------|------|
+| `ERR_EMPTY_RESPONSE` | 初回起動のコンパイル/再起動で接続が切れる | 30〜60秒待ってリロード（Turbopackなら2回目から速い） |
+| `Found lockfile missing swc dependencies` / `Failed to patch lockfile` | lockfile混在（yarn.lock + package-lock.json 等） | **`package-lock.json` を削除** → `yarn install`（Dockerなら frontend volume をクリーン） |
+| `API request ... timed out` | 初回コンパイル待ち or コールドスタート | dev環境は30s延長済み。2回目以降で確認 |
+| `BACKEND_URL_NOT_SET` | 環境変数未設定 | `.env` の `INTERNAL_API_URL` または `NEXT_PUBLIC_API_URL` を確認 |
+
+> **注意**: このプロジェクトは **yarn** を使用しています。`npm ci` や `npm install` を実行すると `package-lock.json` が再生成され、SWCエラーの再発原因になります。
+
+### 関連する環境変数（値はコードに書かない）
+
+```bash
+# backend/.env に設定
+STRIPE_SECRET_KEY=        # Stripe ダッシュボード → APIキー（テスト用は sk_test_...）
+STRIPE_PUBLISHABLE_KEY=   # 同上（公開可、テスト用は pk_test_...）
+
+# frontend/.env.local に設定
+NEXT_PUBLIC_API_URL=      # バックエンドの公開URL（Render等）
+INTERNAL_API_URL=         # Docker内部通信用URL（Next.js → Rails 直通、任意）
+```
+
 ## トラブルシューティング
 
 - コンテナの再ビルドが必要な場合は `make dev-down` → `docker-compose build --no-cache`。

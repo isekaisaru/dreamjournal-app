@@ -41,6 +41,7 @@ Rails.application.routes.draw do
 
   # Stripe決済関連
   post '/checkout', to: 'checkout#create'
+  post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（署名検証は次回実装）
 
   # パスワードリセット関連
   resources :password_resets, only: [:create, :update]
@@ -50,5 +51,5 @@ Rails.application.routes.draw do
     get '/dev/password_resets/token', to: 'password_resets#dev_token'
   end
 
-  post 'trial_users', to: 'trial_users#create'
+  # trial_users#create は /auth/trial_login で提供済みのため、重複ルートは削除
 end
