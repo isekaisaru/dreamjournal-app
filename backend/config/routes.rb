@@ -51,5 +51,5 @@ Rails.application.routes.draw do
     get '/dev/password_resets/token', to: 'password_resets#dev_token'
   end
 
-  post 'trial_users', to: 'trial_users#create'
+  # trial_users#create は /auth/trial_login で提供済みのため、重複ルートは削除
 end
