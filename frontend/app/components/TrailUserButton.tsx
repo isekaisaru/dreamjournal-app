@@ -14,7 +14,9 @@ const TrialUserButton: React.FC = () => {
   const handleTrialUser = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{ user: User }>("/trial_users");
+      const response = await apiClient.post<{ user: User }>(
+        "/auth/trial_login"
+      );
       if (response && response.user) {
         login({ ...response.user, id: String(response.user.id) }); // loginに渡す前にidをstringに変換
       }
