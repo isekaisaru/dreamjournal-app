@@ -6,6 +6,11 @@ class WebhooksController < ApplicationController
 
   # POST /webhooks/stripe
   def stripe
+    unless ENV['STRIPE_WEBHOOK_SECRET'].present?
+      Rails.logger.error("[Webhook] STRIPE_WEBHOOK_SECRET が未設定です")
+      return head :internal_server_error
+    end
+
     payload    = request.raw_post
     sig_header = request.headers['Stripe-Signature']
 
@@ -36,4 +41,3 @@ class WebhooksController < ApplicationController
     head :ok
   end
 end
-
