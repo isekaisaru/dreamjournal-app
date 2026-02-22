@@ -267,6 +267,54 @@ NEXT_PUBLIC_API_URL=      # バックエンドの公開URL（Render等）
 INTERNAL_API_URL=         # Docker内部通信用URL（Next.js → Rails 直通、任意）
 ```
 
+### Webhook署名検証（セキュリティ設計）
+
+決済完了後にStripeから `POST /webhooks/stripe` が届きます。  
+**「誰でもPOSTできる」状態を防ぐため、署名検証を実装しています。**
+
+#### 仕組み
+
+```
+Stripe → POST /webhooks/stripe
+          │
+          ├─ Stripe-Signature ヘッダーを取得
+          ├─ request.raw_post でボディを取得（body.readは不可）
+          │
+          └─ Stripe::Webhook.construct_event で検証
+               ├─ JSON::ParserError    → 400（不正なJSON）
+               ├─ SignatureVerificationError → 400（偽リクエスト）
+               └─ 検証成功 → イベント種別ごとに処理
+```
+
+#### 設計判断メモ
+
+| 判断 | 理由 |
+|---|---|
+| `request.raw_post` を使用 | `body.read` はストリームを消費するため署名検証で空になる |
+| `verify_authenticity_token` のスキップを削除 | Rails APIモード（`ActionController::API`）ではCSRF保護が元から存在しないためスキップ自体が `ArgumentError` になる |
+| `authorize_request` のみスキップ | WebhookはStripeサーバーが叩くためCookieによるJWT認証が通らない |
+
+#### ローカルでのWebhookテスト手順
+
+```bash
+# ターミナル①：Stripe CLIでローカルに転送
+stripe listen --forward-to localhost:3001/webhooks/stripe
+
+# ターミナル②：テストイベントを発火
+stripe trigger checkout.session.completed
+
+# Railsログで確認：
+# [Webhook] 支払い完了 session_id=cs_test_xxx amount=3000
+```
+
+#### 環境変数（Webhook用）
+
+```bash
+# backend/.env に追加
+STRIPE_WEBHOOK_SECRET=   # stripe listen --print-secret で取得（90日間有効）
+                         # 本番用はStripeダッシュボード → Webhooksで別途登録
+```
+
 ## トラブルシューティング
 
 - コンテナの再ビルドが必要な場合は `make dev-down` → `docker-compose build --no-cache`。
