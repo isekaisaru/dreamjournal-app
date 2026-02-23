@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   # 軽量ヘルスチェック（Docker HEALTHCHECK用）
   get "/health", to: proc { [200, {}, ["OK"]] }
+  match "/", to: proc { [200, {}, ["OK"]] }, via: [:get, :head]
   
   # 詳細ヘルスチェック（監視ツール用）
   get "/health/detailed", to: "health#detailed_check"
