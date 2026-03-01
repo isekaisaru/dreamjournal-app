@@ -1,14 +1,26 @@
 import { withSentryConfig } from "@sentry/nextjs";
+import path from "path";
+import { fileURLToPath } from "url";
 /** @type {import('next').NextConfig} */
 const isProd = process.env.NODE_ENV === "production";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const nextConfig = {
+  // Ensure Turbopack resolves workspace root to this app directory.
+  // This avoids picking unrelated lockfiles from parent directories.
+  turbopack: {
+    root: __dirname,
+  },
   // 本番環境で必要なファイルのみを .next/standalone に出力する
   output: "standalone",
   compiler: {
     removeConsole: isProd ? { exclude: ["error"] } : false,
   },
   experimental: {
+    turbo: {
+      root: __dirname,
+    },
     optimizePackageImports: ["lucide-react"],
   },
   async rewrites() {
