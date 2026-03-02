@@ -28,14 +28,26 @@ class WebhooksController < ApplicationController
       return head :bad_request
     end
 
-    # イベント種別ごとの処理
-    case event.type
-    when 'checkout.session.completed'
-      session = event.data.object
-      Rails.logger.info("[Webhook] 支払い完了 session_id=#{session.id} amount=#{session.amount_total}")
-      # TODO: 次回実装 → DB保存（Paymentモデル）or 寄付フラグの更新
-    else
-      Rails.logger.info("[Webhook] 未処理イベント: #{event.type}")
+    begin
+      marker = ProcessedWebhookEvent.create!(stripe_event_id: event.id, processed_at: Time.current)
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+      Rails.logger.info("[Webhook] 重複イベントをスキップ event_id=#{event.id}")
+      return head :ok
+    end
+
+    begin
+      # イベント種別ごとの処理
+      case event.type
+      when 'checkout.session.completed'
+        session = event.data.object
+        Rails.logger.info("[Webhook] 支払い完了 session_id=#{session.id} amount=#{session.amount_total}")
+        # TODO: 次回実装 → DB保存（Paymentモデル）or 寄付フラグの更新
+      else
+        Rails.logger.info("[Webhook] 未処理イベント: #{event.type}")
+      end
+    rescue => e
+      marker&.destroy!
+      raise
     end
 
     head :ok
