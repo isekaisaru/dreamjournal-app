@@ -19,13 +19,14 @@ RSpec.describe 'Webhooks API', type: :request do
   let(:stripe_event_completed) do
     double(
       'StripeEvent',
+      id: 'evt_test_duplicate',
       type: 'checkout.session.completed',
       data: event_data_double
     )
   end
 
   let(:stripe_event_other) do
-    double('StripeEvent', type: 'payment_intent.created', data: event_data_double)
+    double('StripeEvent', id: 'evt_test_other', type: 'payment_intent.created', data: event_data_double)
   end
 
   describe 'POST /webhooks/stripe' do
@@ -94,6 +95,35 @@ RSpec.describe 'Webhooks API', type: :request do
             }
 
           expect(response).to have_http_status(:ok)
+        end
+      end
+
+      context '同じ event.id を2回受信した場合' do
+        it '2回目は処理をスキップしつつ 200 OK を返し、記録は1件のまま' do
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_completed)
+
+          expect do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+            expect(response).to have_http_status(:ok)
+
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+            expect(response).to have_http_status(:ok)
+          end.to change(ProcessedWebhookEvent, :count).by(1)
+
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_test_duplicate').count).to eq(1)
         end
       end
 

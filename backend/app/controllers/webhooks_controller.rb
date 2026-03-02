@@ -28,6 +28,17 @@ class WebhooksController < ApplicationController
       return head :bad_request
     end
 
+    begin
+      ProcessedWebhookEvent.create!(stripe_event_id: event.id, processed_at: Time.current)
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+      if duplicate_processed_webhook_event_error?(e)
+        Rails.logger.info("[Webhook] 重複イベントをスキップ event_id=#{event.id}")
+        return head :ok
+      end
+
+      raise
+    end
+
     # イベント種別ごとの処理
     case event.type
     when 'checkout.session.completed'
@@ -39,5 +50,15 @@ class WebhooksController < ApplicationController
     end
 
     head :ok
+  end
+
+  private
+
+  def duplicate_processed_webhook_event_error?(error)
+    return true if error.is_a?(ActiveRecord::RecordNotUnique)
+    return false unless error.is_a?(ActiveRecord::RecordInvalid)
+    return false unless error.record.is_a?(ProcessedWebhookEvent)
+
+    error.record.errors.added?(:stripe_event_id, :taken)
   end
 end
