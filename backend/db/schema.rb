@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_02_195527) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_03_200817) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -70,6 +70,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_02_195527) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "payments", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "stripe_session_id", null: false
+    t.integer "amount", null: false
+    t.string "status", default: "completed", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["stripe_session_id"], name: "index_payments_on_stripe_session_id", unique: true
+    t.index ["user_id"], name: "index_payments_on_user_id"
+  end
+
   create_table "processed_webhook_events", force: :cascade do |t|
     t.string "stripe_event_id", null: false
     t.datetime "processed_at", null: false
@@ -98,4 +109,5 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_02_195527) do
   add_foreign_key "dream_emotions", "dreams"
   add_foreign_key "dream_emotions", "emotions"
   add_foreign_key "dreams", "users"
+  add_foreign_key "payments", "users"
 end
