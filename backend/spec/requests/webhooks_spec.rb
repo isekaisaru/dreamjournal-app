@@ -4,12 +4,24 @@ RSpec.describe 'Webhooks API', type: :request do
   let(:webhook_secret) { 'whsec_test_secret' }
   let(:payload) { { type: 'checkout.session.completed', data: { object: { id: 'cs_test_xxx', amount_total: 500 } } }.to_json }
   let(:sig_header) { 't=12345,v1=fakesignature' }
+  let(:customer_email) { 'webhook-user@example.com' }
 
   # 有効なStripeイベントのdouble（成功系テスト用）
   # Stripe::StripeObjectはmethod_missingでattributeにアクセスするため
   # instance_doubleではなくdoubleを使用
+  let(:customer_details_double) do
+    double('StripeCustomerDetails', email: customer_email)
+  end
+
   let(:session_double) do
-    double('StripeSession', id: 'cs_test_xxx', amount_total: 500)
+    double(
+      'StripeSession',
+      id: 'cs_test_xxx',
+      amount_total: 500,
+      customer: 'cus_test_123',
+      customer_details: customer_details_double,
+      customer_email: customer_email
+    )
   end
 
   let(:event_data_double) do
@@ -96,6 +108,27 @@ RSpec.describe 'Webhooks API', type: :request do
 
           expect(response).to have_http_status(:ok)
         end
+
+        it 'Paymentレコードを1件作成する' do
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_completed)
+
+          expect do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+          end.to change(Payment, :count).by(1)
+
+          payment = Payment.find_by!(stripe_session_id: 'cs_test_xxx')
+          expect(payment.user_id).to eq(user.id)
+          expect(payment.amount).to eq(500)
+          expect(payment.status).to eq('completed')
+        end
       end
 
       context '同じ event.id を2回受信した場合' do
@@ -124,6 +157,57 @@ RSpec.describe 'Webhooks API', type: :request do
           end.to change(ProcessedWebhookEvent, :count).by(1)
 
           expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_test_duplicate').count).to eq(1)
+        end
+      end
+
+      context '同じ stripe_session_id を2回受信した場合' do
+        let(:stripe_event_completed_second) do
+          double(
+            'StripeEvent',
+            id: 'evt_test_duplicate_second',
+            type: 'checkout.session.completed',
+            data: event_data_double
+          )
+        end
+
+        it 'Paymentは重複作成されず 1件のまま' do
+          create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_completed, stripe_event_completed_second)
+
+          expect do
+            2.times do
+              post '/webhooks/stripe',
+                params: payload,
+                headers: {
+                  'Content-Type' => 'application/json',
+                  'Stripe-Signature' => sig_header,
+                  'HOST' => 'backend'
+                }
+              expect(response).to have_http_status(:ok)
+            end
+          end.to change(Payment, :count).by(1)
+
+          expect(Payment.where(stripe_session_id: 'cs_test_xxx').count).to eq(1)
+        end
+      end
+
+      context 'ユーザーが見つからない場合' do
+        it 'Paymentを作成せず 200 OK を返す' do
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_completed)
+
+          expect do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+          end.not_to change(Payment, :count)
+
+          expect(response).to have_http_status(:ok)
         end
       end
 

@@ -40,8 +40,22 @@ class WebhooksController < ApplicationController
       case event.type
       when 'checkout.session.completed'
         session = event.data.object
-        Rails.logger.info("[Webhook] 支払い完了 session_id=#{session.id} amount=#{session.amount_total}")
-        # TODO: 次回実装 → DB保存（Paymentモデル）or 寄付フラグの更新
+        user = if User.column_names.include?('stripe_customer_id') && session.customer.present?
+                 User.find_by(stripe_customer_id: session.customer)
+               end
+        email = session.customer_details&.email.presence || session.customer_email
+        user ||= User.find_by(email: email)
+
+        if user
+          Payment.find_or_create_by!(stripe_session_id: session.id) do |payment|
+            payment.user = user
+            payment.amount = session.amount_total
+            payment.status = 'completed'
+          end
+          Rails.logger.info("[Webhook] 支払い完了・DB保存 user_id=#{user.id} session_id=#{session.id}")
+        else
+          Rails.logger.warn("[Webhook] ユーザーが見つかりません customer=#{session.customer}")
+        end
       else
         Rails.logger.info("[Webhook] 未処理イベント: #{event.type}")
       end
