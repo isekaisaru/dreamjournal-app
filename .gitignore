@@ -71,3 +71,8 @@ postgres_backup/
 # Playwrightレポート（ログ・画面情報を含む）
 playwright-report/
 frontend/playwright-report/
+
+# 転職活動・個人メモ（公開禁止）
+docs/self-introduction.md
+docs/logs/
+backend/temp_rspec_output.txt
