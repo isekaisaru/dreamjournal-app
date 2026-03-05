@@ -12,7 +12,7 @@ export default function DonationSuccessPage() {
             あなたの応援がユメログの夢を育てます
           </p>
           <Link
-            href="/my-dreams"
+            href="/home"
             className="mt-8 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
             夢日記に戻る
