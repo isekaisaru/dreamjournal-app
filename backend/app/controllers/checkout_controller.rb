@@ -1,7 +1,4 @@
 class CheckoutController < ApplicationController
-  # 認証をスキップ（寄付は誰でも可能）
-  skip_before_action :authorize_request, only: [:create]
-
   def create
     begin
       # FRONTEND_URL must be absolute URL for Stripe redirect
@@ -14,6 +11,10 @@ class CheckoutController < ApplicationController
       # Stripe Checkout Session を作成
       # これは「決済画面のURL」を生成するリクエスト
       session = Stripe::Checkout::Session.create(
+        client_reference_id: current_user.id.to_s,
+        metadata: {
+          user_id: current_user.id.to_s
+        },
         # 決済方法（カード決済）
         payment_method_types: ['card'],
         
