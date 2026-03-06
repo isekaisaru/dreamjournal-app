@@ -18,6 +18,7 @@ RSpec.describe 'Webhooks API', type: :request do
       'StripeSession',
       id: 'cs_test_xxx',
       amount_total: 500,
+      client_reference_id: nil,
       customer: 'cus_test_123',
       customer_details: customer_details_double,
       customer_email: customer_email

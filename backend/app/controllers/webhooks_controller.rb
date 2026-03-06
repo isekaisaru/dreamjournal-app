@@ -40,7 +40,8 @@ class WebhooksController < ApplicationController
       case event.type
       when 'checkout.session.completed'
         session = event.data.object
-        user = if User.column_names.include?('stripe_customer_id') && session.customer.present?
+        user = User.find_by(id: session.client_reference_id)
+        user ||= if User.column_names.include?('stripe_customer_id') && session.customer.present?
                  User.find_by(stripe_customer_id: session.customer)
                end
         email = session.customer_details&.email.presence || session.customer_email
