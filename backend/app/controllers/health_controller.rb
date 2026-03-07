@@ -14,7 +14,7 @@ require 'uri'
 
 class HealthController < ApplicationController
   # 認証をスキップ（外部監視ツールからのアクセスを許可）
-  skip_before_action :authorize_request, only: [:check, :detailed_check], raise: false
+  skip_before_action :authorize_request, only: [:check, :detailed_check, :live, :ready], raise: false
   
   # ========================================
   # 🔍 基本的なヘルスチェック
@@ -32,6 +32,30 @@ class HealthController < ApplicationController
       version: Rails.version,
       environment: Rails.env
     }, status: :ok
+  end
+
+  # Liveness: アプリのプロセスが生きているかのみ確認（DB未確認）
+  def live
+    render json: {
+      status: 'ok',
+      timestamp: Time.current
+    }, status: :ok
+  end
+
+  # Readiness: DB接続まで含めた準備完了状態を確認
+  def ready
+    ApplicationRecord.connection.execute('SELECT 1')
+    render json: {
+      status: 'ok',
+      db: 'connected',
+      timestamp: Time.current
+    }, status: :ok
+  rescue => e
+    render json: {
+      status: 'error',
+      db: 'disconnected',
+      message: e.message
+    }, status: :service_unavailable
   end
 
   # ========================================
