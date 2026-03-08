@@ -1,16 +1,24 @@
 class CheckoutController < ApplicationController
   def create
+    PaymentsObservability.increment('checkout.request.total', user_id: current_user.id)
+    PaymentsObservability.log(event: 'checkout.request.received', user_id: current_user.id)
+
     begin
       # FRONTEND_URL must be absolute URL for Stripe redirect
       frontend_url = ENV['FRONTEND_URL']
       if frontend_url.blank?
+        PaymentsObservability.increment('checkout.error.frontend_url_missing')
+        PaymentsObservability.log(event: 'checkout.error.frontend_url_missing', level: :error, user_id: current_user.id)
         Rails.logger.error "FRONTEND_URL is not set. Cannot create Stripe session."
         return render json: { error: 'FRONTEND_URLが設定されていません。' }, status: :internal_server_error
       end
 
+      customer_id = ensure_stripe_customer_id!
+
       # Stripe Checkout Session を作成
       # これは「決済画面のURL」を生成するリクエスト
       session = Stripe::Checkout::Session.create(
+        customer: customer_id,
         client_reference_id: current_user.id.to_s,
         metadata: {
           user_id: current_user.id.to_s
@@ -41,17 +49,72 @@ class CheckoutController < ApplicationController
         cancel_url: "#{frontend_url}/donation/cancel",
       )
 
+      PaymentsObservability.increment('checkout.session.created', user_id: current_user.id)
+      PaymentsObservability.log(
+        event: 'checkout.session.created',
+        user_id: current_user.id,
+        stripe_customer_id: customer_id,
+        stripe_session_id: session.id
+      )
+
       # 生成された決済画面のURLをフロントエンドに返す
       render json: { url: session.url }, status: :ok
       
     rescue Stripe::StripeError => e
       # Stripeのエラーが発生した場合
+      PaymentsObservability.increment('checkout.error.stripe', user_id: current_user.id)
+      PaymentsObservability.log(event: 'checkout.error.stripe', level: :error, user_id: current_user.id, message: e.message)
       Rails.logger.error "Stripe error: #{e.message}"
       render json: { error: 'Stripe決済の準備に失敗しました。' }, status: :internal_server_error
     rescue => e
       # それ以外のエラー
+      PaymentsObservability.increment('checkout.error.unexpected', user_id: current_user.id)
+      PaymentsObservability.log(event: 'checkout.error.unexpected', level: :error, user_id: current_user.id, message: e.message)
       Rails.logger.error "Checkout error: #{e.message}"
       render json: { error: '予期しないエラーが発生しました。' }, status: :internal_server_error
     end
+  end
+
+  private
+
+  def ensure_stripe_customer_id!
+    existing_id = current_user.stripe_customer_id
+
+    if existing_id.present?
+      Stripe::Customer.retrieve(existing_id)
+      PaymentsObservability.increment('checkout.customer.reused', user_id: current_user.id)
+      PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: existing_id)
+      return existing_id
+    end
+
+    customer = Stripe::Customer.create(
+      email: current_user.email,
+      name: current_user.username,
+      metadata: { user_id: current_user.id.to_s }
+    )
+
+    current_user.update!(stripe_customer_id: customer.id)
+    PaymentsObservability.increment('checkout.customer.created', user_id: current_user.id)
+    PaymentsObservability.log(event: 'checkout.customer.created', user_id: current_user.id, stripe_customer_id: customer.id)
+    customer.id
+  rescue Stripe::InvalidRequestError => e
+    PaymentsObservability.increment('checkout.customer.invalid_reference', user_id: current_user.id)
+    PaymentsObservability.log(
+      event: 'checkout.customer.invalid_reference',
+      level: :warn,
+      user_id: current_user.id,
+      stripe_customer_id: existing_id,
+      message: e.message
+    )
+
+    customer = Stripe::Customer.create(
+      email: current_user.email,
+      name: current_user.username,
+      metadata: { user_id: current_user.id.to_s }
+    )
+    current_user.update!(stripe_customer_id: customer.id)
+    PaymentsObservability.increment('checkout.customer.recreated', user_id: current_user.id)
+    PaymentsObservability.log(event: 'checkout.customer.recreated', user_id: current_user.id, stripe_customer_id: customer.id)
+    customer.id
   end
 end
