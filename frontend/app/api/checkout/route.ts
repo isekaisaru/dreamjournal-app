@@ -1,7 +1,7 @@
 // Sentry OpenTelemetry との互換性のため、Node.js Runtime を使用
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(req: Request) {
   const backendUrl =
     process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
 
@@ -19,8 +19,8 @@ export async function POST() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // 認証が必要になったら、cookieを転送する（今は不要ならこのままでOK）
-        // Cookie: req.headers.get("cookie") ?? "",
+        // JWT認証のためCookieをバックエンドへ転送する（checkout はログイン必須）
+        Cookie: req.headers.get("cookie") ?? "",
       },
       signal: controller.signal,
     });
