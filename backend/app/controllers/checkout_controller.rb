@@ -81,23 +81,24 @@ class CheckoutController < ApplicationController
     existing_id = current_user.stripe_customer_id
 
     if existing_id.present?
-      Stripe::Customer.retrieve(existing_id)
-      PaymentsObservability.increment('checkout.customer.reused', user_id: current_user.id)
-      PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: existing_id)
-      return existing_id
+      customer = Stripe::Customer.retrieve(existing_id)
+
+      # Stripeで削除済みの顧客を再利用しないようにチェック
+      # 削除済み顧客でCheckout Sessionを作ると500エラーになるため
+      unless customer.respond_to?(:deleted) && customer.deleted
+        PaymentsObservability.increment('checkout.customer.reused', user_id: current_user.id)
+        PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: existing_id)
+        return existing_id
+      end
+
+      # 削除済みだった場合は新規作成へフォールスルー
+      PaymentsObservability.increment('checkout.customer.deleted', user_id: current_user.id)
+      PaymentsObservability.log(event: 'checkout.customer.deleted', level: :warn, user_id: current_user.id, stripe_customer_id: existing_id)
     end
 
-    customer = Stripe::Customer.create(
-      email: current_user.email,
-      name: current_user.username,
-      metadata: { user_id: current_user.id.to_s }
-    )
-
-    current_user.update!(stripe_customer_id: customer.id)
-    PaymentsObservability.increment('checkout.customer.created', user_id: current_user.id)
-    PaymentsObservability.log(event: 'checkout.customer.created', user_id: current_user.id, stripe_customer_id: customer.id)
-    customer.id
+    create_and_save_stripe_customer!
   rescue Stripe::InvalidRequestError => e
+    # IDが無効（存在しない等）の場合も新規作成
     PaymentsObservability.increment('checkout.customer.invalid_reference', user_id: current_user.id)
     PaymentsObservability.log(
       event: 'checkout.customer.invalid_reference',
@@ -106,15 +107,18 @@ class CheckoutController < ApplicationController
       stripe_customer_id: existing_id,
       message: e.message
     )
+    create_and_save_stripe_customer!
+  end
 
+  def create_and_save_stripe_customer!
     customer = Stripe::Customer.create(
       email: current_user.email,
       name: current_user.username,
       metadata: { user_id: current_user.id.to_s }
     )
     current_user.update!(stripe_customer_id: customer.id)
-    PaymentsObservability.increment('checkout.customer.recreated', user_id: current_user.id)
-    PaymentsObservability.log(event: 'checkout.customer.recreated', user_id: current_user.id, stripe_customer_id: customer.id)
+    PaymentsObservability.increment('checkout.customer.created', user_id: current_user.id)
+    PaymentsObservability.log(event: 'checkout.customer.created', user_id: current_user.id, stripe_customer_id: customer.id)
     customer.id
   end
 end
