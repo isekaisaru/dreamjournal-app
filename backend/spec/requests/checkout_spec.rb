@@ -1,0 +1,54 @@
+require 'rails_helper'
+
+RSpec.describe 'Checkout API', type: :request do
+  let(:frontend_url) { 'http://localhost:3000' }
+  let(:checkout_url) { 'https://checkout.stripe.com/c/pay/cs_test_123' }
+
+  before do
+    stub_const('ENV', ENV.to_hash.merge('FRONTEND_URL' => frontend_url))
+  end
+
+  describe 'POST /checkout' do
+    it_behaves_like 'unauthorized request', :post, '/checkout'
+
+    context '認証済みユーザーの場合' do
+      let(:checkout_session) do
+        double('StripeCheckoutSession', id: 'cs_test_123', url: checkout_url)
+      end
+
+      it 'stripe_customer_id が無い場合は customer を新規作成して保存する' do
+        user = create(:user, stripe_customer_id: nil)
+        created_customer = double('StripeCustomer', id: 'cus_created_123')
+
+        expect(Stripe::Customer).to receive(:create)
+          .with(hash_including(email: user.email, name: user.username, metadata: { user_id: user.id.to_s }))
+          .and_return(created_customer)
+        expect(Stripe::Checkout::Session).to receive(:create)
+          .with(hash_including(customer: 'cus_created_123', client_reference_id: user.id.to_s))
+          .and_return(checkout_session)
+
+        authenticated_post('/checkout', user)
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['url']).to eq(checkout_url)
+        expect(user.reload.stripe_customer_id).to eq('cus_created_123')
+      end
+
+      it 'stripe_customer_id がある場合は再利用して customer を新規作成しない' do
+        user = create(:user, stripe_customer_id: 'cus_existing_123')
+
+        expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        expect(Stripe::Customer).not_to receive(:create)
+        expect(Stripe::Checkout::Session).to receive(:create)
+          .with(hash_including(customer: 'cus_existing_123', client_reference_id: user.id.to_s))
+          .and_return(checkout_session)
+
+        authenticated_post('/checkout', user)
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['url']).to eq(checkout_url)
+        expect(user.reload.stripe_customer_id).to eq('cus_existing_123')
+      end
+    end
+  end
+end

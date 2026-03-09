@@ -6,7 +6,11 @@ class WebhooksController < ApplicationController
 
   # POST /webhooks/stripe
   def stripe
+    PaymentsObservability.increment('webhook.request.total')
+
     unless ENV['STRIPE_WEBHOOK_SECRET'].present?
+      PaymentsObservability.increment('webhook.error.secret_missing')
+      PaymentsObservability.log(event: 'webhook.error.secret_missing', level: :error)
       Rails.logger.error("[Webhook] STRIPE_WEBHOOK_SECRET が未設定です")
       return head :internal_server_error
     end
@@ -20,17 +24,26 @@ class WebhooksController < ApplicationController
       )
     rescue JSON::ParserError => e
       # リクエストボディが不正なJSON
+      PaymentsObservability.increment('webhook.error.invalid_json')
+      PaymentsObservability.log(event: 'webhook.error.invalid_json', level: :warn, message: e.message)
       Rails.logger.warn("[Webhook] JSON parse error: #{e.message}")
       return head :bad_request
     rescue Stripe::SignatureVerificationError => e
       # 署名が一致しない（偽物のリクエストや改ざん）
+      PaymentsObservability.increment('webhook.error.invalid_signature')
+      PaymentsObservability.log(event: 'webhook.error.invalid_signature', level: :warn, message: e.message)
       Rails.logger.warn("[Webhook] Signature verification failed: #{e.message}")
       return head :bad_request
     end
 
+    PaymentsObservability.increment('webhook.event.received', event_type: event.type)
+    PaymentsObservability.log(event: 'webhook.event.received', event_type: event.type, stripe_event_id: event.id)
+
     begin
       marker = ProcessedWebhookEvent.create!(stripe_event_id: event.id, processed_at: Time.current)
     rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+      PaymentsObservability.increment('webhook.event.duplicate', event_type: event.type)
+      PaymentsObservability.log(event: 'webhook.event.duplicate', event_type: event.type, stripe_event_id: event.id)
       Rails.logger.info("[Webhook] 重複イベントをスキップ event_id=#{event.id}")
       return head :ok
     end
@@ -53,14 +66,40 @@ class WebhooksController < ApplicationController
             payment.amount = session.amount_total
             payment.status = 'completed'
           end
+          PaymentsObservability.increment('webhook.payment.saved', event_type: event.type, user_id: user.id)
+          PaymentsObservability.log(
+            event: 'webhook.payment.saved',
+            event_type: event.type,
+            user_id: user.id,
+            stripe_event_id: event.id,
+            stripe_session_id: session.id
+          )
           Rails.logger.info("[Webhook] 支払い完了・DB保存 user_id=#{user.id} session_id=#{session.id}")
         else
+          PaymentsObservability.increment('webhook.payment.unmatched_user', event_type: event.type)
+          PaymentsObservability.log(
+            event: 'webhook.payment.unmatched_user',
+            level: :warn,
+            event_type: event.type,
+            stripe_event_id: event.id,
+            stripe_customer_id: session.customer
+          )
           Rails.logger.warn("[Webhook] ユーザーが見つかりません customer=#{session.customer}")
         end
       else
+        PaymentsObservability.increment('webhook.event.unhandled', event_type: event.type)
+        PaymentsObservability.log(event: 'webhook.event.unhandled', event_type: event.type, stripe_event_id: event.id)
         Rails.logger.info("[Webhook] 未処理イベント: #{event.type}")
       end
     rescue => e
+      PaymentsObservability.increment('webhook.error.processing', event_type: event.type)
+      PaymentsObservability.log(
+        event: 'webhook.error.processing',
+        level: :error,
+        event_type: event.type,
+        stripe_event_id: event.id,
+        message: e.message
+      )
       marker&.destroy!
       raise
     end

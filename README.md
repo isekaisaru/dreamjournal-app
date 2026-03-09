@@ -317,6 +317,11 @@ STRIPE_WEBHOOK_SECRET=   # stripe listen --print-secret で取得（ローカル
                          # 本番用はStripeダッシュボード → Webhooks で別途登録・発行
 ```
 
+### 運用ドキュメント
+
+- Payments トラブル対応: [`docs/runbook-payments.md`](docs/runbook-payments.md)
+- リリース前チェック: [`docs/release-checklist-payments.md`](docs/release-checklist-payments.md)
+
 ## トラブルシューティング
 
 - コンテナの再ビルドが必要な場合は `make dev-down` → `docker-compose build --no-cache`。
