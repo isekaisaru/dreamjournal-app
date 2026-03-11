@@ -3,7 +3,7 @@
 
 ## 🌐 デプロイ URL
 
-**フロントエンド**: https://dreamjournal-8u8f7y2lu-isekaisarus-projects.vercel.app/
+**フロントエンド**: https://dreamjournal-app.vercel.app
 **バックエンド**: https://dreamjournal-app.onrender.com
 
 ### 動作確認方法
@@ -47,7 +47,7 @@ curl https://dreamjournal-app.onrender.com/health
 > **English Version Below** | 日本語版は下部にあります
 
 ## 🌐 Production URL
-- **Frontend**: https://dreamjournal-8u8f7y2lu-isekaisarus-projects.vercel.app/
+- **Frontend**: https://dreamjournal-app.vercel.app
 - **Backend**: https://dreamjournal-app.onrender.com
 
 ## 🛠 Tech Stack

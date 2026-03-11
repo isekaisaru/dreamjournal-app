@@ -54,15 +54,17 @@ export default function Footer() {
               <span>お問い合わせ</span>
             </h3>
             <p className="text-sm text-gray-300">
-              質問や困ったことがあれば、
+              ご質問・ご要望は
               <br />
-              お気軽にご連絡ください。
+              GitHub Issues からどうぞ。
             </p>
             <a
-              href="mailto:support@dreamjournal.example.com"
+              href="https://github.com/isekaisaru/dreamjournal-app/issues"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-indigo-300 hover:text-indigo-200 transition-colors duration-200 mt-2 inline-block"
             >
-              support@dreamjournal.example.com
+              GitHub Issues →
             </a>
           </div>
         </div>
