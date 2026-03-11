@@ -12,8 +12,9 @@ import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "夢の記録アプリケーション",
-  description: "夢を記録するためのアプリケーションです。",
+  title: "ユメログ | AI夢分析・夢日記アプリ",
+  description:
+    "毎日の夢をAIが分析。感情タグ・検索・月別アーカイブで心の変化を可視化するセルフケア・家族向けアプリ。Next.js / Ruby on Rails / Stripe 決済実装。",
 };
 
 export default function RootLayout({
