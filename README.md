@@ -51,22 +51,41 @@ curl https://dreamjournal-app.onrender.com/health
 - **Backend**: https://dreamjournal-app.onrender.com
 
 ## 🛠 Tech Stack
-- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS
-- **Backend:** Ruby on Rails 7 (API Mode)
-- **Database:** PostgreSQL (Supabase)
-- **Infrastructure:** Vercel (FE), Render (BE)
-- **Monitoring:** Sentry, Lighthouse CI
-- **DevOps:** Docker, GitHub Actions
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16 / React 18 / TypeScript / Tailwind CSS / Framer Motion |
+| Backend | Ruby on Rails 7.1 (API Mode) / Ruby 3.3 |
+| Database | PostgreSQL |
+| Auth | JWT + HttpOnly Cookie |
+| AI | OpenAI API（夢分析） |
+| Payment | Stripe Checkout（寄付機能） |
+| Testing | RSpec（70+ examples）/ Jest / Playwright（E2E） |
+| CI/CD | GitHub Actions / Vercel / Render |
+| Monitoring | Sentry（Frontend + Backend） |
+| DevOps | Docker Compose |
+
+## 💡 Technical Highlights（工夫したポイント）
+
+1. **Stripe Customer の再利用設計**
+   決済時に `ensure_stripe_customer_id!` で既存顧客の再利用・削除済み顧客の再作成を自動化。Codex Bot のコードレビュー（P1指摘）にも対応し、本番で安全に動作する設計を実現。
+
+2. **セキュリティ依存関係の継続管理**
+   Dependabot アラート 25件を体系的に優先度整理し、Rack / nokogiri / Next.js / rollup 等を更新。resolutions による transitive dependency の強制解決まで実施。
+
+3. **観測性（Observability）の実装**
+   `PaymentsObservability` サービスで決済・Webhook イベントの構造化ログと KPI カウンターを統一。本番障害のトラブルシュートを Runbook 化（`docs/runbook-payments.md`）。
 
 ## 🔐 Security & Operations
 - **Authentication:** JWT (HttpOnly Cookie) based auth
-- **Database Security:** Supabase RLS (Row Level Security) enabled with "Default Deny" policy
-- **Performance:** Optimized for Core Web Vitals (Lighthouse Performance: 99/100)
+- **Database Security:** Row Level Security enabled with "Default Deny" policy
+- **Performance:** Lighthouse Performance Score 99/100
 - **CORS:** Strictly configured for production environments
-- **Uptime:** 23 days of continuous production operation with zero critical incidents
+- **Uptime:** Continuous production operation with zero critical incidents
 
-## 👨💻 Author
-Developed by a former Logistics Manager transitioning to Full-Stack Development.
+## 👨‍💻 Author
+Career-changer: former Logistics Manager → Full-Stack Engineer.
+1+ year of solo development with daily commits.
 Focusing on **Reliability**, **Security**, and **User Experience**.
 
 ---
@@ -145,7 +164,7 @@ Focusing on **Reliability**, **Security**, and **User Experience**.
 - Docker Desktop (24 以降推奨)
 - Docker Compose v2
 - Make コマンド (macOS は標準インストール済み)
-- Node.js 18+ と npm (フロントエンド単体で開発する場合)
+- Node.js 20+ と npm (フロントエンド単体で開発する場合)
 
 ### クイックスタート-Docker
 
