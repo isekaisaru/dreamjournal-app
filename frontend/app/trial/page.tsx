@@ -14,13 +14,13 @@ export default function TrialPage() {
   const addDream = () => {
     // バリデーション: タイトルと内容が空でないか確認
     if (!title || !description) {
-      alert("タイトルと内容の両方を入力してください。");
+      alert("ゆめの なまえと おはなしを かいてね。");
       return;
     }
 
     // 夢の記録は7つまで
     if (dreams.length >= 7) {
-      alert("夢の記録は７つまでです。");
+      alert("ここに かける ゆめは 7こ まで だよ。");
       return;
     }
 
@@ -40,17 +40,25 @@ export default function TrialPage() {
           AIで夢を記録・分析するセルフケアアプリ
         </p>
         <p className="text-muted-foreground mb-4">
-          登録不要で夢の記録を体験できます。ただし、ページをリロードするとデータは消えます。
+          ここは おためしの おへや です。
+          <br />
+          ゆめを かいて あそべるけれど、
+          <br />
+          この ぺーじを とじると かいた ゆめは きえてしまいます。
         </p>
         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            💡 夢を永続的に保存したい場合は、ユーザー登録が必要です
+            もっと のこしておきたい ときは、
+            <br />
+            おうちの ひとと いっしょに とうろくしてね。
           </p>
         </div>
       </div>
 
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4 text-foreground">夢の記録</h2>
+        <h2 className="text-2xl font-bold mb-4 text-foreground">
+          ゆめを かいてみよう
+        </h2>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -63,7 +71,7 @@ export default function TrialPage() {
               htmlFor="title"
               className="block text-sm font-medium text-card-foreground"
             >
-              夢のタイトル:
+              ゆめの なまえ
             </label>
             <input
               id="title"
@@ -79,7 +87,7 @@ export default function TrialPage() {
               htmlFor="description"
               className="block text-sm font-medium text-card-foreground"
             >
-              夢の内容:
+              みた ゆめの おはなし
             </label>
             <textarea
               id="description"
@@ -93,16 +101,18 @@ export default function TrialPage() {
             type="submit"
             className="bg-primary text-primary-foreground py-2 px-4 rounded hover:bg-primary/90"
           >
-            夢を記録する
+            このゆめを かく
           </button>
         </form>
 
         <h3 className="text-xl font-semibold mb-2 text-foreground">
-          記録された夢 ({dreams.length}/7)
+          かいた ゆめ ({dreams.length}/7)
         </h3>
         {dreams.length === 0 ? (
           <p className="text-muted-foreground">
-            まだ夢が記録されていません。上のフォームから記録してみましょう。
+            まだ なにも かいていないよ。
+            <br />
+            うえの らんに ゆめを かいてみよう。
           </p>
         ) : (
           <ul className="list-disc pl-5 mb-6">
@@ -119,13 +129,15 @@ export default function TrialPage() {
 
         <div className="mt-6 p-4 bg-card border border-border rounded-lg text-center">
           <p className="text-foreground mb-4">
-            夢を永続的に保存して、いつでも振り返りたいですか？
+            ゆめを ずっと とっておいて、
+            <br />
+            あとで また みたい ときは こちら。
           </p>
           <Link
             href="/register"
             className="inline-block bg-primary text-primary-foreground py-2 px-6 rounded hover:bg-primary/90"
           >
-            ユーザー登録して保存する
+            とうろくして のこす
           </Link>
         </div>
       </div>
