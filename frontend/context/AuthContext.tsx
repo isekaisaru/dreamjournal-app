@@ -8,7 +8,7 @@ import React, {
   useState,
   ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import apiClient from "@/lib/apiClient";
 
 interface User {
@@ -31,9 +31,33 @@ type AuthContextType = {
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_HINT_KEY = "dreamjournal_auth_hint";
+const PROTECTED_PATH_PREFIXES = ["/home", "/dream", "/settings"];
+
+function hasAuthHint(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(AUTH_HINT_KEY) === "1";
+}
+
+function setAuthHint(enabled: boolean): void {
+  if (typeof window === "undefined") return;
+  if (enabled) {
+    window.localStorage.setItem(AUTH_HINT_KEY, "1");
+  } else {
+    window.localStorage.removeItem(AUTH_HINT_KEY);
+  }
+}
+
+function isProtectedPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return PROTECTED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
   const [user, setUser] = useState<User | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -47,6 +71,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ---------------------------
   useEffect(() => {
     let mounted = true;
+    const shouldVerify = hasAuthHint() || isProtectedPath(pathname);
+
+    if (!shouldVerify) {
+      setAuthStatus("unauthenticated");
+      setUser(null);
+      setUserId(null);
+      return () => {
+        mounted = false;
+      };
+    }
 
     const verifyToken = async () => {
       try {
@@ -55,14 +89,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (!mounted) return;
 
         if (res?.user) {
+          setAuthHint(true);
           setUser({ ...res.user, id: String(res.user.id) });
           setUserId(String(res.user.id));
           setAuthStatus("authenticated");
         } else {
+          setAuthHint(false);
           setAuthStatus("unauthenticated");
         }
       } catch (err) {
         if (mounted) {
+          setAuthHint(false);
           setAuthStatus("unauthenticated");
           setUser(null);
           setUserId(null);
@@ -75,12 +112,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       mounted = false;
     };
-  }, []); // ←依存配列なし。初回だけ！
+  }, [pathname]);
 
   // ---------------------------
   // login
   // ---------------------------
   const login = useCallback((userData: User) => {
+    setAuthHint(true);
     setUser(userData);
     setUserId(userData.id);
     setAuthStatus("authenticated");
@@ -95,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Logout API failed:", error);
     } finally {
+      setAuthHint(false);
       setAuthStatus("unauthenticated");
       setUser(null);
       setUserId(null);
