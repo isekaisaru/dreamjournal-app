@@ -28,14 +28,33 @@ export class ApiError extends Error {
   }
 }
 
-type ApiFetchOptions = RequestInit & { token?: string };
+type ApiFetchOptions = RequestInit & { token?: string; timeoutMs?: number };
+
+const DEFAULT_TIMEOUT_MS =
+  process.env.NODE_ENV === "development" ? 30_000 : 15_000;
+const AUTH_TIMEOUT_MS = 45_000;
+
+function resolveTimeoutMs(
+  endpoint: string,
+  timeoutMs?: number
+): number {
+  if (typeof timeoutMs === "number") {
+    return timeoutMs;
+  }
+
+  if (endpoint.startsWith("/auth/")) {
+    return Math.max(DEFAULT_TIMEOUT_MS, AUTH_TIMEOUT_MS);
+  }
+
+  return DEFAULT_TIMEOUT_MS;
+}
 
 export async function apiFetch<T>(
   endpoint: string,
   options: ApiFetchOptions = {}
 ): Promise<T> {
   const url = createApiUrl(endpoint);
-  const { token, ...fetchOptions } = options;
+  const { token, timeoutMs, ...fetchOptions } = options;
 
   const defaultHeaders: HeadersInit = {
     Accept: "application/json",
@@ -76,9 +95,9 @@ export async function apiFetch<T>(
   finalOptions.cache = "no-store";
 
   // ③ Renderコールドスタート対策: タイムアウト（無限ハングを防止）
-  // 開発環境: 30秒（Turbopack初回コンパイル待ちを考慮）
-  // 本番環境: 15秒（Renderコールドスタート対策）
-  const TIMEOUT_MS = process.env.NODE_ENV === "development" ? 30_000 : 15_000;
+  // 開発環境: 30秒
+  // 本番環境: 通常 15秒 / 認証系は 45秒
+  const TIMEOUT_MS = resolveTimeoutMs(endpoint, timeoutMs);
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
 
