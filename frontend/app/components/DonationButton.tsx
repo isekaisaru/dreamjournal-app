@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-export default function DonationButton() {
+type DonationButtonProps = {
+  label?: string;
+};
+
+export default function DonationButton({
+  label = "500円で応援する",
+}: DonationButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,54 +47,16 @@ export default function DonationButton() {
   };
 
   return (
-    <div className="donation-container">
+    <div className="space-y-3">
       <button
         onClick={handleDonation}
         disabled={loading}
-        className="donation-button"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 px-5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? "準備中..." : "💝 500円で応援する"}
+        {loading ? "準備中..." : label}
       </button>
 
-      {error && <p className="error-message">{error}</p>}
-
-      <style jsx>{`
-        .donation-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .donation-button {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          padding: 1rem 2rem;
-          font-size: 1.1rem;
-          font-weight: bold;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .donation-button:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .donation-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .error-message {
-          color: #e53e3e;
-          font-size: 0.9rem;
-          margin: 0;
-        }
-      `}</style>
+      {error && <p className="text-sm font-medium text-destructive">{error}</p>}
     </div>
   );
 }

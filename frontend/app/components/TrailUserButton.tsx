@@ -20,11 +20,11 @@ const TrialUserButton: React.FC = () => {
       if (response && response.user) {
         login({ ...response.user, id: String(response.user.id) }); // loginに渡す前にidをstringに変換
       }
-      toast.success("お試しユーザーとしてログインしました！");
+      toast.success("おためしの おへやに はいったよ。");
     } catch (error: any) {
       const errorMessage = error.response?.data?.error
         ? error.response.data.error
-        : "お試しユーザーの作成に失敗しました。";
+        : "おためしの じゅんびに しっぱい しました。";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -33,7 +33,7 @@ const TrialUserButton: React.FC = () => {
 
   return (
     <Button onClick={handleTrialUser} disabled={isLoading} variant="secondary">
-      {isLoading ? "作成中..." : "お試しユーザーとして始める"}
+      {isLoading ? "じゅんびちゅう..." : "おためしで はじめる"}
     </Button>
   );
 };

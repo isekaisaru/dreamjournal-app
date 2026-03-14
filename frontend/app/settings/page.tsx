@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import Loading from "../loading";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import DonationButton from "../components/DonationButton";
 
 // ジュニアロックのための簡単な計算問題を生成する関数
 const generateMathProblem = () => {
@@ -125,6 +126,29 @@ const SettingsPage = () => {
               <br />
               しっかり まもられています。
             </p>
+          </div>
+
+          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-3 text-foreground flex items-center">
+              <span className="text-2xl mr-2">👨‍👩‍👧</span>
+              保護者の方へ
+            </h2>
+            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+              応援のための決済ボタンは、お子さまがまちがって押さないよう
+              この画面の中だけに置いています。
+              <br />
+              内容をご確認のうえ、必要なときだけご利用ください。
+            </p>
+            <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 p-4">
+              <p className="text-sm font-medium text-foreground">
+                ユメログの開発を気に入っていただけたら、
+                <br />
+                500円のドネーションで応援できます。
+              </p>
+              <div className="mt-4">
+                <DonationButton label="500円で応援する" />
+              </div>
+            </div>
           </div>
         </section>
 
