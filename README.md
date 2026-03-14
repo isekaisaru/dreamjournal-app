@@ -1,4 +1,11 @@
 # 夢の記録アプリケーション
+
+## 30秒で分かるユメログ
+ユメログは「夢の記録を続けられない」「自分の状態を言語化しづらい」という課題を、AI要約と感情タグで振り返れるようにしたWebアプリです。
+- 対象ユーザー: 日々のセルフケアをしたい個人ユーザー
+- できること: 夢記録 / AI分析 / 検索 / 月別アーカイブ / 寄付決済
+- 技術構成: Next.js + Rails API + PostgreSQL + Stripe + Sentry
+
 > **Status**: 🟢 本番運用中 (Production Ready)
 
 ## 🌐 デプロイ URL
@@ -60,7 +67,7 @@ curl https://dreamjournal-app.onrender.com/health
 | Auth | JWT + HttpOnly Cookie |
 | AI | OpenAI API（夢分析） |
 | Payment | Stripe Checkout（寄付機能） |
-| Testing | RSpec（70+ examples）/ Jest / Playwright（E2E） |
+| Testing | RSpec（現時点: 77 examples）/ Jest / Playwright（E2E） |
 | CI/CD | GitHub Actions / Vercel / Render |
 | Monitoring | Sentry（Frontend + Backend） |
 | DevOps | Docker Compose |
@@ -81,7 +88,7 @@ curl https://dreamjournal-app.onrender.com/health
 - **Database Security:** Row Level Security enabled with "Default Deny" policy
 - **Performance:** Lighthouse Performance Score 99/100
 - **CORS:** Strictly configured for production environments
-- **Uptime:** Continuous production operation with zero critical incidents
+- **Operations:** No major incidents recorded to date (based on solo operation logs)
 
 ## 👨‍💻 Author
 Career-changer: former Logistics Manager → Full-Stack Engineer.

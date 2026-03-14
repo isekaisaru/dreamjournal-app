@@ -4,9 +4,11 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/apiClient";
 import { Dream } from "@/app/types";
+import { useAuth } from "@/context/AuthContext";
 
 export default function PendingDreamsMonitor() {
   const router = useRouter();
+  const { authStatus } = useAuth();
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [pollInterval, setPollInterval] = useState(5000);
@@ -22,6 +24,7 @@ export default function PendingDreamsMonitor() {
 
   // 保留中リストの更新 (API)
   const refreshPendingList = useCallback(async () => {
+    if (authStatus !== "authenticated") return;
     try {
       // 最新の夢を取得してpendingのものを探す
       // Note: キャッシュを確実に回避するためタイムスタンプ付与も検討できるが、
@@ -57,7 +60,7 @@ export default function PendingDreamsMonitor() {
         );
       }
     }
-  }, []);
+  }, [authStatus]);
 
   // イベントリスナー設定 (録音完了通知を受け取る)
   useEffect(() => {

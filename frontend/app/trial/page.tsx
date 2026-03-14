@@ -34,8 +34,11 @@ export default function TrialPage() {
     <div className="container mx-auto p-4 bg-background text-foreground">
       <div className="mb-6 p-4 bg-card border border-border rounded-lg">
         <h1 className="text-2xl font-bold mb-2 text-foreground">
-          お試し体験モード
+          ユメログ お試し体験モード
         </h1>
+        <p className="text-lg font-semibold text-primary mb-2">
+          AIで夢を記録・分析するセルフケアアプリ
+        </p>
         <p className="text-muted-foreground mb-4">
           登録不要で夢の記録を体験できます。ただし、ページをリロードするとデータは消えます。
         </p>
