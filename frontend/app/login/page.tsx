@@ -49,6 +49,12 @@ export default function Login() {
       console.error("ログインAPI呼び出しエラー:", apiError);
       // 以前: エラーメッセージは深い階層にありました (apiError.response.data.error)。
       // 今回: 新しいapiFetch関数のおかげで、エラーメッセージが apiError.message に直接入っています。シンプル！
+      if (apiError?.status === 504) {
+        setPageError(
+          "サーバーの起動に時間がかかっています。少し待ってからもう一度お試しください。"
+        );
+        return;
+      }
       setPageError(
         apiError.message || "ログインに失敗しました。もう一度お試しください。"
       );
