@@ -1,4 +1,6 @@
 class WebhooksController < ApplicationController
+  class InvalidCheckoutSessionPayloadError < StandardError; end
+
   # Rails API モードでは CSRF保護はデフォルトで無効のため、
   # verify_authenticity_token のスキップは不要。
   # JWT認証のみスキップする（WebhookはStripeサーバーが叩くため）
@@ -92,6 +94,18 @@ class WebhooksController < ApplicationController
         PaymentsObservability.log(event: 'webhook.event.unhandled', event_type: event.type, stripe_event_id: event.id)
         Rails.logger.info("[Webhook] 未処理イベント: #{event.type}")
       end
+    rescue InvalidCheckoutSessionPayloadError => e
+      PaymentsObservability.increment('webhook.error.processing', event_type: event.type)
+      PaymentsObservability.log(
+        event: 'webhook.error.processing',
+        level: :error,
+        event_type: event.type,
+        stripe_event_id: event.id,
+        message: e.message
+      )
+      marker&.destroy!
+      Rails.logger.error("[Webhook] checkout.session.completed payload invalid: #{e.message}")
+      return head :internal_server_error
     rescue => e
       PaymentsObservability.increment('webhook.error.processing', event_type: event.type)
       PaymentsObservability.log(
@@ -119,9 +133,9 @@ class WebhooksController < ApplicationController
     currency = session.currency
     status = session.payment_status
 
-    raise ArgumentError, 'Stripe checkout.session.completed is missing amount_total' if amount.nil?
-    raise ArgumentError, 'Stripe checkout.session.completed is missing currency' if currency.blank?
-    raise ArgumentError, 'Stripe checkout.session.completed is missing payment_status' if status.blank?
+    raise InvalidCheckoutSessionPayloadError, 'Stripe checkout.session.completed is missing amount_total' if amount.nil?
+    raise InvalidCheckoutSessionPayloadError, 'Stripe checkout.session.completed is missing currency' if currency.blank?
+    raise InvalidCheckoutSessionPayloadError, 'Stripe checkout.session.completed is missing payment_status' if status.blank?
 
     {
       stripe_payment_intent_id: extract_payment_intent_id(session.payment_intent),
