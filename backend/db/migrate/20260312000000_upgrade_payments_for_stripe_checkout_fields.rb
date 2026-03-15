@@ -1,9 +1,6 @@
 class UpgradePaymentsForStripeCheckoutFields < ActiveRecord::Migration[7.1]
   def up
     rename_column :payments, :stripe_session_id, :stripe_checkout_session_id
-    rename_index :payments,
-                 'index_payments_on_stripe_session_id',
-                 'index_payments_on_stripe_checkout_session_id'
 
     add_column :payments, :stripe_payment_intent_id, :string
     add_column :payments, :currency, :string, limit: 3
@@ -33,9 +30,6 @@ class UpgradePaymentsForStripeCheckoutFields < ActiveRecord::Migration[7.1]
     remove_column :payments, :currency
     remove_column :payments, :stripe_payment_intent_id
 
-    rename_index :payments,
-                 'index_payments_on_stripe_checkout_session_id',
-                 'index_payments_on_stripe_session_id'
     rename_column :payments, :stripe_checkout_session_id, :stripe_session_id
   end
 end

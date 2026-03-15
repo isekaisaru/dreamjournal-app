@@ -73,12 +73,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_12_000000) do
   create_table "payments", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "stripe_checkout_session_id", null: false
-    t.string "stripe_payment_intent_id"
     t.integer "amount", null: false
-    t.string "currency", limit: 3, null: false
     t.string "status", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "stripe_payment_intent_id"
+    t.string "currency", limit: 3, null: false
     t.index ["stripe_checkout_session_id"], name: "index_payments_on_stripe_checkout_session_id", unique: true
     t.index ["stripe_payment_intent_id"], name: "index_payments_on_stripe_payment_intent_id", unique: true
     t.index ["user_id", "created_at"], name: "index_payments_on_user_id_and_created_at"
