@@ -2,7 +2,20 @@ require 'rails_helper'
 
 RSpec.describe 'Webhooks API', type: :request do
   let(:webhook_secret) { 'whsec_test_secret' }
-  let(:payload) { { type: 'checkout.session.completed', data: { object: { id: 'cs_test_xxx', amount_total: 500 } } }.to_json }
+  let(:payload) do
+    {
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_xxx',
+          payment_intent: 'pi_test_123',
+          amount_total: 500,
+          currency: 'jpy',
+          payment_status: 'paid'
+        }
+      }
+    }.to_json
+  end
   let(:sig_header) { 't=12345,v1=fakesignature' }
   let(:customer_email) { 'webhook-user@example.com' }
 
@@ -17,7 +30,10 @@ RSpec.describe 'Webhooks API', type: :request do
     double(
       'StripeSession',
       id: 'cs_test_xxx',
+      payment_intent: 'pi_test_123',
       amount_total: 500,
+      currency: 'jpy',
+      payment_status: 'paid',
       client_reference_id: nil,
       customer: 'cus_test_123',
       customer_details: customer_details_double,
@@ -125,10 +141,61 @@ RSpec.describe 'Webhooks API', type: :request do
               }
           end.to change(Payment, :count).by(1)
 
-          payment = Payment.find_by!(stripe_session_id: 'cs_test_xxx')
+          payment = Payment.find_by!(stripe_checkout_session_id: 'cs_test_xxx')
           expect(payment.user_id).to eq(user.id)
+          expect(payment.stripe_payment_intent_id).to eq('pi_test_123')
           expect(payment.amount).to eq(500)
-          expect(payment.status).to eq('completed')
+          expect(payment.currency).to eq('jpy')
+          expect(payment.status).to eq('paid')
+        end
+      end
+
+      context 'checkout.session.completed に必須項目が欠けている場合' do
+        let(:session_without_currency) do
+          double(
+            'StripeSession',
+            id: 'cs_test_xxx',
+            payment_intent: 'pi_test_123',
+            amount_total: 500,
+            currency: nil,
+            payment_status: 'paid',
+            client_reference_id: nil,
+            customer: 'cus_test_123',
+            customer_details: customer_details_double,
+            customer_email: customer_email
+          )
+        end
+
+        let(:event_data_without_currency) do
+          double('StripeEventData', object: session_without_currency)
+        end
+
+        let(:stripe_event_missing_currency) do
+          double(
+            'StripeEvent',
+            id: 'evt_test_missing_currency',
+            type: 'checkout.session.completed',
+            data: event_data_without_currency
+          )
+        end
+
+        it '500 を返し、Payment も ProcessedWebhookEvent も残さない' do
+          create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_missing_currency)
+
+          expect do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+          end.not_to change(Payment, :count)
+
+          expect(response).to have_http_status(:internal_server_error)
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_test_missing_currency')).to be_empty
         end
       end
 
@@ -161,7 +228,7 @@ RSpec.describe 'Webhooks API', type: :request do
         end
       end
 
-      context '同じ stripe_session_id を2回受信した場合' do
+      context '同じ stripe_checkout_session_id を2回受信した場合' do
         let(:stripe_event_completed_second) do
           double(
             'StripeEvent',
@@ -189,7 +256,7 @@ RSpec.describe 'Webhooks API', type: :request do
             end
           end.to change(Payment, :count).by(1)
 
-          expect(Payment.where(stripe_session_id: 'cs_test_xxx').count).to eq(1)
+          expect(Payment.where(stripe_checkout_session_id: 'cs_test_xxx').count).to eq(1)
         end
       end
 
