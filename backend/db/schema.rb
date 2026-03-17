@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_11_202128) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_12_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -72,12 +72,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_11_202128) do
 
   create_table "payments", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.string "stripe_session_id", null: false
+    t.string "stripe_checkout_session_id", null: false
     t.integer "amount", null: false
-    t.string "status", default: "completed", null: false
+    t.string "status", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["stripe_session_id"], name: "index_payments_on_stripe_session_id", unique: true
+    t.string "stripe_payment_intent_id"
+    t.string "currency", limit: 3, null: false
+    t.index ["stripe_checkout_session_id"], name: "index_payments_on_stripe_checkout_session_id", unique: true
+    t.index ["stripe_payment_intent_id"], name: "index_payments_on_stripe_payment_intent_id", unique: true
+    t.index ["user_id", "created_at"], name: "index_payments_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
 

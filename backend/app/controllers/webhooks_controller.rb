@@ -1,4 +1,6 @@
 class WebhooksController < ApplicationController
+  class InvalidCheckoutSessionPayloadError < StandardError; end
+
   # Rails API モードでは CSRF保護はデフォルトで無効のため、
   # verify_authenticity_token のスキップは不要。
   # JWT認証のみスキップする（WebhookはStripeサーバーが叩くため）
@@ -61,18 +63,19 @@ class WebhooksController < ApplicationController
         user ||= User.find_by(email: email)
 
         if user
-          Payment.find_or_create_by!(stripe_session_id: session.id) do |payment|
-            payment.user = user
-            payment.amount = session.amount_total
-            payment.status = 'completed'
-          end
+          payment_attributes = payment_attributes_from_session(session)
+          payment = Payment.find_or_initialize_by(stripe_checkout_session_id: session.id)
+          payment.user = user
+          payment.assign_attributes(payment_attributes)
+          payment.save!
           PaymentsObservability.increment('webhook.payment.saved', event_type: event.type, user_id: user.id)
           PaymentsObservability.log(
             event: 'webhook.payment.saved',
             event_type: event.type,
             user_id: user.id,
             stripe_event_id: event.id,
-            stripe_session_id: session.id
+            stripe_checkout_session_id: session.id,
+            stripe_payment_intent_id: payment.stripe_payment_intent_id
           )
           Rails.logger.info("[Webhook] 支払い完了・DB保存 user_id=#{user.id} session_id=#{session.id}")
         else
@@ -91,6 +94,18 @@ class WebhooksController < ApplicationController
         PaymentsObservability.log(event: 'webhook.event.unhandled', event_type: event.type, stripe_event_id: event.id)
         Rails.logger.info("[Webhook] 未処理イベント: #{event.type}")
       end
+    rescue InvalidCheckoutSessionPayloadError => e
+      PaymentsObservability.increment('webhook.error.processing', event_type: event.type)
+      PaymentsObservability.log(
+        event: 'webhook.error.processing',
+        level: :error,
+        event_type: event.type,
+        stripe_event_id: event.id,
+        message: e.message
+      )
+      marker&.destroy!
+      Rails.logger.error("[Webhook] checkout.session.completed payload invalid: #{e.message}")
+      return head :internal_server_error
     rescue => e
       PaymentsObservability.increment('webhook.error.processing', event_type: event.type)
       PaymentsObservability.log(
@@ -105,5 +120,28 @@ class WebhooksController < ApplicationController
     end
 
     head :ok
+  end
+
+  private
+
+  def extract_payment_intent_id(payment_intent)
+    payment_intent.respond_to?(:id) ? payment_intent.id : payment_intent
+  end
+
+  def payment_attributes_from_session(session)
+    amount = session.amount_total
+    currency = session.currency
+    status = session.payment_status
+
+    raise InvalidCheckoutSessionPayloadError, 'Stripe checkout.session.completed is missing amount_total' if amount.nil?
+    raise InvalidCheckoutSessionPayloadError, 'Stripe checkout.session.completed is missing currency' if currency.blank?
+    raise InvalidCheckoutSessionPayloadError, 'Stripe checkout.session.completed is missing payment_status' if status.blank?
+
+    {
+      stripe_payment_intent_id: extract_payment_intent_id(session.payment_intent),
+      amount: amount,
+      currency: currency,
+      status: status
+    }
   end
 end
