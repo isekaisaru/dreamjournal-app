@@ -3,6 +3,40 @@ import { resolveBackendUrl } from "./backend-url";
 // Sentry OpenTelemetry との互換性のため、Node.js Runtime を使用
 export const runtime = "nodejs";
 
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
+function isPrivateRuntimeHost(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname;
+    return ["backend", "localhost", "127.0.0.1"].includes(hostname);
+  } catch {
+    return true;
+  }
+}
+
+function resolveBackendUrl(): string | null {
+  const internalApiUrl = process.env.INTERNAL_API_URL;
+  const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const isVercelRuntime = process.env.VERCEL === "1";
+
+  // Vercel環境かローカル環境かに応じて、接続優先順位を入れ替える
+  // 指摘に基づき、ハードコードされた公開URLへのフォールバックは削除
+  const candidates = isVercelRuntime
+    ? [publicApiUrl, internalApiUrl]
+    : [internalApiUrl, publicApiUrl];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    // Vercel(Production)環境では、内部ホスト(backend:3001等)を避ける
+    if (isVercelRuntime && isPrivateRuntimeHost(candidate)) continue;
+    return normalizeBaseUrl(candidate);
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   const backendUrl = resolveBackendUrl();
 
