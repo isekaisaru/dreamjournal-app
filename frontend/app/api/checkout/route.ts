@@ -1,38 +1,7 @@
+import { resolveBackendUrl } from "./backend-url";
+
 // Sentry OpenTelemetry との互換性のため、Node.js Runtime を使用
 export const runtime = "nodejs";
-
-const DEFAULT_PUBLIC_BACKEND_URL = "https://dreamjournal-app.onrender.com";
-
-function normalizeBaseUrl(url: string): string {
-  return url.replace(/\/+$/, "");
-}
-
-function isPrivateRuntimeHost(url: string): boolean {
-  try {
-    const hostname = new URL(url).hostname;
-    return ["backend", "localhost", "127.0.0.1"].includes(hostname);
-  } catch {
-    return true;
-  }
-}
-
-function resolveBackendUrl(): string | null {
-  const internalApiUrl = process.env.INTERNAL_API_URL;
-  const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
-  const isVercelRuntime = process.env.VERCEL === "1";
-
-  const candidates = isVercelRuntime
-    ? [publicApiUrl, internalApiUrl, DEFAULT_PUBLIC_BACKEND_URL]
-    : [internalApiUrl, publicApiUrl, DEFAULT_PUBLIC_BACKEND_URL];
-
-  for (const candidate of candidates) {
-    if (!candidate) continue;
-    if (isVercelRuntime && isPrivateRuntimeHost(candidate)) continue;
-    return normalizeBaseUrl(candidate);
-  }
-
-  return null;
-}
 
 export async function POST(req: Request) {
   const backendUrl = resolveBackendUrl();
