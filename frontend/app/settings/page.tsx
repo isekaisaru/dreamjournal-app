@@ -83,7 +83,7 @@ const SettingsPage = () => {
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border/50">
         <div className="container max-w-2xl mx-auto px-4 h-16 flex items-center">
           <Link
-            href="/my-dreams"
+            href="/home"
             className="flex items-center text-muted-foreground hover:text-primary transition-colors pr-4"
           >
             <ChevronLeft className="w-5 h-5 mr-1" />

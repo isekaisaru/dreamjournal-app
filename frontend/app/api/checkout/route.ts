@@ -1,9 +1,10 @@
+import { resolveBackendUrl } from "./backend-url";
+
 // Sentry OpenTelemetry との互換性のため、Node.js Runtime を使用
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const backendUrl =
-    process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const backendUrl = resolveBackendUrl();
 
   if (!backendUrl) {
     return Response.json({ error: "BACKEND_URL_NOT_SET" }, { status: 500 });
