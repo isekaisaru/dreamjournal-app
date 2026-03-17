@@ -45,5 +45,10 @@ export function resolveBackendUrlFromEnv(env: BackendEnv): string | null {
 }
 
 export function resolveBackendUrl(): string | null {
-  return resolveBackendUrlFromEnv(process.env);
+  return resolveBackendUrlFromEnv({
+    INTERNAL_API_URL: process.env.INTERNAL_API_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    VERCEL: process.env.VERCEL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+  });
 }
