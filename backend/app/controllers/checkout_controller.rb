@@ -6,7 +6,6 @@ class CheckoutController < ApplicationController
     begin
       # FRONTEND_URL must be absolute URL for Stripe redirect
       frontend_url = ENV['FRONTEND_URL']
-      Rails.logger.info "[Checkout] FRONTEND_URL present?: #{frontend_url.present?}"
       if frontend_url.blank?
         PaymentsObservability.increment('checkout.error.frontend_url_missing')
         PaymentsObservability.log(event: 'checkout.error.frontend_url_missing', level: :error, user_id: current_user.id)

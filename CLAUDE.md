@@ -1,188 +1,134 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working in this repository.
 
-## Project Overview
+## Project Snapshot
 
-A dream journal application that allows users to record, analyze, and share their dreams. The application features authentication, dream recording with emotional analysis, and uses "Morpheus" as a mascot character.
+ユメログは、夢の記録・AI分析・寄付決済を提供する本番運用中のフルスタックアプリです。
 
-## Architecture
+- Frontend: Next.js 16 / React 18 / TypeScript / Tailwind CSS
+- Backend: Ruby on Rails 7.1 API mode / Ruby 3.3
+- Database: PostgreSQL
+- Auth: JWT + HttpOnly Cookie
+- Payment: Stripe Checkout + Stripe Webhook
+- Monitoring: Sentry + structured payment logs
+- Infra: Vercel (frontend) / Render (backend)
 
-**Full-stack application with:**
+## Production Ready URLs
 
-- **Frontend**: Next.js 15 with TypeScript, React 18, Tailwind CSS
-- **Backend**: Ruby on Rails 7.0 API-only mode with PostgreSQL
-- **Authentication**: HttpOnly cookie-based JWT authentication
-- **Infrastructure**: Docker containerization with docker-compose
+- Frontend: `https://dreamjournal-app.vercel.app`
+- Backend API: `https://dreamjournal-app.onrender.com`
 
-## Development Commands
+本番ではフロントとバックが別ドメインです。クロスドメイン前提で Cookie, CORS, redirect URL を壊さないこと。
 
-### Docker Environment
+## Repo Map
 
-```bash
-# Build and start all services
-docker-compose build
-docker-compose up
+- `frontend/`: Next.js App Router
+- `backend/`: Rails API
+- `docs/runbook-payments.md`: 決済障害対応の一次 runbook
+- `frontend/app/api/checkout/route.ts`: frontend 側の checkout 中継
+- `frontend/app/api/checkout/backend-url.ts`: Vercel/ローカルでの backend URL 解決
+- `backend/app/controllers/checkout_controller.rb`: Stripe Checkout Session 作成
+- `backend/app/controllers/webhooks_controller.rb`: Stripe Webhook 受信と payment 永続化
 
-# Start specific service
-docker-compose up frontend
-docker-compose up backend
-
-# Database setup
-docker-compose run backend rake db:create
-docker-compose run backend rake db:migrate
-```
-
-### Frontend (Next.js)
-
-```bash
-cd frontend
-yarn install
-yarn dev          # Development server
-yarn build        # Production build
-yarn start        # Production server
-yarn lint         # ESLint
-yarn clean        # Clean build cache
-```
-
-### Backend (Rails)
-
-```bash
-cd backend
-bundle install
-bundle exec rails server    # Development server
-bundle exec rails test      # Run tests
-bundle exec rails console   # Rails console
-```
-
-## Key Architecture Patterns
-
-### Authentication Flow
-
-- Uses HttpOnly cookies for secure JWT storage
-- Frontend AuthContext manages authentication state
-- Backend ApplicationController handles token verification
-- Automatic token refresh via `/auth/refresh` endpoint
-
-### Asynchronous Dream Analysis Flow
-
-- **Initiation**: Frontend sends `POST /dreams/:id/analyze`.
-- **Backend Job**: Backend returns `202 Accepted` immediately and queues a background job (e.g., ActiveJob) to perform the AI analysis. The `Location` header in the response points to the status check endpoint.
-- **Polling**: Frontend receives the 202 response and starts polling `GET /dreams/:id/analysis` every few seconds.
-- **Status Updates**: The analysis endpoint returns the current status (`pending`, `done`, `failed`).
-- **Result**: Once the status is `done` or `failed`, the frontend stops polling and displays the result or an error message.
-
-### API Structure
-
-- Rails API-only mode with CORS enabled
-- RESTful resources for dreams, emotions, users
-- Namespaced auth routes under `/auth`
-- Cookie-based session management
-
-### Frontend Organization
-
-- App Router with layout.tsx for consistent UI
-- Context-based authentication state management
-- Centralized API client with axios and cookie support
-- Component-based architecture with reusable UI components
-
-### Database Models
-
-- User model with secure password hashing (bcrypt)
-- Dream model with user association and validations
-- Emotion model with many-to-many relationship via DreamEmotion
-- PostgreSQL with Active Record migrations
-
-## Development Workflow
-
-### Running Tests
-
-```bash
-# Backend tests
-cd backend
-bundle exec rails test
-
-# Frontend tests (add when testing is set up)
-cd frontend
-yarn test
-```
-
-### Database Operations
-
-```bash
-# Create and migrate database
-docker-compose run backend rake db:create db:migrate
-
-# Seed data
-docker-compose run backend rake db:seed
-
-# Reset database
-docker-compose run backend rake db:reset
-```
-
-## Important Files
-
-### Configuration
-
-- `docker-compose.yml`: Multi-service container orchestration
-- `frontend/next.config.mjs`: Next.js configuration with turbo enabled
-- `backend/config/routes.rb`: API route definitions
-- `backend/config/application.rb`: Rails application configuration
-
-### Authentication
-
-- `frontend/context/AuthContext.tsx`: Frontend authentication state
-- `backend/app/controllers/application_controller.rb`: JWT authentication middleware
-- `backend/app/services/auth_service.rb`: JWT token handling
-- `frontend/lib/apiClient.ts`: Axios client with cookie support
-
-### Core Models
-
-- `backend/app/models/user.rb`: User authentication and dream association
-- `backend/app/models/dream.rb`: Dream records with emotion relationships
-- `backend/app/models/emotion.rb`: Emotion taxonomy for dream analysis
-
-## API Endpoints
-
-### Authentication
-
-- `POST /auth/login`: User login with cookie setting
-- `GET /auth/me`: Get current user info
-- `POST /auth/verify`: Verify authentication status
-- `POST /auth/refresh`: Refresh access token
-- `POST /auth/logout`: Logout and clear cookies
-
-### Dreams
-
-- `GET /dreams`: List all dreams
-- `POST /dreams`: Create new dream
-- `GET /dreams/:id`: Get specific dream
-- `PUT /dreams/:id`: Update dream
-- `DELETE /dreams/:id`: Delete dream
-- `POST /dreams/:id/analyze`: Start dream analysis job (returns 202 Accepted with `Location` header)
-- `GET /dreams/:id/analysis`: Get analysis status and result (`{ status: 'pending'|'done'|'failed'|null, result: { text?, error? }|null, analyzed_at }`)
-- `GET /dreams/my_dreams`: Get current user's dreams
-- `GET /dreams/month/:year_month`: Get dreams by month
-
-### Users
-
-- `POST /register`: User registration
-- `DELETE /users/:id`: Delete user account
-
-## Environment Variables
+## Local Commands
 
 ### Frontend
 
-- `NEXT_PUBLIC_API_URL`: Backend API URL (defaults to http://backend:3001 in Docker)
+```bash
+cd frontend
+yarn dev
+yarn build
+yarn test
+yarn e2e
+```
 
 ### Backend
 
-- Database configuration via `.env` file
-- JWT secret keys for token signing
-- OpenAI API key for dream analysis features
+```bash
+cd backend
+bundle exec rails server
+bundle exec rspec
+bundle exec rails console
+```
 
-## Port Configuration
+### Docker / Make
 
-- Frontend: localhost:8000 (maps to container port 3000)
-- Backend: localhost:3001
-- PostgreSQL: localhost:5432
+```bash
+make dev-up
+make dev-down
+make dev-logs
+make health
+```
+
+## Core Architecture
+
+### Authentication
+
+- JWT is stored in HttpOnly cookies.
+- Frontend sends authenticated requests through the App Router / route handlers.
+- Backend authorization is enforced in `ApplicationController`.
+
+### Dream Analysis
+
+- Dream analysis uses OpenAI from the Rails backend.
+- Production must have `OPENAI_API_KEY`; `backend/config/initializers/openai.rb` raises in production if missing.
+
+### Payment Flow
+
+寄付決済は production で成功済みのため、この経路は慎重に扱うこと。
+
+1. Browser calls `POST /api/checkout` on the Next.js app.
+2. `frontend/app/api/checkout/route.ts` forwards the request to Rails `POST /checkout` with the user's Cookie.
+3. `CheckoutController#create` validates `FRONTEND_URL`, ensures/reuses a Stripe customer, and creates a Stripe Checkout Session using `STRIPE_SECRET_KEY`.
+4. Stripe redirects the user back to `${FRONTEND_URL}/donation/success` or `/donation/cancel`.
+5. Stripe sends `checkout.session.completed` to `POST /webhooks/stripe`.
+6. `WebhooksController#stripe` verifies the signature with `STRIPE_WEBHOOK_SECRET`, deduplicates the event, resolves the user, and persists a `Payment`.
+
+補足:
+
+- `client_reference_id` に user id を入れて user 解決の主経路にしている。
+- `stripe_customer_id` と email でもフォールバック解決する。
+- 決済の observability は `PaymentsObservability` と `[PaymentsKPI]` ログで追う。
+- 障害対応は `docs/runbook-payments.md` を最優先で参照する。
+
+## Critical Environment Variables
+
+### Frontend
+
+- `NEXT_PUBLIC_API_URL`: 公開 backend URL。Vercel production では public URL を使う。
+- `INTERNAL_API_URL`: 非 Vercel / ローカル用の backend URL 候補。
+
+### Backend
+
+- `FRONTEND_URL`: Stripe success/cancel redirect のベース URL。絶対 URL 必須。
+- `STRIPE_SECRET_KEY`: Checkout Session 作成に必須。
+- `STRIPE_WEBHOOK_SECRET`: `/webhooks/stripe` の署名検証に必須。
+- `JWT_SECRET_KEY`: 認証トークン署名キー。
+- `OPENAI_API_KEY`: AI分析用。
+- `RAILS_MASTER_KEY`: production boot に必須。
+
+重要:
+
+- 秘密情報の値はログに出さない。
+- 環境変数の確認が必要なら、値そのものではなく `present?` / `blank?` のみを出す。
+- Stripe secret, JWT secret, OpenAI key, master key は絶対にレスポンスやログへ露出しない。
+
+## Working Rules For AI Collaboration
+
+- まず既存コードと関連 docs を読む。推測で決済や認証を触らない。
+- 最小差分を優先する。特に決済・認証・環境変数まわりは不要なリファクタを避ける。
+- Payment flow を変更したら、関連テストと `docs/runbook-payments.md` の整合性を確認する。
+- Frontend と backend の URL 解決ロジックを同時に壊さない。Vercel production と local dev で条件分岐が異なる。
+- 監視しやすい構造化ログは維持するが、秘密情報は出さない。
+- 既存の production 成功フローを尊重し、変更理由が明確なときだけ touch する。
+- ドキュメント更新時は「現行実装と一致しているか」を最優先にする。理想論より実装準拠。
+
+## When Touching Payments
+
+- `backend/spec/requests/checkout_spec.rb`
+- `backend/spec/requests/webhooks_spec.rb`
+- `frontend/__tests__/app/api/checkout/backend-url.test.ts`
+- `docs/runbook-payments.md`
+
+この4点はセットで確認すること。checkout と webhook のどちらか片方だけ直して終わりにしない。
