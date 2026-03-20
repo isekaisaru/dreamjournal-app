@@ -1,6 +1,25 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { createApiUrl } from "./lib/api-config";
+import { NextResponse, type NextRequest } from "next/server";
+
+const API_PREFIX_PATTERN = /\/api\/v1\/?$/;
+
+function normalizeBaseUrl(url: string): string {
+  return url.replace(API_PREFIX_PATTERN, "");
+}
+
+function createMiddlewareApiUrl(
+  request: NextRequest,
+  endpoint: string
+): string {
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const internalApiUrl = process.env.INTERNAL_API_URL;
+
+  if (internalApiUrl) {
+    return `${normalizeBaseUrl(internalApiUrl)}${cleanEndpoint}`;
+  }
+
+  // Keep middleware self-contained for Edge/Turbopack by avoiding shared env helpers.
+  return new URL(`/api${cleanEndpoint}`, request.url).toString();
+}
 
 export async function middleware(request: NextRequest) {
   // クロスドメイン環境ではCookieがVercel Edgeから見えないため、
@@ -37,7 +56,7 @@ export async function middleware(request: NextRequest) {
 
   if (token) {
     try {
-      const response = await fetch(createApiUrl("/auth/verify"), {
+      const response = await fetch(createMiddlewareApiUrl(request, "/auth/verify"), {
         headers: {
           Cookie: `access_token=${token}`,
         },
