@@ -22,6 +22,7 @@ export default defineConfig({
     command: "npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: true,
+    timeout: 300_000, // Turbopack の初回コンパイルに最大5分を許容
     stdout: "ignore",
     stderr: "pipe",
   },

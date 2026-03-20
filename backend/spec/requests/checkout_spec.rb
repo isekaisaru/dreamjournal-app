@@ -11,6 +11,32 @@ RSpec.describe 'Checkout API', type: :request do
   describe 'POST /checkout' do
     it_behaves_like 'unauthorized request', :post, '/checkout'
 
+    context 'FRONTEND_URL が未設定の場合' do
+      it 'nil のとき 500 を返す' do
+        stub_const('ENV', ENV.to_hash.merge('FRONTEND_URL' => nil))
+        user = create(:user)
+
+        expect(Stripe::Checkout::Session).not_to receive(:create)
+
+        authenticated_post('/checkout', user)
+
+        expect(response).to have_http_status(:internal_server_error)
+        expect(JSON.parse(response.body)['error']).to be_present
+      end
+
+      it '空文字列のとき 500 を返す' do
+        stub_const('ENV', ENV.to_hash.merge('FRONTEND_URL' => ''))
+        user = create(:user)
+
+        expect(Stripe::Checkout::Session).not_to receive(:create)
+
+        authenticated_post('/checkout', user)
+
+        expect(response).to have_http_status(:internal_server_error)
+        expect(JSON.parse(response.body)['error']).to be_present
+      end
+    end
+
     context '認証済みユーザーの場合' do
       let(:checkout_session) do
         double('StripeCheckoutSession', id: 'cs_test_123', url: checkout_url)
@@ -24,7 +50,12 @@ RSpec.describe 'Checkout API', type: :request do
           .with(hash_including(email: user.email, name: user.username, metadata: { user_id: user.id.to_s }))
           .and_return(created_customer)
         expect(Stripe::Checkout::Session).to receive(:create)
-          .with(hash_including(customer: 'cus_created_123', client_reference_id: user.id.to_s))
+          .with(hash_including(
+            customer: 'cus_created_123',
+            client_reference_id: user.id.to_s,
+            success_url: "#{frontend_url}/donation/success",
+            cancel_url: "#{frontend_url}/donation/cancel"
+          ))
           .and_return(checkout_session)
 
         authenticated_post('/checkout', user)
@@ -40,7 +71,12 @@ RSpec.describe 'Checkout API', type: :request do
         expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
         expect(Stripe::Customer).not_to receive(:create)
         expect(Stripe::Checkout::Session).to receive(:create)
-          .with(hash_including(customer: 'cus_existing_123', client_reference_id: user.id.to_s))
+          .with(hash_including(
+            customer: 'cus_existing_123',
+            client_reference_id: user.id.to_s,
+            success_url: "#{frontend_url}/donation/success",
+            cancel_url: "#{frontend_url}/donation/cancel"
+          ))
           .and_return(checkout_session)
 
         authenticated_post('/checkout', user)
