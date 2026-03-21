@@ -110,16 +110,6 @@ export default function EditDreamPage({
         isLoading={isUpdating}
       />
 
-      {dreamId && (
-        <>
-          {/* デバッグ用: analysis_json の確認 */}
-          {console.log("Dream Data for Analysis:", {
-            json: dream.analysis_json,
-            status: dream.analysis_status,
-          })}
-        </>
-      )}
-
       <div className="mt-8 pt-6 border-t border-border flex justify-end">
         {dream.id && <DeleteButton onClick={handleDeleteClick} />}
       </div>

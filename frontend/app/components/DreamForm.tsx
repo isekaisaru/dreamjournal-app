@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { Dream, Emotion, DreamDraftData } from "../types";
 import { getEmotions, previewAnalysis } from "@/lib/apiClient";
@@ -31,18 +31,32 @@ export default function DreamForm({
   onSubmit,
   isLoading = false,
 }: DreamFormProps) {
+  const tempId = useRef(
+    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  );
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [emotions, setEmotions] = useState<Emotion[]>([]);
   const [selectedEmotionIds, setSelectedEmotionIds] = useState<number[]>([]);
   const [isFetchingEmotions, setIsFetchingEmotions] = useState(false);
   // 音声解析結果を保持するstate
-  const [analysisText, setAnalysisText] = useState("");
+  const [analysisText, setAnalysisText] = useState<string | null>(null);
   const [suggestedEmotionNames, setSuggestedEmotionNames] = useState<string[]>(
     []
   );
   const [isDraftApplied, setIsDraftApplied] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [morpheusRating, setMorpheusRating] = useState<"good" | "bad" | null>(
+    null
+  );
+  const morpheusRatingKey = `morpheus_rating_${initialData?.id ?? tempId.current}`;
+
+  useEffect(() => {
+    const savedRating = localStorage.getItem(morpheusRatingKey);
+    if (savedRating === "good" || savedRating === "bad") {
+      setMorpheusRating(savedRating);
+    }
+  }, [morpheusRatingKey]);
 
   useEffect(() => {
     if (initialData) {
@@ -57,6 +71,9 @@ export default function DreamForm({
             ""
         );
         setSuggestedEmotionNames(initialData.analysis_json.emotion_tags || []);
+      } else {
+        setAnalysisText(null);
+        setSuggestedEmotionNames([]);
       }
     }
   }, [initialData]);
@@ -154,6 +171,8 @@ export default function DreamForm({
       const result = await previewAnalysis(content);
       setAnalysisText(result.analysis);
       setSuggestedEmotionNames(result.emotion_tags);
+      setMorpheusRating(null);
+      localStorage.removeItem(morpheusRatingKey);
       toast.success("モルペウスが おへんじ したよ！");
     } catch (error) {
       console.error("Analysis failed:", error);
@@ -173,7 +192,7 @@ export default function DreamForm({
     const analysisPayload =
       analysisText || suggestedEmotionNames.length > 0
         ? {
-            analysis: analysisText || "",
+            analysis: analysisText ?? "",
             emotion_tags: suggestedEmotionNames,
           }
         : undefined;
@@ -282,6 +301,38 @@ export default function DreamForm({
                   </span>
                 ))}
               </div>
+            )}
+          </div>
+          <div className="mt-3 flex items-center gap-3 text-sm">
+            <span className="text-muted-foreground">モルペウスは あたってた？</span>
+            <button
+              type="button"
+              onClick={() => {
+                setMorpheusRating("good");
+                localStorage.setItem(morpheusRatingKey, "good");
+              }}
+              className={`rounded-full p-1 text-2xl transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${morpheusRating === "good" ? "scale-125" : ""}`}
+              aria-label="モルペウスの占いが当たった"
+              aria-pressed={morpheusRating === "good"}
+            >
+              👍
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMorpheusRating("bad");
+                localStorage.setItem(morpheusRatingKey, "bad");
+              }}
+              className={`rounded-full p-1 text-2xl transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${morpheusRating === "bad" ? "scale-125" : ""}`}
+              aria-label="モルペウスの占いが違った"
+              aria-pressed={morpheusRating === "bad"}
+            >
+              👎
+            </button>
+            {morpheusRating && (
+              <span className="text-xs text-muted-foreground">
+                {morpheusRating === "good" ? "よかった！" : "おしえてくれて ありがとう！"}
+              </span>
             )}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
