@@ -116,6 +116,7 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     diff-lcs (1.6.2)
+    docile (1.4.1)
     dotenv (3.1.8)
     dotenv-rails (3.1.8)
       dotenv (= 3.1.8)
@@ -312,6 +313,12 @@ GEM
       concurrent-ruby (~> 1.0, >= 1.0.2)
     shoulda-matchers (5.3.0)
       activesupport (>= 5.2.0)
+    simplecov (0.22.0)
+      docile (~> 1.1)
+      simplecov-html (~> 0.11)
+      simplecov_json_formatter (~> 0.1)
+    simplecov-html (0.13.2)
+    simplecov_json_formatter (0.1.4)
     sprockets (4.2.2)
       concurrent-ruby (~> 1.0)
       logger
@@ -386,6 +393,7 @@ DEPENDENCIES
   sentry-rails
   sentry-ruby
   shoulda-matchers (~> 5.3.0)
+  simplecov
   sprockets-rails
   stimulus-rails
   stripe
