@@ -33,16 +33,12 @@ jobs:
         env:
           NEXT_PUBLIC_E2E: "1"
 
-      - name: Start frontend server
-        working-directory: ./frontend
-        run: NEXT_PUBLIC_E2E=1 yarn start &
-
-      - name: Wait for server to be ready
-        run: yarn wait-on http://localhost:3000 --timeout 60000
-
       - name: Run E2E tests
         working-directory: ./frontend
-        run: npx playwright test e2e/smoke.spec.ts e2e/donation.spec.ts --timeout=600000
+        run: |
+          NEXT_PUBLIC_E2E=1 yarn start &
+          yarn wait-on http://localhost:3000 --timeout 60000
+          npx playwright test e2e/smoke.spec.ts e2e/donation.spec.ts --timeout=600000
         env:
           NEXT_PUBLIC_E2E: "1"
           CI: "true"
