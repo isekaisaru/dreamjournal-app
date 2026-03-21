@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Dream } from "@/app/types";
+import { Dream, Emotion } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
+import { getEmotions } from "@/lib/apiClient";
 import DreamList from "@/app/components/DreamList";
 import SearchBar from "@/app/components/SearchBar";
 import MorpheusAssistant from "./MorpheusAssistant";
@@ -53,6 +54,7 @@ export default function HomePage() {
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [emotions, setEmotions] = useState<Emotion[]>([]);
 
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
@@ -68,10 +70,12 @@ export default function HomePage() {
       const query = searchParams.get("query");
       const startDate = searchParams.get("startDate");
       const endDate = searchParams.get("endDate");
+      const emotionIds = searchParams.getAll("emotion_ids[]");
 
       if (query) queryParams.set("query", query);
       if (startDate) queryParams.set("start_date", startDate);
       if (endDate) queryParams.set("end_date", endDate);
+      emotionIds.forEach((id) => queryParams.append("emotion_ids[]", id));
 
       // APIから夢データを取得
       const queryString = queryParams.toString();
@@ -97,6 +101,15 @@ export default function HomePage() {
       setLoading(false);
     }
   }, [authStatus, fetchDreams]);
+
+  // 感情タグ一覧を初回マウント時に取得
+  useEffect(() => {
+    getEmotions()
+      .then(setEmotions)
+      .catch(() => {
+        // 感情タグ取得失敗は非致命的: 検索フォームを通常表示するだけ
+      });
+  }, []);
 
   // dream-createdイベントをリッスン（夢が新規作成されたときにリストを更新）
   useEffect(() => {
@@ -156,6 +169,8 @@ export default function HomePage() {
           query={searchParams.get("query") || undefined}
           startDate={searchParams.get("startDate") || undefined}
           endDate={searchParams.get("endDate") || undefined}
+          emotions={emotions}
+          selectedEmotionIds={searchParams.getAll("emotion_ids[]")}
         />
 
         {/* ローディング中 */}
