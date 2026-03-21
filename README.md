@@ -1,375 +1,357 @@
-# 夢の記録アプリケーション
+# ユメログ — AI Dream Journal
 
-## 30秒で分かるユメログ
-ユメログは「夢の記録を続けられない」「自分の状態を言語化しづらい」という課題を、AI要約と感情タグで振り返れるようにしたWebアプリです。
-- 対象ユーザー: 日々のセルフケアをしたい個人ユーザー
-- できること: 夢記録 / AI分析 / 検索 / 月別アーカイブ / 寄付決済
-- 技術構成: Next.js + Rails API + PostgreSQL + Stripe + Sentry
+> **毎朝の夢を、AIが分析・言語化してくれるセルフケア日記アプリ**
+> *An AI-powered dream journal that captures, analyzes, and visualizes your inner world.*
 
-> **Status**: 🟢 本番運用中 (Production Ready)
+[![E2E Tests](https://github.com/isekaisaru/dream-journal-app/actions/workflows/e2e-test.yml/badge.svg)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/e2e-test.yml)
+[![Backend Tests](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml/badge.svg)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml)
+[![Coverage](https://img.shields.io/badge/coverage-SimpleCov-brightgreen)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml)
+[![Production](https://img.shields.io/badge/status-production%20ready-success)](https://dreamjournal-app.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🌐 デプロイ URL
-
-**フロントエンド**: https://dreamjournal-app.vercel.app
-**バックエンド**: https://dreamjournal-app.onrender.com
-
-### 動作確認方法
-
-**バックエンド API:**
-
-```bash
-curl https://dreamjournal-app.onrender.com/health
-# 期待される応答: OK
-```
-
-**フロントエンド:**
-
-ブラウザで URL にアクセスし、ログイン画面が表示されることを確認
-
-夢の記録アプリケーションは、神話のキャラクター「モルペウス」をガイドに、夢の記録・分析・共有を支援するフルスタック Web アプリケーションです。Rails 製 API と Next.js 製フロントエンドを Docker Compose で統合し、日々の夢を安全に保存しながら感情や傾向を可視化します。
-
-> **Concept**: 忙しい日常で忘れ去られる「夢」を記録し、AI分析によって自分の隠れた感情や状態に気づくためのセルフケア・ツールです。
-
-## 目次
-
-- [プロジェクト概要](#プロジェクト概要)
-- [主な機能](#主な機能)
-- [アーキテクチャ](#アーキテクチャ)
-- [ディレクトリ構成](#ディレクトリ構成)
-- [セットアップ](#セットアップ)
-  - [前提条件](#前提条件)
-  - [クイックスタート-Docker](#クイックスタート-docker)
-  - [環境変数](#環境変数)
-- [よく使うコマンド](#よく使うコマンド)
-- [開発ワークフローのヒント](#開発ワークフローのヒント)
-- [テスト](#テスト)
-- [API とヘルスチェック](#apiとヘルスチェック)
-- [トラブルシューティング](#トラブルシューティング)
-- [開発に参加する](#開発に参加する)
-- [ライセンス](#ライセンス)
-- [貢献者](#貢献者)
-
-# DreamJournal (ユメログ) - AI Dream Analysis App
-
-> **English Version Below** | 日本語版は下部にあります
-
-## 🌐 Production URL
-- **Frontend**: https://dreamjournal-app.vercel.app
-- **Backend**: https://dreamjournal-app.onrender.com
-
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 16 / React 18 / TypeScript / Tailwind CSS / Framer Motion |
-| Backend | Ruby on Rails 7.1 (API Mode) / Ruby 3.3 |
-| Database | PostgreSQL |
-| Auth | JWT + HttpOnly Cookie |
-| AI | OpenAI API（夢分析） |
-| Payment | Stripe Checkout（寄付機能） |
-| Testing | RSpec（現時点: 77 examples）/ Jest / Playwright（E2E） |
-| CI/CD | GitHub Actions / Vercel / Render |
-| Monitoring | Sentry（Frontend + Backend） |
-| DevOps | Docker Compose |
-
-## 💡 Technical Highlights（工夫したポイント）
-
-1. **Stripe Customer の再利用設計**
-   決済時に `ensure_stripe_customer_id!` で既存顧客の再利用・削除済み顧客の再作成を自動化。Codex Bot のコードレビュー（P1指摘）にも対応し、本番で安全に動作する設計を実現。
-
-2. **セキュリティ依存関係の継続管理**
-   Dependabot アラート 25件を体系的に優先度整理し、Rack / nokogiri / Next.js / rollup 等を更新。resolutions による transitive dependency の強制解決まで実施。
-
-3. **観測性（Observability）の実装**
-   `PaymentsObservability` サービスで決済・Webhook イベントの構造化ログと KPI カウンターを統一。本番障害のトラブルシュートを Runbook 化（`docs/runbook-payments.md`）。
-
-## 🔐 Security & Operations
-- **Authentication:** JWT (HttpOnly Cookie) based auth
-- **Database Security:** Row Level Security enabled with "Default Deny" policy
-- **Performance:** Lighthouse Performance Score 99/100
-- **CORS:** Strictly configured for production environments
-- **Operations:** No major incidents recorded to date (based on solo operation logs)
-
-## 👨‍💻 Author
-Career-changer: former Logistics Manager → Full-Stack Engineer.
-1+ year of solo development with daily commits.
-Focusing on **Reliability**, **Security**, and **User Experience**.
+**🌐 本番URL:** https://dreamjournal-app.vercel.app
 
 ---
 
-# 夢の記録アプリケーション（日本語版）
+## Table of Contents
 
-## プロジェクト概要
+- [Tech Stack](#tech-stack)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Running Tests](#running-tests)
+- [CI/CD](#cicd)
+- [Author](#author)
 
-日々の夢を日記のように残し、キーワード検索や簡単な分析で振り返ることを目的としたアプリケーションです。現状は個人利用を想定した設計で、家族内で使う場合は同じアカウントを共有する運用になります。
+---
 
-## 主な機能
+## Tech Stack
 
-- **夢の記録**: タイトル・本文・任意の感情タグを付けて保存できます (睡眠時間などの情報は未対応)。
-- **夢の検索・フィルタ**: キーワード、日付範囲、感情タグでマイページ内の夢を絞り込みできます。
-- **月別アーカイブ表示**: 一覧画面から各月の夢リストに遷移し、振り返りが行えます。
-- **夢の分析 (ベータ)**: OpenAI API キーを設定すると、夢の本文からテキスト要約を生成します。
-- **ユーザー認証**: メールアドレス登録・ログイン・ログアウト、パスワードリセットを提供します。
-- **ブラウザ体験モード**: `/trial` ページでログイン不要の簡易記録を試せます（ページをリロードすると消えます）。
+### Frontend
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-12-0055FF?logo=framer)
 
-## 運用・保守体制
+### Backend
+![Ruby on Rails](https://img.shields.io/badge/Rails-7.1_API-CC0000?logo=ruby-on-rails)
+![Ruby](https://img.shields.io/badge/Ruby-3.3-CC342D?logo=ruby)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-336791?logo=postgresql)
 
-個人開発ですが、継続的な運用と信頼性を担保するための体制を構築しています。
+### AI / Payment / Monitoring
+![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?logo=openai)
+![Stripe](https://img.shields.io/badge/Stripe-Checkout_%2B_Webhook-008CDD?logo=stripe)
+![Sentry](https://img.shields.io/badge/Sentry-Frontend_%2B_Backend-362D59?logo=sentry)
 
-- **エラー監視**: Sentryによるフルスタック（Frontend + Backend）エラー監視体制を構築
-- **品質**: Playwright による E2E Smoke Test を導入し、デプロイごとの品質を担保
-- **パフォーマンス**: Lighthouse Performance スコア 99点を達成（2026年1月測定）
-- **コスト管理**: OpenAI API のハードリミット設定によるインシデント回避と予算管理
-- **ログ監視**: 本番環境（Render）のログ監視体制を確立済み
-- **プライバシー対応**: 利用規約・プライバシーポリシーを整備し、13歳未満の利用者向けに保護者の同意フローを実装
+### Infrastructure / DevOps
+![Vercel](https://img.shields.io/badge/Vercel-Frontend-000000?logo=vercel)
+![Render](https://img.shields.io/badge/Render-Backend_API-46E3B7?logo=render)
+![Docker](https://img.shields.io/badge/Docker_Compose-Local_Dev-2496ED?logo=docker)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
 
-## 🔐 セキュリティ対策
+### Testing
+![Playwright](https://img.shields.io/badge/Playwright-E2E-45ba4b?logo=playwright)
+![RSpec](https://img.shields.io/badge/RSpec-6.1-CC0000?logo=ruby)
+![Jest](https://img.shields.io/badge/Jest-30-C21325?logo=jest)
+![SimpleCov](https://img.shields.io/badge/SimpleCov-Coverage-brightgreen)
 
-本番環境での安全性を確保するため、以下の対策を実施しています。
+---
 
-- **認証**: JWT（HttpOnly Cookie）ベースの認証
-- **データベースセキュリティ**: Supabase RLS（Row Level Security）を有効化
-  - Default Deny（ポリシーなし）で完全封鎖
-  - Rails API以外からの直接DBアクセスを遮断
-- **CORS**: 本番環境用に厳格に設定
-  - フロントエンド（Vercel）とバックエンド（Render）の分離構成
-  - 環境変数による適切な接続管理
+## Features
 
+### 夢の記録 — Dream Logging
+テキストで夢を記録し、感情タグを付けて保存。キーワード・日付・タグによる絞り込み検索と月別アーカイブに対応。
 
-## 開発中の機能
+> 📸 *Screenshot placeholder — `docs/screenshots/dream-log.png`*
 
-- 睡眠時間・睡眠の質などの記録項目追加
-- 家族や友人と夢を共有するワークスペース機能
-- ガイドキャラクター「モルペウス」による使い方チュートリアル
-- 永続化されたお試しアカウント（体験後にデータを引き継げる仕組み）
+---
 
-## アーキテクチャ
+### AI分析 — AI Dream Analysis
+OpenAI GPT-4 が夢の本文を分析し、テキスト要約・感情ラベルを自動生成。隠れた感情パターンを可視化するセルフケアツールとして機能。
 
-- **フロントエンド**: Next.js (React + TypeScript)。`frontend/` 以下で UI を構築し、Playwright を用いた E2E テストにも対応。
-- **バックエンド**: Ruby on Rails API。JWT 認証と OpenAI API による夢分析機能を提供 (`backend/`)。
-- **データベース**: PostgreSQL。docker 上で永続化ボリュームを利用。
-- **インフラ**: Docker Compose によるローカル開発。`Caddyfile` でのリバースプロキシ構成や `Makefile` での運用補助コマンドを用意。
+> 📸 *Screenshot placeholder — `docs/screenshots/ai-analysis.png`*
 
-## ディレクトリ構成
+---
 
+### 認証 — JWT + HttpOnly Cookie Auth
+メール登録・ログイン・ログアウト・パスワードリセットをサポート。JWT トークンは HttpOnly Cookie に格納し、XSS 経由のトークン漏洩を防止。
+
+> 📸 *Screenshot placeholder — `docs/screenshots/auth.png`*
+
+---
+
+### 決済 — Stripe Checkout / Webhook
+アプリへの寄付機能を Stripe Checkout で実装。Webhook 署名検証・冪等処理・`client_reference_id` によるユーザー照合など、本番グレードの堅牢な決済フローを構築。本番環境での決済完了を確認済み。
+
+> 📸 *Screenshot placeholder — `docs/screenshots/donation.png`*
+
+---
+
+### テスト整備 — Testing
+- **Playwright E2E:** smoke テストと寄付フローをブラウザ自動テストでカバー
+- **RSpec:** リクエストスペック中心に API 動作を網羅的に検証
+- **Jest:** フロントエンドのユーティリティ・コンポーネントをユニットテスト
+- **SimpleCov:** バックエンドのコードカバレッジを計測・CI で閾値管理
+
+---
+
+## Architecture
+
+### System Overview（全体構成）
+
+```mermaid
+graph TD
+    Browser["🌐 Browser"]
+    FE["▲ Next.js 16<br/>(Vercel)"]
+    BE["🚂 Rails 7.1 API<br/>(Render)"]
+    DB[("🐘 PostgreSQL")]
+    AI["🤖 OpenAI API<br/>(GPT-4)"]
+    Stripe["💳 Stripe"]
+    Sentry["🔍 Sentry"]
+
+    Browser -->|HTTPS| FE
+    FE -->|REST API + Cookie| BE
+    BE --> DB
+    BE -->|Dream analysis| AI
+    BE -->|Checkout Session| Stripe
+    Stripe -->|Webhook POST| BE
+    FE -->|Error reporting| Sentry
+    BE -->|Error reporting| Sentry
 ```
-.
-├── backend/          # Rails API サーバー
-├── frontend/         # Next.js クライアントアプリ
-├── docker-compose.yml
-├── docker-compose.dev.yml
-├── docker-compose.prod.yml
-├── Makefile          # Docker ライフサイクルのエントリーポイント
-├── scripts/          # モニタリングや補助ツール
-└── data/             # Postgres の永続化データ (ローカル)
+
+---
+
+### Authentication Flow（JWT認証フロー）
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant FE as Next.js (Vercel)
+    participant BE as Rails API (Render)
+
+    B->>FE: POST /api/auth/login
+    FE->>BE: POST /auth/login (forward)
+    BE-->>FE: JWT token (Set-Cookie: HttpOnly)
+    FE-->>B: Cookie set (HttpOnly, Secure)
+
+    B->>FE: GET /dreams (with Cookie)
+    FE->>BE: GET /dreams (Cookie forwarded)
+    BE->>BE: Decode JWT, authorize user
+    BE-->>FE: Dreams JSON
+    FE-->>B: Render dreams
 ```
 
-## セットアップ
+---
 
-### 前提条件
+### Payment Flow（Stripe決済フロー）
 
-- Docker Desktop (24 以降推奨)
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant FE as Next.js /api/checkout
+    participant BE as Rails CheckoutController
+    participant S as Stripe
+
+    B->>FE: POST /api/checkout
+    FE->>BE: POST /checkout (with Cookie)
+    BE->>BE: ensure_stripe_customer_id!
+    BE->>S: Create Checkout Session
+    S-->>BE: session.url
+    BE-->>FE: {url}
+    FE-->>B: Redirect to Stripe
+
+    S-->>B: Redirect → /donation/success
+    S->>BE: POST /webhooks/stripe (checkout.session.completed)
+    BE->>BE: Verify signature (STRIPE_WEBHOOK_SECRET)
+    BE->>BE: Deduplicate + persist Payment record
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Docker Desktop 24+
 - Docker Compose v2
-- Make コマンド (macOS は標準インストール済み)
-- Node.js 20+ と npm (フロントエンド単体で開発する場合)
+- Make (macOS: pre-installed)
 
-### クイックスタート-Docker
+### Quick Start (Docker)
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/isekaisaru/dream-journal-app.git
 cd dream-journal-app
 cp backend/.env.example backend/.env
+# Fill in required values in backend/.env (see Environment Variables below)
 make dev-up
 ```
 
-起動後のエンドポイント:
-
-- フロントエンド: http://localhost:3000
-- バックエンド API: http://localhost:3001
-- Postgres: localhost:5432 (ユーザー名は `postgres`)
-
-### 環境変数
-
-`backend/.env` に以下の最低限の値を設定します。詳細は `backend/.env.example` を参照してください。
-
-| 変数名              | 説明                        | メモ                                     |
-| ------------------- | --------------------------- | ---------------------------------------- |
-| `POSTGRES_PASSWORD` | Postgres のパスワード       | 16 文字以上推奨                          |
-| `RAILS_MASTER_KEY`  | Rails credentials 用キー    | `config/master.key` と一致               |
-| `SECRET_KEY_BASE`   | Rails セッション暗号化キー  | `rails secret` で生成                    |
-| `JWT_SECRET_KEY`    | 認証トークン署名キー        | `openssl rand -hex 64` 推奨              |
-| `OPENAI_API_KEY`    | 夢分析に利用する OpenAI API | 任意機能、未設定の場合は AI 分析を無効化 |
-
-## よく使うコマンド
-
-`Makefile` から主なコマンドを呼び出せます。
-
-| コマンド        | 説明                                             |
-| --------------- | ------------------------------------------------ |
-| `make dev-up`   | 開発用の各サービスをバックグラウンド起動         |
-| `make dev-down` | 開発用コンテナを停止・削除                       |
-| `make dev-logs` | 開発モードの複合ログをストリーム表示             |
-| `make status`   | 現在起動中のコンテナ一覧を確認                   |
-| `make health`   | バックエンド/フロントエンドのヘルスチェック      |
-| `make db-setup` | 初期 DB セットアップ (マイグレーション + シード) |
-| `make clean`    | 未使用の Docker リソースをクリーンアップ         |
-
-## 開発ワークフローのヒント
-
-- Rails コンソール: `make dev-rails-console`
-- バックエンド内シェル: `make dev-shell-backend`
-- フロントエンド内シェル: `make dev-shell-frontend`
-- 監視スクリプト: `make monitor` または `make monitor-watch` で状態監視を自動化
-- `docker-compose.dev.yml` にはホットリロード設定が含まれています。コード変更後はブラウザの再読み込みのみで反映されます。
-
-## テスト
-
-- **バックエンド (RSpec)**: `docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec backend bundle exec rspec`
-- **バックエンド (Rails Test)**: `make test` で `rails test` を実行できます。
-- **フロントエンド (Jest)**: `cd frontend && npm install && npm test`
-- **E2E (Playwright)**: `cd frontend && npm run e2e`
-
-テスト前に `make dev-up` で依存サービスを起動しておくことを推奨します。
-
-## API とヘルスチェック
-
-- 軽量ヘルスチェック: `GET /health`
-- 詳細ヘルスチェック: `GET /health/detailed`
-- 主要リソース:
-  - `dreams` (CRUD + `/dreams/:id/analyze`, `/dreams/:id/analysis`, `/dreams/my_dreams`, `/dreams/month/:year_month`)
-  - `emotions` (感情マスタ取得)
-  - `auth` (ログイン/ログアウト/リフレッシュ、トライアルログイン、`GET /auth/me` など)
-  - `password_resets` (パスワードリセットフロー)
-
-開発環境では `ENABLE_DEV_ENDPOINTS=true` を設定すると `/dev/password_resets/token` が利用可能です。
-
-## 💳 Stripe 決済（ローカルでの動かし方）
-
-> ⚠️ **テストモードでは実課金は発生しません。** 以下の手順はすべてStripeのテストモード環境で動作します。
-
-### 手順
-
-1. `make dev-up` でローカル起動
-2. ブラウザで http://localhost:3000/home を開く
-3. 「💝 500円で応援する」ボタンをクリック
-4. Stripe のチェックアウト画面へリダイレクトされる
-5. テストカードで決済を完了する
-
-### テストカード情報
-
-| 項目 | 値 |
-|------|-----|
-| カード番号 | `4242 4242 4242 4242` |
-| 有効期限 | 未来の任意の日付（例: `12/29`） |
-| CVC | 任意の3桁（例: `123`） |
-| 郵便番号 | 任意の数字 |
-
-### データフロー（3行で）
-
-```
-Browser → Next.js /api/checkout → Rails /checkout → Stripe Checkout URL
-```
-
-### よくあるエラーと対処法
-
-| エラー | 原因 | 対処 |
-|--------|------|------|
-| `ERR_EMPTY_RESPONSE` | 初回起動のコンパイル/再起動で接続が切れる | 30〜60秒待ってリロード（Turbopackなら2回目から速い） |
-| `Found lockfile missing swc dependencies` / `Failed to patch lockfile` | lockfile混在（yarn.lock + package-lock.json 等） | **`package-lock.json` を削除** → `yarn install`（Dockerなら frontend volume をクリーン） |
-| `API request ... timed out` | 初回コンパイル待ち or コールドスタート | dev環境は30s延長済み。2回目以降で確認 |
-| `BACKEND_URL_NOT_SET` | 環境変数未設定 | `.env` の `INTERNAL_API_URL` または `NEXT_PUBLIC_API_URL` を確認 |
-
-> **注意**: このプロジェクトは **yarn** を使用しています。`npm ci` や `npm install` を実行すると `package-lock.json` が再生成され、SWCエラーの再発原因になります。
-
-### 関連する環境変数（値はコードに書かない）
-
-```bash
-# backend/.env に設定
-STRIPE_SECRET_KEY=        # Stripe ダッシュボード → APIキー（テスト用は sk_test_...）
-STRIPE_PUBLISHABLE_KEY=   # 同上（公開可、テスト用は pk_test_...）
-
-# frontend/.env.local に設定
-NEXT_PUBLIC_API_URL=      # バックエンドの公開URL（Render等）
-INTERNAL_API_URL=         # Docker内部通信用URL（Next.js → Rails 直通、任意）
-```
-
-### Webhook署名検証（セキュリティ設計）
-
-> ✅ 決済の「成功画面」はUX、Webhookは支払い成立の**確定情報（サーバー側の真実）**として扱います。
-
-決済完了後にStripeから `POST /webhooks/stripe` が届きます。  
-**「誰でもPOSTできる」状態を防ぐため、署名検証を実装しています。**
-
-#### 仕組み
-
-```
-Stripe → POST /webhooks/stripe
-          │
-          ├─ Stripe-Signature ヘッダーを取得
-          ├─ request.raw_post でボディを取得（body.readは不可）
-          │
-          └─ Stripe::Webhook.construct_event で検証
-               ├─ JSON::ParserError    → 400（不正なJSON）
-               ├─ SignatureVerificationError → 400（偽リクエスト）
-               └─ 検証成功 → イベント種別ごとに処理
-```
-
-#### 設計判断メモ
-
-| 判断 | 理由 |
+| Service | URL |
 |---|---|
-| `request.raw_post` を使用 | `body.read` はストリームを消費し、署名検証に必要な生payloadが変化・欠落する。署名検証は1バイトでも変わると失敗するため生データをそのまま渡す必要がある |
-| `verify_authenticity_token` のスキップを削除 | Rails APIモード（`ActionController::API`）ではCSRF保護が元から存在しないためスキップ自体が `ArgumentError` になる |
-| `authorize_request` のみスキップ | WebhookはStripeサーバーが叩くためCookieによるJWT認証が通らない |
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:3001 |
+| PostgreSQL | localhost:5432 |
 
-#### ローカルでのWebhookテスト手順
+### Useful Make Commands
+
+| Command | Description |
+|---|---|
+| `make dev-up` | Start all services (background) |
+| `make dev-down` | Stop and remove containers |
+| `make dev-logs` | Stream combined logs |
+| `make health` | Health check for both services |
+| `make db-setup` | Run migrations + seed |
+| `make clean` | Prune unused Docker resources |
+
+---
+
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+| Variable | Description | Required |
+|---|---|---|
+| `RAILS_MASTER_KEY` | Rails credentials master key | ✅ |
+| `SECRET_KEY_BASE` | Rails session encryption key (`rails secret`) | ✅ |
+| `JWT_SECRET_KEY` | JWT signing key (`openssl rand -hex 64`) | ✅ |
+| `POSTGRES_PASSWORD` | PostgreSQL password (16+ chars recommended) | ✅ |
+| `FRONTEND_URL` | Stripe success/cancel redirect base URL | ✅ |
+| `STRIPE_SECRET_KEY` | Stripe API secret key (`sk_test_...`) | ✅ |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signature secret | ✅ |
+| `OPENAI_API_KEY` | OpenAI API key for dream analysis | Optional |
+
+### Frontend (`frontend/.env.local`)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Public backend URL (used in Vercel production) |
+| `INTERNAL_API_URL` | Internal backend URL for server-side calls |
+
+> ⚠️ **Never commit secret values.** Use `.env.example` as a template and only set actual values in your local `.env` files.
+
+---
+
+## Running Tests
+
+### Backend (RSpec + SimpleCov)
 
 ```bash
-# ターミナル①：Stripe CLIでローカルに転送
+cd backend
+bundle exec rspec
+```
+
+### Frontend (Jest)
+
+```bash
+cd frontend
+yarn test
+```
+
+### E2E (Playwright)
+
+```bash
+# Requires the app to be running (make dev-up)
+cd frontend
+yarn e2e
+```
+
+### Stripe Webhook (Local)
+
+```bash
+# Terminal 1: Forward Stripe events to local server
 stripe listen --forward-to localhost:3001/webhooks/stripe
 
-# ターミナル②：テストイベントを発火
+# Terminal 2: Trigger test event
 stripe trigger checkout.session.completed
-
-# Railsログで確認：
-# [Webhook] 支払い完了 session_id=cs_test_xxx amount=3000
 ```
 
-#### 環境変数（Webhook用）
+Test card: `4242 4242 4242 4242` / any future date / any CVC
 
-```bash
-# backend/.env に追加
-STRIPE_WEBHOOK_SECRET=   # stripe listen --print-secret で取得（ローカル検証用）
-                         # 本番用はStripeダッシュボード → Webhooks で別途登録・発行
+---
+
+## CI/CD
+
+GitHub Actions runs automatically on every push and pull request to `main`.
+
+### E2E Tests (`.github/workflows/e2e-test.yml`)
+
+1. Install Node.js 20 + Playwright browsers
+2. Build the Next.js app
+3. Start the production server
+4. Run `e2e/smoke.spec.ts` and `e2e/donation.spec.ts` via Playwright
+
+### Backend Tests (`.github/workflows/backend-test.yml`)
+
+1. Spin up PostgreSQL 14 service container
+2. Set up Ruby 3.3 with bundler cache
+3. Run `bundle exec rspec`
+4. SimpleCov generates coverage report; CI enforces minimum threshold
+
+### Quality Gates
+
+| Check | Tool | Status |
+|---|---|---|
+| E2E Browser Tests | Playwright | Auto on push/PR |
+| Backend Unit/Request Tests | RSpec | Auto on push/PR |
+| Frontend Unit Tests | Jest | `yarn test` |
+| Code Coverage | SimpleCov | Threshold enforced in CI |
+| Error Monitoring | Sentry | Always-on in production |
+
+---
+
+## Technical Highlights
+
+### 1. Production-Grade Payment Flow
+`ensure_stripe_customer_id!` で既存 Stripe 顧客の再利用・削除済み顧客の再作成を自動化。`client_reference_id` による user 解決 + email・`stripe_customer_id` でのフォールバックで、決済の完全性を担保。本番環境で決済完了を確認済み。
+
+### 2. Observability by Design
+`PaymentsObservability` サービスで Webhook イベントの構造化ログと KPI カウンターを統一管理。`[PaymentsKPI]` ログで障害時の素早いトリアージを実現。障害対応手順は [`docs/runbook-payments.md`](docs/runbook-payments.md) として Runbook 化。
+
+### 3. Security in Depth
+- JWT を HttpOnly Cookie に格納（XSS によるトークン漏洩を防止）
+- Stripe Webhook の署名検証（`Stripe::Webhook.construct_event`）で偽リクエストを排除
+- CORS を本番ドメインのみに厳格設定
+- Dependabot アラートを体系的に優先度分類し、25件以上を解消
+
+### 4. Cross-Domain Architecture
+フロントエンド（Vercel）とバックエンド（Render）を別ドメインで分離運用。Cookie の `SameSite` / `Secure` 設定、CORS ヘッダー、Stripe リダイレクト URL のすべてをクロスドメイン前提で設計。
+
+---
+
+## Project Structure
+
+```
+.
+├── frontend/               # Next.js App Router
+│   ├── app/                # Pages & API route handlers
+│   ├── __tests__/          # Jest unit tests
+│   └── e2e/                # Playwright E2E tests
+├── backend/                # Rails 7.1 API
+│   ├── app/controllers/    # API controllers (auth, dreams, checkout, webhooks)
+│   ├── app/services/       # PaymentsObservability, etc.
+│   └── spec/               # RSpec tests (requests, models, services)
+├── docs/
+│   ├── runbook-payments.md # Payment incident runbook
+│   └── release-checklist-payments.md
+├── docker-compose.yml
+├── docker-compose.dev.yml
+└── Makefile
 ```
 
-### 運用ドキュメント
-
-- Payments トラブル対応: [`docs/runbook-payments.md`](docs/runbook-payments.md)
-- リリース前チェック: [`docs/release-checklist-payments.md`](docs/release-checklist-payments.md)
-
-## トラブルシューティング
-
-- コンテナの再ビルドが必要な場合は `make dev-down` → `docker-compose build --no-cache`。
-- DB 関連の問題は `make db-reset` で初期化できます。
-- `make logs-errors` で直近 1 時間のエラーログを抽出できます。
-- OpenAI 連携を無効化したい場合は `OPENAI_API_KEY` を未設定にするか、アプリ側で機能フラグを切り替えてください。
-
-## 開発に参加する
-
-1. GitHub でリポジトリをフォークしてクローンします。
-2. ブランチを作成します (例: `feature/add-dream-tags`)。
-3. lint・テストを通し、必要に応じて `frontend/README.md` や API ドキュメントも更新します。
-4. 変更内容とテスト結果を記載した Pull Request を送信してください。
-
-Issue やアイデアの提案も歓迎です。議論したいテーマがある場合は Draft PR から相談してください。
-
-## ライセンス
-
-このプロジェクトは [MIT ライセンス](LICENSE) の下で公開されています。
+---
 
 ## Author
 
-- **Tyogoro** (Owner / Developer)
+**Tyougorou** — Career changer: Logistics Manager → Full-Stack Engineer
 
-プロジェクトへのご関心とサポートに感謝します！
+- 1+ year of solo development with continuous daily commits
+- Built and shipped a production-ready full-stack app with real payment processing
+- Focused on **Reliability**, **Security**, and **Observability**
+
+---
+
+## License
+
+[MIT](LICENSE)
