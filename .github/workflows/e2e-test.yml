@@ -27,7 +27,23 @@ jobs:
         working-directory: ./frontend
         run: npx playwright install --with-deps
 
-      # TODO: Week4で完全なE2Eテストを実装する。今はブランチ保護設定のために成功させることを優先。
-      - name: Verify Playwright setup
+      - name: Build frontend
         working-directory: ./frontend
-        run: npx playwright --version
+        run: yarn build
+        env:
+          NEXT_PUBLIC_E2E: "1"
+
+      - name: Start frontend server
+        working-directory: ./frontend
+        run: NEXT_PUBLIC_E2E=1 yarn start &
+
+      - name: Wait for server to be ready
+        run: npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run E2E tests
+        working-directory: ./frontend
+        run: npx playwright test e2e/smoke.spec.ts e2e/donation.spec.ts --timeout=600000
+        env:
+          NEXT_PUBLIC_E2E: "1"
+          CI: "true"
+        timeout-minutes: 10
