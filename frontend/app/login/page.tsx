@@ -94,6 +94,9 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="パスワード"
               autoComplete="current-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
               aria-label="パスワード"
               aria-required="true"

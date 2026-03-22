@@ -125,6 +125,9 @@ export default function Register() {
               placeholder="パスワード"
               aria-describedby="error-message"
               autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
               className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -145,6 +148,9 @@ export default function Register() {
               onChange={(e) => setPasswordConfirmation(e.target.value)}
               placeholder="パスワード確認"
               autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
               aria-label="パスワード確認"
               aria-required="true"
