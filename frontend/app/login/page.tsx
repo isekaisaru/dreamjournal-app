@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
   const [email, setEmail] = useState("");
+  const [showEmail, setShowEmail] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [pageError, setPageError] = useState("");
@@ -74,18 +75,31 @@ export default function Login() {
           ログイン
         </h2>
         <div className="space-y-4">
-          <input
-            type="email"
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="メールアドレス"
-            autoComplete="email"
-            required
-            aria-label="メールアドレス"
-            aria-required="true"
-            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          <div className="relative">
+            <input
+              type={showEmail ? "email" : "password"}
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="メールアドレス"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              required
+              aria-label="メールアドレス"
+              aria-required="true"
+              className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="button"
+              onClick={() => setShowEmail((v) => !v)}
+              aria-label={showEmail ? "メールアドレスを隠す" : "メールアドレスを表示"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+            >
+              {showEmail ? "🙈" : "👁"}
+            </button>
+          </div>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
