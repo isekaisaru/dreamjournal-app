@@ -7,8 +7,14 @@ import { useRouter } from "next/navigation";
 import { clientRegister } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
+const hiddenEmailStyle = {
+  WebkitTextSecurity: "disc",
+  textSecurity: "disc",
+} as React.CSSProperties;
+
 export default function Register() {
   const [email, setEmail] = useState("");
+  const [showEmail, setShowEmail] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -104,18 +110,32 @@ export default function Register() {
             aria-invalid={error ? "true" : "false"}
             className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          <input
-            type="email"
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="メールアドレス"
-            autoComplete="email"
-            required
-            aria-required="true"
-            aria-describedby="error-message"
-            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          <div className="relative">
+            <input
+              type="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="メールアドレス"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              required
+              aria-required="true"
+              aria-describedby="error-message"
+              style={showEmail ? undefined : hiddenEmailStyle}
+              className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              type="button"
+              onClick={() => setShowEmail((v) => !v)}
+              aria-label={showEmail ? "メールアドレスを隠す" : "メールアドレスを表示"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+            >
+              {showEmail ? "🙈" : "👁"}
+            </button>
+          </div>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
