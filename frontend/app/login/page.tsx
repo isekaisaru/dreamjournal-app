@@ -6,6 +6,11 @@ import { clientLogin } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
+const hiddenEmailStyle = {
+  WebkitTextSecurity: "disc",
+  textSecurity: "disc",
+} as React.CSSProperties;
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [showEmail, setShowEmail] = useState(false);
@@ -77,7 +82,7 @@ export default function Login() {
         <div className="space-y-4">
           <div className="relative">
             <input
-              type={showEmail ? "email" : "password"}
+              type="email"
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -89,6 +94,7 @@ export default function Login() {
               required
               aria-label="メールアドレス"
               aria-required="true"
+              style={showEmail ? undefined : hiddenEmailStyle}
               className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <button

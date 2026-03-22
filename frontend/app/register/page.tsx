@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import { clientRegister } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 
+const hiddenEmailStyle = {
+  WebkitTextSecurity: "disc",
+  textSecurity: "disc",
+} as React.CSSProperties;
+
 export default function Register() {
   const [email, setEmail] = useState("");
   const [showEmail, setShowEmail] = useState(false);
@@ -107,7 +112,7 @@ export default function Register() {
           />
           <div className="relative">
             <input
-              type={showEmail ? "email" : "password"}
+              type="email"
               name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -119,6 +124,7 @@ export default function Register() {
               required
               aria-required="true"
               aria-describedby="error-message"
+              style={showEmail ? undefined : hiddenEmailStyle}
               className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <button
