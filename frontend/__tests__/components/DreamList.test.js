@@ -77,7 +77,7 @@ describe("DreamList (integration with DreamCard)", () => {
     expect(links[0]).toHaveAttribute("href", "dream/7");
   });
 
-  it("renders nothing for empty list (no DreamCard)", () => {
+  it("renders empty state without any DreamCard detail links", () => {
     // Arrange
     const dreams = [];
 
@@ -85,7 +85,17 @@ describe("DreamList (integration with DreamCard)", () => {
     render(<DreamList dreams={dreams} />);
 
     // Assert
-    expect(screen.queryAllByRole("link")).toHaveLength(0);
+    expect(screen.getByText("まだ ゆめ は ないよ")).toBeInTheDocument();
+    expect(
+      screen.getByText("きょう みた ゆめ を おしえてね")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /の詳細を見る$/ })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "✏️ ゆめを かく" })).toHaveAttribute(
+      "href",
+      "/dream/new"
+    );
   });
 
   it("preserves order of dreams (sorting responsibility upstream)", () => {
