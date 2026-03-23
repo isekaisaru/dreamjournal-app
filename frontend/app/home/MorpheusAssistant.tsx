@@ -95,7 +95,7 @@ export default function MorpheusAssistant() {
   if (!isMounted) return null;
 
   return (
-    <div className="fixed bottom-44 right-8 hidden sm:flex flex-col items-end gap-1 z-50 animate-morpheus-entry">
+    <div className="fixed bottom-20 right-4 sm:bottom-44 sm:right-8 flex flex-col items-end gap-1 z-50 animate-morpheus-entry">
       <button
         type="button"
         aria-haspopup="dialog"
