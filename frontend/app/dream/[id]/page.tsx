@@ -2,6 +2,10 @@
 
 import DreamForm from "../../components/DreamForm";
 import DeleteButton from "../../components/DeleteButton";
+import {
+  EmotionTag,
+  getChildFriendlyEmotionLabel,
+} from "../../components/EmotionTag";
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
@@ -16,9 +20,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+function formatDate(dateInput: string | undefined): string {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "Asia/Tokyo",
+  });
+}
+
 // Next.jsの新しいバージョンでは、Page Propsの`params`はPromiseになりました。
 // Client Componentでこれを利用するには、Reactの`use`フックを使います。
-export default function EditDreamPage({
+export default function DreamDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -35,13 +51,13 @@ export default function EditDreamPage({
   } = useDream(dreamId);
 
   const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (error) {
-      console.error("夢データの取得に失敗しました:", error); // TODO: alertの代わりにトースト通知などのUIでエラーを表示することを推奨します
-      // 例: toast.error(`エラー: ${error}`);
+      console.error("夢データの取得に失敗しました:", error);
     }
   }, [error]);
 
@@ -49,7 +65,7 @@ export default function EditDreamPage({
     if (!dreamId) return;
     const success = await hookUpdateDream(formData);
     if (success) {
-      router.push("/home");
+      setIsEditing(false);
     }
   };
 
@@ -68,8 +84,6 @@ export default function EditDreamPage({
         }
       } catch (err) {
         console.error("削除処理中にエラー:", err);
-        // TODO: alertの代わりにトースト通知などのUIでエラーを表示することを推奨します
-        // 例: toast.error("削除中にエラーが発生しました。");
       } finally {
         setIsDeleting(false);
       }
@@ -98,21 +112,107 @@ export default function EditDreamPage({
       </p>
     );
 
+  // --- 編集モード ---
+  if (isEditing) {
+    return (
+      <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-foreground">ゆめ の なおし</h1>
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg px-4 py-2 transition-colors"
+          >
+            やめる
+          </button>
+        </div>
+
+        <DreamForm
+          initialData={dream}
+          onSubmit={handleUpdateSubmit}
+          isLoading={isUpdating}
+        />
+      </div>
+    );
+  }
+
+  // --- 閲覧専用モード ---
+  // AI感情タグ (analysis_json) と手動タグ (emotions) を統合して表示
+  const aiEmotionTags: string[] =
+    dream.analysis_json?.emotion_tags && dream.analysis_json.emotion_tags.length > 0
+      ? Array.from(
+          new Set(
+            dream.analysis_json.emotion_tags.map((t) =>
+              getChildFriendlyEmotionLabel(t)
+            )
+          )
+        )
+      : [];
+  const dbEmotionTags: string[] =
+    dream.emotions && dream.emotions.length > 0
+      ? Array.from(
+          new Set(dream.emotions.map((e) => getChildFriendlyEmotionLabel(e.name)))
+        )
+      : [];
+  const displayTags = aiEmotionTags.length > 0 ? aiEmotionTags : dbEmotionTags;
+
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
-      <h1 className="text-3xl font-bold mb-6 text-foreground">
-        ゆめ の なおし
+      {/* ヘッダー：日付 */}
+      <p className="text-sm text-muted-foreground mb-2" suppressHydrationWarning>
+        {formatDate(dream.created_at)}
+      </p>
+
+      {/* タイトル */}
+      <h1 className="text-3xl font-bold mb-4 text-foreground leading-snug">
+        {dream.title}
       </h1>
 
-      <DreamForm
-        initialData={dream}
-        onSubmit={handleUpdateSubmit}
-        isLoading={isUpdating}
-      />
+      {/* 感情タグ */}
+      {displayTags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {displayTags.map((tag, i) => (
+            <EmotionTag key={i} label={tag} />
+          ))}
+        </div>
+      )}
 
-      <div className="mt-8 pt-6 border-t border-border flex justify-end">
+      {/* 夢の内容 */}
+      {dream.content && dream.content !== dream.title && (
+        <div className="bg-card border border-border rounded-xl p-5 mb-6">
+          <p className="text-sm font-semibold text-muted-foreground mb-2">
+            ゆめの おはなし
+          </p>
+          <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+            {dream.content}
+          </p>
+        </div>
+      )}
+
+      {/* モルペウスのゆめうらない */}
+      {dream.analysis_json?.analysis && (
+        <div className="bg-muted/50 border border-input rounded-xl p-5 mb-6">
+          <p className="text-sm font-semibold text-muted-foreground mb-2">
+            🔮 モルペウスの ゆめうらない
+          </p>
+          <p className="text-foreground leading-relaxed whitespace-pre-wrap text-sm">
+            {dream.analysis_json.analysis}
+          </p>
+        </div>
+      )}
+
+      {/* アクションボタン */}
+      <div className="mt-8 pt-6 border-t border-border flex items-center justify-between">
         {dream.id && <DeleteButton onClick={handleDeleteClick} />}
+        <button
+          type="button"
+          onClick={() => setIsEditing(true)}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          ✏️ なおす
+        </button>
       </div>
+
       {/* 削除確認 AlertDialog */}
       <AlertDialog
         open={isDeleteDialogOpen}
