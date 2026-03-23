@@ -74,7 +74,7 @@ export default function NewDreamPage() {
   }
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">新しい夢を記録</h1>
+      <h1 className="text-2xl font-bold mb-4">あたらしい ゆめを かく</h1>
       <DreamForm onSubmit={handleCreateSubmit} isLoading={isSaving} />
     </div>
   );
