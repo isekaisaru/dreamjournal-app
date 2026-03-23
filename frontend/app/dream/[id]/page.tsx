@@ -155,6 +155,8 @@ export default function DreamDetailPage({
         )
       : [];
   const displayTags = aiEmotionTags.length > 0 ? aiEmotionTags : dbEmotionTags;
+  const analysisText =
+    dream.analysis_json?.analysis || dream.analysis_json?.text || "";
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
@@ -190,13 +192,13 @@ export default function DreamDetailPage({
       )}
 
       {/* モルペウスのゆめうらない */}
-      {dream.analysis_json?.analysis && (
+      {analysisText && (
         <div className="bg-muted/50 border border-input rounded-xl p-5 mb-6">
           <p className="text-sm font-semibold text-muted-foreground mb-2">
             🔮 モルペウスの ゆめうらない
           </p>
           <p className="text-foreground leading-relaxed whitespace-pre-wrap text-sm">
-            {dream.analysis_json.analysis}
+            {analysisText}
           </p>
         </div>
       )}
