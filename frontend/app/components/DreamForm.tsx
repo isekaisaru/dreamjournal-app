@@ -141,11 +141,13 @@ export default function DreamForm({
   }, []);
 
   useEffect(() => {
-    if (
-      !isDraftApplied ||
-      emotions.length === 0 ||
-      suggestedEmotionNames.length === 0
-    ) {
+    if (emotions.length === 0 || suggestedEmotionNames.length === 0) {
+      return;
+    }
+
+    // 過去の夢の編集モードでは、初期ロード時に手動選択済みタグを
+    // AI提案タグで上書きしないようにする。
+    if (initialData) {
       return;
     }
 
@@ -153,7 +155,7 @@ export default function DreamForm({
     setSelectedEmotionIds(
       mapEmotionNamesToIds(emotions, suggestedEmotionNames)
     );
-  }, [emotions, suggestedEmotionNames, isDraftApplied]);
+  }, [emotions, suggestedEmotionNames, initialData]);
 
   // handleEmotionChange は新しいUIで直接使用されなくなったため削除
 
