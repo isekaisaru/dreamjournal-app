@@ -145,11 +145,17 @@ export default function DreamForm({
       return;
     }
 
+    // 過去の夢の編集モードでは、初期ロード時に手動選択済みタグを
+    // AI提案タグで上書きしないようにする。
+    if (initialData) {
+      return;
+    }
+
     // AI提案タグが変わったら、その提案内容をそのまま選択状態へ反映する。
     setSelectedEmotionIds(
       mapEmotionNamesToIds(emotions, suggestedEmotionNames)
     );
-  }, [emotions, suggestedEmotionNames]);
+  }, [emotions, suggestedEmotionNames, initialData]);
 
   // handleEmotionChange は新しいUIで直接使用されなくなったため削除
 
