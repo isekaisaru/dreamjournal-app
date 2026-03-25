@@ -141,7 +141,11 @@ export default function DreamForm({
   }, []);
 
   useEffect(() => {
-    if (emotions.length === 0 || suggestedEmotionNames.length === 0) {
+    if (
+      !isDraftApplied ||
+      emotions.length === 0 ||
+      suggestedEmotionNames.length === 0
+    ) {
       return;
     }
 
@@ -149,7 +153,7 @@ export default function DreamForm({
     setSelectedEmotionIds(
       mapEmotionNamesToIds(emotions, suggestedEmotionNames)
     );
-  }, [emotions, suggestedEmotionNames]);
+  }, [emotions, suggestedEmotionNames, isDraftApplied]);
 
   // handleEmotionChange は新しいUIで直接使用されなくなったため削除
 
