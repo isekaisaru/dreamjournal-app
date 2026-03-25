@@ -31,6 +31,14 @@ export default function DreamForm({
   onSubmit,
   isLoading = false,
 }: DreamFormProps) {
+  const mapEmotionNamesToIds = (
+    availableEmotions: Emotion[],
+    emotionNames: string[]
+  ): number[] =>
+    availableEmotions
+      .filter((emotion) => emotionNames.includes(emotion.name))
+      .map((emotion) => emotion.id);
+
   const tempId = useRef(
     `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   );
@@ -133,30 +141,15 @@ export default function DreamForm({
   }, []);
 
   useEffect(() => {
-    if (
-      !isDraftApplied ||
-      emotions.length === 0 ||
-      suggestedEmotionNames.length === 0
-    ) {
+    if (emotions.length === 0 || suggestedEmotionNames.length === 0) {
       return;
     }
 
-    // 既存の選択とマージするか、新規に設定するかを判断
-    setSelectedEmotionIds((prevIds) => {
-      if (prevIds.length > 0) {
-        const merged = new Set(prevIds);
-        suggestedEmotionNames.forEach((tag) => {
-          const matched = emotions.find((emotion) => emotion.name === tag);
-          if (matched) merged.add(matched.id);
-        });
-        return Array.from(merged);
-      }
-      // 新規作成時
-      return emotions
-        .filter((emotion) => suggestedEmotionNames.includes(emotion.name))
-        .map((emotion) => emotion.id);
-    });
-  }, [emotions, isDraftApplied, suggestedEmotionNames]);
+    // AI提案タグが変わったら、その提案内容をそのまま選択状態へ反映する。
+    setSelectedEmotionIds(
+      mapEmotionNamesToIds(emotions, suggestedEmotionNames)
+    );
+  }, [emotions, suggestedEmotionNames]);
 
   // handleEmotionChange は新しいUIで直接使用されなくなったため削除
 
@@ -171,6 +164,7 @@ export default function DreamForm({
       const result = await previewAnalysis(content);
       setAnalysisText(result.analysis);
       setSuggestedEmotionNames(result.emotion_tags);
+      setSelectedEmotionIds(mapEmotionNamesToIds(emotions, result.emotion_tags));
       setMorpheusRating(null);
       localStorage.removeItem(morpheusRatingKey);
       toast.success("モルペウスが おへんじ したよ！");

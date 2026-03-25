@@ -7,15 +7,17 @@ import { createMockEmotion } from "../utils/mockFactory";
 // Mocks
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),
+  previewAnalysis: jest.fn(),
 }));
 
 jest.mock("@/lib/toast", () => ({
   toast: {
     error: jest.fn(),
+    success: jest.fn(),
   },
 }));
 
-const { getEmotions } = require("@/lib/apiClient");
+const { getEmotions, previewAnalysis } = require("@/lib/apiClient");
 const { toast } = require("@/lib/toast");
 
 describe("DreamForm", () => {
@@ -152,5 +154,68 @@ describe("DreamForm", () => {
     });
     expect(wonder).toBeChecked();
     expect(anxiety).not.toBeChecked();
+  });
+
+  it("updates analysis text and emotion selection immediately after re-analysis in edit mode", async () => {
+    const emotions = [
+      createMockEmotion({ id: 10, name: "不安" }),
+      createMockEmotion({ id: 11, name: "不思議" }),
+      createMockEmotion({ id: 12, name: "嬉しい" }),
+    ];
+    getEmotions.mockResolvedValueOnce(emotions);
+    previewAnalysis.mockResolvedValueOnce({
+      analysis: "あたらしい うらない けっか",
+      emotion_tags: ["不安", "嬉しい"],
+    });
+
+    const initialData = {
+      id: 1,
+      title: "初期タイトル",
+      content: "初期コンテンツ",
+      userId: 1,
+      created_at: "2025-01-01",
+      updated_at: "2025-01-01",
+      emotions: [{ id: 11, name: "不思議" }],
+      analysis_json: {
+        analysis: "まえの うらない",
+        emotion_tags: ["不思議"],
+      },
+    };
+
+    const user = userEvent.setup();
+
+    render(<DreamForm initialData={initialData} onSubmit={jest.fn()} />);
+
+    const analyzeButton = await screen.findByRole("button", {
+      name: /もういちど\s*きく/,
+    });
+    const wonder = await screen.findByRole("checkbox", {
+      name: "😵 わからない",
+    });
+    const anxiety = await screen.findByRole("checkbox", {
+      name: "😓 しんぱい",
+    });
+    const happy = await screen.findByRole("checkbox", {
+      name: "😊 うれしい",
+    });
+
+    expect(screen.getByText("まえの うらない")).toBeInTheDocument();
+    expect(wonder).toBeChecked();
+    expect(anxiety).not.toBeChecked();
+    expect(happy).not.toBeChecked();
+
+    await user.click(analyzeButton);
+
+    await waitFor(() => {
+      expect(screen.getByText("あたらしい うらない けっか")).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(anxiety).toBeChecked();
+      expect(happy).toBeChecked();
+    });
+    expect(wonder).not.toBeChecked();
+    expect(screen.getByText("#不安")).toBeInTheDocument();
+    expect(screen.getByText("#嬉しい")).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("モルペウスが おへんじ したよ！");
   });
 });

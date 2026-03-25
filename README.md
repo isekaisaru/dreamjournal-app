@@ -1,7 +1,7 @@
 # 🌙 ユメログ — AI Dream Journal
 
-**「言葉にならない子どもの夢や感情を、家族で楽しく記録・共有したい」** という課題から生まれた家族向け夢記録アプリです。
-毎朝の不思議な夢を記録すると、OpenAIが内容を分析し感情タグで可視化。言葉の発達段階にある子どもの感情を紐解き、日々のセルフケアやご家族間のコミュニケーションのきっかけを作ります。
+**「言葉にならない子どもの夢や感情を、家族で楽しく記録・共有したい」** という課題から生まれた家族向け夢記録アプリです。  
+夢の内容を記録すると、OpenAI API が分析文と感情タグを返し、言葉の発達段階にある子どもの気持ちを家族で振り返るきっかけを作ります。
 
 [![E2E Tests](https://github.com/isekaisaru/dream-journal-app/actions/workflows/e2e-test.yml/badge.svg)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/e2e-test.yml)
 [![Backend Tests](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml/badge.svg)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml)
@@ -9,40 +9,40 @@
 
 **🌐 本番URL:** https://dreamjournal-app.vercel.app
 
-## 概要 (Overview)
-ユメログは、言葉で説明しづらい「夢」を記録し、AIを用いて感情の可視化を行う家族向けのWebアプリです。
-Next.js（App Router）+ Ruby on Rails API を用いて、認証、感情タグ、多対多リレーション、UI/UX改善、決済フロー、インフラ構築までを一貫して個人開発しています。
-単なるモダン技術の羅列ではなく、**「なぜそのアーキテクチャ・設計にしたか」** というビジネス要件からの逆算を重視し、課題設定から改善まで継続的に取り組んでいます。
+## 概要
+
+ユメログは、夢の記録、感情タグの可視化、家族向けのやさしいUIを組み合わせた Web アプリです。  
+フロントエンドは Next.js 16、バックエンドは Rails 7.1 API を採用し、認証、AI 連携、寄付導線、監視、テストまでを個人開発で一貫して構築しています。
+
+技術選定では「モダンだから」ではなく、家族が毎日迷わず使える UX と、継続運用しやすい構成になるかを重視しています。
 
 ---
 
-## 1. 解決する課題とプロダクト体験 (Features)
-
-**「家族が毎日ストレスなく、直感的に記録できる」** ことを最優先にUI/UXを設計しています。
+## 1. 解決する課題とプロダクト体験
 
 ### 夢の記録と感情の可視化
-子どもでも使えるよう平易な表現（ひらがな等）を活用。テキストで夢を記録すると、OpenAI GPT-4 が内容を分析し、隠れた感情パターンを可視化するセルフケアツールとして機能します。
-> 📸 *Screenshot placeholder — `docs/screenshots/dream-log.png`*
-> 📸 *Screenshot placeholder — `docs/screenshots/ai-analysis.png`*
 
-### 堅牢な認証とSaaS課金フロー
-JWT（HttpOnly Cookie）によるセキュアな認証と、Stripe Checkout（Webhook連動）を用いた本番グレードの寄付・フリーミアム機能を構築しています。
-> 📸 *Screenshot placeholder — `docs/screenshots/auth.png`*
-> 📸 *Screenshot placeholder — `docs/screenshots/donation.png`*
+子どもでも扱いやすいよう、ひらがなを多めに使った表現やシンプルな入力導線を意識しています。  
+記録した夢は OpenAI API（現在の実装では `gpt-4o-mini`）で分析し、短い解釈文と感情タグを返します。日々の夢を単なるメモで終わらせず、親子の会話やセルフケアのきっかけに変えることを狙っています。
+
+### 認証と寄付導線
+
+認証は JWT を HttpOnly Cookie で扱い、フロントエンドとバックエンドを分離した構成でも安全にセッションを維持できるようにしています。  
+また、Stripe Checkout と Webhook を使った寄付導線を実装し、`checkout.session.completed` を受けて支払い結果を永続化するところまで含めて整備しています。
 
 ---
 
-## 2. システムアーキテクチャと技術選定の理由 (Why)
+## 2. システムアーキテクチャと技術選定
 
 ```mermaid
 graph TD
-    Browser["🌐 Browser"]
-    FE["▲ Next.js 16<br/>(Vercel)"]
-    BE["🚂 Rails 7.1 API<br/>(Render)"]
-    DB[("🐘 PostgreSQL")]
-    AI["🤖 OpenAI API<br/>(GPT-4)"]
-    Stripe["💳 Stripe"]
-    Sentry["🔍 Sentry"]
+    Browser["Browser"]
+    FE["Next.js 16<br/>(Vercel)"]
+    BE["Rails 7.1 API<br/>(Render)"]
+    DB[("PostgreSQL")]
+    AI["OpenAI API<br/>(gpt-4o-mini)"]
+    Stripe["Stripe"]
+    Sentry["Sentry"]
 
     Browser -->|HTTPS| FE
     FE -->|REST API + Cookie| BE
@@ -52,61 +52,71 @@ graph TD
     Stripe -->|Webhook POST| BE
 ```
 
-### なぜこの構成を選定したか（Why）
+### この構成を選んだ理由
+
 - **フロントエンド: Next.js (App Router)**
-  家族が毎日使うUIとして「触り心地の良さ（Framer Motion等）」と「将来的なPWA・ネイティブアプリ化」を見据え、Reactベースの堅牢な基盤を採用。Server/Client Componentsを使い分け、初期ロードの最適化とインタラクティブなUIを両立させています。
-- **バックエンド: Ruby on Rails (API mode)**
-  複雑なドメインロジック（夢データの解析連携、Stripe決済プロセスなど）を素早く正確に構築するため。また、RSpecによる豊富なテストエコシステムにより、決済や認証といったクリティカルな処理の品質担保が容易な点を評価しています。
-- **認証設計（JWT + HttpOnly Cookie）の意図**
-  フロントエンド（Vercel）とバックエンド（Render）の完全分離ドメインにおいて、ステートレスでスケール可能なJWTを採用。同時に、SPA特有のXSSリスクを最小化すべく `Set-Cookie: HttpOnly / Secure` ヘッダーを用いてブラウザへ送るセキュアな方式を独自実装しました。
-- **インフラと運用保守 (Vercel / Render)**
-  インフラ運用コストを最小化し、機能開発やUX改善に注力できるようフルマネージドの構成を選択。Dependabotによる依存関係の更新（25件以上解消済み）にも手堅く追従しています。
+  毎日使うアプリとして、初期表示の軽さと操作感の両立を重視しました。Server / Client Components を使い分けつつ、インタラクティブな UI は Framer Motion で補っています。
+- **バックエンド: Rails API**
+  認証、AI 連携、決済、Webhook 処理のようなドメインロジックを、短いサイクルで安全に改善しやすい構成として採用しました。RSpec による回帰確認もしやすい点を重視しています。
+- **認証設計: JWT + HttpOnly Cookie**
+  XSS 耐性を意識し、トークンをブラウザの JavaScript から直接触らせない構成にしています。クロスドメイン環境では Vercel 側の API 経由で Cookie を安定して扱えるようにしています。
+- **インフラ: Vercel / Render**
+  インフラ運用を過度に抱えず、機能改善と UX 検証に集中しやすいフルマネージド構成を選びました。
 
 ---
 
-## 3. 面接で語れる「泥臭い改善」と実装の工夫
+## 3. 設計・実装上の工夫
 
-### ① 完璧主義より「80%での前進と継続的UX改善」
-家族によるテスト運用を行い、そのフィードバックを基に「分かりやすいひらがなUI」「夢詳細の閲覧/編集モード分離」「パスワード可視化トグル」などを素早く実装。「一度作って終わり」ではなく、利用者の声から継続的にUXを磨き上げるサイクルを実践しています。これを支えているのがPlaywrightやRSpecによる自動テスト網（CI/CD）であり、大胆なリファクタリングもエンバグを恐れず行えています。
+### ① 利用者フィードバック前提の UX 改善
 
-### ② 拡張性を見据えたデータ設計（多対多リレーションとレガシー対応）
-「一つの夢に複数の複雑な感情が入り混じる」性質をモデリングし、夢と感情タグを多対多の中間テーブルで正規化。また、AI分析のフォーマットアップデート（単一テキストから構造化JSONへの移行）の際も、ビュー層で独自のアダプタを書き、過去のレガシーデータと新フォーマットがシームレスに共存できる泥臭い対応を行っています。
+「ひらがな中心の表示」「夢詳細の閲覧モードと編集モードの分離」「パスワード可視化トグル」など、使いながら分かりにくかった点を小さく改善してきました。  
+個人開発でも変更を積み重ねやすいよう、Jest・RSpec・Playwright を併用して回帰確認しやすい状態を保っています。
 
-### ③ 本格運用を見据えたエラー監視 (Observability) とセキュリティ
-Sentryを導入し、本番デプロイ後に見落としがちな非同期処理のエラー等を検知・即座にパッチを当てるトリアージ運用を実施。また、CORSの厳格化やJWT HttpOnly Cookie運用、 Dependabotからの脆弱性アラートの地道な解消（25件以上）など、守りの開発も徹底しています。
+### ② 多対多リレーションとレガシーデータ共存
 
-### ④ 実務レベルの堅牢な決済フローと運用体制
-Stripe連携において、`ensure_stripe_customer_id!` による重複排除や、Webhookの署名検証・冪等処理など、複雑なステート管理を実装。万が一の障害時に備えて `PaymentsObservability` サービスで構造化ログを吐き出し、[`docs/runbook-payments.md`](docs/runbook-payments.md) を整備するなど「現場」を意識した運用体制を目指しています。
+夢と感情の関係は多対多で表現しています。さらに、AI 分析結果の保存形式が変わった後も既存データを壊さず扱えるよう、表示側で新旧フォーマットを吸収する実装にしています。
+
+### ③ 監視とセキュリティを後回しにしない
+
+Sentry をフロントエンドとバックエンドの両方に導入し、本番での例外や不安定な挙動を検知しやすくしています。  
+加えて、CORS 設定、HttpOnly Cookie、環境変数管理など、派手ではないが運用上効く部分を優先して整えています。
+
+### ④ Stripe 決済フローの堅牢化
+
+寄付導線では、`ensure_stripe_customer_id!` による顧客再利用、Webhook 署名検証、重複イベントの排除、支払いログの構造化を実装しています。  
+一次切り分け用に [`docs/runbook-payments.md`](docs/runbook-payments.md) も用意し、機能実装だけでなく運用時の対応手順まで残しています。
 
 ---
 
 ## 4. 今後の展望・課題
-- N+1問題の撲滅など、ドメインモデルの成長とデータ量増加を見据えたバックエンドのパフォーマンス・チューニング。
-- 自動テストカバレッジの拡充と、より安全なCI/CDパイプラインの本格運用。
+
+- N+1 の解消やクエリ改善など、データ量増加を見据えたバックエンド最適化
+- 自動テストの拡充と、より安全な CI/CD の継続改善
 
 ---
 
-## Tech Stack & Project Info (Appendix)
+## Tech Stack & Project Info
 
 <details>
-<summary>詳細な利用技術一覧</summary>
+<summary>利用技術</summary>
 
-- **Frontend**: Next.js 16 (React 18), TypeScript, Tailwind CSS, Framer Motion
+- **Frontend**: Next.js 16, React 18, TypeScript, Tailwind CSS, Framer Motion
 - **Backend**: Ruby on Rails 7.1 (API mode), Ruby 3.3, PostgreSQL
-- **Testing**: Playwright (E2E), RSpec (Backend Unit/Request), Jest (Frontend Unit)
-- **AI & 3rd Party**: OpenAI API (GPT-4), Stripe (Checkout & Webhooks), Sentry
+- **Testing**: Playwright, RSpec, Jest
+- **AI / External Services**: OpenAI API (`gpt-4o-mini`, `whisper-1`), Stripe, Sentry
 - **DevOps**: Vercel, Render, Docker Compose, GitHub Actions
 </details>
 
 <details>
-<summary>ローカル開発環境の立ち上げ手順 (Getting Started)</summary>
+<summary>ローカル開発環境の立ち上げ</summary>
 
 ```bash
 git clone https://github.com/isekaisaru/dream-journal-app.git
 cd dream-journal-app
-cp backend/.env.example backend/.env # 必須環境変数の入力
+cp backend/.env.example backend/.env
 make dev-up
 ```
+
 | Service | URL |
 |---|---|
 | Frontend | http://localhost:3000 |
@@ -115,13 +125,14 @@ make dev-up
 </details>
 
 <details>
-<summary>CI/CD構成と品質ゲート</summary>
+<summary>CI/CD</summary>
 
-GitHub Actionsを用いて、`main` ブランチへのPush/PR時に自動で各種テスト（Playwright, RSpec, Jest）を実行し、品質低下を防ぐパイプライン（E2E / Backend / Frontend）を構築しています。
+GitHub Actions で `main` への Push / PR 時に Playwright、RSpec、Jest を実行し、主要フローの回帰を検知できるようにしています。
 </details>
 
 ---
 
 ## Author
-**Tyougorou**
-物流・現場マネジメント経験を経て、手触りのあるソフトウェアで課題解決を行うためWeb開発技術を習得。要件定義からデプロイ・運用まで、一連の開発工程に責任を持って取り組んできました。
+
+**Tyougorou**  
+物流・現場マネジメント経験を経て、手触りのあるソフトウェアで課題解決を行うため Web 開発技術を習得。要件定義から実装、デプロイ、運用改善まで一貫して取り組んでいます。
