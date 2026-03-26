@@ -6,15 +6,23 @@ import apiClient from "@/lib/apiClient";
 import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 
+/** ポーリングのタイムアウト上限: 3分 */
+const POLLING_TIMEOUT_MS = 3 * 60 * 1000;
+
 export default function PendingDreamsMonitor() {
   const router = useRouter();
   const { authStatus } = useAuth();
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [pollInterval, setPollInterval] = useState(5000);
+  const [pollRestartKey, setPollRestartKey] = useState(0);
   const failedAttemptsRef = useRef(0);
   // 処理済みIDを永続的に記録 (重複処理防止)
   const processedIdsRef = useRef<Set<number>>(new Set());
+  // ポーリング開始時刻 (タイムアウト判定用)
+  const pollingStartTimeRef = useRef<number | null>(null);
+  // タイムアウト状態
+  const [isTimedOut, setIsTimedOut] = useState(false);
 
   // マウントログ
   useEffect(() => {
@@ -62,12 +70,26 @@ export default function PendingDreamsMonitor() {
     }
   }, [authStatus]);
 
+  // タイムアウトをリセットして再試行
+  const handleRetry = useCallback(() => {
+    console.log("[PendingDreamsMonitor] Retry triggered by user");
+    setIsTimedOut(false);
+    pollingStartTimeRef.current = null;
+    failedAttemptsRef.current = 0;
+    setPollInterval(5000);
+    setPollRestartKey((prev) => prev + 1);
+    refreshPendingList();
+  }, [refreshPendingList]);
+
   // イベントリスナー設定 (録音完了通知を受け取る)
   useEffect(() => {
     refreshPendingList();
 
     const handleDreamCreated = () => {
       console.log("[PendingDreamsMonitor] dream-created event received");
+      // 新しい夢が作成されたらタイムアウト状態をリセット
+      setIsTimedOut(false);
+      pollingStartTimeRef.current = null;
       refreshPendingList();
     };
 
@@ -87,7 +109,17 @@ export default function PendingDreamsMonitor() {
           "[PendingDreamsMonitor] Polling stopped (no pending dreams)"
         );
       }
+      // pendingIdsが空になったらタイムアウト状態もリセット
+      pollingStartTimeRef.current = null;
       return;
+    }
+
+    // ポーリング開始時刻を記録 (初回のみ)
+    if (pollingStartTimeRef.current === null) {
+      pollingStartTimeRef.current = Date.now();
+      console.log(
+        `[PendingDreamsMonitor] Polling started at ${new Date().toISOString()}`
+      );
     }
 
     console.log(
@@ -96,6 +128,22 @@ export default function PendingDreamsMonitor() {
 
     const checkStatuses = async () => {
       if (document.hidden) return;
+
+      // タイムアウト判定: 3分以上ポーリングしていたら中断
+      if (
+        pollingStartTimeRef.current !== null &&
+        Date.now() - pollingStartTimeRef.current > POLLING_TIMEOUT_MS
+      ) {
+        console.warn(
+          `[PendingDreamsMonitor] Polling timed out after ${POLLING_TIMEOUT_MS / 1000}s for dreams: ${pendingIds.join(", ")}`
+        );
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        setIsTimedOut(true);
+        return;
+      }
 
       try {
         const idsParam = pendingIds.join(",");
@@ -181,8 +229,27 @@ export default function PendingDreamsMonitor() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // routerを依存配列から除外。pendingIdsかpollIntervalが変わった時だけ再設定。
-  }, [pendingIds, pollInterval, router]);
+  }, [pendingIds, pollInterval, pollRestartKey, router]);
 
+  // タイムアウト時: 再試行を促すバナーを表示
+  if (isTimedOut) {
+    return (
+      <div className="fixed bottom-4 left-4 z-50 animate-in slide-in-from-bottom-2 fade-in">
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-950/90 text-amber-100 rounded-full shadow-lg border border-amber-700/50 backdrop-blur-sm">
+          <span className="text-base">⏱</span>
+          <span className="text-xs font-medium">かんがえるのに時間がかかってるよ</span>
+          <button
+            onClick={handleRetry}
+            className="text-xs font-bold underline underline-offset-2 text-amber-300 hover:text-amber-100 transition-colors"
+          >
+            もういちど
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // pending中: 解析中バナーを表示
   if (pendingIds.length === 0) return null;
 
   return (
