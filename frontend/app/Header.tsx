@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Moon, Sparkles } from "lucide-react";
 import AuthNav from "./components/AuthNav";
+import ThemeToggle from "./components/ThemeToggle";
 
 // クロスドメイン環境（Vercel × Render）では、Server側でCookieを読めないため、
 // 認証状態の取得はAuthNav内のAuthContextで行う。
@@ -24,6 +25,10 @@ export default function Header() {
       </div>
       <div className="w-full flex-grow">
         <AuthNav />
+      </div>
+      {/* テーマ切り替え */}
+      <div className="flex-shrink-0">
+        <ThemeToggle />
       </div>
     </header>
   );

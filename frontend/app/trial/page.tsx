@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import MorpheusSmall from "@/app/components/MorpheusSmall";
 
 export default function TrialPage() {
   const [dreams, setDreams] = useState<
@@ -39,13 +40,15 @@ export default function TrialPage() {
         <p className="text-lg font-semibold text-primary mb-2">
           AIで夢を記録・分析するセルフケアアプリ
         </p>
-        <p className="text-muted-foreground mb-4">
-          ここは おためしの おへや です。
-          <br />
-          ゆめを かいて あそべるけれど、
-          <br />
-          この ぺーじを とじると かいた ゆめは きえてしまいます。
-        </p>
+
+        {/* モルペウスの案内 */}
+        <div className="mb-4">
+          <MorpheusSmall
+            title="ようこそ！ぼくが あんないするよ✨"
+            message="ここは おためしの おへや だよ。ゆめを かいて あそんでね！とじると きえちゃうから、のこしたいときは とうろく してね。"
+          />
+        </div>
+
         <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
             もっと のこしておきたい ときは、
