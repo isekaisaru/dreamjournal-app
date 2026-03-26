@@ -4,7 +4,7 @@ import DreamForm from "../../components/DreamForm";
 import MorpheusSmall from "../../components/MorpheusSmall";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import Loading from "../../loading";
 import { createDream } from "@/lib/apiClient";
@@ -19,7 +19,7 @@ export default function NewDreamPage() {
   const [hasDraft, setHasDraft] = useState(false);
   const [isDraftChecked, setIsDraftChecked] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setHasDraft(!!sessionStorage.getItem("dream_draft_data"));
     setIsDraftChecked(true);
   }, []);
