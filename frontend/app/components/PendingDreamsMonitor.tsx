@@ -15,6 +15,7 @@ export default function PendingDreamsMonitor() {
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [pollInterval, setPollInterval] = useState(5000);
+  const [pollRestartKey, setPollRestartKey] = useState(0);
   const failedAttemptsRef = useRef(0);
   // 処理済みIDを永続的に記録 (重複処理防止)
   const processedIdsRef = useRef<Set<number>>(new Set());
@@ -76,6 +77,7 @@ export default function PendingDreamsMonitor() {
     pollingStartTimeRef.current = null;
     failedAttemptsRef.current = 0;
     setPollInterval(5000);
+    setPollRestartKey((prev) => prev + 1);
     refreshPendingList();
   }, [refreshPendingList]);
 
@@ -227,7 +229,7 @@ export default function PendingDreamsMonitor() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // routerを依存配列から除外。pendingIdsかpollIntervalが変わった時だけ再設定。
-  }, [pendingIds, pollInterval, router]);
+  }, [pendingIds, pollInterval, pollRestartKey, router]);
 
   // タイムアウト時: 再試行を促すバナーを表示
   if (isTimedOut) {
