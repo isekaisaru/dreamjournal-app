@@ -1,16 +1,10 @@
 "use client";
 
 import { Dream } from "@/app/types";
+import { getJSTDateStr, getJSTYearMonthKey } from "@/lib/date";
 
 interface DreamStreakBadgeProps {
   dreams: Dream[];
-}
-
-/** JST で YYYY-MM-DD 文字列を取得 */
-function getJSTDateStr(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-CA", {
-    timeZone: "Asia/Tokyo",
-  });
 }
 
 /** 連続記録日数を計算 */
@@ -76,13 +70,9 @@ export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
   const { current, longest } = calcStreak(dreams);
 
   // 今月のカウント
-  const now = new Date();
+  const currentJSTMonth = getJSTYearMonthKey(new Date());
   const thisMonthCount = dreams.filter((d) => {
-    const date = new Date(d.created_at);
-    return (
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear()
-    );
+    return getJSTYearMonthKey(d.created_at) === currentJSTMonth;
   }).length;
 
   // 獲得バッジの計算

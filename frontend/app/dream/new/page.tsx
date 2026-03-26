@@ -4,7 +4,7 @@ import DreamForm from "../../components/DreamForm";
 import MorpheusSmall from "../../components/MorpheusSmall";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import Loading from "../../loading";
 import { createDream } from "@/lib/apiClient";
@@ -16,14 +16,13 @@ export default function NewDreamPage() {
   const router = useRouter();
   const { authStatus } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [isDraftChecked, setIsDraftChecked] = useState(false);
 
-  /**
-   * sessionStorage にドラフトが残っているか同期チェック
-   * DreamForm の useEffect より先に実行されるため、値が消える前に読み取れる
-   */
-  const hasDraft =
-    typeof window !== "undefined" &&
-    !!sessionStorage.getItem("dream_draft_data");
+  useLayoutEffect(() => {
+    setHasDraft(!!sessionStorage.getItem("dream_draft_data"));
+    setIsDraftChecked(true);
+  }, []);
 
   if (authStatus === "checking") {
     return <Loading />;
@@ -92,7 +91,9 @@ export default function NewDreamPage() {
       <h1 className="text-2xl font-bold mb-4">あたらしい ゆめを かく</h1>
 
       {/* ドラフト復元バナー（録音データがある場合のみ表示） */}
-      {hasDraft ? (
+      {!isDraftChecked ? (
+        <div className="mb-6 h-[72px]" aria-hidden="true" />
+      ) : hasDraft ? (
         <div className="mb-6">
           <MorpheusSmall
             title="まえの つづきが あるよ！"
