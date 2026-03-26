@@ -34,10 +34,7 @@ const DEFAULT_TIMEOUT_MS =
   process.env.NODE_ENV === "development" ? 30_000 : 15_000;
 const AUTH_TIMEOUT_MS = 45_000;
 
-function resolveTimeoutMs(
-  endpoint: string,
-  timeoutMs?: number
-): number {
+function resolveTimeoutMs(endpoint: string, timeoutMs?: number): number {
   if (typeof timeoutMs === "number") {
     return timeoutMs;
   }
@@ -47,6 +44,47 @@ function resolveTimeoutMs(
   }
 
   return DEFAULT_TIMEOUT_MS;
+}
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+  endpointLabel: string
+): Promise<Response> {
+  const timeoutController = new AbortController();
+  const timeoutId = setTimeout(() => timeoutController.abort(), timeoutMs);
+  const callerSignal = options.signal;
+  const requestOptions: RequestInit = { ...options };
+
+  if (typeof AbortSignal.any === "function") {
+    const signals = callerSignal
+      ? [callerSignal, timeoutController.signal]
+      : [timeoutController.signal];
+    requestOptions.signal = AbortSignal.any(signals);
+  } else {
+    // AbortSignal.any未対応環境ではタイムアウトsignalのみ使用
+    requestOptions.signal = timeoutController.signal;
+  }
+
+  try {
+    return await fetch(url, requestOptions);
+  } catch (fetchError) {
+    if ((fetchError as Error)?.name === "AbortError") {
+      if (callerSignal?.aborted) {
+        throw fetchError;
+      }
+
+      const error = new ApiError(
+        `API request to ${endpointLabel} timed out after ${timeoutMs / 1000}s.`
+      );
+      error.status = 504;
+      throw error;
+    }
+    throw fetchError;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function apiFetch<T>(
@@ -98,70 +136,29 @@ export async function apiFetch<T>(
   // 開発環境: 30秒
   // 本番環境: 通常 15秒 / 認証系は 45秒
   const TIMEOUT_MS = resolveTimeoutMs(endpoint, timeoutMs);
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(() => timeoutController.abort(), TIMEOUT_MS);
-
-  // 呼び出し元のsignalがあれば、タイムアウトsignalと組み合わせる（上書きしない）
-  const callerSignal = fetchOptions.signal;
-  if (typeof AbortSignal.any === "function") {
-    const signals = callerSignal
-      ? [callerSignal, timeoutController.signal]
-      : [timeoutController.signal];
-    finalOptions.signal = AbortSignal.any(signals);
-  } else {
-    // AbortSignal.any未対応環境ではタイムアウトsignalのみ使用
-    finalOptions.signal = timeoutController.signal;
-  }
-
   let response: Response;
-  try {
-    response = await fetch(url, finalOptions);
-  } catch (fetchError) {
-    // ④ AbortError判定: Node環境ではDOMExceptionが無い場合があるため name で判定
-    if ((fetchError as Error)?.name === "AbortError") {
-      const error = new ApiError(
-        `API request to ${endpoint} timed out after ${TIMEOUT_MS / 1000}s.`
-      );
-      error.status = 504;
-      throw error;
-    }
-    throw fetchError;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  response = await fetchWithTimeout(url, finalOptions, TIMEOUT_MS, endpoint);
 
   // ⑤ アクセストークン自動リフレッシュ
   // 401 を受け取ったとき、/auth/ エンドポイント以外なら refresh を試みて1回だけリトライする。
   // これにより 15分ごとの強制ログアウトを防ぐ。
   if (response.status === 401 && !isServer && !endpoint.startsWith("/auth/")) {
-    try {
-      const refreshRes = await fetch(createApiUrl("/auth/refresh"), {
+    const refreshRes = await fetchWithTimeout(
+      createApiUrl("/auth/refresh"),
+      {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
         cache: "no-store",
-      });
+        signal: fetchOptions.signal,
+      },
+      resolveTimeoutMs("/auth/refresh"),
+      "/auth/refresh"
+    );
 
-      if (refreshRes.ok) {
-        // 新しいアクセストークンが Cookie にセットされたので元のリクエストをリトライ
-        const retryController = new AbortController();
-        const retryTimeoutId = setTimeout(
-          () => retryController.abort(),
-          TIMEOUT_MS
-        );
-        try {
-          response = await fetch(url, {
-            ...finalOptions,
-            signal: retryController.signal,
-          });
-        } finally {
-          clearTimeout(retryTimeoutId);
-        }
-        // リトライも失敗した場合は下の error ハンドラに流れる
-      }
-      // refresh 失敗時はそのまま下の error ハンドラに流れる（ログインページへの誘導）
-    } catch {
-      // refresh 自体が通信エラーの場合も無視して下の error ハンドラへ
+    if (refreshRes.ok) {
+      // 新しいアクセストークンが Cookie にセットされたので元のリクエストをリトライ
+      response = await fetchWithTimeout(url, finalOptions, TIMEOUT_MS, endpoint);
     }
   }
 
