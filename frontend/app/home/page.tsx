@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
 import { getEmotions } from "@/lib/apiClient";
 import DreamList from "@/app/components/DreamList";
+import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import SearchBar from "@/app/components/SearchBar";
 import MorpheusAssistant from "./MorpheusAssistant";
 import VoiceRecorderClient from "./VoiceRecorderClient";
@@ -158,6 +159,14 @@ export default function HomePage() {
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);
 
+  // 検索フィルターが有効かどうかを判定
+  const isSearchActive = !!(
+    searchParams.get("query") ||
+    searchParams.get("startDate") ||
+    searchParams.get("endDate") ||
+    searchParams.getAll("emotion_ids[]").length > 0
+  );
+
   return (
     <div className="md:flex text-foreground">
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
@@ -173,12 +182,8 @@ export default function HomePage() {
           selectedEmotionIds={searchParams.getAll("emotion_ids[]")}
         />
 
-        {/* ローディング中 */}
-        {loading && (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">読み込み中...</div>
-          </div>
-        )}
+        {/* ローディング中: スケルトンカードを表示 */}
+        {loading && <DreamListSkeleton count={6} />}
         {/* エラーメッセージがある場合は表示 */}
         {errorMessage && (
           <div className="text-destructive mb-4">{errorMessage}</div>
@@ -187,6 +192,7 @@ export default function HomePage() {
         {!loading && !errorMessage && (
           <DreamList
             dreams={dreams}
+            isSearchActive={isSearchActive}
             key={`${dreams[0]?.id}-${dreams.length}`}
           />
         )}
