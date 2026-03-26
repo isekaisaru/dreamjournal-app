@@ -130,6 +130,41 @@ export async function apiFetch<T>(
     clearTimeout(timeoutId);
   }
 
+  // ⑤ アクセストークン自動リフレッシュ
+  // 401 を受け取ったとき、/auth/ エンドポイント以外なら refresh を試みて1回だけリトライする。
+  // これにより 15分ごとの強制ログアウトを防ぐ。
+  if (response.status === 401 && !isServer && !endpoint.startsWith("/auth/")) {
+    try {
+      const refreshRes = await fetch(createApiUrl("/auth/refresh"), {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+
+      if (refreshRes.ok) {
+        // 新しいアクセストークンが Cookie にセットされたので元のリクエストをリトライ
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(
+          () => retryController.abort(),
+          TIMEOUT_MS
+        );
+        try {
+          response = await fetch(url, {
+            ...finalOptions,
+            signal: retryController.signal,
+          });
+        } finally {
+          clearTimeout(retryTimeoutId);
+        }
+        // リトライも失敗した場合は下の error ハンドラに流れる
+      }
+      // refresh 失敗時はそのまま下の error ハンドラに流れる（ログインページへの誘導）
+    } catch {
+      // refresh 自体が通信エラーの場合も無視して下の error ハンドラへ
+    }
+  }
+
   if (!response.ok) {
     const error = new ApiError(
       `API request to ${endpoint} failed with status ${response.status}.`
