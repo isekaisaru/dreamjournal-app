@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import MorpheusSmall from "@/app/components/MorpheusSmall";
 
 export default function DonationPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +38,14 @@ export default function DonationPage() {
           <p className="mt-4 text-base text-muted-foreground">
             500円であなたの夢日記を応援できます
           </p>
+
+          {/* モルペウスのメッセージ */}
+          <div className="mt-6 text-left">
+            <MorpheusSmall
+              title="ありがとう！✨"
+              message="きみが おうえん してくれると、ゆめの せかいが もっと ひろがるよ。モルペウスも うれしい！"
+            />
+          </div>
 
           <button
             type="button"

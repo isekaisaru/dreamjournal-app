@@ -1,6 +1,7 @@
 "use client";
 
 import DreamForm from "../../components/DreamForm";
+import MorpheusSmall from "../../components/MorpheusSmall";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -16,6 +17,14 @@ export default function NewDreamPage() {
   const { authStatus } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
 
+  /**
+   * sessionStorage にドラフトが残っているか同期チェック
+   * DreamForm の useEffect より先に実行されるため、値が消える前に読み取れる
+   */
+  const hasDraft =
+    typeof window !== "undefined" &&
+    !!sessionStorage.getItem("dream_draft_data");
+
   if (authStatus === "checking") {
     return <Loading />;
   }
@@ -30,7 +39,7 @@ export default function NewDreamPage() {
     setIsSaving(true);
     try {
       await createDream(formData);
-      triggerDreamConfetti(); // 星屑の祝福を発火
+      triggerDreamConfetti();
       toast.success("夢を保存しました！");
       router.push("/home");
     } catch (error) {
@@ -45,6 +54,11 @@ export default function NewDreamPage() {
     return (
       <div className="min-h-screen px-4 py-8 md:px-12">
         <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-6 shadow-lg md:p-8">
+          {/* 未ログインユーザーへのモルペウスメッセージ */}
+          <MorpheusSmall
+            message="ゆめを のこすには、ログインが ひつようだよ。いっしょに はじめよう！"
+            className="mb-6"
+          />
           <h1 className="text-2xl font-bold text-card-foreground">
             新しい夢を記録
           </h1>
@@ -72,9 +86,29 @@ export default function NewDreamPage() {
       </div>
     );
   }
+
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">あたらしい ゆめを かく</h1>
+
+      {/* ドラフト復元バナー（録音データがある場合のみ表示） */}
+      {hasDraft ? (
+        <div className="mb-6">
+          <MorpheusSmall
+            title="まえの つづきが あるよ！"
+            message="モルペウスが きいた おはなしを かわりに かいておいたよ。まちがってたら なおしてね🔮"
+          />
+        </div>
+      ) : (
+        /* 通常時の励ましメッセージ */
+        <div className="mb-6">
+          <MorpheusSmall
+            message="どんな ゆめを みたの？おもいだせる だけ おしえてね！"
+            size="sm"
+          />
+        </div>
+      )}
+
       <DreamForm onSubmit={handleCreateSubmit} isLoading={isSaving} />
     </div>
   );

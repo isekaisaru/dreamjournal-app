@@ -9,6 +9,8 @@ import apiClient from "@/lib/apiClient";
 import { getEmotions } from "@/lib/apiClient";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
+import DreamStatsWidget from "@/app/components/DreamStatsWidget";
+import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
 import MorpheusAssistant from "./MorpheusAssistant";
 import VoiceRecorderClient from "./VoiceRecorderClient";
@@ -198,23 +200,29 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* サイドバー: 月ごとの夢リンクを動的に表示 */}
+      {/* サイドバー: 統計・ストリーク・月ごとリンク */}
       <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 md:mt-0">
-        <div className="bg-card text-card-foreground shadow-md rounded p-4 mb-6 border border-border">
+        {/* 連続記録バッジ */}
+        <DreamStreakBadge dreams={dreams} />
+
+        {/* 感情タグ統計 */}
+        <DreamStatsWidget dreams={dreams} />
+
+        {/* 月別アーカイブリンク */}
+        <div className="bg-card text-card-foreground shadow-md rounded-xl p-4 mb-4 border border-border w-full">
           <h3 className="font-bold text-card-foreground mb-2">
             まえに みた ゆめ
           </h3>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             まえに みた ゆめ を見てみよう！
           </p>
         </div>
-        <ul className="space-y-2">
-          {/* 月ごとの夢リンクを表示 */}
+        <ul className="space-y-2 w-full">
           {Object.entries(groupedDreams).map(([yearMonth, monthDreams]) => (
             <li key={yearMonth}>
               <Link
                 href={`/dream/month/${yearMonth}`}
-                className="text-primary hover:text-primary/90 hover:underline"
+                className="text-primary hover:text-primary/90 hover:underline text-sm"
               >
                 {new Date(monthDreams[0].created_at).toLocaleString("ja-JP", {
                   year: "numeric",
