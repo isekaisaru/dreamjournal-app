@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
+import { getJSTYearMonthKey } from "@/lib/date";
 
 interface DreamStatsWidgetProps {
   dreams: Dream[];
@@ -15,18 +16,15 @@ interface DreamStatsWidgetProps {
 export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
   if (dreams.length === 0) return null;
 
-  const now = new Date();
+  const currentJSTMonth = getJSTYearMonthKey(new Date());
 
   // 今月の夢
   const thisMonthDreams = dreams.filter((d) => {
-    const date = new Date(d.created_at);
-    return (
-      date.getMonth() === now.getMonth() &&
-      date.getFullYear() === now.getFullYear()
-    );
+    return getJSTYearMonthKey(d.created_at) === currentJSTMonth;
   });
 
   // 今週の夢（直近7日）
+  const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thisWeekDreams = dreams.filter(
     (d) => new Date(d.created_at) >= weekAgo
