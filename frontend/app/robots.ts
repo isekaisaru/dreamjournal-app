@@ -14,9 +14,9 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: [
           "/api/",      // API エンドポイントはクロールさせない
-          "/home/",     // ログイン後のページはクロールさせない
-          "/dream/",    // ユーザーの夢データはクロールさせない
-          "/settings/", // 設定ページはクロールさせない
+          "/home",      // ログイン後のページはクロールさせない
+          "/dream",     // ユーザーの夢データはクロールさせない
+          "/settings",  // 設定ページはクロールさせない
         ],
       },
     ],

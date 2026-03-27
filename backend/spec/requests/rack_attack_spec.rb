@@ -4,13 +4,17 @@ require 'rails_helper'
 
 RSpec.describe "Rack::Attack rate limiting", type: :request do
   before do
+    @original_cache_store = Rack::Attack.cache.store
     # このスペックではレート制限を有効化
     Rack::Attack.enabled = true
+    # null_store ではカウンタが永続化されないため MemoryStore を使用
+    Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
     Rack::Attack.reset!
   end
 
   after do
     Rack::Attack.enabled = false
+    Rack::Attack.cache.store = @original_cache_store
   end
 
   describe "POST /dreams/preview_analysis (AI分析)" do
@@ -18,8 +22,8 @@ RSpec.describe "Rack::Attack rate limiting", type: :request do
     let(:access_token) { AuthService.encode_token(user.id) }
 
     before do
-      # OpenAI をモックして実際のAPI呼び出しを防ぐ
-      allow_any_instance_of(DreamAnalysisService).to receive(:analyze).and_return({
+      # OpenAI をモックして実際のAPI呼び出しを防ぐ（クラスメソッド）
+      allow(DreamAnalysisService).to receive(:analyze).and_return({
         analysis: "テスト分析",
         emotion_tags: ["happy"]
       })
