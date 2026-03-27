@@ -27,6 +27,9 @@ gem "jbuilder"
 # Add CORS to accept requests from different origins
 gem 'rack-cors'
 
+# Rate limiting / throttling
+gem 'rack-attack'
+
 # JSON Web Tokens for authentication
 gem 'jwt'
 # Use bcrypt for secure password hashing
