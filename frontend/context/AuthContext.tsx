@@ -55,10 +55,16 @@ function isProtectedPath(pathname: string | null): boolean {
   );
 }
 
+function getInitialAuthStatus(pathname: string | null): AuthStatus {
+  return isProtectedPath(pathname) ? "checking" : "unauthenticated";
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const [authStatus, setAuthStatus] = useState<AuthStatus>("checking");
+  const [authStatus, setAuthStatus] = useState<AuthStatus>(() =>
+    getInitialAuthStatus(pathname)
+  );
   const [user, setUser] = useState<User | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
