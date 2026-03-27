@@ -27,6 +27,8 @@ class AudioDreamsController < ApplicationController
     end
 
     if dream.save
+      user.increment!(:trial_audio_count) if user.trial_user?
+
       # 3. ジョブをエンキュー (非同期処理)
       AnalyzeDreamJob.perform_later(dream.id)
 
@@ -52,8 +54,7 @@ class AudioDreamsController < ApplicationController
     user = current_user
     return unless user&.trial_user?
 
-    audio_count = user.dreams.joins(:audio_attachment).count
-    if audio_count >= TRIAL_AUDIO_LIMIT
+    if user.trial_audio_count >= TRIAL_AUDIO_LIMIT
       render json: {
         error: "トライアルユーザーの音声分析上限（#{TRIAL_AUDIO_LIMIT}回）に達しました。アカウント登録すると無制限に利用できます。",
         limit_reached: true

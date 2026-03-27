@@ -361,10 +361,41 @@ RSpec.describe 'Dreams API', type: :request do
         authenticated_post "/dreams/#{other_dream.id}/analyze", user
         expect(response).to have_http_status(:forbidden)
       end
+
+      it 'トライアル上限到達後でも分析済みの夢はキャッシュ結果を返す' do
+        user.update!(trial_user: true, trial_analysis_count: 3)
+        dream.mark_done!({ analysis: 'cached result', emotion_tags: ['happy'] })
+
+        assert_no_enqueued_jobs do
+          authenticated_post "/dreams/#{dream.id}/analyze", user
+        end
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response['cached']).to be true
+        expect(json_response['result']['analysis']).to eq('cached result')
+      end
     end
 
     context '認証されていない場合' do
       it_behaves_like 'unauthorized request', :post, '/dreams/1/analyze'
+    end
+  end
+
+  describe 'POST /dreams/preview_analysis' do
+    context '認証済みユーザーの場合' do
+      it 'トライアルの永続カウンタ上限に達している場合は夢を削除しても403を返す' do
+        user.update!(trial_user: true, trial_analysis_count: 3)
+
+        expect(DreamAnalysisService).not_to receive(:analyze)
+        authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :post, '/dreams/preview_analysis', { content: '空を飛ぶ夢' }
     end
   end
 

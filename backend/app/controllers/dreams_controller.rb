@@ -140,6 +140,8 @@ class DreamsController < ApplicationController
       analysis_json: nil
     )
 
+    current_user.increment!(:trial_analysis_count) if current_user.trial_user?
+
     # 3. 非同期ジョブをエンキュー
     AnalyzeDreamJob.perform_later(@dream.id)
 
@@ -170,12 +172,7 @@ class DreamsController < ApplicationController
     if result[:error]
       render json: { error: result[:error] }, status: :unprocessable_content
     else
-      # トライアルユーザーの場合、preview 回数をキャッシュでカウント
-      if current_user.trial_user?
-        cache_key = "trial_preview_count:#{current_user.id}"
-        current = Rails.cache.read(cache_key).to_i
-        Rails.cache.write(cache_key, current + 1, expires_in: 24.hours)
-      end
+      current_user.increment!(:trial_analysis_count) if current_user.trial_user?
       render json: result
     end
   end
@@ -196,26 +193,20 @@ class DreamsController < ApplicationController
     end
 
     # トライアルユーザーの分析回数チェック
-    # DB保存される analyze と DB保存されない preview_analysis の両方をカバーする
-    # - analyze: DB上の分析済み Dream 件数
-    # - preview_analysis: Rails.cache の専用カウンタ（DBに残らないため）
     def check_trial_analysis_limit
       return unless current_user.trial_user?
+      return if action_name == "analyze" && cached_analysis_request?
 
-      # DB に保存された分析回数
-      db_count = current_user.dreams.where.not(analysis_status: [nil, "failed"]).count
-
-      # preview_analysis の呼び出し回数（DBに保存されないためキャッシュで追跡）
-      preview_cache_key = "trial_preview_count:#{current_user.id}"
-      preview_count = Rails.cache.read(preview_cache_key).to_i
-
-      total_count = db_count + preview_count
-      if total_count >= TRIAL_ANALYSIS_LIMIT
+      if current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
         render json: {
           error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると無制限に分析できます。",
           limit_reached: true
         }, status: :forbidden
       end
+    end
+
+    def cached_analysis_request?
+      @dream&.analysis_status == "done" && @dream.analysis_json.present?
     end
 
     def set_dream_and_authorize_user
