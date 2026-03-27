@@ -6,13 +6,15 @@ import MorpheusSmall from "@/app/components/MorpheusSmall";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import { User } from "@/app/types";
-import { previewAnalysis } from "@/lib/apiClient";
+import { previewAnalysis, verifyAuth } from "@/lib/apiClient";
 import { Sparkles, Loader2 } from "lucide-react";
 
 type AnalysisResult = {
   analysis: string;
   emotion_tags: string[];
 };
+
+const MAX_TRIAL_DREAMS = 7;
 
 export default function TrialPage() {
   const { authStatus, login } = useAuth();
@@ -41,6 +43,11 @@ export default function TrialPage() {
       return;
     }
 
+    if (dreams.length >= MAX_TRIAL_DREAMS) {
+      setAnalysisError("ここに かける ゆめは 7こ まで だよ。");
+      return;
+    }
+
     // 認証確認中は実行しない（既存セッションを上書きしないため）
     if (isAuthChecking) {
       setAnalysisError("じゅんびちゅう... すこしまってね。");
@@ -53,22 +60,28 @@ export default function TrialPage() {
     try {
       // 未認証ならトライアルログインを行う
       if (authStatus === "unauthenticated") {
-        setIsLoggingIn(true);
-        const timestamp = Date.now();
-        const res = await apiClient.post<{ user: User }>("/auth/trial_login", {
-          trial_user: {
-            email: `trial_${timestamp}@example.com`,
-            username: `trial_${timestamp}`,
-            password: "trial_password_123",
-            password_confirmation: "trial_password_123",
-          },
-        });
-        if (res?.user) {
-          login({ ...res.user, id: String(res.user.id) });
+        const verified = await verifyAuth();
+
+        if (verified?.user) {
+          login(verified.user);
+        } else {
+          setIsLoggingIn(true);
+          const timestamp = Date.now();
+          const res = await apiClient.post<{ user: User }>("/auth/trial_login", {
+            trial_user: {
+              email: `trial_${timestamp}@example.com`,
+              username: `trial_${timestamp}`,
+              password: "trial_password_123",
+              password_confirmation: "trial_password_123",
+            },
+          });
+          if (res?.user) {
+            login({ ...res.user, id: String(res.user.id) });
+          }
+          setIsLoggingIn(false);
+          // Cookieが設定されるのを待つ
+          await new Promise((r) => setTimeout(r, 500));
         }
-        setIsLoggingIn(false);
-        // Cookieが設定されるのを待つ
-        await new Promise((r) => setTimeout(r, 500));
       }
 
       // AI分析を実行
@@ -106,7 +119,7 @@ export default function TrialPage() {
     if (!title && !description) {
       return;
     }
-    if (dreams.length >= 7) {
+    if (dreams.length >= MAX_TRIAL_DREAMS) {
       setAnalysisError("ここに かける ゆめは 7こ まで だよ。");
       return;
     }
@@ -173,7 +186,12 @@ export default function TrialPage() {
           <button
             type="button"
             onClick={handleAnalyze}
-            disabled={isAnalyzing || isAuthChecking || !description.trim()}
+            disabled={
+              isAnalyzing ||
+              isAuthChecking ||
+              dreams.length >= MAX_TRIAL_DREAMS ||
+              !description.trim()
+            }
             className="
               inline-flex items-center justify-center gap-2 px-6 py-2.5
               bg-gradient-to-r from-sky-500 to-blue-600
@@ -201,7 +219,9 @@ export default function TrialPage() {
           <button
             type="button"
             onClick={addDreamWithoutAnalysis}
-            disabled={!description.trim()}
+            disabled={
+              dreams.length >= MAX_TRIAL_DREAMS || !description.trim()
+            }
             className="
               inline-flex items-center justify-center px-5 py-2.5
               bg-slate-700/50 hover:bg-slate-700/70
@@ -218,7 +238,7 @@ export default function TrialPage() {
       {/* 記録した夢リスト */}
       <div className="mb-8">
         <h3 className="text-lg font-bold mb-4">
-          かいた ゆめ ({dreams.length}/7)
+          かいた ゆめ ({dreams.length}/{MAX_TRIAL_DREAMS})
         </h3>
 
         {dreams.length === 0 ? (
