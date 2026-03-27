@@ -3,8 +3,8 @@
 import React, {
   createContext,
   useContext,
-  useEffect,
   useCallback,
+  useLayoutEffect,
   useState,
   ReactNode,
 } from "react";
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // ---------------------------
   // 初回マウント時のみ認証チェック
   // ---------------------------
-  useEffect(() => {
+  useLayoutEffect(() => {
     let mounted = true;
     const shouldVerify = hasAuthHint() || isProtectedPath(pathname);
 
@@ -87,6 +87,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         mounted = false;
       };
     }
+
+    setAuthStatus("checking");
 
     const verifyToken = async () => {
       try {
