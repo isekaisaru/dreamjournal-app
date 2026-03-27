@@ -1,5 +1,8 @@
 class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis]
+  before_action :check_trial_analysis_limit, only: [:analyze, :preview_analysis]
+
+  TRIAL_ANALYSIS_LIMIT = 3 # トライアルユーザーの分析回数上限
   
 
   # GET /dreams
@@ -116,10 +119,19 @@ class DreamsController < ApplicationController
       }, status: :unprocessable_content
     end
 
-    # 2. ステータスを pending に更新
-    # 同じ夢に対する複数の分析リクエストをガード
+    # 2. 同じ夢に対する複数の分析リクエストをガード
     if @dream.analysis_pending?
       return render json: { message: 'すでに解析中です。' }, status: :accepted, location: analysis_dream_url(@dream)
+    end
+
+    # 3. 既に分析完了済みの場合はAPIを呼ばず既存結果を返す
+    if @dream.analysis_status == "done" && @dream.analysis_json.present?
+      return render json: {
+        status: "done",
+        result: @dream.analysis_json,
+        analyzed_at: @dream.analyzed_at,
+        cached: true
+      }, status: :ok
     end
 
     @dream.update!(
@@ -127,6 +139,8 @@ class DreamsController < ApplicationController
       analyzed_at: nil,
       analysis_json: nil
     )
+
+    current_user.increment!(:trial_analysis_count) if current_user.trial_user?
 
     # 3. 非同期ジョブをエンキュー
     AnalyzeDreamJob.perform_later(@dream.id)
@@ -154,10 +168,11 @@ class DreamsController < ApplicationController
     end
 
     result = DreamAnalysisService.analyze(content)
-    
+
     if result[:error]
       render json: { error: result[:error] }, status: :unprocessable_content
     else
+      current_user.increment!(:trial_analysis_count) if current_user.trial_user?
       render json: result
     end
   end
@@ -175,6 +190,23 @@ class DreamsController < ApplicationController
         emotion_ids: [],
         analysis_json: [:analysis, :text, { emotion_tags: [] }]
       )
+    end
+
+    # トライアルユーザーの分析回数チェック
+    def check_trial_analysis_limit
+      return unless current_user.trial_user?
+      return if action_name == "analyze" && cached_analysis_request?
+
+      if current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
+        render json: {
+          error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると無制限に分析できます。",
+          limit_reached: true
+        }, status: :forbidden
+      end
+    end
+
+    def cached_analysis_request?
+      @dream&.analysis_status == "done" && @dream.analysis_json.present?
     end
 
     def set_dream_and_authorize_user

@@ -18,9 +18,6 @@ const nextConfig = {
     removeConsole: isProd ? { exclude: ["error"] } : false,
   },
   experimental: {
-    turbo: {
-      root: __dirname,
-    },
     optimizePackageImports: ["lucide-react"],
   },
   async rewrites() {

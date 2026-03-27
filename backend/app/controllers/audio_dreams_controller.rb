@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class AudioDreamsController < ApplicationController
+  before_action :check_trial_audio_limit, only: [:create]
+
+  TRIAL_AUDIO_LIMIT = 1 # トライアルユーザーの音声分析上限（Whisper+GPTで高コスト）
 
   def create
     # ユーザー認証: トークンからcurrent_userを取得するロジックが必要
@@ -24,6 +27,8 @@ class AudioDreamsController < ApplicationController
     end
 
     if dream.save
+      user.increment!(:trial_audio_count) if user.trial_user?
+
       # 3. ジョブをエンキュー (非同期処理)
       AnalyzeDreamJob.perform_later(dream.id)
 
@@ -39,5 +44,21 @@ class AudioDreamsController < ApplicationController
   rescue StandardError => e
     Rails.logger.error "AudioDreamsController#create error: #{e.class} - #{e.message}"
     render json: { error: "処理中にエラーが発生しました。" }, status: :internal_server_error
+  end
+
+  private
+
+  # トライアルユーザーの音声分析回数チェック
+  # 音声分析は Whisper + GPT で二重課金されるため厳しめに制限
+  def check_trial_audio_limit
+    user = current_user
+    return unless user&.trial_user?
+
+    if user.trial_audio_count >= TRIAL_AUDIO_LIMIT
+      render json: {
+        error: "トライアルユーザーの音声分析上限（#{TRIAL_AUDIO_LIMIT}回）に達しました。アカウント登録すると無制限に利用できます。",
+        limit_reached: true
+      }, status: :forbidden
+    end
   end
 end
