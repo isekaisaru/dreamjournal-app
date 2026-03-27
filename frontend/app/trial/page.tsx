@@ -60,7 +60,14 @@ export default function TrialPage() {
     try {
       // 未認証ならトライアルログインを行う
       if (authStatus === "unauthenticated") {
-        const verified = await verifyAuth();
+        let verified: Awaited<ReturnType<typeof verifyAuth>> = null;
+
+        try {
+          verified = await verifyAuth();
+        } catch {
+          // verify が一時的に失敗しても trial login にフォールバックする
+          verified = null;
+        }
 
         if (verified?.user) {
           login(verified.user);
