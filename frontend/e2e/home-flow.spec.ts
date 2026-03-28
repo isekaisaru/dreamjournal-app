@@ -124,14 +124,17 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
   test("検索バーが表示されており、検索実行で API にクエリパラメータが送られる", async ({
     page,
   }) => {
-    // 検索リクエストを捕捉するための準備
-    let searchRequestUrl = "";
+    const dreamRequestUrls: string[] = [];
+
     await page.route("**/dreams**", async (route) => {
-      searchRequestUrl = route.request().url();
+      const requestUrl = route.request().url();
+      dreamRequestUrls.push(requestUrl);
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify([MOCK_DREAMS[0]]), // 検索結果として1件
+        body: JSON.stringify(
+          requestUrl.includes("query=") ? [MOCK_DREAMS[0]] : MOCK_DREAMS
+        ),
       });
     });
 
@@ -144,6 +147,26 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
     // 送信ボタンが表示されていることを確認
     const submitButton = page.getByRole("button", { name: /さがす|検索/i });
     await expect(submitButton).toBeVisible();
+
+    // 実際に検索条件を入力して送信し、URL と API リクエストの双方に反映されることを確認
+    await searchInput.fill("空");
+
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+      submitButton.click(),
+    ]);
+
+    await expect(page).toHaveURL(/\/home\?query=%E7%A9%BA/);
+    await expect
+      .poll(() =>
+        dreamRequestUrls.some((url) => url.includes("query=%E7%A9%BA"))
+      )
+      .toBe(true);
+
+    // 検索後の画面に入力値が維持され、モックした絞り込み結果だけが表示されることを確認
+    await expect(searchInput).toHaveValue("空");
+    await expect(page.getByText("空飛ぶ夢")).toBeVisible();
+    await expect(page.getByText("海の夢")).toHaveCount(0);
   });
 
   test("夢が0件のとき空状態メッセージが表示される", async ({ page }) => {

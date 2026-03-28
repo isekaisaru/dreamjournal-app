@@ -7,6 +7,7 @@ import { Dream, Emotion } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
 import { getEmotions } from "@/lib/apiClient";
+import { getJSTYearMonthKey } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import DreamStatsWidget from "@/app/components/DreamStatsWidget";
@@ -22,17 +23,7 @@ import Loading from "../loading";
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
-      const date = new Date(dream.created_at);
-      // Vercelサーバー（UTC）でも日本時間で正しくグループ化するためtimeZoneを明示指定
-      const year = date.toLocaleString("ja-JP", {
-        year: "numeric",
-        timeZone: "Asia/Tokyo",
-      });
-      const month = date.toLocaleString("ja-JP", {
-        month: "2-digit",
-        timeZone: "Asia/Tokyo",
-      });
-      const yearMonth = `${year}-${month}`;
+      const yearMonth = getJSTYearMonthKey(dream.created_at);
 
       if (!groupedDreams[yearMonth]) {
         groupedDreams[yearMonth] = [];
