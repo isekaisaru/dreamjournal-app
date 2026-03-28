@@ -24,14 +24,20 @@ export const useDream = (id?: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
-  const { isLoggedIn } = useAuth();
+  const { authStatus, isLoggedIn } = useAuth();
 
   const fetchDreamDetail = useCallback(async () => {
     const numericId = id ? parseInt(id, 10) : null;
     if (!numericId) return;
 
+    if (authStatus === "checking") {
+      setIsLoading(true);
+      return;
+    }
+
     if (!isLoggedIn) {
       setError("ログインが必要です");
+      setDream(null);
       setIsLoading(false);
       return;
     }
@@ -51,9 +57,14 @@ export const useDream = (id?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [id, isLoggedIn]);
+  }, [id, authStatus, isLoggedIn]);
 
   const fetchDreams = useCallback(async () => {
+    if (authStatus === "checking") {
+      setIsLoading(true);
+      return;
+    }
+
     if (!isLoggedIn) {
       setError("ログインが必要です");
       setIsLoading(false);
@@ -75,7 +86,7 @@ export const useDream = (id?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoggedIn]);
+  }, [authStatus, isLoggedIn]);
 
   const createDream = async (dreamData: DreamInput): Promise<boolean> => {
     setError(null);
