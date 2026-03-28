@@ -176,6 +176,8 @@ Webhook が届いたときに、「この支払いは誰のものか？」を特
 
 そのため、主経路は `client_reference_id` にしました。
 
+> **注意**：Stripe のドキュメントでは `client_reference_id` にパスワード等の機密情報を入れないよう推奨されています。DB の整数 ID であれば問題ありません。
+
 ### Stripe Customer を再利用する理由
 
 毎回 Customer を作ると、同じユーザーの決済履歴が分散してしまいます。
@@ -217,7 +219,9 @@ def stripe
   event = Stripe::Webhook.construct_event(
     payload, sig_header, ENV['STRIPE_WEBHOOK_SECRET']
   )
-rescue Stripe::SignatureVerificationError
+rescue Stripe::SignatureVerificationError => e
+  # 署名不一致 → 偽リクエストまたは設定ミス。ログに残して 400 を返す
+  Rails.logger.warn("[Webhook] Signature verification failed: #{e.message}")
   return head :bad_request
 end
 ```
@@ -281,14 +285,17 @@ end
 
 その後、Stripe の取り扱いを考えて拡張しました。
 
-```ruby
-rename_column :payments, :stripe_session_id, :stripe_checkout_session_id
-add_column :payments, :stripe_payment_intent_id, :string
-add_column :payments, :currency, :string, limit: 3
+```diff ruby
+- rename_column :payments, :stripe_session_id, :stripe_checkout_session_id
++ # カラム名を Stripe の命名に合わせて変更
++ rename_column :payments, :stripe_session_id, :stripe_checkout_session_id
 
-# 既存レコードへの backfill
-execute "UPDATE payments SET currency = 'jpy' WHERE currency IS NULL"
-change_column_null :payments, :currency, false
++ add_column :payments, :stripe_payment_intent_id, :string
++ add_column :payments, :currency, :string, limit: 3
+
++ # 既存レコードへの backfill（currency が未設定の行を jpy に統一）
++ execute "UPDATE payments SET currency = 'jpy' WHERE currency IS NULL"
++ change_column_null :payments, :currency, false
 ```
 
 `stripe_payment_intent_id` を持つようにしたのは、将来的に返金や照会が必要になったとき Session ID だけでは足りないからです。
