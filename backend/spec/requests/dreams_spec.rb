@@ -446,4 +446,79 @@ RSpec.describe 'Dreams API', type: :request do
       it_behaves_like 'unauthorized request', :get, '/dreams/1/analysis'
     end
   end
+
+  describe 'POST /dreams/:id/generate_image' do
+    let!(:dream) do
+      create(
+        :dream,
+        user: user,
+        content: '空を飛びながら星のあいだを泳ぐ夢を見ました。',
+        analysis_json: { 'analysis' => '自由で穏やかな気持ちを表しています。' }
+      )
+    end
+    let(:generated_url) { 'https://oaidalleapiprodscus.blob.core.windows.net/generated/test.png' }
+    let(:images_client) { double('OpenAI::Images') }
+    let(:openai_client) { double('OpenAI::Client', images: images_client) }
+
+    before do
+      @original_openai_client = $openai_client
+      $openai_client = openai_client
+    end
+
+    after do
+      $openai_client = @original_openai_client
+    end
+
+    context '認証済みユーザーの場合' do
+      it '画像を生成して generated_image_url を保存し 200 を返す' do
+        expect(images_client).to receive(:generate).with(
+          parameters: hash_including(
+            model: 'dall-e-3',
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard',
+            prompt: a_string_including('空を飛びながら星のあいだを泳ぐ夢')
+          )
+        ).and_return({ 'data' => [{ 'url' => generated_url }] })
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['image_url']).to eq(generated_url)
+        expect(dream.reload.generated_image_url).to eq(generated_url)
+      end
+
+      it 'OpenAI が URL を返さない場合は 422 を返す' do
+        allow(images_client).to receive(:generate).and_return({ 'data' => [{}] })
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['error']).to include('画像URLの取得に失敗')
+        expect(dream.reload.generated_image_url).to be_nil
+      end
+
+      it 'OpenAI クライアントが nil の場合は 503 を返す' do
+        $openai_client = nil
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:service_unavailable)
+        expect(JSON.parse(response.body)['error']).to include('画像生成機能は現在利用できません')
+      end
+
+      it '他人の夢は画像生成できない（403）' do
+        other_dream = create(:dream, user: other_user, content: '秘密の夢')
+        expect(images_client).not_to receive(:generate)
+
+        authenticated_post "/dreams/#{other_dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :post, '/dreams/1/generate_image'
+    end
+  end
 end
