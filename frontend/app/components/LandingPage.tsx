@@ -42,7 +42,24 @@ export default function LandingPage() {
   if (authStatus === "authenticated") return null;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="relative isolate max-w-4xl mx-auto overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[32rem] dark:hidden"
+      >
+        <div className="absolute left-[-8%] top-12 h-56 w-56 rounded-full bg-sky-200/70 blur-3xl" />
+        <div className="absolute right-[-10%] top-24 h-64 w-64 rounded-full bg-blue-100 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-80 bg-gradient-to-b from-slate-100/90 via-white to-transparent" />
+      </div>
+
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-[32rem] dark:block"
+      >
+        <div className="absolute left-[-8%] top-8 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="absolute right-[-10%] top-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
+      </div>
+
       {/* ===== Hero: 世界観で引き込む ===== */}
       <section className="min-h-[75vh] flex flex-col items-center justify-center text-center px-4 py-16 sm:py-24">
         <motion.div
@@ -60,7 +77,7 @@ export default function LandingPage() {
             priority
           />
           <Sparkles
-            className="absolute -top-3 -right-3 text-yellow-300/80 animate-pulse"
+            className="absolute -top-3 -right-3 text-yellow-400/80 dark:text-yellow-300/80 animate-pulse"
             size={20}
           />
         </motion.div>
@@ -71,7 +88,7 @@ export default function LandingPage() {
           transition={{ delay: 0.3, duration: 0.6 }}
           className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-6"
         >
-          <span className="text-slate-100">夢は、</span>
+          <span className="text-slate-800 dark:text-slate-100">夢は、</span>
           <br />
           <span className="bg-gradient-to-r from-sky-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
             忘れるためのものじゃない。
@@ -82,12 +99,12 @@ export default function LandingPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.55, duration: 0.6 }}
-          className="text-base sm:text-lg text-slate-400 max-w-lg mx-auto leading-relaxed mb-10"
+          className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed mb-10"
         >
           朝の数分で夢を残す。AIが意味と感情を返す。
           <br className="hidden sm:block" />
           親子で使える、
-          <span className="text-slate-200">心のセルフケア</span>
+          <span className="text-slate-700 dark:text-slate-200">心のセルフケア</span>
           アプリ。
         </motion.p>
 
@@ -110,7 +127,7 @@ export default function LandingPage() {
             <Sparkles size={20} />
             今朝の夢を入れてみる
           </Link>
-          <p className="text-xs text-slate-500 mt-4">
+          <p className="text-xs text-slate-500 dark:text-slate-500 mt-4">
             無料のおためしアカウントでAI分析を体験できます
           </p>
         </motion.div>
@@ -125,7 +142,8 @@ export default function LandingPage() {
           className="
             relative max-w-2xl mx-auto
             p-6 sm:p-10 rounded-3xl
-            bg-slate-800/40 border border-slate-700/30
+            bg-slate-100/80 dark:bg-slate-800/40
+            border border-slate-200/80 dark:border-slate-700/30
             backdrop-blur-sm
           "
         >
@@ -134,12 +152,12 @@ export default function LandingPage() {
             {/* Step 1: 入力 */}
             <motion.div variants={fadeIn} custom={0} className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center">
-                <Mic className="text-sky-400" size={20} />
+                <Mic className="text-sky-500 dark:text-sky-400" size={20} />
               </div>
               <div>
-                <p className="text-xs text-sky-400 font-medium mb-1">あなたの夢</p>
-                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-700/40">
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                <p className="text-xs text-sky-600 dark:text-sky-400 font-medium mb-1">あなたの夢</p>
+                <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/40">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                     「空を飛んでいた。すごく気持ちよくて、
                     <br className="hidden sm:block" />
                     雲の上に誰かが待っている気がした」
@@ -156,15 +174,15 @@ export default function LandingPage() {
             {/* Step 2: AI分析結果 */}
             <motion.div variants={fadeIn} custom={2} className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
-                <Brain className="text-purple-400" size={20} />
+                <Brain className="text-purple-500 dark:text-purple-400" size={20} />
               </div>
               <div>
-                <p className="text-xs text-purple-400 font-medium mb-1">モルペウスの分析</p>
-                <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-700/40">
-                  <p className="text-sm text-slate-300 leading-relaxed">
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">モルペウスの分析</p>
+                <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/40">
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                     「すごいゆめだね！そらをとぶゆめは、
                     <br className="hidden sm:block" />
-                    きみが <span className="text-sky-300">あたらしいことにちょうせん</span> したい
+                    きみが <span className="text-sky-500 dark:text-sky-300">あたらしいことにちょうせん</span> したい
                     <br className="hidden sm:block" />
                     きもちのあらわれだよ」
                   </p>
@@ -180,15 +198,15 @@ export default function LandingPage() {
             {/* Step 3: 感情タグ */}
             <motion.div variants={fadeIn} custom={4} className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                <TrendingUp className="text-amber-400" size={20} />
+                <TrendingUp className="text-amber-500 dark:text-amber-400" size={20} />
               </div>
               <div>
-                <p className="text-xs text-amber-400 font-medium mb-1">感情タグ</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium mb-1">感情タグ</p>
                 <div className="flex gap-2 flex-wrap">
                   {["わくわく", "自由", "期待"].map((tag) => (
                     <span
                       key={tag}
-                      className="px-3 py-1 rounded-full text-xs font-medium bg-sky-500/15 text-sky-300 border border-sky-500/20"
+                      className="px-3 py-1 rounded-full text-xs font-medium bg-sky-100 dark:bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-300/60 dark:border-sky-500/20"
                     >
                       {tag}
                     </span>
@@ -232,10 +250,10 @@ export default function LandingPage() {
               <div
                 className={`h-1 w-10 rounded-full bg-gradient-to-r ${item.accent} mb-4 mx-auto sm:mx-0`}
               />
-              <h3 className="font-bold text-lg text-slate-100 mb-2">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 mb-2">
                 {item.title}
               </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 {item.body}
               </p>
             </motion.div>
@@ -258,10 +276,10 @@ export default function LandingPage() {
             height={80}
             className="mx-auto mb-6 drop-shadow-[0_4px_20px_rgba(56,189,248,0.35)]"
           />
-          <p className="text-xl sm:text-2xl font-bold text-slate-200 mb-2">
+          <p className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-slate-200 mb-2">
             今夜の夢が、明日の気づきになる。
           </p>
-          <p className="text-sm text-slate-500 mb-8">
+          <p className="text-sm text-slate-500 dark:text-slate-500 mb-8">
             お子さまの夢も、あなたの夢も。家族の心のログを残しませんか？
           </p>
           <Link
@@ -281,14 +299,14 @@ export default function LandingPage() {
           <div className="flex gap-4 justify-center mt-5 text-sm">
             <Link
               href="/register"
-              className="text-slate-400 hover:text-sky-400 transition-colors"
+              className="text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
             >
               アカウント作成
             </Link>
-            <span className="text-slate-600">|</span>
+            <span className="text-slate-300 dark:text-slate-600">|</span>
             <Link
               href="/login"
-              className="text-slate-400 hover:text-sky-400 transition-colors"
+              className="text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
             >
               ログイン
             </Link>
@@ -301,9 +319,9 @@ export default function LandingPage() {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="py-8 px-4 border-t border-slate-800/50"
+        className="py-8 px-4 border-t border-slate-200 dark:border-slate-800/50"
       >
-        <p className="text-xs text-slate-600 text-center mb-3">Built with</p>
+        <p className="text-xs text-slate-500 dark:text-slate-600 text-center mb-3">Built with</p>
         <div className="flex flex-wrap gap-1.5 justify-center max-w-lg mx-auto">
           {[
             "Next.js", "React", "TypeScript", "Tailwind CSS",
@@ -312,7 +330,7 @@ export default function LandingPage() {
           ].map((tech) => (
             <span
               key={tech}
-              className="px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-500 border border-slate-800/60"
+              className="px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-slate-800/60 bg-white/70 dark:bg-transparent"
             >
               {tech}
             </span>
