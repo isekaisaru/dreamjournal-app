@@ -457,8 +457,8 @@ RSpec.describe 'Dreams API', type: :request do
       )
     end
     let(:generated_url) { 'https://oaidalleapiprodscus.blob.core.windows.net/generated/test.png' }
-    let(:images_client) { instance_double('OpenAI::Images') }
-    let(:openai_client) { instance_double(OpenAI::Client, images: images_client) }
+    let(:images_client) { double('OpenAI::Images') }
+    let(:openai_client) { double('OpenAI::Client', images: images_client) }
 
     around do |example|
       original = $openai_client

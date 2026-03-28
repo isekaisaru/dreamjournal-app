@@ -89,8 +89,8 @@ RSpec.describe "Rack::Attack rate limiting", type: :request do
     let(:user) { create(:user) }
     let(:dream) { create(:dream, user: user, content: "雲の上を歩く夢") }
     let(:access_token) { AuthService.encode_token(user.id) }
-    let(:images_client) { instance_double("OpenAI::Images") }
-    let(:openai_client) { instance_double(OpenAI::Client, images: images_client) }
+    let(:images_client) { double("OpenAI::Images") }
+    let(:openai_client) { double("OpenAI::Client", images: images_client) }
 
     around do |example|
       original = $openai_client
