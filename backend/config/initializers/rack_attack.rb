@@ -110,6 +110,20 @@ class Rack::Attack
   end
 
   # ----------------------------------------------------------
+  # 9. DALL-E 3 画像生成: 認証ユーザー 1日 3回
+  #    → 1枚あたりのコストが高いため厳しめに制限
+  # ----------------------------------------------------------
+  throttle("generate_image/user", limit: 3, period: 24.hours) do |req|
+    if req.path.match?(%r{^/dreams/\d+/generate_image$}) && req.post?
+      token = req.cookies["access_token"]
+      if token
+        decoded = AuthService.decode_token(token) rescue nil
+        decoded&.dig("user_id")&.to_s
+      end
+    end
+  end
+
+  # ----------------------------------------------------------
   # レスポンス: 429 Too Many Requests
   # ----------------------------------------------------------
   self.throttled_responder = lambda do |request|
