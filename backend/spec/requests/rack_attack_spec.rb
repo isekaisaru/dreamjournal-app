@@ -92,18 +92,16 @@ RSpec.describe "Rack::Attack rate limiting", type: :request do
     let(:images_client) { double("OpenAI::Images") }
     let(:openai_client) { double("OpenAI::Client", images: images_client) }
 
-    around do |example|
-      original = $openai_client
-      $openai_client = openai_client
-      example.run
-    ensure
-      $openai_client = original
-    end
-
     before do
+      @original_openai_client = $openai_client
+      $openai_client = openai_client
       allow(images_client).to receive(:generate).and_return({
         "data" => [{ "url" => "https://oaidalleapiprodscus.blob.core.windows.net/generated/test.png" }]
       })
+    end
+
+    after do
+      $openai_client = @original_openai_client
     end
 
     it "1日3回まで成功し、4回目は 429 を返す" do

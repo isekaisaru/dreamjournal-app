@@ -460,12 +460,13 @@ RSpec.describe 'Dreams API', type: :request do
     let(:images_client) { double('OpenAI::Images') }
     let(:openai_client) { double('OpenAI::Client', images: images_client) }
 
-    around do |example|
-      original = $openai_client
+    before do
+      @original_openai_client = $openai_client
       $openai_client = openai_client
-      example.run
-    ensure
-      $openai_client = original
+    end
+
+    after do
+      $openai_client = @original_openai_client
     end
 
     context '認証済みユーザーの場合' do
