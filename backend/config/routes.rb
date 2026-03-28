@@ -15,6 +15,7 @@ Rails.application.routes.draw do
     member do
       post :analyze
       get :analysis
+      post :generate_image
     end
     collection do
       post :preview_analysis

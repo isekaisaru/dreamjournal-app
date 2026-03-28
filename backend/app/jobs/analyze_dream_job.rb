@@ -20,19 +20,33 @@ class AnalyzeDreamJob < ApplicationJob
   private
 
   def process_audio_dream(dream)
+    # OpenAI 呼び出し（Whisper + GPT）— ここが課金対象
+    result = nil
     dream.audio.open do |file|
-      # ActiveStorageの一時ファイルをサービスに渡す
       result = AudioAnalysisService.new(file).call
-      
-      # 文字起こし結果で本文を更新
-      dream.content = result[:transcript]
-      
-      # 結果を保存
-      save_analysis_result(dream, result)
     end
-  rescue StandardError => e
+
+    # 文字起こしが Dream.content の上限（1000文字）を超える場合は切り詰め
+    transcript = (result[:transcript] || "").truncate(1000)
+    result[:transcript] = transcript
+
+    # DB保存 — OpenAI 呼び出し後の保存失敗ではリトライしない
+    # （リトライすると同じ音声で再課金される）
+    begin
+      dream.content = transcript
+      save_analysis_result(dream, result)
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotSaved => e
+      Rails.logger.error "Audio dream save failed after OpenAI call: #{e.message}"
+      dream.mark_failed!("分析は完了しましたが保存に失敗しました: #{e.message}")
+      # ここでは raise しない — OpenAI 再課金を防ぐ
+    end
+  rescue AudioAnalysisService::TranscriptionError, AudioAnalysisService::AnalysisError => e
+    # OpenAI 呼び出し自体の失敗はリトライ対象
     dream.mark_failed!("音声解析中にエラーが発生しました: #{e.message}")
-    raise e # リトライのために再スロー
+    raise e
+  rescue StandardError => e
+    dream.mark_failed!("音声解析中に予期せぬエラーが発生しました: #{e.message}")
+    raise e
   end
 
   def process_text_dream(dream)

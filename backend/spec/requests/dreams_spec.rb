@@ -319,6 +319,69 @@ RSpec.describe 'Dreams API', type: :request do
     end
   end
 
+  describe 'GET /dreams/month/:year_month' do
+    let!(:may_dream) do
+      create(
+        :dream,
+        user: user,
+        title: '5月の夢',
+        content: '空の上を歩く夢',
+        created_at: Time.zone.parse('2025-05-10 12:00:00'),
+        analysis_status: 'done',
+        analysis_json: { analysis: '明るい気持ち', emotion_tags: ['嬉しい', '安心'] }
+      )
+    end
+    let!(:april_dream) do
+      create(
+        :dream,
+        user: user,
+        title: '4月の夢',
+        created_at: Time.zone.parse('2025-04-25 12:00:00')
+      )
+    end
+    let!(:other_user_dream) do
+      create(
+        :dream,
+        user: other_user,
+        title: '他人の5月の夢',
+        created_at: Time.zone.parse('2025-05-12 12:00:00')
+      )
+    end
+
+    before do
+      may_dream.emotions = [emotions.first, emotions.third]
+      may_dream.save!
+    end
+
+    context '認証済みユーザーの場合' do
+      it '指定月の自分の夢だけを返し、分析結果と感情タグを含む' do
+        authenticated_get('/dreams/month/2025-05', user)
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response.length).to eq(1)
+        expect(json_response.first['id']).to eq(may_dream.id)
+        expect(json_response.first['analysis_status']).to eq('done')
+        expect(json_response.first['analysis_json']['analysis']).to eq('明るい気持ち')
+        expect(json_response.first['emotions'].map { |emotion| emotion['id'] }).to match_array(
+          [emotions.first.id, emotions.third.id]
+        )
+      end
+
+      it '不正な年月フォーマットなら 400 を返す' do
+        authenticated_get('/dreams/month/2025-13', user)
+
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to include('YYYY-MM')
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :get, '/dreams/month/2025-05'
+    end
+  end
+
   describe 'POST /dreams/:id/analyze' do
     let!(:dream) { create(:dream, user: user, content: 'A dream to be analyzed.') }
     # contentのバリデーションをスキップして、内容が空のテストデータを作成する
@@ -361,10 +424,41 @@ RSpec.describe 'Dreams API', type: :request do
         authenticated_post "/dreams/#{other_dream.id}/analyze", user
         expect(response).to have_http_status(:forbidden)
       end
+
+      it 'トライアル上限到達後でも分析済みの夢はキャッシュ結果を返す' do
+        user.update!(trial_user: true, trial_analysis_count: 3)
+        dream.mark_done!({ analysis: 'cached result', emotion_tags: ['happy'] })
+
+        assert_no_enqueued_jobs do
+          authenticated_post "/dreams/#{dream.id}/analyze", user
+        end
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response['cached']).to be true
+        expect(json_response['result']['analysis']).to eq('cached result')
+      end
     end
 
     context '認証されていない場合' do
       it_behaves_like 'unauthorized request', :post, '/dreams/1/analyze'
+    end
+  end
+
+  describe 'POST /dreams/preview_analysis' do
+    context '認証済みユーザーの場合' do
+      it 'トライアルの永続カウンタ上限に達している場合は夢を削除しても403を返す' do
+        user.update!(trial_user: true, trial_analysis_count: 3)
+
+        expect(DreamAnalysisService).not_to receive(:analyze)
+        authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :post, '/dreams/preview_analysis', { content: '空を飛ぶ夢' }
     end
   end
 
@@ -413,6 +507,81 @@ RSpec.describe 'Dreams API', type: :request do
 
     context '認証されていない場合' do
       it_behaves_like 'unauthorized request', :get, '/dreams/1/analysis'
+    end
+  end
+
+  describe 'POST /dreams/:id/generate_image' do
+    let!(:dream) do
+      create(
+        :dream,
+        user: user,
+        content: '空を飛びながら星のあいだを泳ぐ夢を見ました。',
+        analysis_json: { 'analysis' => '自由で穏やかな気持ちを表しています。' }
+      )
+    end
+    let(:generated_url) { 'https://oaidalleapiprodscus.blob.core.windows.net/generated/test.png' }
+    let(:images_client) { double('OpenAI::Images') }
+    let(:openai_client) { double('OpenAI::Client', images: images_client) }
+
+    before do
+      @original_openai_client = $openai_client
+      $openai_client = openai_client
+    end
+
+    after do
+      $openai_client = @original_openai_client
+    end
+
+    context '認証済みユーザーの場合' do
+      it '画像を生成して generated_image_url を保存し 200 を返す' do
+        expect(images_client).to receive(:generate).with(
+          parameters: hash_including(
+            model: 'dall-e-3',
+            n: 1,
+            size: '1024x1024',
+            quality: 'standard',
+            prompt: a_string_including('空を飛びながら星のあいだを泳ぐ夢')
+          )
+        ).and_return({ 'data' => [{ 'url' => generated_url }] })
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['image_url']).to eq(generated_url)
+        expect(dream.reload.generated_image_url).to eq(generated_url)
+      end
+
+      it 'OpenAI が URL を返さない場合は 422 を返す' do
+        allow(images_client).to receive(:generate).and_return({ 'data' => [{}] })
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)['error']).to include('画像URLの取得に失敗')
+        expect(dream.reload.generated_image_url).to be_nil
+      end
+
+      it 'OpenAI クライアントが nil の場合は 503 を返す' do
+        $openai_client = nil
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:service_unavailable)
+        expect(JSON.parse(response.body)['error']).to include('画像生成機能は現在利用できません')
+      end
+
+      it '他人の夢は画像生成できない（403）' do
+        other_dream = create(:dream, user: other_user, content: '秘密の夢')
+        expect(images_client).not_to receive(:generate)
+
+        authenticated_post "/dreams/#{other_dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :post, '/dreams/1/generate_image'
     end
   end
 end

@@ -21,7 +21,7 @@ function createMiddlewareApiUrl(
   return new URL(`/api${cleanEndpoint}`, request.url).toString();
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // クロスドメイン環境ではCookieがVercel Edgeから見えないため、
   // 認証判定はClient側に委譲する（将来の同一ドメイン運用で復活可能）
   const authMode = process.env.NEXT_PUBLIC_AUTH_MODE;

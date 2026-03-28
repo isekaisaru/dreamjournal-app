@@ -49,6 +49,9 @@ Rails.application.configure do
   # deliver_laterのようなバックグラウンドジョブを即座に実行するようにします
   config.active_job.queue_adapter = :inline
 
+  # テスト環境ではレート制限を無効化（既存テストへの影響を防ぐ）
+  Rack::Attack.enabled = false
+
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 

@@ -1,6 +1,5 @@
-import IndexRedirectClient from "./components/IndexRedirectClient";
+import LandingPage from "./components/LandingPage";
 
 export default function IndexPage() {
-  // Server Componentのまま、認証判定はClient側に委譲
-  return <IndexRedirectClient />;
+  return <LandingPage />;
 }

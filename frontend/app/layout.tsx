@@ -11,10 +11,32 @@ import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 
+const siteUrl = "https://dreamjournal-app.vercel.app";
+
 export const metadata: Metadata = {
   title: "ユメログ | AI夢分析・夢日記アプリ",
   description:
-    "毎日の夢をAIが分析。感情タグ・検索・月別アーカイブで心の変化を可視化するセルフケア・家族向けアプリ。Next.js / Ruby on Rails / Stripe 決済実装。",
+    "毎日の夢をAIが分析。感情タグ・検索・月別アーカイブで心の変化を可視化するセルフケア・家族向けアプリ。",
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    title: "ユメログ | AI夢分析・夢日記アプリ",
+    description:
+      "毎日の夢をAIが分析。感情タグ・検索で心の変化を可視化するセルフケア・家族向けアプリ。",
+    url: siteUrl,
+    siteName: "ユメログ",
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ユメログ | AI夢分析・夢日記アプリ",
+    description:
+      "毎日の夢をAIが分析。感情タグ・検索で心の変化を可視化するセルフケア・家族向けアプリ。",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

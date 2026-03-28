@@ -74,7 +74,7 @@ describe("DreamList (integration with DreamCard)", () => {
     // Assert
     const links = screen.getAllByRole("link");
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute("href", "dream/7");
+    expect(links[0]).toHaveAttribute("href", "/dream/7");
   });
 
   it("renders empty state without any DreamCard detail links", () => {
