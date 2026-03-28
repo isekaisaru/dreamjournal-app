@@ -37,6 +37,7 @@ export default function MorpheusSmall({
           alt="モルペウス"
           width={imgPx}
           height={imgPx}
+          sizes={`${imgPx}px`}
           className="opacity-90 drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
         />
         <motion.div
@@ -78,6 +79,7 @@ export default function MorpheusSmall({
           alt="モルペウス"
           width={imgPx}
           height={imgPx}
+          sizes={`${imgPx}px`}
           className="opacity-90 drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
         />
       </div>
