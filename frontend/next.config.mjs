@@ -12,6 +12,14 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "oaidalleapiprodscus.blob.core.windows.net",
+      },
+    ],
+  },
   // 本番環境で必要なファイルのみを .next/standalone に出力する
   output: "standalone",
   compiler: {

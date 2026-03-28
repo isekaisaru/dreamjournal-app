@@ -1,5 +1,5 @@
 class DreamsController < ApplicationController
-  before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis]
+  before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
   before_action :check_trial_analysis_limit, only: [:analyze, :preview_analysis]
 
   TRIAL_ANALYSIS_LIMIT = 3 # トライアルユーザーの分析回数上限
@@ -33,7 +33,7 @@ class DreamsController < ApplicationController
   # GET /dreams/:id
   def show
     render json: @dream.as_json(
-      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at],
+      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url],
       include: :emotions
     )
   end
@@ -159,6 +159,45 @@ class DreamsController < ApplicationController
     }, status: :ok
   end
 
+  # POST /dreams/:id/generate_image
+  # DALL-E 3 で夢のイメージ画像を生成し URL を保存する
+  def generate_image
+    unless $openai_client
+      return render json: { error: "画像生成機能は現在利用できません" }, status: :service_unavailable
+    end
+
+    content = @dream.content.to_s.truncate(400)
+    analysis = @dream.analysis_json&.dig("analysis").to_s.truncate(200)
+
+    prompt = build_image_prompt(content, analysis)
+
+    response = $openai_client.images.generate(
+      parameters: {
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "standard"
+      }
+    )
+
+    image_url = response.dig("data", 0, "url")
+
+    unless image_url
+      return render json: { error: "画像URLの取得に失敗しました" }, status: :unprocessable_entity
+    end
+
+    @dream.update!(generated_image_url: image_url)
+
+    render json: { image_url: image_url }, status: :ok
+  rescue OpenAI::Error => e
+    Rails.logger.error "[generate_image] OpenAI error for dream #{@dream.id}: #{e.message}"
+    render json: { error: "画像の生成に失敗しました。しばらく待ってからお試しください。" }, status: :unprocessable_entity
+  rescue StandardError => e
+    Rails.logger.error "[generate_image] Unexpected error for dream #{@dream.id}: #{e.message}"
+    render json: { error: "画像の生成に失敗しました。" }, status: :internal_server_error
+  end
+
   # POST /dreams/preview_analysis
   # DBに保存せずに分析のみ行い、結果を返します。
   def preview_analysis
@@ -207,6 +246,13 @@ class DreamsController < ApplicationController
 
     def cached_analysis_request?
       @dream&.analysis_status == "done" && @dream.analysis_json.present?
+    end
+
+    def build_image_prompt(content, analysis)
+      base = "A dreamy, whimsical illustration of a dream: #{content}"
+      base += " The mood is: #{analysis}" if analysis.present?
+      base += ". Soft watercolor style, gentle colors, child-friendly, peaceful atmosphere, no text."
+      base.truncate(900)
     end
 
     def set_dream_and_authorize_user
