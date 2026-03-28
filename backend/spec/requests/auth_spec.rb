@@ -187,13 +187,43 @@ RSpec.describe 'Authentication API', type: :request do
       end
 
       it 'パスワードが短すぎる場合、422を返す' do
-        short_password_params = valid_user_params.deep_merge(user: { password: '123', password_confirmation: '123' })
+        short_password_params = valid_user_params.deep_merge(user: { password: 'abc1234', password_confirmation: 'abc1234' })
         expect {
           post '/auth/register', params: short_password_params, as: :json, headers: { 'HOST' => 'backend' }
         }.not_to change(User, :count)
 
         expect(response).to have_http_status(:unprocessable_content)
-        expect(json_response['error']).to include('Password is too short (minimum is 6 characters)')
+        expect(json_response['error']).to include('Password is too short (minimum is 8 characters)')
+      end
+
+      it 'パスワードに数字が含まれない場合、422を返す' do
+        no_digit_params = valid_user_params.deep_merge(user: { password: 'abcdefgh', password_confirmation: 'abcdefgh' })
+        expect {
+          post '/auth/register', params: no_digit_params, as: :json, headers: { 'HOST' => 'backend' }
+        }.not_to change(User, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json_response['error']).to include('Password')
+      end
+
+      it 'パスワードに英字が含まれない場合、422を返す' do
+        no_letter_params = valid_user_params.deep_merge(user: { password: '12345678', password_confirmation: '12345678' })
+        expect {
+          post '/auth/register', params: no_letter_params, as: :json, headers: { 'HOST' => 'backend' }
+        }.not_to change(User, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json_response['error']).to include('Password')
+      end
+
+      it '空白文字だけのパスワードの場合、422を返す' do
+        whitespace_only_params = valid_user_params.deep_merge(user: { password: '        ', password_confirmation: '        ' })
+        expect {
+          post '/auth/register', params: whitespace_only_params, as: :json, headers: { 'HOST' => 'backend' }
+        }.not_to change(User, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json_response['error']).to include('Password')
       end
 
       it 'パスワード確認が一致しない場合、422を返す' do
