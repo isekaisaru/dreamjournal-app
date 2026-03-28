@@ -236,26 +236,31 @@ export default function DreamDetailPage({
       {/* ゆめのえ */}
       <div className="mb-6">
         {generatedImageUrl ? (
-          <div className="rounded-xl overflow-hidden border border-border">
-            <Image
-              src={generatedImageUrl}
-              alt="ゆめのえ"
-              width={1024}
-              height={1024}
-              className="w-full h-auto"
-              unoptimized
-            />
-            <div className="p-3 bg-card flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">🎨 ゆめのえ</p>
-              <button
-                type="button"
-                onClick={handleGenerateImage}
-                disabled={isGeneratingImage}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                {isGeneratingImage ? "かいています..." : "かきなおす"}
-              </button>
+          <div className="space-y-2">
+            <div className="rounded-xl overflow-hidden border border-border">
+              <Image
+                src={generatedImageUrl}
+                alt="ゆめのえ"
+                width={1024}
+                height={1024}
+                className="w-full h-auto"
+                unoptimized
+              />
+              <div className="p-3 bg-card flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">🎨 ゆめのえ</p>
+                <button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingImage ? "かいています..." : "かきなおす"}
+                </button>
+              </div>
             </div>
+            {imageError && (
+              <p className="text-xs text-destructive">{imageError}</p>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-6 rounded-xl border border-dashed border-border bg-muted/20">
