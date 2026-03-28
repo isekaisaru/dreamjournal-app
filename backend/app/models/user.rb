@@ -16,8 +16,7 @@ class User < ApplicationRecord
       with: /\A(?=.*[a-zA-Z])(?=.*\d).+\z/,
       message: "は英字と数字をそれぞれ1文字以上含む必要があります"
     },
-    allow_nil: true,
-    allow_blank: true
+    allow_nil: true
 
   # JWTトークンを生成する
   def generate_jwt

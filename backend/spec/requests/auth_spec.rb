@@ -216,6 +216,16 @@ RSpec.describe 'Authentication API', type: :request do
         expect(json_response['error']).to include('Password')
       end
 
+      it '空白文字だけのパスワードの場合、422を返す' do
+        whitespace_only_params = valid_user_params.deep_merge(user: { password: '        ', password_confirmation: '        ' })
+        expect {
+          post '/auth/register', params: whitespace_only_params, as: :json, headers: { 'HOST' => 'backend' }
+        }.not_to change(User, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json_response['error']).to include('Password')
+      end
+
       it 'パスワード確認が一致しない場合、422を返す' do
         mismatched_password_params = valid_user_params.deep_merge(user: { password_confirmation: 'wrong_confirmation' })
         expect {
