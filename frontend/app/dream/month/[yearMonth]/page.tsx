@@ -1,43 +1,64 @@
 "use client";
 
-import React from "react";
-import { useParams } from "next/navigation"; // useRouterを使用
-import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { EmotionTag } from "@/app/components/EmotionTag";
+import DreamList from "@/app/components/DreamList";
+import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import { Dream } from "@/app/types";
-import { useAuth } from "../../../../context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
-import Loading from "../../../loading";
+import { buildMonthlySummary } from "@/lib/monthlySummary";
+import Loading from "@/app/loading";
+
+function formatYearMonthLabel(yearMonth: string): string {
+  const [year, month] = yearMonth.split("-");
+  if (!year || !month) return yearMonth;
+  return `${year}年${Number(month)}月`;
+}
 
 export default function DreamByMonthPage() {
   const params = useParams();
-  const yearMonth = params.yearMonth; // URLのパラメータからyearMonthを取得
-  const [dreams, setDreams] = useState<Dream[]>([]); // 夢データを保存するための変数
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージの状態管理
+  const yearMonthParam = params.yearMonth;
+  const yearMonth =
+    typeof yearMonthParam === "string" ? yearMonthParam : yearMonthParam?.[0];
+  const monthLabel = formatYearMonthLabel(yearMonth ?? "");
+  const [dreams, setDreams] = useState<Dream[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { authStatus } = useAuth();
+
   const fetchDreamsByMonth = useCallback(async () => {
-    if (yearMonth && authStatus === "authenticated") {
-      try {
-        const response = await apiClient.get<Dream[]>(
-          `/dreams/month/${yearMonth}`
-        );
-        setDreams(response);
-        setErrorMessage(null);
-      } catch (error) {
-        console.error("Error fetching dreams by month:", error);
-        setErrorMessage("夢の取得に失敗しました");
-      }
+    if (!yearMonth || authStatus !== "authenticated") return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await apiClient.get<Dream[]>(`/dreams/month/${yearMonth}`);
+      setDreams(response);
+      setErrorMessage(null);
+    } catch (error) {
+      console.error("Error fetching dreams by month:", error);
+      setErrorMessage("この月の ゆめを よみこめなかったよ。");
+    } finally {
+      setIsLoading(false);
     }
   }, [yearMonth, authStatus]);
 
   useEffect(() => {
     if (authStatus === "authenticated") {
       fetchDreamsByMonth();
+    } else if (authStatus === "unauthenticated") {
+      setIsLoading(false);
     }
   }, [authStatus, fetchDreamsByMonth]);
 
   if (authStatus === "checking") {
     return <Loading />;
   }
+
   if (authStatus === "unauthenticated") {
     return (
       <div className="container mx-auto p-5 bg-background text-foreground">
@@ -46,32 +67,144 @@ export default function DreamByMonthPage() {
     );
   }
 
-  return (
-    <div className="container mx-auto p-5 bg-background text-foreground">
-      <h1 className="text-3xl md:text-4xl font-bold text-center mb-6 text-foreground">
-        {yearMonth}の夢一覧
-      </h1>
+  const summary = buildMonthlySummary(dreams, monthLabel);
 
-      {errorMessage ? (
-        <p className="text-destructive text-center">{errorMessage}</p>
-      ) : (
-        <ul>
-          {dreams.length > 0 ? (
-            dreams.map((dream) => (
-              <li key={dream.id} className="border-b border-border py-4">
-                <h2 className="text-xl font-bold text-foreground">
-                  {dream.title}
-                </h2>
-                <p className="text-muted-foreground mt-1">{dream.content}</p>
-              </li>
-            ))
-          ) : (
-            <p className="text-muted-foreground text-center">
-              まだこの月には夢が見つかりません。
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <Link
+              href="/home"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← ホームにもどる
+            </Link>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">
+              {monthLabel}の ゆめ
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              この月に見たゆめを まとめて ふりかえるページだよ。
             </p>
-          )}
-        </ul>
-      )}
+          </div>
+        </div>
+
+        {isLoading ? (
+          <DreamListSkeleton count={4} />
+        ) : errorMessage ? (
+          <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive">
+            {errorMessage}
+          </p>
+        ) : dreams.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/60 px-6 py-12 text-center">
+            <p className="text-lg font-bold">まだ この月の ゆめは ないよ</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              あたらしい ゆめを きろくすると、ここに月のまとめが出るよ。
+            </p>
+            <Link
+              href="/dream/new"
+              className="mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              ゆめを かく
+            </Link>
+          </div>
+        ) : (
+          <>
+            <section className="mb-6 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <div className="grid gap-0 md:grid-cols-[1.25fr_0.75fr]">
+                <div className="p-5 md:p-7">
+                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+                    Monthly Summary
+                  </p>
+                  <h2 className="mt-2 text-2xl font-bold">
+                    モルペウスの ひとこと
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                    {summary.message}
+                  </p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {summary.highlights.map((highlight) => (
+                      <span
+                        key={highlight}
+                        className="rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-foreground"
+                      >
+                        {highlight}
+                      </span>
+                    ))}
+                  </div>
+
+                  {summary.topEmotions.length > 0 && (
+                    <div className="mt-5">
+                      <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                        よく出てきた きもち
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {summary.topEmotions.map(({ label, count }) => (
+                          <div
+                            key={label}
+                            className="inline-flex items-center gap-2 rounded-full bg-muted px-2.5 py-1.5"
+                          >
+                            <EmotionTag label={label} />
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              {count}回
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-center border-t border-border bg-slate-100/70 p-5 dark:bg-slate-900/50 md:border-l md:border-t-0">
+                  <div className="text-center">
+                    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-white/70 shadow-sm ring-1 ring-slate-200 dark:bg-slate-950/40 dark:ring-slate-700/60">
+                      <Image
+                        src="/images/morpheus.png"
+                        alt="モルペウス"
+                        width={96}
+                        height={96}
+                        sizes="96px"
+                        className="h-24 w-24 object-contain"
+                        priority={false}
+                      />
+                    </div>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      ゆめを ふりかえると、つぎの ゆめも おもしろくなるかも。
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="mb-3 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  きろくした ゆめ
+                </p>
+                <p className="mt-2 text-3xl font-bold">{summary.dreamCount}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  きろくした ひ
+                </p>
+                <p className="mt-2 text-3xl font-bold">{summary.recordedDays}</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  ぶんせきずみ
+                </p>
+                <p className="mt-2 text-3xl font-bold">{summary.analyzedCount}</p>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="px-4 pt-4 text-lg font-bold">この月の ゆめ一覧</h2>
+              <DreamList dreams={dreams} />
+            </section>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ const DreamCard = ({ dream }: DreamCardProps) => {
 
   return (
     <Link
-      href={`dream/${dream.id}`}
+      href={`/dream/${dream.id}`}
       aria-label={`${dream.title} の詳細を見る`}
       className="group block h-full"
     >

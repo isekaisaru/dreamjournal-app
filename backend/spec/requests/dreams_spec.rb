@@ -319,6 +319,69 @@ RSpec.describe 'Dreams API', type: :request do
     end
   end
 
+  describe 'GET /dreams/month/:year_month' do
+    let!(:may_dream) do
+      create(
+        :dream,
+        user: user,
+        title: '5月の夢',
+        content: '空の上を歩く夢',
+        created_at: Time.zone.parse('2025-05-10 12:00:00'),
+        analysis_status: 'done',
+        analysis_json: { analysis: '明るい気持ち', emotion_tags: ['嬉しい', '安心'] }
+      )
+    end
+    let!(:april_dream) do
+      create(
+        :dream,
+        user: user,
+        title: '4月の夢',
+        created_at: Time.zone.parse('2025-04-25 12:00:00')
+      )
+    end
+    let!(:other_user_dream) do
+      create(
+        :dream,
+        user: other_user,
+        title: '他人の5月の夢',
+        created_at: Time.zone.parse('2025-05-12 12:00:00')
+      )
+    end
+
+    before do
+      may_dream.emotions = [emotions.first, emotions.third]
+      may_dream.save!
+    end
+
+    context '認証済みユーザーの場合' do
+      it '指定月の自分の夢だけを返し、分析結果と感情タグを含む' do
+        authenticated_get('/dreams/month/2025-05', user)
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response.length).to eq(1)
+        expect(json_response.first['id']).to eq(may_dream.id)
+        expect(json_response.first['analysis_status']).to eq('done')
+        expect(json_response.first['analysis_json']['analysis']).to eq('明るい気持ち')
+        expect(json_response.first['emotions'].map { |emotion| emotion['id'] }).to match_array(
+          [emotions.first.id, emotions.third.id]
+        )
+      end
+
+      it '不正な年月フォーマットなら 400 を返す' do
+        authenticated_get('/dreams/month/2025-13', user)
+
+        expect(response).to have_http_status(:bad_request)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error']).to include('YYYY-MM')
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :get, '/dreams/month/2025-05'
+    end
+  end
+
   describe 'POST /dreams/:id/analyze' do
     let!(:dream) { create(:dream, user: user, content: 'A dream to be analyzed.') }
     # contentのバリデーションをスキップして、内容が空のテストデータを作成する
