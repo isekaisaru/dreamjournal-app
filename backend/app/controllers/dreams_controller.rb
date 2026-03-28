@@ -98,8 +98,14 @@ class DreamsController < ApplicationController
       year, month = year_month_str.split('-').map(&:to_i)
       start_date = Date.new(year, month, 1).beginning_of_month
       end_date = Date.new(year, month, 1).end_of_month
-      @dreams = current_user.dreams.where(created_at: start_date..end_date).order(created_at: :desc)
-      render json: @dreams.as_json(only: [:id, :title, :content, :created_at])
+      @dreams = current_user.dreams
+                           .where(created_at: start_date..end_date)
+                           .includes(:emotions)
+                           .order(created_at: :desc)
+      render json: @dreams.as_json(
+        only: [:id, :title, :content, :created_at, :analysis_json, :analysis_status, :analyzed_at],
+        include: :emotions
+      )
     rescue ArgumentError, TypeError
       render json: { error: "無効な日付フォーマットです。YYYY-MM 形式で指定してください。" }, status: :bad_request
     end
