@@ -10,7 +10,14 @@ class User < ApplicationRecord
   # パスワードのチェックは、新しいユーザーを作るときか、
   # パスワードが変更されたときだけにするよ。
   # これで、パスワード以外の情報（例えばユーザー名）だけを変えるときにエラーが出なくなるんだ。
-  validates :password, length: { minimum: 6 }, allow_nil: true
+  validates :password, length: { minimum: 8 }, allow_nil: true
+  validates :password,
+    format: {
+      with: /\A(?=.*[a-zA-Z])(?=.*\d).+\z/,
+      message: "は英字と数字をそれぞれ1文字以上含む必要があります"
+    },
+    allow_nil: true,
+    allow_blank: true
 
   # JWTトークンを生成する
   def generate_jwt
