@@ -73,6 +73,7 @@ export default function LandingPage() {
             alt="モルペウス"
             width={140}
             height={140}
+            sizes="140px"
             className="drop-shadow-[0_8px_32px_rgba(56,189,248,0.5)] animate-morpheus-float"
             priority
           />
@@ -274,6 +275,7 @@ export default function LandingPage() {
             alt="モルペウス"
             width={80}
             height={80}
+            sizes="80px"
             className="mx-auto mb-6 drop-shadow-[0_4px_20px_rgba(56,189,248,0.35)]"
           />
           <p className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-slate-200 mb-2">

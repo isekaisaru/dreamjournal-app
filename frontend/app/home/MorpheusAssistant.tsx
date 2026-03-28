@@ -109,6 +109,7 @@ export default function MorpheusAssistant() {
           alt="夢の番人モルペウス"
           width={240}
           height={240}
+          sizes="(max-width: 640px) 160px, (max-width: 768px) 176px, (max-width: 1024px) 208px, 224px"
           priority
           className="h-40 w-40 sm:h-44 sm:w-44 md:h-52 md:w-52 lg:h-56 lg:w-56 opacity-90 transition-transform duration-500 ease-out group-hover:opacity-100 group-hover:scale-[1.08] drop-shadow-[0_16px_35px_rgba(56,189,248,0.35)] animate-morpheus-float group-hover:animate-none"
         />

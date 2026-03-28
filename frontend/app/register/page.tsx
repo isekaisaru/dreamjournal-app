@@ -54,9 +54,14 @@ export default function Register() {
       setIsLoading(false);
       return;
     }
-    if (password.length < 6) {
-      setError("パスワードは6文字以上である必要があります。");
-      setIsLoading(false); // ローディング状態を解除するのを忘れない
+    if (password.length < 8) {
+      setError("パスワードは8文字以上である必要があります。");
+      setIsLoading(false);
+      return;
+    }
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("パスワードは英字と数字をそれぞれ1文字以上含む必要があります。");
+      setIsLoading(false);
       return;
     }
     // 3. メールアドレスの形式が正しいかチェックする機能
@@ -136,29 +141,34 @@ export default function Register() {
               {showEmail ? "🙈" : "👁"}
             </button>
           </div>
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="パスワード"
-              aria-describedby="error-message"
-              autoComplete="new-password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-              className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-            >
-              {showPassword ? "🙈" : "👁"}
-            </button>
+          <div>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="パスワード"
+                aria-describedby="password-hint error-message"
+                autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                {showPassword ? "🙈" : "👁"}
+              </button>
+            </div>
+            <p id="password-hint" className="text-xs text-muted-foreground mt-1 ml-1">
+              8文字以上・英字と数字をそれぞれ含む
+            </p>
           </div>
           <div className="relative">
             <input
