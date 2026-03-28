@@ -84,4 +84,44 @@ RSpec.describe "Rack::Attack rate limiting", type: :request do
       expect(response).to have_http_status(429)
     end
   end
+
+  describe "POST /dreams/:id/generate_image (DALL-E 3 レート制限)" do
+    let(:user) { create(:user) }
+    let(:dream) { create(:dream, user: user, content: "雲の上を歩く夢") }
+    let(:access_token) { AuthService.encode_token(user.id) }
+    let(:images_client) { instance_double("OpenAI::Images") }
+    let(:openai_client) { instance_double(OpenAI::Client, images: images_client) }
+
+    around do |example|
+      original = $openai_client
+      $openai_client = openai_client
+      example.run
+    ensure
+      $openai_client = original
+    end
+
+    before do
+      allow(images_client).to receive(:generate).and_return({
+        "data" => [{ "url" => "https://oaidalleapiprodscus.blob.core.windows.net/generated/test.png" }]
+      })
+    end
+
+    it "1日3回まで成功し、4回目は 429 を返す" do
+      3.times do
+        post "/dreams/#{dream.id}/generate_image",
+             params: {}.to_json,
+             headers: { "Content-Type" => "application/json", "Cookie" => "access_token=#{access_token}" }
+        expect(response).to have_http_status(:ok)
+      end
+
+      post "/dreams/#{dream.id}/generate_image",
+           params: {}.to_json,
+           headers: { "Content-Type" => "application/json", "Cookie" => "access_token=#{access_token}" }
+
+      expect(response).to have_http_status(429)
+      body = JSON.parse(response.body)
+      expect(body["error"]).to include("リクエストが多すぎます")
+      expect(body["retry_after"]).to eq(24.hours.to_i)
+    end
+  end
 end
