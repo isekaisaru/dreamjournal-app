@@ -6,16 +6,8 @@ export function getJSTDateStr(dateInput: string | Date): string {
   });
 }
 
+// "YYYY-MM" 形式（URLパラメータ用）を返す
+// ja-JP ロケールは "2026年" / "3月" のように日本語文字を含むため使用しない
 export function getJSTYearMonthKey(dateInput: string | Date): string {
-  const date = new Date(dateInput);
-  const year = date.toLocaleString("ja-JP", {
-    year: "numeric",
-    timeZone: JST_TIME_ZONE,
-  });
-  const month = date.toLocaleString("ja-JP", {
-    month: "2-digit",
-    timeZone: JST_TIME_ZONE,
-  });
-
-  return `${year}-${month}`;
+  return getJSTDateStr(dateInput).slice(0, 7); // "YYYY-MM-DD" の先頭7文字
 }
