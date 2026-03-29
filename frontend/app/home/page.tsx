@@ -6,8 +6,8 @@ import Link from "next/link";
 import { Dream, Emotion } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
-import { getJSTYearMonthKey } from "@/lib/date";
 import { getEmotions } from "@/lib/apiClient";
+import { getJSTYearMonthKey } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import DreamStatsWidget from "@/app/components/DreamStatsWidget";
@@ -23,7 +23,7 @@ import Loading from "../loading";
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
-      // getJSTYearMonthKey は "YYYY-MM" 形式を返す（URL使用可・日本語文字を含まない）
+
       const yearMonth = getJSTYearMonthKey(dream.created_at);
 
       if (!groupedDreams[yearMonth]) {
