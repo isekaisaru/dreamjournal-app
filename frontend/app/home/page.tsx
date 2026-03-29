@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Dream, Emotion } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
-import { getJSTYearMonthKey } from "@/lib/date";
 import { getEmotions } from "@/lib/apiClient";
 import { getJSTYearMonthKey } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
