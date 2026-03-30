@@ -16,6 +16,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "check:resolutions": "node scripts/check-resolution-policy.js",
     "clean": "rm -rf .next",
     "analyze": "ANALYZE=true next build",
     "format": "prettier --write ."
@@ -85,8 +86,7 @@
     "minimatch": "^10.2.4",
     "test-exclude": "^7.0.1",
     "rollup": "^4.59.0",
-    "picomatch": ">=2.3.2",
-    "flatted": ">=3.4.2",
-    "yaml": ">=2.8.3"
+    "flatted": "^3.4.2",
+    "yaml": "^2.8.3"
   }
 }
