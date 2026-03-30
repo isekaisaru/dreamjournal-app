@@ -42,7 +42,6 @@
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.23",
     "lucide-react": "^0.503.0",
-    "micromatch": "^4.0.8",
     "mime-types": "^2.1.35",
     "minimatch": "^10.2.4",
     "ms": "^2.1.3",
