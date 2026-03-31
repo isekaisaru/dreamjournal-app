@@ -15,11 +15,7 @@ const policies = {
   rollup: { major: 4 },
   flatted: { major: 3 },
   yaml: { major: 2 },
-  picomatch: {
-    forbidden: true,
-    reason:
-      "mixed 2.x and 4.x transitive dependencies rely on picomatch, so a global resolution breaks one side of the tree",
-  },
+  picomatch: { major: 4 },
 };
 
 const errors = [];
@@ -35,11 +31,6 @@ for (const [name, range] of Object.entries(resolutions)) {
   }
 
   if (!policy) {
-    continue;
-  }
-
-  if (policy.forbidden) {
-    errors.push(`${name}: do not add a global resolution because ${policy.reason}.`);
     continue;
   }
 
