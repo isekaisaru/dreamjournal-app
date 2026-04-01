@@ -16,6 +16,8 @@ export async function POST(req: Request) {
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
+    const body = await req.text().catch(() => "");
+
     const upstream = await fetch(`${backendUrl}/checkout`, {
       method: "POST",
       headers: {
@@ -23,6 +25,7 @@ export async function POST(req: Request) {
         // JWT認証のためCookieをバックエンドへ転送する（checkout はログイン必須）
         Cookie: req.headers.get("cookie") ?? "",
       },
+      body: body || undefined,
       signal: controller.signal,
     });
 

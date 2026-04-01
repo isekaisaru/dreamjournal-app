@@ -1,8 +1,10 @@
 class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
   before_action :check_trial_analysis_limit, only: [:analyze, :preview_analysis]
+  before_action :check_monthly_image_limit, only: [:generate_image]
 
-  TRIAL_ANALYSIS_LIMIT = 3 # トライアルユーザーの分析回数上限
+  TRIAL_ANALYSIS_LIMIT = 3   # トライアルユーザーの分析回数上限
+  IMAGE_MONTHLY_LIMIT   = 30 # 全ユーザー共通の画像生成月次上限
   
 
   # GET /dreams
@@ -246,6 +248,23 @@ class DreamsController < ApplicationController
         render json: {
           error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると無制限に分析できます。",
           limit_reached: true
+        }, status: :forbidden
+      end
+    end
+
+    # 画像生成の月次上限チェック（全ユーザー共通）
+    def check_monthly_image_limit
+      count = current_user.dreams
+        .where.not(generated_image_url: nil)
+        .where("updated_at >= ?", Time.current.beginning_of_month)
+        .count
+
+      if count >= IMAGE_MONTHLY_LIMIT
+        render json: {
+          error: "今月の画像生成上限（#{IMAGE_MONTHLY_LIMIT}枚）に達しました。来月またお試しください。",
+          limit_reached: true,
+          monthly_image_count: count,
+          monthly_image_limit: IMAGE_MONTHLY_LIMIT
         }, status: :forbidden
       end
     end

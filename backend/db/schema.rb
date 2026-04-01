@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_28_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_03_31_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -94,6 +94,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_000000) do
     t.index ["stripe_event_id"], name: "index_processed_webhook_events_on_stripe_event_id", unique: true
   end
 
+  create_table "subscriptions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "stripe_subscription_id", null: false
+    t.string "stripe_customer_id", null: false
+    t.string "status", null: false
+    t.datetime "current_period_end"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["stripe_customer_id"], name: "index_subscriptions_on_stripe_customer_id"
+    t.index ["stripe_subscription_id"], name: "index_subscriptions_on_stripe_subscription_id", unique: true
+    t.index ["user_id"], name: "index_subscriptions_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.string "email"
@@ -102,12 +115,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_000000) do
     t.string "password_digest"
     t.string "username"
     t.boolean "trial_user"
-    t.integer "trial_analysis_count", default: 0, null: false
-    t.integer "trial_audio_count", default: 0, null: false
     t.string "refresh_token"
     t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.string "stripe_customer_id"
+    t.integer "trial_analysis_count", default: 0, null: false
+    t.integer "trial_audio_count", default: 0, null: false
+    t.boolean "premium", default: false, null: false
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
@@ -119,4 +133,5 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_28_000000) do
   add_foreign_key "dream_emotions", "emotions"
   add_foreign_key "dreams", "users"
   add_foreign_key "payments", "users"
+  add_foreign_key "subscriptions", "users"
 end
