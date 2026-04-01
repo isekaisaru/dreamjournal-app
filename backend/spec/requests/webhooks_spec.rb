@@ -156,6 +156,7 @@ RSpec.describe 'Webhooks API', type: :request do
           double(
             'StripeSession',
             id: 'cs_test_xxx',
+            mode: 'payment',
             payment_intent: 'pi_test_123',
             amount_total: 500,
             currency: nil,

@@ -12,7 +12,7 @@ class TrialUsersController < ApplicationController
         return
       end
       set_token_cookies(result[:access_token], result[:refresh_token])
-      render json: { user: result[:user].as_json(only: [:id, :email, :username]) }, status: :created
+      render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium]) }, status: :created
     rescue AuthService::RegistrationError => e
       Rails.logger.error "Error in TrialUsersController#create: #{e.message}"
       render json: { error: e.message }, status: :internal_server_error

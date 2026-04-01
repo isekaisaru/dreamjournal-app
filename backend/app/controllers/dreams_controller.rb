@@ -264,7 +264,7 @@ class DreamsController < ApplicationController
           error: "今月の画像生成上限（#{IMAGE_MONTHLY_LIMIT}枚）に達しました。来月またお試しください。",
           limit_reached: true,
           monthly_image_count: count,
-          monthly_image_limit: IMAGE_MONTHLY_LIMIT
+          monthly_image_limit: DreamsController::IMAGE_MONTHLY_LIMIT
         }, status: :forbidden
       end
     end
