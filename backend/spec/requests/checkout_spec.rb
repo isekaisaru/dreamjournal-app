@@ -86,5 +86,56 @@ RSpec.describe 'Checkout API', type: :request do
         expect(user.reload.stripe_customer_id).to eq('cus_existing_123')
       end
     end
+
+    context 'plan=premium の場合' do
+      let(:premium_price_id) { 'price_premium_test_123' }
+      let(:subscription_checkout_url) { 'https://checkout.stripe.com/c/pay/cs_sub_test_456' }
+      let(:subscription_session) do
+        double('StripeCheckoutSession', id: 'cs_sub_test_456', url: subscription_checkout_url)
+      end
+
+      before do
+        stub_const('ENV', ENV.to_hash.merge(
+          'FRONTEND_URL' => frontend_url,
+          'STRIPE_PREMIUM_PRICE_ID' => premium_price_id
+        ))
+      end
+
+      it 'mode=subscription で Checkout Session を作成する' do
+        user = create(:user, stripe_customer_id: 'cus_existing_123')
+
+        expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        expect(Stripe::Checkout::Session).to receive(:create)
+          .with(hash_including(
+            mode: 'subscription',
+            customer: 'cus_existing_123',
+            client_reference_id: user.id.to_s,
+            line_items: [{ price: premium_price_id, quantity: 1 }],
+            success_url: "#{frontend_url}/subscription/success",
+            cancel_url:  "#{frontend_url}/subscription/cancel"
+          ))
+          .and_return(subscription_session)
+
+        authenticated_post('/checkout', user, params: { plan: 'premium' })
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['url']).to eq(subscription_checkout_url)
+      end
+
+      it 'STRIPE_PREMIUM_PRICE_ID が未設定なら 500 を返す' do
+        stub_const('ENV', ENV.to_hash.merge(
+          'FRONTEND_URL' => frontend_url,
+          'STRIPE_PREMIUM_PRICE_ID' => nil
+        ))
+        user = create(:user, stripe_customer_id: 'cus_existing_123')
+
+        expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        expect(Stripe::Checkout::Session).not_to receive(:create)
+
+        authenticated_post('/checkout', user, params: { plan: 'premium' })
+
+        expect(response).to have_http_status(:internal_server_error)
+      end
+    end
   end
 end

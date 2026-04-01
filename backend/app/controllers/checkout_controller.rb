@@ -15,59 +15,29 @@ class CheckoutController < ApplicationController
 
       customer_id = ensure_stripe_customer_id!
 
-      # Stripe Checkout Session を作成
-      # これは「決済画面のURL」を生成するリクエスト
-      session = Stripe::Checkout::Session.create(
-        customer: customer_id,
-        client_reference_id: current_user.id.to_s,
-        metadata: {
-          user_id: current_user.id.to_s
-        },
-        # 決済方法（カード決済）
-        payment_method_types: ['card'],
-        
-        # 決済する商品（今回は寄付）
-        line_items: [{
-          price_data: {
-            currency: 'jpy', # 日本円
-            unit_amount: 500, # 500円（Stripeは最小単位で指定：円なら1円単位）
-            product_data: {
-              name: 'ユメログへの応援寄付',
-              description: 'あなたの夢日記アプリ開発を応援してくれてありがとう！',
-            },
-          },
-          quantity: 1,
-        }],
-        
-        # 決済モード（一回きりの支払い）
-        mode: 'payment',
-        
-        # 決済成功後のリダイレクト先（フロントエンドのURL）
-        success_url: "#{frontend_url}/donation/success",
-        
-        # キャンセル時のリダイレクト先
-        cancel_url: "#{frontend_url}/donation/cancel",
-      )
+      session = if params[:plan] == 'premium'
+        create_subscription_session(customer_id, frontend_url)
+      else
+        create_donation_session(customer_id, frontend_url)
+      end
 
       PaymentsObservability.increment('checkout.session.created', user_id: current_user.id)
       PaymentsObservability.log(
         event: 'checkout.session.created',
         user_id: current_user.id,
         stripe_customer_id: customer_id,
-        stripe_session_id: session.id
+        stripe_session_id: session.id,
+        plan: params[:plan].presence || 'donation'
       )
 
-      # 生成された決済画面のURLをフロントエンドに返す
       render json: { url: session.url }, status: :ok
-      
+
     rescue Stripe::StripeError => e
-      # Stripeのエラーが発生した場合
       PaymentsObservability.increment('checkout.error.stripe', user_id: current_user.id)
       PaymentsObservability.log(event: 'checkout.error.stripe', level: :error, user_id: current_user.id, message: e.message)
       Rails.logger.error "Stripe error: #{e.message}"
       render json: { error: 'Stripe決済の準備に失敗しました。' }, status: :internal_server_error
     rescue => e
-      # それ以外のエラー
       PaymentsObservability.increment('checkout.error.unexpected', user_id: current_user.id)
       PaymentsObservability.log(event: 'checkout.error.unexpected', level: :error, user_id: current_user.id, message: e.message)
       Rails.logger.error "Checkout error: #{e.message}"
@@ -76,6 +46,47 @@ class CheckoutController < ApplicationController
   end
 
   private
+
+  def create_donation_session(customer_id, frontend_url)
+    Stripe::Checkout::Session.create(
+      customer: customer_id,
+      client_reference_id: current_user.id.to_s,
+      metadata: { user_id: current_user.id.to_s },
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'jpy',
+          unit_amount: 500,
+          product_data: {
+            name: 'ユメログへの応援寄付',
+            description: 'あなたの夢日記アプリ開発を応援してくれてありがとう！',
+          },
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: "#{frontend_url}/donation/success",
+      cancel_url:  "#{frontend_url}/donation/cancel",
+    )
+  end
+
+  def create_subscription_session(customer_id, frontend_url)
+    price_id = ENV['STRIPE_PREMIUM_PRICE_ID']
+    if price_id.blank?
+      raise ArgumentError, 'STRIPE_PREMIUM_PRICE_ID が設定されていません。'
+    end
+
+    Stripe::Checkout::Session.create(
+      customer: customer_id,
+      client_reference_id: current_user.id.to_s,
+      metadata: { user_id: current_user.id.to_s },
+      payment_method_types: ['card'],
+      line_items: [{ price: price_id, quantity: 1 }],
+      mode: 'subscription',
+      success_url: "#{frontend_url}/subscription/success",
+      cancel_url:  "#{frontend_url}/subscription/cancel",
+    )
+  end
 
   def ensure_stripe_customer_id!
     existing_id = current_user.stripe_customer_id

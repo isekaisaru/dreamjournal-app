@@ -15,6 +15,7 @@ interface User {
   id: string;
   email?: string;
   username?: string;
+  premium?: boolean;
 }
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";

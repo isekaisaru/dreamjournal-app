@@ -17,7 +17,7 @@ class AuthController < ApplicationController
       end
 
       set_token_cookies(result[:access_token], result[:refresh_token])
-      render json: { user: result[:user].as_json(only: [:id, :email, :username]) }, status: :ok
+      render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium]) }, status: :ok
     rescue AuthService::InvalidCredentialsError => e
       render json: { error: e.message }, status: :unauthorized
     rescue StandardError => e # その他の予期せぬエラー
@@ -28,7 +28,7 @@ class AuthController < ApplicationController
 
   # 現在のユーザーを返す
   def me
-    render json: { user: @current_user.as_json(only: [:id, :email, :username]) }, status: :ok
+    render json: { user: @current_user.as_json(only: [:id, :email, :username, :premium]) }, status: :ok
   end
 
   # トークンをリフレッシュする
@@ -89,6 +89,6 @@ class AuthController < ApplicationController
 
   # トークンの検証
   def verify
-    render json: { authenticated: true, user: @current_user.as_json(only: [:id, :email, :username]) }, status: :ok
+    render json: { authenticated: true, user: @current_user.as_json(only: [:id, :email, :username, :premium]) }, status: :ok
   end
 end
