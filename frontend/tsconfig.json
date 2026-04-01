@@ -21,8 +21,7 @@
       "node",
       "react",
       "react-dom",
-      "next",
-      "jest"
+      "next"
     ],
     "plugins": [
       {

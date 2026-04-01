@@ -16,6 +16,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20"
+      - name: Validate dependency resolution policy
+        working-directory: ./frontend
+        run: yarn check:resolutions
       - name: Install dependencies
         working-directory: ./frontend
         run: yarn install --frozen-lockfile
