@@ -544,10 +544,10 @@ RSpec.describe 'Dreams API', type: :request do
       it '画像を生成して generated_image_url を保存し 200 を返す' do
         expect(images_client).to receive(:generate).with(
           parameters: hash_including(
-            model: 'dall-e-3',
+            model: 'gpt-image-1',
             n: 1,
             size: '1024x1024',
-            quality: 'standard',
+            quality: 'medium',
             prompt: a_string_including('空を飛びながら星のあいだを泳ぐ夢')
           )
         ).and_return({ 'data' => [{ 'url' => generated_url }] })

@@ -181,11 +181,11 @@ class DreamsController < ApplicationController
 
     response = $openai_client.images.generate(
       parameters: {
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
-        quality: "standard"
+        quality: "medium"
       }
     )
 
