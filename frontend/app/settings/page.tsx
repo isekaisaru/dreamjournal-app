@@ -19,8 +19,32 @@ const generateMathProblem = () => {
 };
 
 const SettingsPage = () => {
-  const { authStatus, userId, logout, deleteUser } = useAuth();
+  const { authStatus, userId, user, logout, deleteUser } = useAuth();
   const router = useRouter();
+
+  const [isPortalLoading, setIsPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
+
+  const handleManageSubscription = async () => {
+    setIsPortalLoading(true);
+    setPortalError(null);
+    try {
+      const response = await fetch("/api/billing-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.url) {
+        throw new Error("管理ページの準備に失敗しました。");
+      }
+      window.location.assign(data.url);
+    } catch (error) {
+      setPortalError(
+        error instanceof Error ? error.message : "エラーが発生しました。"
+      );
+      setIsPortalLoading(false);
+    }
+  };
 
   // モーダルとロックの状態
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -126,6 +150,47 @@ const SettingsPage = () => {
               <br />
               しっかり まもられています。
             </p>
+          </div>
+
+          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-3 text-foreground flex items-center">
+              <span className="text-2xl mr-2">✨</span>
+              プレミアムプラン
+            </h2>
+            {user?.premium ? (
+              <div>
+                <p className="text-muted-foreground text-sm mb-4">
+                  プレミアム会員として、すべての機能をご利用いただけます。
+                  <br />
+                  解約・カード変更・請求履歴の確認はこちらから。
+                </p>
+                <button
+                  type="button"
+                  onClick={handleManageSubscription}
+                  disabled={isPortalLoading}
+                  className="w-full py-3 px-4 rounded-xl border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isPortalLoading ? "準備中..." : "サブスクリプションを管理する"}
+                </button>
+                {portalError && (
+                  <p className="mt-2 text-sm text-destructive">{portalError}</p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <p className="text-muted-foreground text-sm mb-4">
+                  月額500円でAI分析・画像生成・月次サマリーが使い放題になります。
+                  <br />
+                  いつでもキャンセルできます。
+                </p>
+                <Link
+                  href="/subscription"
+                  className="block w-full py-3 px-4 rounded-xl bg-primary text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  月額500円でプレミアムになる
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
