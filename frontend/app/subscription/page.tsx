@@ -35,6 +35,30 @@ export default function SubscriptionPage() {
     }
   };
 
+  const handleManageSubscription = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/billing-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.url) {
+        throw new Error("管理ページの準備に失敗しました。");
+      }
+
+      window.location.assign(data.url);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "エラーが発生しました。"
+      );
+      setIsLoading(false);
+    }
+  };
+
   // すでにプレミアム会員の場合
   if (user?.premium) {
     return (
@@ -53,12 +77,27 @@ export default function SubscriptionPage() {
                 message="きみが まいつき おうえん してくれているから、ゆめの せかいが どんどん ひろがっているよ！"
               />
             </div>
-            <Link
-              href="/home"
-              className="mt-8 inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              夢日記へ戻る
-            </Link>
+            <div className="mt-8 flex flex-col items-center gap-3">
+              <Link
+                href="/home"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                夢日記へ戻る
+              </Link>
+              <button
+                type="button"
+                onClick={handleManageSubscription}
+                disabled={isLoading}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-6 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoading ? "準備中..." : "サブスクリプションを管理する"}
+              </button>
+            </div>
+            {errorMessage && (
+              <p className="mt-4 text-sm font-medium text-destructive">
+                {errorMessage}
+              </p>
+            )}
           </section>
         </main>
       </div>
