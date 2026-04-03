@@ -1,5 +1,9 @@
 class BillingPortalController < ApplicationController
   def create
+    unless current_user.premium?
+      return render json: { error: 'プレミアム会員のみご利用いただけます。' }, status: :forbidden
+    end
+
     unless current_user.stripe_customer_id.present?
       return render json: { error: 'Stripe顧客情報が見つかりません。サポートにお問い合わせください。' }, status: :unprocessable_content
     end

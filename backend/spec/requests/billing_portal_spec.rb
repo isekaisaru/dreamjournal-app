@@ -11,9 +11,22 @@ RSpec.describe 'BillingPortal API', type: :request do
   describe 'POST /billing_portal' do
     it_behaves_like 'unauthorized request', :post, '/billing_portal'
 
+    context 'プレミアム会員でない場合' do
+      it '403 を返す' do
+        user = create(:user, premium: false, stripe_customer_id: 'cus_test_123')
+
+        expect(Stripe::BillingPortal::Session).not_to receive(:create)
+
+        authenticated_post('/billing_portal', user)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['error']).to include('プレミアム会員のみ')
+      end
+    end
+
     context 'stripe_customer_id がある場合' do
       it 'ポータルURLを返す' do
-        user = create(:user, stripe_customer_id: 'cus_test_123')
+        user = create(:user, premium: true, stripe_customer_id: 'cus_test_123')
         portal_session = double('Stripe::BillingPortal::Session', url: portal_url)
 
         expect(Stripe::BillingPortal::Session).to receive(:create).with(
@@ -30,7 +43,7 @@ RSpec.describe 'BillingPortal API', type: :request do
 
     context 'stripe_customer_id がない場合' do
       it '422 を返す' do
-        user = create(:user, stripe_customer_id: nil)
+        user = create(:user, premium: true, stripe_customer_id: nil)
 
         expect(Stripe::BillingPortal::Session).not_to receive(:create)
 
@@ -44,7 +57,7 @@ RSpec.describe 'BillingPortal API', type: :request do
     context 'FRONTEND_URL が未設定の場合' do
       it '500 を返す' do
         stub_const('ENV', ENV.to_hash.merge('FRONTEND_URL' => nil))
-        user = create(:user, stripe_customer_id: 'cus_test_123')
+        user = create(:user, premium: true, stripe_customer_id: 'cus_test_123')
 
         expect(Stripe::BillingPortal::Session).not_to receive(:create)
 
@@ -56,7 +69,7 @@ RSpec.describe 'BillingPortal API', type: :request do
 
     context 'Stripe がエラーを返す場合' do
       it '500 を返す' do
-        user = create(:user, stripe_customer_id: 'cus_test_123')
+        user = create(:user, premium: true, stripe_customer_id: 'cus_test_123')
 
         allow(Stripe::BillingPortal::Session).to receive(:create).and_raise(
           Stripe::StripeError.new('invalid customer')
