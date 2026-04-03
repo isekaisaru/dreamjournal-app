@@ -559,7 +559,19 @@ RSpec.describe 'Dreams API', type: :request do
         expect(dream.reload.generated_image_url).to eq(generated_url)
       end
 
-      it 'OpenAI が URL を返さない場合は 422 を返す' do
+      it 'gpt-image-1 が b64_json を返す場合はデータURLとして保存し 200 を返す' do
+        b64_data = Base64.strict_encode64('fake_png_binary_data')
+        allow(images_client).to receive(:generate).and_return({ 'data' => [{ 'b64_json' => b64_data }] })
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expected_data_url = "data:image/png;base64,#{b64_data}"
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body)['image_url']).to eq(expected_data_url)
+        expect(dream.reload.generated_image_url).to eq(expected_data_url)
+      end
+
+      it 'OpenAI が url も b64_json も返さない場合は 422 を返す' do
         allow(images_client).to receive(:generate).and_return({ 'data' => [{}] })
 
         authenticated_post "/dreams/#{dream.id}/generate_image", user

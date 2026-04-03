@@ -190,6 +190,10 @@ class DreamsController < ApplicationController
     )
 
     image_url = response.dig("data", 0, "url")
+    if image_url.nil?
+      b64 = response.dig("data", 0, "b64_json")
+      image_url = "data:image/png;base64,#{b64}" if b64.present?
+    end
 
     unless image_url
       return render json: { error: "画像URLの取得に失敗しました" }, status: :unprocessable_entity
