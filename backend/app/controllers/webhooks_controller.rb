@@ -99,76 +99,47 @@ class WebhooksController < ApplicationController
 
   private
 
-  def resolve_user_from_session(session)
-    user = User.find_by(id: session.client_reference_id)
-    user ||= if User.column_names.include?('stripe_customer_id') && session.customer.present?
-               User.find_by(stripe_customer_id: session.customer)
-             end
-    email = session.customer_details&.email.presence || session.customer_email
-    user ||= User.find_by(email: email)
-    user
-  end
-
   def handle_donation_checkout_completed(session, event_id)
     user = resolve_user_from_session(session)
+    return log_unmatched_user(session, event_id, 'webhook.payment.unmatched_user') unless user
 
-    if user
-      payment_attributes = payment_attributes_from_session(session)
-      payment = Payment.find_or_initialize_by(stripe_checkout_session_id: session.id)
-      payment.user = user
-      payment.assign_attributes(payment_attributes)
-      payment.save!
-      PaymentsObservability.increment('webhook.payment.saved', event_type: 'checkout.session.completed', user_id: user.id)
-      PaymentsObservability.log(
-        event: 'webhook.payment.saved',
-        event_type: 'checkout.session.completed',
-        user_id: user.id,
-        stripe_event_id: event_id,
-        stripe_checkout_session_id: session.id,
-        stripe_payment_intent_id: payment.stripe_payment_intent_id
-      )
-      Rails.logger.info("[Webhook] 支払い完了・DB保存 user_id=#{user.id} session_id=#{session.id}")
-    else
-      PaymentsObservability.increment('webhook.payment.unmatched_user', event_type: 'checkout.session.completed')
-      PaymentsObservability.log(
-        event: 'webhook.payment.unmatched_user',
-        level: :warn,
-        event_type: 'checkout.session.completed',
-        stripe_event_id: event_id,
-        stripe_customer_id: session.customer
-      )
-      Rails.logger.warn("[Webhook] ユーザーが見つかりません customer=#{session.customer}")
-    end
+    payment_attributes = payment_attributes_from_session(session)
+    payment = Payment.find_or_initialize_by(stripe_checkout_session_id: session.id)
+    payment.user = user
+    payment.assign_attributes(payment_attributes)
+    payment.save!
+    PaymentsObservability.increment('webhook.payment.saved', event_type: 'checkout.session.completed', user_id: user.id)
+    PaymentsObservability.log(
+      event: 'webhook.payment.saved',
+      event_type: 'checkout.session.completed',
+      user_id: user.id,
+      stripe_event_id: event_id,
+      stripe_checkout_session_id: session.id,
+      stripe_payment_intent_id: payment.stripe_payment_intent_id
+    )
+    Rails.logger.info("[Webhook] 支払い完了・DB保存 user_id=#{user.id} session_id=#{session.id}")
   end
 
   def handle_subscription_checkout_completed(session, event_id)
     user = resolve_user_from_session(session)
+    return log_unmatched_user(session, event_id, 'webhook.subscription.unmatched_user') unless user
 
-    unless user
-      PaymentsObservability.increment('webhook.subscription.unmatched_user')
-      PaymentsObservability.log(
-        event: 'webhook.subscription.unmatched_user',
-        level: :warn,
-        stripe_event_id: event_id,
-        stripe_customer_id: session.customer
-      )
-      Rails.logger.warn("[Webhook] サブスク: ユーザーが見つかりません customer=#{session.customer}")
-      return
-    end
-
-    stripe_subscription_id = session.subscription.respond_to?(:id) ? session.subscription.id : session.subscription
+    stripe_subscription_id = extract_object_id(session.subscription)
+    stripe_customer_id = extract_object_id(session.customer)
+    raise InvalidCheckoutSessionPayloadError, 'Stripe subscription checkout is missing subscription id' if stripe_subscription_id.blank?
+    raise InvalidCheckoutSessionPayloadError, 'Stripe subscription checkout is missing customer id' if stripe_customer_id.blank?
 
     subscription = Subscription.find_or_initialize_by(stripe_subscription_id: stripe_subscription_id)
     subscription.user = user
-    subscription.stripe_customer_id = session.customer
+    subscription.stripe_customer_id = stripe_customer_id
     subscription.status = 'active'
     subscription.save!
 
-    user.update!(premium: true)
+    user.update!(premium: true, stripe_customer_id: stripe_customer_id)
 
-    PaymentsObservability.increment('webhook.subscription.activated', user_id: user.id)
+    PaymentsObservability.increment('webhook.subscription.started', user_id: user.id)
     PaymentsObservability.log(
-      event: 'webhook.subscription.activated',
+      event: 'webhook.subscription.started',
       user_id: user.id,
       stripe_event_id: event_id,
       stripe_subscription_id: stripe_subscription_id
@@ -177,53 +148,111 @@ class WebhooksController < ApplicationController
   end
 
   def handle_invoice_payment_succeeded(invoice, event_id)
-    stripe_subscription_id = invoice.subscription.respond_to?(:id) ? invoice.subscription.id : invoice.subscription
+    stripe_subscription_id = extract_object_id(invoice.subscription)
+    stripe_customer_id = extract_object_id(invoice.customer)
+    return if stripe_subscription_id.blank?
+
+    subscription = Subscription.find_or_initialize_by(stripe_subscription_id: stripe_subscription_id)
+    subscription.user ||= User.find_by(stripe_customer_id: stripe_customer_id)
+    return unless subscription.user
+
+    subscription.stripe_customer_id ||= stripe_customer_id
+    subscription.status = 'active'
+    subscription.current_period_end = extract_current_period_end(invoice)
+    subscription.save!
+
+    subscription.user.update!(premium: true, stripe_customer_id: stripe_customer_id.presence || subscription.user.stripe_customer_id)
+
+    PaymentsObservability.increment('webhook.subscription.invoice_paid', user_id: subscription.user.id)
+    PaymentsObservability.log(
+      event: 'webhook.subscription.invoice_paid',
+      user_id: subscription.user.id,
+      stripe_event_id: event_id,
+      stripe_subscription_id: stripe_subscription_id
+    )
+    Rails.logger.info("[Webhook] 月次請求成功 user_id=#{subscription.user.id} sub_id=#{stripe_subscription_id}")
+  end
+
+  def handle_subscription_deleted(subscription_object, event_id)
+    stripe_subscription_id = extract_object_id(subscription_object)
     return if stripe_subscription_id.blank?
 
     subscription = Subscription.find_by(stripe_subscription_id: stripe_subscription_id)
-    unless subscription
-      Rails.logger.info("[Webhook] invoice.payment_succeeded: 対応するサブスクが見つかりません sub_id=#{stripe_subscription_id}")
-      return
-    end
-
-    period_end = invoice.respond_to?(:period_end) && invoice.period_end.present? ?
-                   Time.at(invoice.period_end) : nil
+    return unless subscription
 
     subscription.update!(
-      status: 'active',
-      current_period_end: period_end
+      status: subscription_object.respond_to?(:status) ? subscription_object.status : 'canceled',
+      current_period_end: timestamp_to_time(subscription_object.respond_to?(:current_period_end) ? subscription_object.current_period_end : nil)
     )
 
-    PaymentsObservability.increment('webhook.subscription.invoice_paid', user_id: subscription.user_id)
+    user = subscription.user
+    user.update!(premium: false) unless user.premium_active_subscription?
+
+    PaymentsObservability.increment('webhook.subscription.deleted', user_id: user.id)
     PaymentsObservability.log(
-      event: 'webhook.subscription.invoice_paid',
-      user_id: subscription.user_id,
+      event: 'webhook.subscription.deleted',
+      user_id: user.id,
       stripe_event_id: event_id,
       stripe_subscription_id: stripe_subscription_id
     )
-    Rails.logger.info("[Webhook] 月次請求成功 user_id=#{subscription.user_id} sub_id=#{stripe_subscription_id}")
+    Rails.logger.info("[Webhook] サブスク解約 user_id=#{user.id} sub_id=#{stripe_subscription_id}")
   end
 
-  def handle_subscription_deleted(stripe_sub, event_id)
-    stripe_subscription_id = stripe_sub.respond_to?(:id) ? stripe_sub.id : stripe_sub.to_s
+  def resolve_user_from_session(session)
+    user_id = session.respond_to?(:client_reference_id) ? session.client_reference_id.presence : nil
+    user = User.find_by(id: user_id) if user_id.present?
 
-    subscription = Subscription.find_by(stripe_subscription_id: stripe_subscription_id)
-    unless subscription
-      Rails.logger.info("[Webhook] customer.subscription.deleted: 対応するサブスクが見つかりません sub_id=#{stripe_subscription_id}")
-      return
+    customer_id = extract_object_id(session.respond_to?(:customer) ? session.customer : nil)
+    if user.nil? && User.column_names.include?('stripe_customer_id') && customer_id.present?
+      user = User.find_by(stripe_customer_id: customer_id)
     end
 
-    subscription.update!(status: 'canceled')
-    subscription.user.update!(premium: false)
+    email = extract_customer_email(session)
+    user ||= User.find_by(email: email) if email.present?
+    user
+  end
 
-    PaymentsObservability.increment('webhook.subscription.canceled', user_id: subscription.user_id)
+  def extract_customer_email(session)
+    if session.respond_to?(:customer_details) && session.customer_details.respond_to?(:email)
+      email = session.customer_details.email
+      return email if email.present?
+    end
+
+    session.customer_email if session.respond_to?(:customer_email)
+  end
+
+  def extract_object_id(value)
+    value.respond_to?(:id) ? value.id : value
+  end
+
+  def extract_current_period_end(invoice)
+    if invoice.respond_to?(:lines) && invoice.lines.respond_to?(:data)
+      line = invoice.lines.data.first
+      if line&.respond_to?(:period) && line.period.respond_to?(:end)
+        return timestamp_to_time(line.period.end)
+      end
+    end
+
+    nil
+  end
+
+  def timestamp_to_time(value)
+    return nil if value.blank?
+
+    Time.zone.at(value)
+  end
+
+  def log_unmatched_user(session, event_id, metric_name)
+    customer_id = extract_object_id(session.respond_to?(:customer) ? session.customer : nil)
+    PaymentsObservability.increment(metric_name, event_type: 'checkout.session.completed')
     PaymentsObservability.log(
-      event: 'webhook.subscription.canceled',
-      user_id: subscription.user_id,
+      event: metric_name,
+      level: :warn,
+      event_type: 'checkout.session.completed',
       stripe_event_id: event_id,
-      stripe_subscription_id: stripe_subscription_id
+      stripe_customer_id: customer_id
     )
-    Rails.logger.info("[Webhook] サブスクキャンセル user_id=#{subscription.user_id} sub_id=#{stripe_subscription_id}")
+    Rails.logger.warn("[Webhook] ユーザーが見つかりません customer=#{customer_id}")
   end
 
   def extract_payment_intent_id(payment_intent)

@@ -4,6 +4,7 @@ export interface User {
   email: string;
   created_at: string;
   updated_at: string;
+  premium?: boolean;
 }
 
 // Backendから直接受け取るユーザー情報の型。IDは数値。
@@ -13,6 +14,7 @@ export interface BackendUser {
   email: string;
   created_at: string;
   updated_at: string;
+  premium?: boolean;
 }
 
 export interface Emotion {

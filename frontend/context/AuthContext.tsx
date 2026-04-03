@@ -33,7 +33,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_HINT_KEY = "dreamjournal_auth_hint";
-const PROTECTED_PATH_PREFIXES = ["/home", "/dream", "/settings"];
+const PROTECTED_PATH_PREFIXES = ["/home", "/dream", "/settings", "/subscription"];
 
 function hasAuthHint(): boolean {
   if (typeof window === "undefined") return false;
