@@ -32,6 +32,7 @@ RSpec.describe 'Authentication API', type: :request do
         expect(json_response).to have_key('user')
         expect(json_response['user']['email']).to eq(user.email)
         expect(json_response['user']['username']).to eq(user.username)
+        expect(json_response['user']['premium']).to be false
         
         # Cookie設定確認
         expect(response.cookies['access_token']).to be_present
@@ -90,6 +91,7 @@ RSpec.describe 'Authentication API', type: :request do
         expect(json_response['user']['id']).to eq(user.id)
         expect(json_response['user']['email']).to eq(user.email)
         expect(json_response['user']['username']).to eq(user.username)
+        expect(json_response['user']['premium']).to be false
       end
     end
 
@@ -121,6 +123,7 @@ RSpec.describe 'Authentication API', type: :request do
         expect(json_response['authenticated']).to be true
         expect(json_response).to have_key('user')
         expect(json_response['user']['email']).to eq(user.email)
+        expect(json_response['user']['premium']).to be false
       end
     end
 
@@ -169,6 +172,7 @@ RSpec.describe 'Authentication API', type: :request do
 
         expect(response).to have_http_status(:created)
         expect(json_response['user']['email']).to eq('newuser@example.com')
+        expect(json_response['user']['premium']).to be false
         expect(response.cookies['access_token']).to be_present
       end
     end

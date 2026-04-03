@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   const TIMEOUT_MS = 15_000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const requestBody = await req.text();
 
   try {
     // リクエストボディをJSONとして確実にパースして再構築する（ドロップ防止）
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
         // JWT認証のためCookieをバックエンドへ転送する（checkout はログイン必須）
         Cookie: req.headers.get("cookie") ?? "",
       },
-      body: requestData ? JSON.stringify(requestData) : undefined,
+      body: requestBody || undefined,
       signal: controller.signal,
     });
 
