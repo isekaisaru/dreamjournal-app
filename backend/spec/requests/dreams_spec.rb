@@ -392,6 +392,14 @@ RSpec.describe 'Dreams API', type: :request do
     end
 
     context '認証済みユーザーの場合' do
+      around do |example|
+        original_adapter = ActiveJob::Base.queue_adapter
+        ActiveJob::Base.queue_adapter = :test
+        example.run
+      ensure
+        ActiveJob::Base.queue_adapter = original_adapter
+      end
+
       it '夢の分析ジョブをキューに入れ、202 Acceptedを返す' do
         # perform_enqueued_jobs ブロック内でジョブがキューに入ることを確認
         assert_enqueued_with(job: AnalyzeDreamJob, args: [dream.id]) do
