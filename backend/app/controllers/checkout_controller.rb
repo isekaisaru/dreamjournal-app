@@ -1,9 +1,15 @@
 class CheckoutController < ApplicationController
+  class MissingPremiumPriceIdError < StandardError; end
+
+  DONATION_UNIT_AMOUNT = 500
+
   def create
     PaymentsObservability.increment('checkout.request.total', user_id: current_user.id)
     PaymentsObservability.log(event: 'checkout.request.received', user_id: current_user.id)
 
     begin
+      plan = requested_plan
+
       # FRONTEND_URL must be absolute URL for Stripe redirect
       frontend_url = ENV['FRONTEND_URL']
       if frontend_url.blank?
@@ -13,13 +19,19 @@ class CheckoutController < ApplicationController
         return render json: { error: 'FRONTEND_URLが設定されていません。' }, status: :internal_server_error
       end
 
+      if plan == 'premium' && current_user.premium?
+        return render json: { error: 'すでにプレミアム会員です。' }, status: :unprocessable_content
+      end
+
       customer_id = ensure_stripe_customer_id!
 
-      session = if params[:plan] == 'premium'
-        create_subscription_session(customer_id, frontend_url)
-      else
-        create_donation_session(customer_id, frontend_url)
-      end
+      session = Stripe::Checkout::Session.create(
+        build_checkout_session_params(
+          plan: plan,
+          frontend_url: frontend_url,
+          customer_id: customer_id
+        )
+      )
 
       PaymentsObservability.increment('checkout.session.created', user_id: current_user.id)
       PaymentsObservability.log(
@@ -31,7 +43,11 @@ class CheckoutController < ApplicationController
       )
 
       render json: { url: session.url }, status: :ok
-
+    rescue MissingPremiumPriceIdError => e
+      PaymentsObservability.increment('checkout.error.premium_price_missing', user_id: current_user.id)
+      PaymentsObservability.log(event: 'checkout.error.premium_price_missing', level: :error, user_id: current_user.id)
+      Rails.logger.error "Checkout configuration error: #{e.message}"
+      render json: { error: 'プレミアム決済の設定が未完了です。' }, status: :internal_server_error
     rescue Stripe::StripeError => e
       PaymentsObservability.increment('checkout.error.stripe', user_id: current_user.id)
       PaymentsObservability.log(event: 'checkout.error.stripe', level: :error, user_id: current_user.id, message: e.message)
@@ -47,45 +63,56 @@ class CheckoutController < ApplicationController
 
   private
 
-  def create_donation_session(customer_id, frontend_url)
-    Stripe::Checkout::Session.create(
+  def requested_plan
+    params[:plan].to_s == 'premium' ? 'premium' : 'donation'
+  end
+
+  def build_checkout_session_params(plan:, frontend_url:, customer_id:)
+    base_params = {
       customer: customer_id,
       client_reference_id: current_user.id.to_s,
-      metadata: { user_id: current_user.id.to_s },
-      payment_method_types: ['card'],
+      metadata: {
+        user_id: current_user.id.to_s,
+        plan: plan
+      },
+      payment_method_types: ['card']
+    }
+
+    plan == 'premium' ? base_params.merge(premium_session_params(frontend_url)) : base_params.merge(donation_session_params(frontend_url))
+  end
+
+  def donation_session_params(frontend_url)
+    {
       line_items: [{
         price_data: {
           currency: 'jpy',
-          unit_amount: 500,
+          unit_amount: DONATION_UNIT_AMOUNT,
           product_data: {
             name: 'ユメログへの応援寄付',
-            description: 'あなたの夢日記アプリ開発を応援してくれてありがとう！',
-          },
+            description: 'あなたの夢日記アプリ開発を応援してくれてありがとう！'
+          }
         },
-        quantity: 1,
+        quantity: 1
       }],
       mode: 'payment',
       success_url: "#{frontend_url}/donation/success",
-      cancel_url:  "#{frontend_url}/donation/cancel",
-    )
+      cancel_url: "#{frontend_url}/donation/cancel"
+    }
   end
 
-  def create_subscription_session(customer_id, frontend_url)
+  def premium_session_params(frontend_url)
     price_id = ENV['STRIPE_PREMIUM_PRICE_ID']
-    if price_id.blank?
-      raise ArgumentError, 'STRIPE_PREMIUM_PRICE_ID が設定されていません。'
-    end
+    raise MissingPremiumPriceIdError, 'STRIPE_PREMIUM_PRICE_ID is not set' if price_id.blank?
 
-    Stripe::Checkout::Session.create(
-      customer: customer_id,
-      client_reference_id: current_user.id.to_s,
-      metadata: { user_id: current_user.id.to_s },
-      payment_method_types: ['card'],
-      line_items: [{ price: price_id, quantity: 1 }],
+    {
+      line_items: [{
+        price: price_id,
+        quantity: 1
+      }],
       mode: 'subscription',
-      success_url: "#{frontend_url}/subscription/success",
-      cancel_url:  "#{frontend_url}/subscription/cancel",
-    )
+      success_url: "#{frontend_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}",
+      cancel_url: "#{frontend_url}/subscription/cancel"
+    }
   end
 
   def ensure_stripe_customer_id!

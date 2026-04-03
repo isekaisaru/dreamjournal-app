@@ -51,4 +51,8 @@ class User < ApplicationRecord
     # 合言葉と時間を消して、もう使えないようにする
     update!(reset_password_token: nil, reset_password_sent_at: nil)
   end
+
+  def premium_active_subscription?
+    subscriptions.where(status: Subscription::ACTIVE_STATUSES).exists?
+  end
 end
