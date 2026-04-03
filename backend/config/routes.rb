@@ -45,6 +45,7 @@ Rails.application.routes.draw do
 
   # Stripe決済関連
   post '/checkout', to: 'checkout#create'
+  post '/billing_portal', to: 'billing_portal#create'
   post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（署名検証は次回実装）
 
   # パスワードリセット関連
