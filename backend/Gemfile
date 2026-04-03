@@ -3,7 +3,7 @@ source "https://rubygems.org"
 ruby "3.3.0"
 
 # Rails
-gem "rails", "~> 7.1.0"
+gem "rails", ">= 7.2.3.1", "< 7.3"
 
 # PostgreSQL as the database
 gem "pg", "~> 1.3"

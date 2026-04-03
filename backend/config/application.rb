@@ -14,9 +14,7 @@ module App
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
-    config.autoload_paths << Rails.root.join('app/services')
-
-    config.autoload_paths << Rails.root.join('lib')
+    config.autoload_paths += [Rails.root.join('app/services'), Rails.root.join('lib')]
     config.debug_exception_response_format = :api
     
     # セキュリティヘッダーの追加
