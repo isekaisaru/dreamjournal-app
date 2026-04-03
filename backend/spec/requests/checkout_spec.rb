@@ -171,7 +171,9 @@ RSpec.describe 'Checkout API', type: :request do
             customer: 'cus_existing_123',
             client_reference_id: user.id.to_s,
             line_items: [{ price: premium_price_id, quantity: 1 }],
-            success_url: "#{frontend_url}/subscription/success",
+            metadata: { user_id: user.id.to_s, plan: 'premium' },
+            payment_method_types: ['card'],
+            success_url: "#{frontend_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}",
             cancel_url:  "#{frontend_url}/subscription/cancel"
           ))
           .and_return(subscription_session)

@@ -533,12 +533,16 @@ RSpec.describe 'Webhooks API', type: :request do
       end
 
       context 'invoice.payment_succeeded の場合' do
+        let(:period_end) { 1_800_000_000 }
+        let(:period_double) { double('StripePeriod', end: period_end) }
+        let(:line_double) { double('StripeInvoiceLine', period: period_double) }
+        let(:lines_double) { double('StripeLines', data: [line_double]) }
         let(:invoice_double) do
           double(
             'StripeInvoice',
             subscription: 'sub_test_123',
             customer: 'cus_test_123',
-            period_end: 1_800_000_000
+            lines: lines_double
           )
         end
 
@@ -583,7 +587,7 @@ RSpec.describe 'Webhooks API', type: :request do
               'HOST' => 'backend'
             }
 
-          expect(subscription.reload.current_period_end).to be_present
+          expect(subscription.reload.current_period_end.to_i).to eq(period_end)
         end
       end
 
@@ -638,22 +642,22 @@ RSpec.describe 'Webhooks API', type: :request do
         end
 
         it '他に有効な subscription があれば premium を維持する' do
-          user = create(:user, premium: true)
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123', premium: true)
           create(
             :subscription,
             user: user,
-            stripe_subscription_id: 'sub_test_active_other',
-            stripe_customer_id: 'cus_cancel_123',
+            stripe_subscription_id: 'sub_test_other_active',
+            stripe_customer_id: 'cus_test_123',
             status: 'past_due'
           )
           canceled_subscription = create(
             :subscription,
             user: user,
-            stripe_subscription_id: 'sub_test_cancelled',
-            stripe_customer_id: 'cus_cancel_123',
+            stripe_subscription_id: 'sub_test_123',
+            stripe_customer_id: 'cus_test_123',
             status: 'active'
           )
-          allow(Stripe::Webhook).to receive(:construct_event).and_return(subscription_deleted_event)
+          allow(Stripe::Webhook).to receive(:construct_event).and_return(stripe_event_sub_deleted)
 
           post '/webhooks/stripe',
             params: payload,
