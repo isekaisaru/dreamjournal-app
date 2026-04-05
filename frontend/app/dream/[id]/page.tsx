@@ -79,7 +79,8 @@ export default function DreamDetailPage({
     try {
       const result = await apiClient.post<{ image_url: string }>(
         `/dreams/${dreamId}/generate_image`,
-        {}
+        {},
+        { timeoutMs: 60_000 }
       );
       setGeneratedImageUrl(result.image_url);
     } catch (err) {
