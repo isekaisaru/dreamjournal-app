@@ -202,6 +202,9 @@ class DreamsController < ApplicationController
     @dream.update!(generated_image_url: image_url)
 
     render json: { image_url: image_url }, status: :ok
+  rescue Faraday::TimeoutError, Net::ReadTimeout, Net::OpenTimeout => e
+    Rails.logger.error "[generate_image] Timeout for dream #{@dream.id}: #{e.message}"
+    render json: { error: "画像の生成に時間がかかりすぎました。しばらく待ってからお試しください。" }, status: :gateway_timeout
   rescue OpenAI::Error => e
     Rails.logger.error "[generate_image] OpenAI error for dream #{@dream.id}: #{e.message}"
     render json: { error: "画像の生成に失敗しました。しばらく待ってからお試しください。" }, status: :unprocessable_entity

@@ -23,6 +23,12 @@ end
 # terminating a worker in development environments.
 worker_timeout 3600 if ENV.fetch("RAILS_ENV", "development") == "development"
 
+# 本番環境では画像生成（gpt-image-1）が最大60秒かかるため、
+# Puma がワーカーを強制終了しないよう 90 秒に設定する。
+# OpenAI クライアント側タイムアウト（55秒）より長くすることで
+# Rails 側で正常にエラーハンドリングできる。
+worker_timeout 90 if ENV.fetch("RAILS_ENV", "development") == "production"
+
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT") { 3000 }
 
