@@ -188,6 +188,84 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     ).toBeVisible();
   });
 
+  test("画像未生成時に「🎨 ゆめのえを かく」ボタンが表示される", async ({
+    page,
+  }) => {
+    await page.goto("/dream/1");
+
+    // generated_image_url がない（MOCK_DREAM にはない）ので画像生成ボタンが表示される
+    await expect(
+      page.getByRole("button", { name: /🎨 ゆめのえを かく/ })
+    ).toBeVisible();
+  });
+
+  test("「🎨 ゆめのえを かく」をクリックすると POST リクエストが飛び、成功時に画像が表示される", async ({
+    page,
+  }) => {
+    const GENERATED_IMAGE_URL = "https://example.com/dream-image.png";
+
+    // 画像生成 API をモック
+    await page.route("**/dreams/1/generate_image", async (route) => {
+      expect(route.request().method()).toBe("POST");
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ image_url: GENERATED_IMAGE_URL }),
+      });
+    });
+
+    await page.goto("/dream/1");
+
+    // POST リクエストを捕捉する待ち受けを設定
+    const postRequestPromise = page.waitForRequest(
+      (req) =>
+        req.url().includes("/dreams/1/generate_image") &&
+        req.method() === "POST"
+    );
+
+    // 「🎨 ゆめのえを かく」ボタンをクリック
+    await page.getByRole("button", { name: /🎨 ゆめのえを かく/ }).click();
+
+    // POST リクエストが送信されたことを確認
+    await postRequestPromise;
+
+    // 成功後に画像が表示されることを確認
+    await expect(page.locator('img[alt="ゆめのえ"]')).toBeVisible();
+
+    // 「かきなおす」ボタンが表示されることを確認
+    await expect(
+      page.getByRole("button", { name: "かきなおす" })
+    ).toBeVisible();
+  });
+
+  test("画像生成 API がエラーを返した場合、エラーメッセージが表示される", async ({
+    page,
+  }) => {
+    // 画像生成 API をエラーでモック（タイムアウト相当の 504）
+    await page.route("**/dreams/1/generate_image", async (route) => {
+      await route.fulfill({
+        status: 504,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "画像の生成に時間がかかりすぎました。しばらく待ってからお試しください。",
+        }),
+      });
+    });
+
+    await page.goto("/dream/1");
+
+    // ボタンをクリック
+    await page.getByRole("button", { name: /🎨 ゆめのえを かく/ }).click();
+
+    // エラーメッセージが表示されることを確認
+    await expect(page.locator(".text-destructive")).toBeVisible();
+
+    // エラー後もボタンが再度有効になる（再試行できる状態）ことを確認
+    await expect(
+      page.getByRole("button", { name: /🎨 ゆめのえを かく/ })
+    ).toBeVisible();
+  });
+
   test("編集内容を保存すると閲覧モードに戻る", async ({ page }) => {
     // beforeEach の GET ハンドラを上書きし、PUT と複数回の GET を一括で処理する
     // 1回目の GET: 元のタイトルを返す、PUT: 成功レスポンス、2回目以降の GET: 更新後のタイトルを返す
