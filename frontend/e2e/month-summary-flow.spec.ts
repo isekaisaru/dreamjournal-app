@@ -72,10 +72,16 @@ test.describe("月次サマリーページ", () => {
       page.getByRole("heading", { name: "2024年1月の ゆめ" })
     ).toBeVisible();
 
-    // 統計カードの数値が正しく表示される（2件・2日・1件分析済み）
-    await expect(page.getByText("きろくした ゆめ")).toBeVisible();
-    await expect(page.getByText("きろくした ひ")).toBeVisible();
-    await expect(page.getByText("ぶんせきずみ")).toBeVisible();
+    // 統計カードのラベルと数値が正しく表示される
+    // ラベルを含む card の中に数値が正しくあることを確認（数値ゼロでも合格する誤検知を防ぐ）
+    const dreamCountCard = page.locator("div").filter({ hasText: /^きろくした ゆめ/ }).first();
+    await expect(dreamCountCard.getByText("2")).toBeVisible();
+
+    const recordedDaysCard = page.locator("div").filter({ hasText: /^きろくした ひ/ }).first();
+    await expect(recordedDaysCard.getByText("2")).toBeVisible();
+
+    const analyzedCountCard = page.locator("div").filter({ hasText: /^ぶんせきずみ/ }).first();
+    await expect(analyzedCountCard.getByText("1")).toBeVisible();
 
     // サマリーメッセージが表示される
     await expect(
