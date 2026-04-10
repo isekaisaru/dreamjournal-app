@@ -10,6 +10,16 @@ class Dream < ApplicationRecord
   # analysis_status カラムを enum として定義し、メソッド名の衝突を避けるためにプレフィックスを付けます
   enum analysis_status: { pending: 'pending', done: 'done', failed: 'failed' }, _prefix: :analysis
 
+  # よく使うクエリパターンをスコープとして定義する
+  # current_user.dreams.with_image のように使う
+  scope :with_image, -> { where.not(generated_image_url: nil) }
+  # current_user.dreams.generated_in_month のように使う（引数省略時は当月）
+  scope :generated_in_month, ->(date = Time.current) {
+    where(updated_at: date.beginning_of_month..date.end_of_month)
+  }
+  # dream.analysis_done? の代わりに、コレクションの絞り込みにも使える
+  scope :analyzed, -> { where(analysis_status: 'done') }
+
   # 分析プロセスを開始するメソッド
   def start_analysis!
     update!(analysis_status: 'pending', analysis_json: nil, analyzed_at: nil)

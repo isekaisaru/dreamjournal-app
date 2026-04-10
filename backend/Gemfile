@@ -87,6 +87,9 @@ group :development do
 
   # インブラウザでメール内容を確認
   gem "letter_opener"
+
+  # N+1クエリとメモリ使用の自動検出
+  gem "bullet"
 end
 
 # Stripe payment processing

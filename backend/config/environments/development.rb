@@ -60,4 +60,11 @@ Rails.application.configure do
   # 必要ならホスト許可（Docker 経由アクセス用）
   # フロントエンドコンテナ(backend)からのリクエストを許可
   config.hosts << "backend"
+
+  # Bullet: N+1クエリと不要なeager loadingをログに出力する
+  config.after_initialize do
+    Bullet.enable        = true
+    Bullet.rails_logger  = true   # development.log にN+1を記録
+    Bullet.add_footer    = false  # API modeなのでHTML footerは不要
+  end
 end
