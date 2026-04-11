@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Emotion } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "@/app/components/EmotionTag";
+import { getJSTDateStr } from "@/lib/date";
 
 type SearchBarProps = {
   query?: string | string[] | undefined;
@@ -19,13 +20,6 @@ function normalizeParam(value: string | string[] | undefined): string {
   return value ?? "";
 }
 
-function toLocalDateStr(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 export default function SearchBar({
   query,
   startDate,
@@ -38,8 +32,8 @@ export default function SearchBar({
   const [dateTo, setDateTo] = useState(normalizeParam(endDate));
 
   const applyPreset = (from: Date, to: Date) => {
-    setDateFrom(toLocalDateStr(from));
-    setDateTo(toLocalDateStr(to));
+    setDateFrom(getJSTDateStr(from));
+    setDateTo(getJSTDateStr(to));
   };
 
   const presets = [
