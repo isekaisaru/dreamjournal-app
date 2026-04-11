@@ -162,9 +162,9 @@ export default function HomePage() {
   );
 
   return (
-    <div className="md:flex text-foreground">
+    <div className="lg:flex text-foreground">
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
-      <section className="w-full md:w-2/3 flex flex-col items-center px-3 md:px-6">
+      <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
         <h1 className="text-2xl font-bold text-foreground">
           {user ? `${user.username}ちゃんの ゆめ日記` : "ゆめ日記"}
         </h1>
@@ -193,7 +193,7 @@ export default function HomePage() {
       </section>
 
       {/* サイドバー: 統計・ストリーク・月ごとリンク */}
-      <aside className="w-full md:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 md:mt-0">
+      <aside className="w-full lg:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 lg:mt-0">
         {/* 連続記録バッジ */}
         <DreamStreakBadge dreams={dreams} />
 

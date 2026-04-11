@@ -1,6 +1,9 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { Emotion } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "@/app/components/EmotionTag";
+import { getJSTDateStr } from "@/lib/date";
 
 type SearchBarProps = {
   query?: string | string[] | undefined;
@@ -24,9 +27,55 @@ export default function SearchBar({
   emotions = [],
   selectedEmotionIds = [],
 }: SearchBarProps) {
-  const normalizedQuery = normalizeParam(query);
-  const normalizedStartDate = normalizeParam(startDate);
-  const normalizedEndDate = normalizeParam(endDate);
+  const [queryValue, setQueryValue] = useState(normalizeParam(query));
+  const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
+  const [dateTo, setDateTo] = useState(normalizeParam(endDate));
+
+  // URL パラメータ（props）が変わったとき（例：ブラウザ戻る・検索リセット）に
+  // フォームの表示値を同期する。
+  useEffect(() => {
+    setQueryValue(normalizeParam(query));
+  }, [query]);
+
+  useEffect(() => {
+    setDateFrom(normalizeParam(startDate));
+  }, [startDate]);
+
+  useEffect(() => {
+    setDateTo(normalizeParam(endDate));
+  }, [endDate]);
+
+  const applyPreset = (from: Date, to: Date) => {
+    setDateFrom(getJSTDateStr(from));
+    setDateTo(getJSTDateStr(to));
+  };
+
+  const presets = [
+    {
+      label: "きょう",
+      onClick: () => {
+        const t = new Date();
+        applyPreset(t, t);
+      },
+    },
+    {
+      label: "今週",
+      onClick: () => {
+        const to = new Date();
+        const from = new Date();
+        from.setDate(to.getDate() - 6);
+        applyPreset(from, to);
+      },
+    },
+    {
+      label: "今月",
+      onClick: () => {
+        const to = new Date();
+        const from = new Date(to.getFullYear(), to.getMonth(), 1);
+        applyPreset(from, to);
+      },
+    },
+  ];
 
   return (
     <form
@@ -46,7 +95,8 @@ export default function SearchBar({
             id="search-query"
             name="query"
             type="text"
-            defaultValue={normalizedQuery}
+            value={queryValue}
+            onChange={(e) => setQueryValue(e.target.value)}
             placeholder="「ねこ」「こわい」など..."
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
@@ -62,7 +112,8 @@ export default function SearchBar({
             id="start-date"
             name="startDate"
             type="date"
-            defaultValue={normalizedStartDate}
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -77,10 +128,25 @@ export default function SearchBar({
             id="end-date"
             name="endDate"
             type="date"
-            defaultValue={normalizedEndDate}
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
         </div>
+      </div>
+
+      {/* 日付プリセット */}
+      <div className="flex gap-2 mt-3">
+        {presets.map(({ label, onClick }) => (
+          <button
+            key={label}
+            type="button"
+            onClick={onClick}
+            className="px-3 py-1 text-xs rounded-full border border-border bg-muted text-muted-foreground hover:bg-muted/70 transition-colors"
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {emotions.length > 0 && (
