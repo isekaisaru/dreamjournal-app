@@ -261,10 +261,7 @@ class DreamsController < ApplicationController
 
     # 画像生成の月次上限チェック（全ユーザー共通）
     def check_monthly_image_limit
-      count = current_user.dreams
-        .where.not(generated_image_url: nil)
-        .where("updated_at >= ?", Time.current.beginning_of_month)
-        .count
+      count = current_user.dreams.with_image.generated_in_month.count
 
       if count >= IMAGE_MONTHLY_LIMIT
         render json: {

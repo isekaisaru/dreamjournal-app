@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_03_31_000002) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_11_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -62,6 +62,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_03_31_000002) do
     t.jsonb "analysis_json"
     t.datetime "analyzed_at"
     t.text "generated_image_url"
+    t.index ["analysis_status"], name: "index_dreams_on_analysis_status"
+    t.index ["user_id", "created_at"], name: "index_dreams_on_user_id_and_created_at"
+    t.index ["user_id", "updated_at"], name: "index_dreams_on_user_id_and_updated_at_with_image", where: "(generated_image_url IS NOT NULL)"
     t.index ["user_id"], name: "index_dreams_on_user_id"
   end
 
