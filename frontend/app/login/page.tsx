@@ -13,7 +13,7 @@ const hiddenEmailStyle = {
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [showEmail, setShowEmail] = useState(false);
+  const [showEmail, setShowEmail] = useState(true);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [pageError, setPageError] = useState("");

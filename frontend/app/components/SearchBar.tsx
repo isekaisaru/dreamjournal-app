@@ -1,5 +1,6 @@
 import React from "react";
 import { Emotion } from "@/app/types";
+import { getChildFriendlyEmotionLabel } from "@/app/components/EmotionTag";
 
 type SearchBarProps = {
   query?: string | string[] | undefined;
@@ -110,7 +111,7 @@ export default function SearchBar({
                         : "bg-muted text-muted-foreground border-border hover:bg-muted/70")
                     }
                   >
-                    {emotion.name}
+                    {getChildFriendlyEmotionLabel(emotion.name)}
                   </span>
                 </label>
               );

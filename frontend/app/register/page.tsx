@@ -14,7 +14,7 @@ const hiddenEmailStyle = {
 
 export default function Register() {
   const [email, setEmail] = useState("");
-  const [showEmail, setShowEmail] = useState(false);
+  const [showEmail, setShowEmail] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
