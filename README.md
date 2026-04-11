@@ -124,6 +124,7 @@ Subscription フローでは `client_reference_id` → `stripe_customer_id` → 
 実装の背景・設計判断・はまりポイントを Zenn にまとめています。
 
 - 📝 [個人開発で Stripe Webhook を本番稼働させた全記録 — 署名検証・冪等性・3段階ユーザー解決](https://zenn.dev/isekaisaru/articles/2e4860a296799b)
+- 📝 [個人開発で gpt-image-1 の 502 エラーを直した記録 — タイムアウト3層設計の全容](https://zenn.dev/isekaisaru/articles/656e5186401467)
 
 ---
 
