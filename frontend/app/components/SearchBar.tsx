@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Emotion } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "@/app/components/EmotionTag";
 import { getJSTDateStr } from "@/lib/date";
@@ -30,6 +30,16 @@ export default function SearchBar({
   const normalizedQuery = normalizeParam(query);
   const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
   const [dateTo, setDateTo] = useState(normalizeParam(endDate));
+
+  // URL パラメータ（props）が変わったとき（例：ブラウザ戻る・検索リセット）に
+  // 表示中の日付入力を同期する。プリセットで直接書き込んだ値は上書きしない。
+  useEffect(() => {
+    setDateFrom(normalizeParam(startDate));
+  }, [startDate]);
+
+  useEffect(() => {
+    setDateTo(normalizeParam(endDate));
+  }, [endDate]);
 
   const applyPreset = (from: Date, to: Date) => {
     setDateFrom(getJSTDateStr(from));
