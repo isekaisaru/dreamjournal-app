@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { clientRegister } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
+import MorpheusSmall from "@/app/components/MorpheusSmall";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
@@ -94,6 +95,11 @@ export default function Register() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <MorpheusSmall
+          message="はじめまして！いっしょにゆめを記録しよう"
+          className="mb-4"
+        />
       <form
         onSubmit={handleSubmit}
         className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
@@ -261,6 +267,7 @@ export default function Register() {
           </Link>
         </div>
       </form>
+      </div>
     </div>
   );
 }

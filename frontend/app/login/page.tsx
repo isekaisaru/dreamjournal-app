@@ -5,6 +5,7 @@ import Link from "next/link";
 import { clientLogin } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import MorpheusSmall from "@/app/components/MorpheusSmall";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
@@ -72,6 +73,11 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <MorpheusSmall
+          message="おかえり！ゆめの世界へ ようこそ"
+          className="mb-4"
+        />
       <form
         onSubmit={handleSubmit}
         className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
@@ -152,6 +158,7 @@ export default function Login() {
           <p className="text-destructive mt-4 text-center">{pageError}</p>
         )}
       </form>
+      </div>
     </div>
   );
 }

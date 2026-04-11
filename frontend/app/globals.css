@@ -113,14 +113,15 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    /* 朝空ライトモード: 淡い空色ベース + 白カード */
+    --background: 214 60% 97%;    /* #f0f6fd — 朝のうすい空 */
+    --foreground: 222 47% 15%;    /* #182238 — 濃いネイビー文字 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;            /* 白カードが空背景に浮かぶ */
+    --card-foreground: 222 47% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover-foreground: 222 47% 15%;
 
     --primary: 262.1 83.3% 57.8%;
     --primary-foreground: 210 20% 98%;
@@ -128,8 +129,8 @@
     --secondary: 217.2 91.2% 59.8%;
     --secondary-foreground: 210 20% 98%;
 
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted: 214 35% 93%;         /* 空色ミュート */
+    --muted-foreground: 222 20% 45%;
 
     --accent: 142.1 70.6% 45.3%;
     --accent-foreground: 142.1 70.6% 95.3%;
@@ -140,9 +141,9 @@
     --success: 140 60% 45%;
     --success-foreground: 140 60% 95%;
 
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    --border: 214 30% 87%;        /* 空色ボーダー */
+    --input: 214 30% 87%;
+    --ring: 222 47% 15%;
 
     --radius: 0.5rem;
 
