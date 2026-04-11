@@ -113,7 +113,7 @@ export default function AuthNav() {
     <nav className="flex flex-col md:flex-row items-center justify-between w-full h-full gap-4 md:gap-0">
       {/* 行動（左側）：毎日つかうもの */}
       <div className="flex items-center bg-secondary/30 p-1 rounded-full gap-1">
-        <NavItem href="/" icon={House} label="おうち" />
+        <NavItem href="/home" icon={House} label="おうち" />
         <NavItem href="/dream/new" icon={Pencil} label="ゆめをかく" />
       </div>
 

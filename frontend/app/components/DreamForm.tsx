@@ -259,7 +259,7 @@ export default function DreamForm({
                 ${
                   isAnalyzing
                     ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg hover:scale-105 active:scale-95"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70 border border-border"
                 }
               `}
           >
