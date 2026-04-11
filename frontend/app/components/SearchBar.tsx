@@ -27,12 +27,16 @@ export default function SearchBar({
   emotions = [],
   selectedEmotionIds = [],
 }: SearchBarProps) {
-  const normalizedQuery = normalizeParam(query);
+  const [queryValue, setQueryValue] = useState(normalizeParam(query));
   const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
   const [dateTo, setDateTo] = useState(normalizeParam(endDate));
 
   // URL パラメータ（props）が変わったとき（例：ブラウザ戻る・検索リセット）に
-  // 表示中の日付入力を同期する。プリセットで直接書き込んだ値は上書きしない。
+  // フォームの表示値を同期する。
+  useEffect(() => {
+    setQueryValue(normalizeParam(query));
+  }, [query]);
+
   useEffect(() => {
     setDateFrom(normalizeParam(startDate));
   }, [startDate]);
@@ -91,7 +95,8 @@ export default function SearchBar({
             id="search-query"
             name="query"
             type="text"
-            defaultValue={normalizedQuery}
+            value={queryValue}
+            onChange={(e) => setQueryValue(e.target.value)}
             placeholder="「ねこ」「こわい」など..."
             className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
           />
