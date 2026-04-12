@@ -1,23 +1,30 @@
 default: &default
   adapter: postgresql
   encoding: unicode
-  host: <%= ENV.fetch("POSTGRES_HOST") { "db" } %>
   port: 5432
-  username: <%= ENV.fetch("POSTGRES_USER") { "postgres" } %>
-  password: <%= ENV["POSTGRES_PASSWORD"] %>
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
 development:
   <<: *default
+  host: <%= ENV.fetch("POSTGRES_HOST") { "db" } %>
+  username: <%= ENV.fetch("POSTGRES_USER") { "postgres" } %>
+  password: <%= ENV["POSTGRES_PASSWORD"] %>
   database: <%= ENV.fetch("POSTGRES_DB") { "dream_journal_development" } %>
 
   
 test:
   <<: *default
+  host: <%= ENV.fetch("POSTGRES_HOST") { "db" } %>
+  username: <%= ENV.fetch("POSTGRES_USER") { "postgres" } %>
+  password: <%= ENV["POSTGRES_PASSWORD"] %>
   database: app_test
 
 
 
 production:
   <<: *default
-  database: <%= ENV["POSTGRES_DB"] %>
+  url: <%= ENV["DATABASE_URL"] if ENV["DATABASE_URL"].present? %>
+  host: <%= ENV.fetch("POSTGRES_HOST") { "db" } unless ENV["DATABASE_URL"].present? %>
+  username: <%= ENV.fetch("POSTGRES_USER") { "postgres" } unless ENV["DATABASE_URL"].present? %>
+  password: <%= ENV["POSTGRES_PASSWORD"] unless ENV["DATABASE_URL"].present? %>
+  database: <%= ENV["POSTGRES_DB"] unless ENV["DATABASE_URL"].present? %>

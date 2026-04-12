@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveBackendUrl } from "../../checkout/backend-url";
 
-// Vercel本番環境（NODE_ENV=production）でのみRenderのURLをフォールバックとして使用する
-const PRODUCTION_FALLBACK =
-  process.env.NODE_ENV === "production"
-    ? "https://dreamjournal-app.onrender.com"
-    : undefined;
-
-const BACKEND_URL =
-  process.env.INTERNAL_BACKEND_URL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  PRODUCTION_FALLBACK;
+const BACKEND_URL = resolveBackendUrl();
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

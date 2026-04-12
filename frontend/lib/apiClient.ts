@@ -167,38 +167,44 @@ export async function apiFetch<T>(
       `API request to ${endpoint} failed with status ${response.status}.`
     );
     error.status = response.status;
-    try {
-      const errorData = await response.json();
-      // Railsのエラー形式に合わせて調整 (より堅牢な形式)
-      if (errorData.error) {
-        error.message = errorData.error;
-      } else if (Array.isArray(errorData.errors)) {
-        error.message = errorData.errors.join(", ");
-      } else if (
-        typeof errorData.errors === "object" &&
-        errorData.errors !== null
-      ) {
-        // { "email": ["has already been taken"], "password": ["is too short"] } のような形式に対応
-        error.message = Object.entries(errorData.errors)
-          .map(
-            ([key, messages]) =>
-              `${key} ${Array.isArray(messages) ? messages.join(", ") : messages}`
-          )
-          .join("; ");
-      } else if (errorData.message) {
-        error.message = errorData.message;
-      }
+    const responseBody = await response.text().catch(() => "");
 
-      error.data = errorData;
-    } catch {
-      // JSONのパースに失敗した場合も、テキスト本文があれば残して調査しやすくする
-      const fallbackBody = await response.text().catch(() => "");
-      if (fallbackBody) {
-        error.message = fallbackBody;
+    if (responseBody) {
+      try {
+        const errorData = JSON.parse(responseBody);
+        // Railsのエラー形式に合わせて調整 (より堅牢な形式)
+        if (errorData.error) {
+          error.message = errorData.error;
+        } else if (Array.isArray(errorData.errors)) {
+          error.message = errorData.errors.join(", ");
+        } else if (
+          typeof errorData.errors === "object" &&
+          errorData.errors !== null
+        ) {
+          // { "email": ["has already been taken"], "password": ["is too short"] } のような形式に対応
+          error.message = Object.entries(errorData.errors)
+            .map(
+              ([key, messages]) =>
+                `${key} ${Array.isArray(messages) ? messages.join(", ") : messages}`
+            )
+            .join("; ");
+        } else if (errorData.message) {
+          error.message = errorData.message;
+        }
+
+        error.data = errorData;
+      } catch {
+        const plainTextBody = responseBody
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (plainTextBody) {
+          error.message = plainTextBody;
+        }
+        error.data = responseBody;
       }
-      error.data = fallbackBody || undefined;
-      console.error(`Could not parse error response for ${endpoint}:`);
     }
+
     throw error;
   }
 
