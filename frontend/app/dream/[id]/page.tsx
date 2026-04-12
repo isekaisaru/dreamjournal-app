@@ -92,6 +92,19 @@ export default function DreamDetailPage({
     }
   };
 
+  const handleImageLoadError = () => {
+    const isRemoteBlobUrl =
+      typeof generatedImageUrl === "string" &&
+      generatedImageUrl.startsWith("https://oaidalleapiprodscus.blob.core.windows.net/");
+
+    setImageError(
+      isRemoteBlobUrl
+        ? "ほぞんずみ の ゆめのえ の きげん が きれました。もういちど かいてみてください。"
+        : "ゆめのえ を ひょうじ できませんでした。"
+    );
+    setGeneratedImageUrl(null);
+  };
+
   const handleUpdateSubmit = async (formData: DreamInput) => {
     if (!dreamId) return;
     const success = await hookUpdateDream(formData);
@@ -246,6 +259,7 @@ export default function DreamDetailPage({
                 height={1024}
                 className="w-full h-auto"
                 unoptimized
+                onError={handleImageLoadError}
               />
               <div className="p-3 bg-card flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">🎨 ゆめのえ</p>

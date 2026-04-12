@@ -191,7 +191,12 @@ export async function apiFetch<T>(
 
       error.data = errorData;
     } catch {
-      // JSONのパースに失敗した場合
+      // JSONのパースに失敗した場合も、テキスト本文があれば残して調査しやすくする
+      const fallbackBody = await response.text().catch(() => "");
+      if (fallbackBody) {
+        error.message = fallbackBody;
+      }
+      error.data = fallbackBody || undefined;
       console.error(`Could not parse error response for ${endpoint}:`);
     }
     throw error;
