@@ -24,4 +24,17 @@ describe("apiFetch timeout policy", () => {
 
     expect(setTimeout).toHaveBeenCalledWith(expect.any(Function), 15_000);
   });
+
+  it("preserves plain-text error bodies when the upstream response is not JSON", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: jest.fn().mockRejectedValue(new Error("invalid json")),
+      text: jest.fn().mockResolvedValue("upstream connect error or disconnect/reset before headers"),
+    } as unknown as Response) as typeof fetch;
+
+    await expect(apiFetch("/dreams")).rejects.toThrow(
+      "upstream connect error or disconnect/reset before headers"
+    );
+  });
 });
