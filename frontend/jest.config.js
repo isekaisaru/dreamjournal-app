@@ -7,6 +7,8 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testEnvironment: "jest-environment-jsdom",
+  // OOM対策: ワーカーのメモリが上限を超えたら再起動する
+  workerIdleMemoryLimit: "512MB",
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/$1",
   },

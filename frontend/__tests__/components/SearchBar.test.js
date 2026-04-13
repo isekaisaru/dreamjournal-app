@@ -1,6 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import SearchBar from "@/app/components/SearchBar";
 
 const mockEmotions = [
@@ -32,54 +31,49 @@ describe("SearchBar", () => {
   });
 
   describe("詳細フィルターの展開", () => {
-    it("「くわしく さがす」を押すと日付入力が表示される", async () => {
-      const user = userEvent.setup();
+    it("「くわしく さがす」を押すと日付入力が表示される", () => {
       render(<SearchBar emotions={mockEmotions} />);
-      await user.click(screen.getByText("くわしく さがす"));
+      fireEvent.click(screen.getByText("くわしく さがす"));
       expect(screen.getByLabelText("いつから")).toBeInTheDocument();
       expect(screen.getByLabelText("いつまで")).toBeInTheDocument();
     });
 
-    it("展開後に感情チップが表示される", async () => {
-      const user = userEvent.setup();
+    it("展開後に感情チップが表示される", () => {
       render(<SearchBar emotions={[{ id: 1, name: "嬉しい" }]} />);
-      await user.click(screen.getByText("くわしく さがす"));
+      fireEvent.click(screen.getByText("くわしく さがす"));
       expect(screen.getByText("😊 うれしい")).toBeInTheDocument();
     });
 
-    it("展開後に「かんたんにする」ボタンに変わる", async () => {
-      const user = userEvent.setup();
+    it("展開後に「かんたんにする」ボタンに変わる", () => {
       render(<SearchBar />);
-      await user.click(screen.getByText("くわしく さがす"));
+      fireEvent.click(screen.getByText("くわしく さがす"));
       expect(screen.getByText("かんたんにする")).toBeInTheDocument();
     });
   });
 
   describe("感情ラベルの子ども向け変換（展開後）", () => {
-    async function expandAndRender(emotions) {
-      const user = userEvent.setup();
+    function expandAndRender(emotions) {
       render(<SearchBar emotions={emotions} />);
-      await user.click(screen.getByText("くわしく さがす"));
-      return user;
+      fireEvent.click(screen.getByText("くわしく さがす"));
     }
 
-    it("嬉しい → 😊 うれしい と表示される", async () => {
-      await expandAndRender([{ id: 1, name: "嬉しい" }]);
+    it("嬉しい → 😊 うれしい と表示される", () => {
+      expandAndRender([{ id: 1, name: "嬉しい" }]);
       expect(screen.getByText("😊 うれしい")).toBeInTheDocument();
     });
 
-    it("楽しい → 😆 たのしい と表示される", async () => {
-      await expandAndRender([{ id: 2, name: "楽しい" }]);
+    it("楽しい → 😆 たのしい と表示される", () => {
+      expandAndRender([{ id: 2, name: "楽しい" }]);
       expect(screen.getByText("😆 たのしい")).toBeInTheDocument();
     });
 
-    it("怖い → 😰 こわい と表示される", async () => {
-      await expandAndRender([{ id: 4, name: "怖い" }]);
+    it("怖い → 😰 こわい と表示される", () => {
+      expandAndRender([{ id: 4, name: "怖い" }]);
       expect(screen.getByText("😰 こわい")).toBeInTheDocument();
     });
 
-    it("全感情の生ラベルが表示されない", async () => {
-      await expandAndRender(mockEmotions);
+    it("全感情の生ラベルが表示されない", () => {
+      expandAndRender(mockEmotions);
       mockEmotions.forEach(({ name }) => {
         expect(screen.queryByText(name)).not.toBeInTheDocument();
       });
@@ -87,20 +81,18 @@ describe("SearchBar", () => {
   });
 
   describe("日付プリセット（展開後）", () => {
-    it("きょう・今週・今月 のプリセットボタンが表示される", async () => {
-      const user = userEvent.setup();
+    it("きょう・今週・今月 のプリセットボタンが表示される", () => {
       render(<SearchBar />);
-      await user.click(screen.getByText("くわしく さがす"));
+      fireEvent.click(screen.getByText("くわしく さがす"));
       expect(screen.getByText("きょう")).toBeInTheDocument();
       expect(screen.getByText("今週")).toBeInTheDocument();
       expect(screen.getByText("今月")).toBeInTheDocument();
     });
 
-    it("「きょう」ボタンを押すと開始日と終了日が同じ日付になる", async () => {
-      const user = userEvent.setup();
+    it("「きょう」ボタンを押すと開始日と終了日が同じ日付になる", () => {
       render(<SearchBar />);
-      await user.click(screen.getByText("くわしく さがす"));
-      await user.click(screen.getByText("きょう"));
+      fireEvent.click(screen.getByText("くわしく さがす"));
+      fireEvent.click(screen.getByText("きょう"));
       const startInput = screen.getByLabelText("いつから");
       const endInput = screen.getByLabelText("いつまで");
       expect(startInput.value).not.toBe("");
