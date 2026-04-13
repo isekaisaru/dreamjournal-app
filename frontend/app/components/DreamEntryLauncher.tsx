@@ -37,11 +37,6 @@ export default function DreamEntryLauncher({
     "idle"
   );
 
-  const closeSheet = useCallback(() => {
-    if (isProcessing) return;
-    setIsOpen(false);
-  }, [isProcessing]);
-
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
       toast.success(result.message || "こえを きいたよ！ ちょっと まっててね。");
@@ -77,6 +72,15 @@ export default function DreamEntryLauncher({
     useVoiceRecorder({
       onBlobReady: handleBlobReady,
     });
+
+  const closeSheet = useCallback(() => {
+    if (isProcessing) return;
+    // 録音中にシートを閉じるとマイクがバックグラウンドで動き続けるため、先に停止する
+    if (isRecording) {
+      stopRecording();
+    }
+    setIsOpen(false);
+  }, [isProcessing, isRecording, stopRecording]);
 
   useEffect(() => {
     if (isRecording) {

@@ -108,6 +108,13 @@ export default function SearchBar({
       {selectedIds.map((id) => (
         <input key={id} type="hidden" name="emotion_ids[]" value={id} />
       ))}
+      {/* 折りたたみ時も日付フィルターを保持する */}
+      {!isExpanded && dateFrom && (
+        <input type="hidden" name="startDate" value={dateFrom} />
+      )}
+      {!isExpanded && dateTo && (
+        <input type="hidden" name="endDate" value={dateTo} />
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <div>
