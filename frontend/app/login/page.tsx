@@ -12,6 +12,9 @@ const hiddenEmailStyle = {
   textSecurity: "disc",
 } as React.CSSProperties;
 
+const defaultLoginError =
+  "うまく ログインできなかったよ。もういちど ためしてね。";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [showEmail, setShowEmail] = useState(true);
@@ -31,7 +34,7 @@ export default function Login() {
 
   useEffect(() => {
     if (authError) {
-      setPageError(authError);
+      setPageError(defaultLoginError);
     }
   }, [authError]);
 
@@ -40,7 +43,7 @@ export default function Login() {
     setPageError("");
     setIsLoading(true);
     if (!email || !password) {
-      setPageError("すべてのフィールドを入力してください。");
+      setPageError("メールアドレス と パスワード を いれてね。");
       setIsLoading(false);
       return;
     }
@@ -59,13 +62,11 @@ export default function Login() {
       // 今回: 新しいapiFetch関数のおかげで、エラーメッセージが apiError.message に直接入っています。シンプル！
       if (apiError?.status === 504) {
         setPageError(
-          "サーバーの起動に時間がかかっています。少し待ってからもう一度お試しください。"
+          "じゅんびに すこし じかんが かかっているよ。ちょっと まってから ためしてね。"
         );
         return;
       }
-      setPageError(
-        apiError.message || "ログインに失敗しました。もう一度お試しください。"
-      );
+      setPageError(defaultLoginError);
     } finally {
       setIsLoading(false);
     }
@@ -83,42 +84,58 @@ export default function Login() {
         className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
         <h2 className="text-2xl md:text-3xl font-semibold  mb-4 md:mb-6 text-center text-card-foreground">
-          ログイン
+          つづきから
         </h2>
         <div className="space-y-4">
-          <div className="relative">
-            <input
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="メールアドレス"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-              aria-label="メールアドレス"
-              aria-required="true"
-              style={showEmail ? undefined : hiddenEmailStyle}
-              className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="button"
-              onClick={() => setShowEmail((v) => !v)}
-              aria-label={showEmail ? "メールアドレスを隠す" : "メールアドレスを表示"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          <div>
+            <label
+              htmlFor="login-email"
+              className="mb-2 block text-sm font-medium text-card-foreground"
             >
-              {showEmail ? "🙈" : "👁"}
-            </button>
+              メールアドレス
+            </label>
+            <div className="relative">
+              <input
+                id="login-email"
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                aria-label="メールアドレス"
+                aria-required="true"
+                style={showEmail ? undefined : hiddenEmailStyle}
+                className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => setShowEmail((v) => !v)}
+                aria-label={showEmail ? "メールアドレスを隠す" : "メールアドレスを表示"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                {showEmail ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
-          <div className="relative">
+          <div>
+            <label
+              htmlFor="login-password"
+              className="mb-2 block text-sm font-medium text-card-foreground"
+            >
+              パスワード
+            </label>
             <input
+              id="login-password"
               type={showPassword ? "text" : "password"}
               name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="パスワード"
+              placeholder="8もじ いじょう"
               autoComplete="current-password"
               autoCapitalize="none"
               autoCorrect="off"
@@ -143,19 +160,21 @@ export default function Login() {
             disabled={isLoading}
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            {isLoading ? "ログイン中..." : "ログイン"}
+            {isLoading ? "はいっているよ..." : "つづける"}
           </button>
           <div className="text-right">
             <Link
               href="/forgot-password"
               className="text-sm text-primary hover:underline"
             >
-              パスワードをお忘れの方
+              パスワードを わすれたとき
             </Link>
           </div>
         </div>
         {pageError && (
-          <p className="text-destructive mt-4 text-center">{pageError}</p>
+          <p className="text-destructive mt-4 text-center" aria-live="assertive">
+            {pageError}
+          </p>
         )}
       </form>
       </div>

@@ -13,6 +13,9 @@ const hiddenEmailStyle = {
   textSecurity: "disc",
 } as React.CSSProperties;
 
+const defaultRegisterError =
+  "うまく はじめられなかったよ。もういちど ためしてね。";
+
 export default function Register() {
   const [email, setEmail] = useState("");
   const [showEmail, setShowEmail] = useState(true);
@@ -41,34 +44,34 @@ export default function Register() {
 
     // 2. 入力内容のチェックを強化
     if (!email || !username || !password || !passwordConfirmation) {
-      setError("すべてのフィールドを入力してください。");
+      setError("まだ はいっていない ところが あるよ。");
       setIsLoading(false);
       return;
     }
     if (!agreedToTerms) {
-      setError("利用規約とプライバシーポリシーに同意してください。");
+      setError("はじめる まえに、きまりを たしかめてね。");
       setIsLoading(false);
       return;
     }
     if (password !== passwordConfirmation) {
-      setError("パスワードが一致しません。");
+      setError("パスワードが ちがっているみたい。もういちど みてみよう。");
       setIsLoading(false);
       return;
     }
     if (password.length < 8) {
-      setError("パスワードは8文字以上である必要があります。");
+      setError("パスワードは 8もじ いじょうで いれてね。");
       setIsLoading(false);
       return;
     }
     if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
-      setError("パスワードは英字と数字をそれぞれ1文字以上含む必要があります。");
+      setError("パスワードに えいじ と すうじ を いれてね。");
       setIsLoading(false);
       return;
     }
     // 3. メールアドレスの形式が正しいかチェックする機能
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("有効なメールアドレスを入力してください。");
+      setError("メールアドレスの かたちを もういちど みてみてね。");
       setIsLoading(false);
       return;
     }
@@ -87,7 +90,7 @@ export default function Register() {
     } catch (err: any) {
       // 以前: エラーメッセージは err.response.data.errors など、複数の可能性がありました。
       // 今回: apiClientから来るエラーメッセージを直接表示します。シンプル！
-      setError(err.message || "登録に失敗しました。");
+      setError(defaultRegisterError);
     } finally {
       setIsLoading(false);
     }
@@ -105,56 +108,81 @@ export default function Register() {
         className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
         <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-card-foreground">
-          ユーザー登録
+          はじめる
         </h2>
         <div className="space-y-4">
-          <input
-            type="text"
-            name="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="ユーザー名"
-            autoComplete="username"
-            required
-            aria-label="ユーザー名"
-            aria-required="true"
-            aria-invalid={error ? "true" : "false"}
-            className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          <div className="relative">
-            <input
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="メールアドレス"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-              aria-required="true"
-              aria-describedby="error-message"
-              style={showEmail ? undefined : hiddenEmailStyle}
-              className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="button"
-              onClick={() => setShowEmail((v) => !v)}
-              aria-label={showEmail ? "メールアドレスを隠す" : "メールアドレスを表示"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          <div>
+            <label
+              htmlFor="register-username"
+              className="mb-2 block text-sm font-medium text-card-foreground"
             >
-              {showEmail ? "🙈" : "👁"}
-            </button>
+              ニックネーム
+            </label>
+            <input
+              id="register-username"
+              type="text"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="みんなに よばれたい なまえ"
+              autoComplete="username"
+              required
+              aria-label="ニックネーム"
+              aria-required="true"
+              aria-invalid={error ? "true" : "false"}
+              className="w-full px-4 py-2 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+            />
           </div>
           <div>
+            <label
+              htmlFor="register-email"
+              className="mb-2 block text-sm font-medium text-card-foreground"
+            >
+              メールアドレス
+            </label>
             <div className="relative">
               <input
+                id="register-email"
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                aria-required="true"
+                aria-describedby="error-message"
+                style={showEmail ? undefined : hiddenEmailStyle}
+                className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => setShowEmail((v) => !v)}
+                aria-label={showEmail ? "メールアドレスを隠す" : "メールアドレスを表示"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                {showEmail ? "🙈" : "👁"}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label
+              htmlFor="register-password"
+              className="mb-2 block text-sm font-medium text-card-foreground"
+            >
+              パスワード
+            </label>
+            <div className="relative">
+              <input
+                id="register-password"
                 type={showPassword ? "text" : "password"}
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="パスワード"
+                placeholder="8もじ いじょう"
                 aria-describedby="password-hint error-message"
                 autoComplete="new-password"
                 autoCapitalize="none"
@@ -176,31 +204,40 @@ export default function Register() {
               8文字以上・英字と数字をそれぞれ含む
             </p>
           </div>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? "text" : "password"}
-              name="password_confirmation"
-              value={passwordConfirmation}
-              onChange={(e) => setPasswordConfirmation(e.target.value)}
-              placeholder="パスワード確認"
-              autoComplete="new-password"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              required
-              aria-label="パスワード確認"
-              aria-required="true"
-              aria-invalid={error ? "true" : "false"}
-              className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword((v) => !v)}
-              aria-label={showConfirmPassword ? "パスワード確認を隠す" : "パスワード確認を表示"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+          <div>
+            <label
+              htmlFor="register-password-confirmation"
+              className="mb-2 block text-sm font-medium text-card-foreground"
             >
-              {showConfirmPassword ? "🙈" : "👁"}
-            </button>
+              パスワードを もういちど
+            </label>
+            <div className="relative">
+              <input
+                id="register-password-confirmation"
+                type={showConfirmPassword ? "text" : "password"}
+                name="password_confirmation"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                placeholder="もういちど いれてね"
+                autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                required
+                aria-label="パスワード確認"
+                aria-required="true"
+                aria-invalid={error ? "true" : "false"}
+                className="w-full px-4 py-2 pr-12 border border-input bg-background text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                aria-label={showConfirmPassword ? "パスワード確認を隠す" : "パスワード確認を表示"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                {showConfirmPassword ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
 
           {/* 利用規約への同意 */}
@@ -242,7 +279,7 @@ export default function Register() {
             disabled={isLoading}
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            {isLoading ? "登録中..." : "登録"}
+            {isLoading ? "じゅんび しているよ..." : "はじめる"}
           </button>
         </div>
         {error && (
