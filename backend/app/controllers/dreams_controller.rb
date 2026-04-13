@@ -15,7 +15,12 @@ class DreamsController < ApplicationController
     initial_scope = current_user.dreams.order(created_at: :desc)
     filter_params = params.permit(:query, :start_date, :end_date, emotion_ids: [])
     @dreams = DreamFilterQuery.new(initial_scope, filter_params).call.includes(:emotions)
-    render json: @dreams.as_json(include: :emotions)
+    # generated_image_url は base64 で最大 1MB になるため一覧では除外する。
+    # 詳細画面（show）でのみ返す。
+    render json: @dreams.as_json(
+      only: [:id, :title, :content, :created_at, :analysis_json, :analysis_status, :analyzed_at],
+      include: :emotions
+    )
   end
 
   # GET /dreams/statuses?ids=1,2,3
