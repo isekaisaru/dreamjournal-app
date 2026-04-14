@@ -3,6 +3,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
+const THEME_STORAGE_KEY = "theme";
+
+function applyTheme(theme: Theme) {
+  document.documentElement.classList.toggle("dark", theme === "dark");
+}
 
 interface ThemeContextValue {
   theme: Theme;
@@ -10,31 +15,25 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: "dark",
+  theme: "light",
   toggleTheme: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored === "light") {
-      setTheme("light");
-      document.documentElement.classList.remove("dark");
-    }
-    // dark がデフォルト（layout.tsx の className="dark" をそのまま活かす）
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    const nextTheme: Theme = stored === "dark" ? "dark" : "light";
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
   }, []);
 
   const toggleTheme = () => {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    localStorage.setItem("theme", next);
-    if (next === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    applyTheme(nextTheme);
   };
 
   return (

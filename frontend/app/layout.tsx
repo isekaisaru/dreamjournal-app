@@ -1,6 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import { Noto_Sans_JP } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Header from "./Header";
 import Footer from "./components/Footer";
@@ -10,6 +11,15 @@ import { Providers } from "./providers";
 import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
+// Hydration前にテーマを合わせて、ライト→ダークのちらつきを防ぐ。
+const themeInitScript = `
+  try {
+    const storedTheme = window.localStorage.getItem("theme");
+    document.documentElement.classList.toggle("dark", storedTheme === "dark");
+  } catch {
+    document.documentElement.classList.remove("dark");
+  }
+`;
 
 const siteUrl = "https://dreamjournal-app.vercel.app";
 
@@ -45,10 +55,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>): React.ReactElement {
   return (
-    <html lang="ja" className="dark min-h-full">
+    <html lang="ja" className="min-h-full" suppressHydrationWarning>
       <body
         className={`${notoSansJP.className} px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}
       >
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <Providers>
           <Header />
           <div className="flex flex-col flex-grow">
