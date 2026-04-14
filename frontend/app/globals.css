@@ -323,3 +323,19 @@
     @apply flex flex-col grow;
   }
 }
+
+/* OSが「動きを減らしたい」と伝えてきたら、演出をほぼ止める。 */
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

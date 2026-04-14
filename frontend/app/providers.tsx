@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { MotionConfig } from "framer-motion";
 import { AuthProvider } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import dynamic from "next/dynamic";
@@ -12,11 +13,13 @@ const Toaster = dynamic(
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <Toaster position="top-center" />
-        {children}
-      </AuthProvider>
-    </ThemeProvider>
+    <MotionConfig reducedMotion="user">
+      <ThemeProvider>
+        <AuthProvider>
+          <Toaster position="top-center" />
+          {children}
+        </AuthProvider>
+      </ThemeProvider>
+    </MotionConfig>
   );
 }
