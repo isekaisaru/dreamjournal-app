@@ -28,11 +28,13 @@ export default function SearchBar({
   emotions = [],
   selectedEmotionIds = [],
 }: SearchBarProps) {
+  const normalizedSelectedEmotionIds = selectedEmotionIds.map((id) => Number(id));
+  const selectedIdsKey = normalizedSelectedEmotionIds.join(",");
   const [queryValue, setQueryValue] = useState(normalizeParam(query));
   const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
   const [dateTo, setDateTo] = useState(normalizeParam(endDate));
   const [selectedIds, setSelectedIds] = useState<number[]>(
-    selectedEmotionIds.map((id) => Number(id))
+    normalizedSelectedEmotionIds
   );
 
   const hasAdvancedFilters =
@@ -58,8 +60,8 @@ export default function SearchBar({
   }, [endDate]);
 
   useEffect(() => {
-    setSelectedIds(selectedEmotionIds.map((id) => Number(id)));
-  }, [selectedEmotionIds]);
+    setSelectedIds(normalizedSelectedEmotionIds);
+  }, [selectedIdsKey]);
 
   useEffect(() => {
     if (hasAdvancedFilters) {
