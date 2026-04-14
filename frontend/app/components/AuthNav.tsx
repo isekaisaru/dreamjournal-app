@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { Button } from "./ui/button";
 import { toast } from "@/lib/toast";
 import { useAuth } from "@/context/AuthContext";
+import DreamEntryLauncher from "./DreamEntryLauncher";
 import {
   House,
-  Pencil,
   Settings,
   LogOut,
   LogIn,
@@ -97,12 +97,12 @@ export default function AuthNav() {
       <nav className="flex justify-center md:justify-end gap-3 w-full">
         <Link href="/login">
           <Button variant="ghost" className="gap-2">
-            <LogIn size={18} /> ログイン
+            <LogIn size={18} /> つづきから
           </Button>
         </Link>
         <Link href="/register">
           <Button variant="secondary" className="gap-2">
-            <UserPlus size={18} /> ユーザー登録
+            <UserPlus size={18} /> はじめる
           </Button>
         </Link>
       </nav>
@@ -114,7 +114,14 @@ export default function AuthNav() {
       {/* 行動（左側）：毎日つかうもの */}
       <div className="flex items-center bg-secondary/30 p-1 rounded-full gap-1">
         <NavItem href="/home" icon={House} label="おうち" />
-        <NavItem href="/dream/new" icon={Pencil} label="ゆめをかく" />
+        {pathname !== "/home" ? (
+          <DreamEntryLauncher
+            buttonLabel="きろくする"
+            buttonVariant="ghost"
+            buttonSize="sm"
+            buttonClassName="h-10 rounded-full px-4 text-sm font-semibold text-foreground hover:bg-background"
+          />
+        ) : null}
       </div>
 
       {/* 管理（右側）：おわり・設定 */}
@@ -122,7 +129,7 @@ export default function AuthNav() {
         <NavItem
           href="/settings"
           icon={Settings}
-          label="おとなのきまり"
+          label="保護者メニュー"
           variant="admin"
         />
 
@@ -133,7 +140,7 @@ export default function AuthNav() {
           className="text-muted-foreground hover:text-destructive gap-1.5 rounded-full px-3"
         >
           <LogOut size={18} />
-          <span className="text-xs">おしまい</span>
+          <span className="text-xs">ログアウト</span>
         </Button>
       </div>
     </nav>

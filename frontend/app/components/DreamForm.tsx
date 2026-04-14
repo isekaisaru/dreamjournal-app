@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Dream, Emotion, DreamDraftData } from "../types";
 import { getEmotions, previewAnalysis } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
-import { getChildFriendlyEmotionLabel } from "./EmotionTag";
+import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
 
 interface DreamFormData {
   title: string;
@@ -350,29 +350,7 @@ export default function DreamForm({
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {(() => {
-              // 1. Group emotions by their display label to deduplicate visual options
-              const groupedEmotions: Record<
-                string,
-                {
-                  displayLabel: string;
-                  ids: number[];
-                  representativeId: number;
-                }
-              > = {};
-
-              emotions.forEach((emotion) => {
-                const label = getChildFriendlyEmotionLabel(emotion.name);
-                if (!groupedEmotions[label]) {
-                  groupedEmotions[label] = {
-                    displayLabel: label,
-                    ids: [],
-                    representativeId: emotion.id,
-                  };
-                }
-                groupedEmotions[label].ids.push(emotion.id);
-              });
-
-              const uniqueGroups = Object.values(groupedEmotions);
+              const uniqueGroups = groupEmotionsByDisplayLabel(emotions);
 
               if (uniqueGroups.length === 0) {
                 return (

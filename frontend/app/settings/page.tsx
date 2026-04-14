@@ -114,7 +114,7 @@ const SettingsPage = () => {
             もどる
           </Link>
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-            おとなのきまり
+            保護者メニュー
           </h1>
         </div>
       </header>

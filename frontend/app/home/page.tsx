@@ -13,8 +13,8 @@ import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import DreamStatsWidget from "@/app/components/DreamStatsWidget";
 import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
+import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import MorpheusAssistant from "./MorpheusAssistant";
-import VoiceRecorderClient from "./VoiceRecorderClient";
 import Loading from "../loading";
 
 /**
@@ -165,9 +165,26 @@ export default function HomePage() {
     <div className="lg:flex text-foreground">
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
-        <h1 className="text-2xl font-bold text-foreground">
-          {user ? `${user.username}ちゃんの ゆめ日記` : "ゆめ日記"}
-        </h1>
+        <div className="w-full rounded-3xl border border-border/70 bg-card px-5 py-5 shadow-sm">
+          <p className="text-sm font-semibold text-primary">
+            {user ? `${user.username}さん、おはよう` : "おはよう"}
+          </p>
+          <h1 className="mt-1 text-2xl font-bold text-foreground">
+            きょうの ゆめを すぐ のこそう
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            ねむい あさでも だいじょうぶ。ことばでも、こえでも のこせるよ。
+          </p>
+          <div className="mt-4 max-w-md">
+            <DreamEntryLauncher
+              buttonLabel="きょうの ゆめを のこす"
+              buttonSize="lg"
+              buttonClassName="min-h-14 w-full text-base font-bold shadow-lg shadow-primary/15"
+              helperText="おすと、のこしかたを えらべるよ"
+              showSparkles
+            />
+          </div>
+        </div>
         <SearchBar
           query={searchParams.get("query") || undefined}
           startDate={searchParams.get("startDate") || undefined}
@@ -228,7 +245,6 @@ export default function HomePage() {
         </ul>
       </aside>
       <MorpheusAssistant />
-      <VoiceRecorderClient />
     </div>
   );
 }

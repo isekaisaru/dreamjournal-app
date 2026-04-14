@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { Emotion } from "@/app/types";
-import { getChildFriendlyEmotionLabel } from "@/app/components/EmotionTag";
 import { getJSTDateStr } from "@/lib/date";
+import { Button } from "./ui/button";
+import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
 
 type SearchBarProps = {
   query?: string | string[] | undefined;
@@ -27,9 +28,22 @@ export default function SearchBar({
   emotions = [],
   selectedEmotionIds = [],
 }: SearchBarProps) {
+  const normalizedSelectedEmotionIds = selectedEmotionIds.map((id) => Number(id));
+  const selectedIdsKey = normalizedSelectedEmotionIds.join(",");
   const [queryValue, setQueryValue] = useState(normalizeParam(query));
   const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
   const [dateTo, setDateTo] = useState(normalizeParam(endDate));
+  const [selectedIds, setSelectedIds] = useState<number[]>(
+    normalizedSelectedEmotionIds
+  );
+
+  const hasAdvancedFilters =
+    !!normalizeParam(startDate) ||
+    !!normalizeParam(endDate) ||
+    selectedEmotionIds.length > 0;
+  const [isExpanded, setIsExpanded] = useState(hasAdvancedFilters);
+
+  const groupedEmotions = groupEmotionsByDisplayLabel(emotions);
 
   // URL パラメータ（props）が変わったとき（例：ブラウザ戻る・検索リセット）に
   // フォームの表示値を同期する。
@@ -44,6 +58,16 @@ export default function SearchBar({
   useEffect(() => {
     setDateTo(normalizeParam(endDate));
   }, [endDate]);
+
+  useEffect(() => {
+    setSelectedIds(normalizedSelectedEmotionIds);
+  }, [selectedIdsKey]);
+
+  useEffect(() => {
+    if (hasAdvancedFilters) {
+      setIsExpanded(true);
+    }
+  }, [hasAdvancedFilters]);
 
   const applyPreset = (from: Date, to: Date) => {
     setDateFrom(getJSTDateStr(from));
@@ -81,15 +105,26 @@ export default function SearchBar({
     <form
       action="/home"
       method="get"
-      className="p-4 mb-6 bg-card border border-border rounded-lg w-full"
+      className="mb-6 w-full rounded-2xl border border-border bg-card p-4 shadow-sm"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
-        <div className="sm:col-span-2 md:col-span-2">
+      {selectedIds.map((id) => (
+        <input key={id} type="hidden" name="emotion_ids[]" value={id} />
+      ))}
+      {/* 折りたたみ時も日付フィルターを保持する */}
+      {!isExpanded && dateFrom && (
+        <input type="hidden" name="startDate" value={dateFrom} />
+      )}
+      {!isExpanded && dateTo && (
+        <input type="hidden" name="endDate" value={dateTo} />
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <div>
           <label
             htmlFor="search-query"
             className="block text-sm font-medium text-card-foreground mb-1"
           >
-            さがしたい ことば
+            ゆめの ことば
           </label>
           <input
             id="search-query"
@@ -97,109 +132,132 @@ export default function SearchBar({
             type="text"
             value={queryValue}
             onChange={(e) => setQueryValue(e.target.value)}
-            placeholder="「ねこ」「こわい」など..."
-            className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
+            placeholder="ねこ、そら、とぶ など"
+            className="min-h-12 w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-ring"
           />
         </div>
-        <div>
-          <label
-            htmlFor="start-date"
-            className="block text-sm font-medium text-card-foreground mb-1"
-          >
-            いつから
-          </label>
-          <input
-            id="start-date"
-            name="startDate"
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="end-date"
-            className="block text-sm font-medium text-card-foreground mb-1"
-          >
-            いつまで
-          </label>
-          <input
-            id="end-date"
-            name="endDate"
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="w-full border border-input bg-background text-foreground p-2 rounded focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      </div>
-
-      {/* 日付プリセット */}
-      <div className="flex gap-2 mt-3">
-        {presets.map(({ label, onClick }) => (
-          <button
-            key={label}
+        <div className="flex gap-2 sm:justify-end">
+          <Button
             type="button"
-            onClick={onClick}
-            className="px-3 py-1 text-xs rounded-full border border-border bg-muted text-muted-foreground hover:bg-muted/70 transition-colors"
+            variant="outline"
+            className="min-h-12 flex-1 rounded-xl px-4 text-sm sm:flex-none"
+            onClick={() => setIsExpanded((current) => !current)}
+            aria-expanded={isExpanded}
           >
-            {label}
-          </button>
-        ))}
+            {isExpanded ? "かんたんにする" : "くわしく さがす"}
+          </Button>
+          <Button
+            type="submit"
+            className="min-h-12 flex-1 rounded-xl px-5 text-sm font-bold sm:flex-none"
+          >
+            さがす
+          </Button>
+        </div>
       </div>
 
-      {emotions.length > 0 && (
-        <div className="mt-4">
-          <p className="block text-sm font-medium text-card-foreground mb-2">
-            きもちで しぼる
-          </p>
+      {isExpanded ? (
+        <div className="mt-4 space-y-4 rounded-2xl border border-border/70 bg-muted/30 p-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="start-date"
+                className="mb-1 block text-sm font-medium text-card-foreground"
+              >
+                いつから
+              </label>
+              <input
+                id="start-date"
+                name="startDate"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="min-h-12 w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="end-date"
+                className="mb-1 block text-sm font-medium text-card-foreground"
+              >
+                いつまで
+              </label>
+              <input
+                id="end-date"
+                name="endDate"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="min-h-12 w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2">
-            {emotions.map((emotion) => {
-              const isSelected = selectedEmotionIds.includes(
-                String(emotion.id)
-              );
-              return (
-                <label key={emotion.id} className="cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="emotion_ids[]"
-                    value={emotion.id}
-                    defaultChecked={isSelected}
-                    className="sr-only peer"
-                  />
-                  <span
-                    className={
-                      "inline-block px-3 py-1 rounded-full text-sm border transition-colors " +
-                      "peer-checked:bg-primary peer-checked:text-primary-foreground peer-checked:border-primary " +
-                      (isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-muted text-muted-foreground border-border hover:bg-muted/70")
-                    }
-                  >
-                    {getChildFriendlyEmotionLabel(emotion.name)}
-                  </span>
-                </label>
-              );
-            })}
+            {presets.map(({ label, onClick }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={onClick}
+                className="min-h-11 rounded-full border border-border bg-background px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {groupedEmotions.length > 0 ? (
+            <fieldset>
+              <legend className="mb-2 block text-sm font-medium text-card-foreground">
+                きもちで しぼる
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {groupedEmotions.map((group) => {
+                  const isSelected = group.ids.some((id) =>
+                    selectedIds.includes(id)
+                  );
+
+                  return (
+                    <button
+                      key={group.displayLabel}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedIds((current) =>
+                            current.filter((id) => !group.ids.includes(id))
+                          );
+                          return;
+                        }
+
+                        setSelectedIds((current) => [
+                          ...new Set([...current, ...group.ids]),
+                        ]);
+                      }}
+                      aria-pressed={isSelected}
+                      className={[
+                        "min-h-11 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted",
+                      ].join(" ")}
+                    >
+                      {group.displayLabel}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          ) : null}
+
+          <div className="flex justify-end">
+            <a
+              href="/home"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              けんさくを やめる
+            </a>
           </div>
         </div>
-      )}
-
-      <div className="flex justify-end gap-2 mt-4">
-        <a
-          href="/home"
-          className="inline-flex items-center justify-center bg-muted hover:bg-muted/80 text-muted-foreground p-2 rounded text-sm"
-        >
-          もどす
-        </a>
-        <button
-          type="submit"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground p-2 rounded text-sm"
-        >
-          さがす
-        </button>
-      </div>
+      ) : null}
     </form>
   );
 }
