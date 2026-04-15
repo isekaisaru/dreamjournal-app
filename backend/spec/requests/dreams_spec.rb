@@ -612,6 +612,54 @@ RSpec.describe 'Dreams API', type: :request do
 
         expect(response).to have_http_status(:forbidden)
       end
+
+      describe '年齢帯ごとのプロンプトスタイル' do
+        let(:style_dream) { create(:dream, user: age_user, content: 'テスト用の夢') }
+
+        shared_examples 'プロンプトにスタイルが含まれる' do |expected_fragment|
+          it "プロンプトに '#{expected_fragment}' が含まれる" do
+            expect(images_client).to receive(:generate).with(
+              parameters: hash_including(
+                prompt: a_string_including(expected_fragment)
+              )
+            ).and_return({ 'data' => [{ 'url' => generated_url }] })
+
+            authenticated_post "/dreams/#{style_dream.id}/generate_image", age_user
+            expect(response).to have_http_status(:ok)
+          end
+        end
+
+        context 'child ユーザー' do
+          let(:age_user) { create(:user, age_group: 'child') }
+          include_examples 'プロンプトにスタイルが含まれる', 'watercolor'
+        end
+
+        context 'child_small ユーザー' do
+          let(:age_user) { create(:user, age_group: 'child_small') }
+          include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
+        end
+
+        context 'preteen ユーザー' do
+          let(:age_user) { create(:user, age_group: 'preteen') }
+          include_examples 'プロンプトにスタイルが含まれる', 'storybook'
+        end
+
+        context 'teen ユーザー' do
+          let(:age_user) { create(:user, age_group: 'teen') }
+          include_examples 'プロンプトにスタイルが含まれる', 'cinematic'
+        end
+
+        context 'adult ユーザー' do
+          let(:age_user) { create(:user, age_group: 'adult') }
+          include_examples 'プロンプトにスタイルが含まれる', 'Surrealist'
+        end
+
+        context 'age_group が nil のユーザー（旧データ互換）' do
+          let(:age_user) { create(:user) }
+          before { age_user.update_column(:age_group, nil) }
+          include_examples 'プロンプトにスタイルが含まれる', 'watercolor'
+        end
+      end
     end
 
     context '認証されていない場合' do
