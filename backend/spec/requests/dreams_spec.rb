@@ -654,9 +654,8 @@ RSpec.describe 'Dreams API', type: :request do
           include_examples 'プロンプトにスタイルが含まれる', 'Surrealist'
         end
 
-        context 'age_group が nil のユーザー（旧データ互換）' do
+        context 'age_group がデフォルト（child）のユーザー' do
           let(:age_user) { create(:user) }
-          before { age_user.update_column(:age_group, nil) }
           include_examples 'プロンプトにスタイルが含まれる', 'watercolor'
         end
       end
