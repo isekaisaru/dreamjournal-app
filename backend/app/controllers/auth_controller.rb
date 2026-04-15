@@ -17,7 +17,7 @@ class AuthController < ApplicationController
       end
 
       set_token_cookies(result[:access_token], result[:refresh_token])
-      render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium]) }, status: :ok
+      render json: { user: user_json(result[:user]) }, status: :ok
     rescue AuthService::InvalidCredentialsError => e
       render json: { error: e.message }, status: :unauthorized
     rescue StandardError => e # その他の予期せぬエラー

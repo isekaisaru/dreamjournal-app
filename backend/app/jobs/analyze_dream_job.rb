@@ -21,9 +21,14 @@ class AnalyzeDreamJob < ApplicationJob
 
   def process_audio_dream(dream)
     # OpenAI 呼び出し（Whisper + GPT）— ここが課金対象
+    user = dream.user
     result = nil
     dream.audio.open do |file|
-      result = AudioAnalysisService.new(file).call
+      result = AudioAnalysisService.new(
+        file,
+        age_group:     user&.age_group     || "child",
+        analysis_tone: user&.analysis_tone || "auto"
+      ).call
     end
 
     # 文字起こしが Dream.content の上限（1000文字）を超える場合は切り詰め
