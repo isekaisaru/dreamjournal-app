@@ -1,3 +1,6 @@
+export type AgeGroup = "child_small" | "child" | "preteen" | "teen" | "adult";
+export type AnalysisTone = "auto" | "gentle_kids" | "junior" | "standard" | "deep";
+
 export interface User {
   id: string; // FrontendではIDを文字列として扱う
   username: string;
@@ -5,6 +8,8 @@ export interface User {
   created_at: string;
   updated_at: string;
   premium?: boolean;
+  age_group?: AgeGroup;
+  analysis_tone?: AnalysisTone;
 }
 
 // Backendから直接受け取るユーザー情報の型。IDは数値。

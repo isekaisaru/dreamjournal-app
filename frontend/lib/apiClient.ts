@@ -244,6 +244,21 @@ export async function getMe(token: string): Promise<User> {
   return { ...data.user, id: String(data.user.id) };
 }
 
+/**
+ * プロフィール情報を更新します（username, age_group, analysis_tone）
+ */
+export async function updateProfile(data: {
+  username?: string;
+  age_group?: string;
+  analysis_tone?: string;
+}): Promise<{ user: User }> {
+  const response = await apiFetch<{ user: BackendUser }>("/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify({ user: data }),
+  });
+  return { user: { ...response.user, id: String(response.user.id) } };
+}
+
 // --- Client Component Functions ---
 
 export async function clientLogin(

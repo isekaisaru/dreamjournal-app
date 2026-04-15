@@ -50,8 +50,13 @@ class AnalyzeDreamJob < ApplicationJob
   end
 
   def process_text_dream(dream)
-    result = DreamAnalysisService.analyze(dream.content)
-    
+    user = dream.user
+    result = DreamAnalysisService.analyze(
+      dream.content,
+      age_group:     user&.age_group     || "child",
+      analysis_tone: user&.analysis_tone || "auto"
+    )
+
     if result[:error]
       dream.update!(analysis_status: "failed", analysis_json: { error: result[:error] })
     else

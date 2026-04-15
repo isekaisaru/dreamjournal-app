@@ -5,6 +5,12 @@ class User < ApplicationRecord
   has_many :payments, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
 
+  AGE_GROUPS = %w[child_small child preteen teen adult].freeze
+  ANALYSIS_TONES = %w[auto gentle_kids junior standard deep].freeze
+
+  validates :age_group, inclusion: { in: AGE_GROUPS }
+  validates :analysis_tone, inclusion: { in: ANALYSIS_TONES }
+
   # バリデーション
   validates :email, presence: true, uniqueness: true
   validates :username, presence: true, uniqueness: true

@@ -3,21 +3,13 @@ require 'openai'
 
 class DreamAnalysisService
   # 夢の内容を分析するクラスメソッド
-  def self.analyze(dream_content)
+  # age_group / analysis_tone はユーザー設定から渡す。省略時は子ども向けデフォルト。
+  def self.analyze(dream_content, age_group: "child", analysis_tone: "auto")
     client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
 
-    Rails.logger.info("DreamAnalysisService: Analyzing with child-friendly prompt")
-    system_prompt = <<~'PROMPT'
-      あなたは子供向けの「夢占い博士」モルペウスです。
-      6歳の子供でもわかるように、ひらがなを多めに使って、優しく短く夢の意味を教えてあげてください。
-      漢字は小学校1年生で習うもの程度（例：山、川、月、日）に留め、難しい漢字はひらがなにしてください。
-      出力は必ず以下のJSONフォーマットに従ってください。
-      {
-        "analysis": "（例：◯◯くん、すごいゆめをみたね！それは・・・）",
-        "emotion_tags": ["感情1", "感情2"]
-      }
-      emotion_tags には夢から読み取れる主要な感情を日本語で1〜3個だけ含めてください。
-    PROMPT
+    resolved_tone = TonePromptBuilder.resolve_tone(age_group: age_group, analysis_tone: analysis_tone)
+    Rails.logger.info("DreamAnalysisService: tone=#{resolved_tone} (age_group=#{age_group}, analysis_tone=#{analysis_tone})")
+    system_prompt = TonePromptBuilder.build(age_group: age_group, analysis_tone: analysis_tone)
 
     begin
       response = client.chat(parameters: {

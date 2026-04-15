@@ -38,6 +38,7 @@ Rails.application.routes.draw do
     post 'logout', to: 'auth#logout'
     post 'refresh', to: 'auth#refresh'
     get 'me', to: 'auth#me'
+    patch 'me', to: 'auth#update_me'
     get 'verify', to: 'auth#verify'
     post 'register', to: 'users#create'
     post 'trial_login', to: 'trial_users#create'
