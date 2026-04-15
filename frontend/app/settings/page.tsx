@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import Loading from "../loading";
@@ -46,6 +46,14 @@ const SettingsPage = () => {
   const [profileAgeGroup, setProfileAgeGroup] = useState<AgeGroup>((user?.age_group as AgeGroup) ?? "child");
   const [profileTone, setProfileTone] = useState<AnalysisTone>((user?.analysis_tone as AnalysisTone) ?? "auto");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
+  useEffect(() => {
+    if (!user) return;
+    setProfileUsername(user.username ?? "");
+    setProfileAgeGroup((user.age_group as AgeGroup) ?? "child");
+    setProfileTone((user.analysis_tone as AnalysisTone) ?? "auto");
+  }, [user?.id]);
 
   const handleSaveProfile = async () => {
     if (!profileUsername.trim()) {

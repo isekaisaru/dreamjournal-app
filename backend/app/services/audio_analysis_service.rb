@@ -6,8 +6,10 @@ class AudioAnalysisService
   class TranscriptionError < StandardError; end
   class AnalysisError < StandardError; end
 
-  def initialize(file_source)
+  def initialize(file_source, age_group: "child", analysis_tone: "auto")
     @file_source = file_source
+    @age_group = age_group
+    @analysis_tone = analysis_tone
     @client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
   end
 
@@ -90,16 +92,7 @@ class AudioAnalysisService
   end
 
   def analyze_transcript(text)
-    system_prompt = <<~PROMPT
-      あなたは子供向けの「夢占い博士」モルペウスです。
-      6歳の子供でもわかるように、ひらがなを多めに使って、優しく短く夢の意味を教えてあげてください。
-      漢字は小学校1年生で習うもの程度（例：山、川、月、日）に留め、難しい漢字はひらがなにしてください。
-      出力は必ず以下のJSONフォーマットに従ってください。
-      {
-        "analysis": "（例：◯◯くん、すごいゆめをみたね！それは・・・）",
-        "emotion_tags": ["感情1", "感情2"]
-      }
-    PROMPT
+    system_prompt = TonePromptBuilder.build(age_group: @age_group, analysis_tone: @analysis_tone)
 
     response = @client.chat(
       parameters: {
