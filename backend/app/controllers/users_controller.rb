@@ -19,7 +19,7 @@ class UsersController < ApplicationController
 
       # ログイン時と同様にCookieを設定
       set_token_cookies(result[:access_token], result[:refresh_token])
-      render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium]) }, status: :created
+      render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium, :age_group, :analysis_tone]) }, status: :created
     rescue AuthService::RegistrationError => e
       render json: { error: e.message }, status: :unprocessable_entity
     end
