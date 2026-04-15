@@ -232,7 +232,11 @@ class DreamsController < ApplicationController
       return render json: { error: "ゆめの ないよう が ないよ" }, status: :unprocessable_content
     end
 
-    result = DreamAnalysisService.analyze(content)
+    result = DreamAnalysisService.analyze(
+      content,
+      age_group:     current_user.age_group,
+      analysis_tone: current_user.analysis_tone
+    )
 
     if result[:error]
       render json: { error: result[:error] }, status: :unprocessable_content

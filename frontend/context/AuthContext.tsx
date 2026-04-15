@@ -16,6 +16,8 @@ interface User {
   email?: string;
   username?: string;
   premium?: boolean;
+  age_group?: string;
+  analysis_tone?: string;
 }
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";

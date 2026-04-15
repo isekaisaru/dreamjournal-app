@@ -28,7 +28,16 @@ class AuthController < ApplicationController
 
   # 現在のユーザーを返す
   def me
-    render json: { user: @current_user.as_json(only: [:id, :email, :username, :premium]) }, status: :ok
+    render json: { user: user_json(@current_user) }, status: :ok
+  end
+
+  # プロフィール更新 PATCH /auth/me
+  def update_me
+    if @current_user.update(profile_params)
+      render json: { user: user_json(@current_user) }, status: :ok
+    else
+      render json: { error: @current_user.errors.full_messages.join(", ") }, status: :unprocessable_entity
+    end
   end
 
   # トークンをリフレッシュする
@@ -89,6 +98,16 @@ class AuthController < ApplicationController
 
   # トークンの検証
   def verify
-    render json: { authenticated: true, user: @current_user.as_json(only: [:id, :email, :username, :premium]) }, status: :ok
+    render json: { authenticated: true, user: user_json(@current_user) }, status: :ok
+  end
+
+  private
+
+  def user_json(user)
+    user.as_json(only: [:id, :email, :username, :premium, :age_group, :analysis_tone])
+  end
+
+  def profile_params
+    params.require(:user).permit(:username, :age_group, :analysis_tone)
   end
 end

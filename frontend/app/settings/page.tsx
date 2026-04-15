@@ -7,6 +7,25 @@ import Loading from "../loading";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import DonationButton from "../components/DonationButton";
+import { updateProfile } from "@/lib/apiClient";
+import { toast } from "@/lib/toast";
+import type { AgeGroup, AnalysisTone } from "@/app/types";
+
+const AGE_GROUP_OPTIONS: { value: AgeGroup; label: string }[] = [
+  { value: "child_small", label: "6さい いか" },
+  { value: "child",       label: "7〜9さい" },
+  { value: "preteen",     label: "10〜12さい" },
+  { value: "teen",        label: "13〜15さい" },
+  { value: "adult",       label: "16さい いじょう" },
+];
+
+const ANALYSIS_TONE_OPTIONS: { value: AnalysisTone; label: string; desc: string }[] = [
+  { value: "auto",        label: "じどうで あわせる",    desc: "年れいたいに合わせて自動でえらぶ" },
+  { value: "gentle_kids", label: "やさしく・ひらがなで", desc: "ひらがな多め・こわくない説明" },
+  { value: "junior",      label: "小中学生むけ",         desc: "わかりやすい語句・少し詳しく" },
+  { value: "standard",    label: "ふつう",               desc: "一般的な日本語で" },
+  { value: "deep",        label: "くわしく",             desc: "少し詳しい分析" },
+];
 
 // ジュニアロックのための簡単な計算問題を生成する関数
 const generateMathProblem = () => {
@@ -21,6 +40,32 @@ const generateMathProblem = () => {
 const SettingsPage = () => {
   const { authStatus, userId, user, logout, deleteUser } = useAuth();
   const router = useRouter();
+
+  // プロフィール編集フォーム用 state
+  const [profileUsername, setProfileUsername] = useState(user?.username ?? "");
+  const [profileAgeGroup, setProfileAgeGroup] = useState<AgeGroup>((user?.age_group as AgeGroup) ?? "child");
+  const [profileTone, setProfileTone] = useState<AnalysisTone>((user?.analysis_tone as AnalysisTone) ?? "auto");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const handleSaveProfile = async () => {
+    if (!profileUsername.trim()) {
+      toast.error("ニックネームを いれてね。");
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await updateProfile({
+        username: profileUsername.trim(),
+        age_group: profileAgeGroup,
+        analysis_tone: profileTone,
+      });
+      toast.success("プロフィールを ほぞんしたよ！");
+    } catch {
+      toast.error("ほぞんできなかったよ。もういちど ためしてね。");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   const [isPortalLoading, setIsPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
@@ -120,6 +165,90 @@ const SettingsPage = () => {
       </header>
 
       <main className="container max-w-2xl mx-auto px-4 py-8 space-y-8">
+        {/* プロフィール設定 */}
+        <section className="space-y-4">
+          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-4 text-primary flex items-center">
+              <span className="text-2xl mr-2">👤</span>
+              プロフィール せってい
+            </h2>
+            <div className="space-y-5">
+              {/* ニックネーム */}
+              <div>
+                <label htmlFor="profile-username" className="mb-1 block text-sm font-medium text-card-foreground">
+                  ニックネーム
+                </label>
+                <input
+                  id="profile-username"
+                  type="text"
+                  value={profileUsername}
+                  onChange={(e) => setProfileUsername(e.target.value)}
+                  placeholder="みんなに よばれたい なまえ"
+                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-ring"
+                />
+              </div>
+
+              {/* 年齢帯 */}
+              <div>
+                <label htmlFor="profile-age-group" className="mb-1 block text-sm font-medium text-card-foreground">
+                  とし（ねんれいたい）
+                </label>
+                <select
+                  id="profile-age-group"
+                  value={profileAgeGroup}
+                  onChange={(e) => setProfileAgeGroup(e.target.value as AgeGroup)}
+                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground focus:ring-2 focus:ring-ring"
+                >
+                  {AGE_GROUP_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 分析トーン */}
+              <div>
+                <p className="mb-2 block text-sm font-medium text-card-foreground">
+                  ゆめ分析の スタイル
+                </p>
+                <div className="space-y-2">
+                  {ANALYSIS_TONE_OPTIONS.map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
+                        profileTone === opt.value
+                          ? "border-primary bg-primary/5"
+                          : "border-border bg-background hover:bg-muted"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="analysis-tone"
+                        value={opt.value}
+                        checked={profileTone === opt.value}
+                        onChange={() => setProfileTone(opt.value)}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                        <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={isSavingProfile}
+                className="w-full min-h-12 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isSavingProfile ? "ほぞんしているよ..." : "ほぞんする"}
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* 安心感を与えるメッセージセクション */}
         <section className="space-y-4">
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
