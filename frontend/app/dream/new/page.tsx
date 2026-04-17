@@ -9,12 +9,43 @@ import { useAuth } from "../../../context/AuthContext";
 import Loading from "../../loading";
 import { createDream } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
-import { DreamInput } from "@/app/types";
+import { DreamInput, AgeGroup } from "@/app/types";
 import { triggerDreamConfetti } from "@/lib/confetti";
+
+function getNewDreamCopy(ageGroup: AgeGroup | undefined) {
+  switch (ageGroup) {
+    case "child_small":
+      return {
+        heading: "あたらしい ゆめを かこう",
+        morpheus: "どんな ゆめを みたの？おしえてね！",
+      };
+    case "child":
+      return {
+        heading: "あたらしい ゆめを かく",
+        morpheus: "どんな ゆめを みたの？おもいだせる だけ おしえてね！",
+      };
+    case "preteen":
+      return {
+        heading: "夢を書いてみよう",
+        morpheus: "どんな夢だった？思い出せる範囲で書いてね。",
+      };
+    case "teen":
+      return {
+        heading: "今日の夢を記録する",
+        morpheus: "どんな夢を見た？細かくなくていいよ。",
+      };
+    case "adult":
+    default:
+      return {
+        heading: "新しい夢を記録",
+        morpheus: "どのような夢を見ましたか？思い出せる範囲で記録しましょう。",
+      };
+  }
+}
 
 export default function NewDreamPage() {
   const router = useRouter();
-  const { authStatus } = useAuth();
+  const { authStatus, user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [isDraftChecked, setIsDraftChecked] = useState(false);
@@ -86,9 +117,11 @@ export default function NewDreamPage() {
     );
   }
 
+  const copy = getNewDreamCopy(user?.age_group as AgeGroup | undefined);
+
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">あたらしい ゆめを かく</h1>
+      <h1 className="text-2xl font-bold mb-4">{copy.heading}</h1>
 
       {/* ドラフト復元バナー（録音データがある場合のみ表示） */}
       {!isDraftChecked ? (
@@ -104,7 +137,7 @@ export default function NewDreamPage() {
         /* 通常時の励ましメッセージ */
         <div className="mb-6">
           <MorpheusSmall
-            message="どんな ゆめを みたの？おもいだせる だけ おしえてね！"
+            message={copy.morpheus}
             size="sm"
           />
         </div>

@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
 import Image from "next/image";
 import apiClient from "../../../lib/apiClient";
+import { useAuth } from "../../../context/AuthContext";
+import { AgeGroup } from "@/app/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +23,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
+  switch (ageGroup) {
+    case "child_small":
+    case "child":
+      return {
+        content: "ゆめの おはなし",
+        analysis: "🔮 モルペウスの ゆめうらない",
+        image: "🎨 ゆめのえ",
+        imageAlt: "ゆめのえ",
+        imageRedraw: "かきなおす",
+        imageGenerating: "かいています...",
+      };
+    case "preteen":
+      return {
+        content: "夢の内容",
+        analysis: "🔮 夢の分析",
+        image: "🎨 夢のイラスト",
+        imageAlt: "夢のイラスト",
+        imageRedraw: "描き直す",
+        imageGenerating: "生成中...",
+      };
+    case "teen":
+    case "adult":
+    default:
+      return {
+        content: "夢の内容",
+        analysis: "🔮 AI分析",
+        image: "🎨 生成画像",
+        imageAlt: "生成された夢のイメージ",
+        imageRedraw: "再生成",
+        imageGenerating: "生成中...",
+      };
+  }
+}
 
 function formatDate(dateInput: string | undefined): string {
   if (!dateInput) return "";
@@ -51,6 +88,9 @@ export default function DreamDetailPage({
     updateDream: hookUpdateDream,
     deleteDream: hookDeleteDream,
   } = useDream(dreamId);
+
+  const { user } = useAuth();
+  const copy = getDreamDetailCopy(user?.age_group as AgeGroup | undefined);
 
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -227,7 +267,7 @@ export default function DreamDetailPage({
       {dream.content && dream.content !== dream.title && (
         <div className="bg-card border border-border rounded-xl p-5 mb-6">
           <p className="text-sm font-semibold text-muted-foreground mb-2">
-            ゆめの おはなし
+            {copy.content}
           </p>
           <p className="text-foreground leading-relaxed whitespace-pre-wrap">
             {dream.content}
@@ -239,7 +279,7 @@ export default function DreamDetailPage({
       {analysisText && (
         <div className="bg-muted/50 border border-input rounded-xl p-5 mb-6">
           <p className="text-sm font-semibold text-muted-foreground mb-2">
-            🔮 モルペウスの ゆめうらない
+            {copy.analysis}
           </p>
           <p className="text-foreground leading-relaxed whitespace-pre-wrap text-sm">
             {analysisText}
@@ -254,7 +294,7 @@ export default function DreamDetailPage({
             <div className="rounded-xl overflow-hidden border border-border">
               <Image
                 src={generatedImageUrl}
-                alt="ゆめのえ"
+                alt={copy.imageAlt}
                 width={1024}
                 height={1024}
                 className="w-full h-auto"
@@ -262,14 +302,14 @@ export default function DreamDetailPage({
                 onError={handleImageLoadError}
               />
               <div className="p-3 bg-card flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">🎨 ゆめのえ</p>
+                <p className="text-xs text-muted-foreground">{copy.image}</p>
                 <button
                   type="button"
                   onClick={handleGenerateImage}
                   disabled={isGeneratingImage}
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
                 >
-                  {isGeneratingImage ? "かいています..." : "かきなおす"}
+                  {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
                 </button>
               </div>
             </div>
