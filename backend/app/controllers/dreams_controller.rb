@@ -293,10 +293,25 @@ class DreamsController < ApplicationController
     end
 
     def build_image_prompt(content, analysis)
-      base = "A dreamy, whimsical illustration of a dream: #{content}"
+      base = "A dreamy illustration of a dream: #{content}"
       base += " The mood is: #{analysis}" if analysis.present?
-      base += ". Soft watercolor style, gentle colors, child-friendly, peaceful atmosphere, no text."
+      base += ". #{image_style_for_age_group(@current_user&.age_group)} No text, no letters."
       base.truncate(900)
+    end
+
+    def image_style_for_age_group(age_group)
+      case age_group
+      when "child_small", "child"
+        "Soft watercolor style, pastel colors, child-friendly, gentle and peaceful atmosphere."
+      when "preteen"
+        "Colorful storybook illustration style, slightly adventurous, vivid but friendly colors."
+      when "teen"
+        "Stylized digital art, cinematic lighting, vivid colors, cool and dramatic dreamlike mood."
+      when "adult"
+        "Surrealist oil painting style, rich detail, deep colors, sophisticated and dreamlike atmosphere."
+      else
+        "Soft watercolor style, gentle colors, peaceful dreamlike atmosphere."
+      end
     end
 
     def set_dream_and_authorize_user
