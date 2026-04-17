@@ -99,12 +99,19 @@ export default function DreamDetailPage({
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageQuota, setImageQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
 
   useEffect(() => {
     if (error) {
       console.error("夢データの取得に失敗しました:", error);
     }
   }, [error]);
+
+  useEffect(() => {
+    apiClient.get<{ used: number; limit: number; remaining: number }>("/dreams/image_quota")
+      .then(setImageQuota)
+      .catch(() => {/* 非致命的 */});
+  }, []);
 
   useEffect(() => {
     if (dream?.generated_image_url) {
@@ -337,7 +344,11 @@ export default function DreamDetailPage({
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
-            <p className="text-xs text-muted-foreground">AIが夢のイメージを絵にします（月30枚まで）</p>
+            <p className="text-xs text-muted-foreground">
+              {imageQuota
+                ? `今月あと ${imageQuota.remaining} 枚 生成できます（${imageQuota.used} / ${imageQuota.limit}）`
+                : "AIが夢のイメージを絵にします（月30枚まで）"}
+            </p>
           </div>
         )}
       </div>

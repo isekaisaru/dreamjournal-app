@@ -39,6 +39,17 @@ class DreamsController < ApplicationController
     render json: status_map
   end
 
+  # GET /dreams/image_quota
+  def image_quota
+    used  = current_user.dreams.with_image.generated_in_month.count
+    limit = IMAGE_MONTHLY_LIMIT
+    render json: {
+      used:      used,
+      limit:     limit,
+      remaining: [limit - used, 0].max
+    }
+  end
+
   # GET /dreams/:id
   def show
     render json: @dream.as_json(
