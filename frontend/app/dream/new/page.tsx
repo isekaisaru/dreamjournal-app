@@ -39,7 +39,7 @@ export default function NewDreamPage() {
     try {
       await createDream(formData);
       triggerDreamConfetti();
-      toast.success("夢を保存しました！");
+      toast.success("夢を保存したよ！");
       router.push("/home");
     } catch (error) {
       console.error("Failed to save dream:", error);

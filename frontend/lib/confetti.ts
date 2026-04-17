@@ -1,9 +1,15 @@
 import confetti from "canvas-confetti";
 
 export const triggerDreamConfetti = () => {
-  const duration = 3000;
+  const duration = 800;
   const animationEnd = Date.now() + duration;
-  const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+  const defaults = {
+    startVelocity: 22,
+    spread: 70,
+    ticks: 45,
+    scalar: 0.9,
+    zIndex: 0,
+  };
 
   const randomInRange = (min: number, max: number) => {
     return Math.random() * (max - min) + min;
@@ -16,25 +22,27 @@ export const triggerDreamConfetti = () => {
       return clearInterval(interval);
     }
 
-    const particleCount = 50 * (timeLeft / duration);
+    const particleCount = Math.max(6, Math.round(18 * (timeLeft / duration)));
 
-    // 星と丸を混ぜる
-    // 夢っぽい色: 黄色(FFD700), 紫(9370DB), 青(4169E1), ピンク(FF69B4)
-    const colors = ["#FFD700", "#9370DB", "#4169E1", "#FF69B4", "#00CED1"];
+    const colors = ["#FFD700", "#FFB347", "#7DD3FC"];
 
     confetti({
       ...defaults,
       particleCount,
-      origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-      colors: colors,
-      shapes: ["star", "circle"],
+      origin: { x: randomInRange(0.2, 0.35), y: 0.2 },
+      drift: randomInRange(-0.2, 0.2),
+      gravity: 0.8,
+      colors,
+      shapes: ["star"],
     });
     confetti({
       ...defaults,
       particleCount,
-      origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-      colors: colors,
-      shapes: ["star", "circle"],
+      origin: { x: randomInRange(0.65, 0.8), y: 0.2 },
+      drift: randomInRange(-0.2, 0.2),
+      gravity: 0.8,
+      colors,
+      shapes: ["star"],
     });
   }, 250);
 };

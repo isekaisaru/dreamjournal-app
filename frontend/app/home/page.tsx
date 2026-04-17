@@ -23,7 +23,6 @@ import Loading from "../loading";
 function groupDreamsByMonth(dreams: Dream[]) {
   return dreams.reduce(
     (groupedDreams, dream) => {
-
       const yearMonth = getJSTYearMonthKey(dream.created_at);
 
       if (!groupedDreams[yearMonth]) {
@@ -50,6 +49,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [emotions, setEmotions] = useState<Emotion[]>([]);
+  const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
 
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
@@ -160,6 +160,18 @@ export default function HomePage() {
     searchParams.get("endDate") ||
     searchParams.getAll("emotion_ids[]").length > 0
   );
+  const shouldDeferSearch =
+    !loading &&
+    !isSearchActive &&
+    !isSearchPanelOpen &&
+    dreams.length > 0 &&
+    dreams.length < 5;
+
+  useEffect(() => {
+    if (isSearchActive) {
+      setIsSearchPanelOpen(true);
+    }
+  }, [isSearchActive]);
 
   return (
     <div className="lg:flex text-foreground">
@@ -185,13 +197,31 @@ export default function HomePage() {
             />
           </div>
         </div>
-        <SearchBar
-          query={searchParams.get("query") || undefined}
-          startDate={searchParams.get("startDate") || undefined}
-          endDate={searchParams.get("endDate") || undefined}
-          emotions={emotions}
-          selectedEmotionIds={searchParams.getAll("emotion_ids[]")}
-        />
+        {shouldDeferSearch ? (
+          <div className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-sm">
+            <p className="text-sm font-medium text-card-foreground">
+              けんさくは まだ しまってあるよ
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              ゆめが ふえてからでも だいじょうぶ。ひつような ときだけ ひらこう。
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsSearchPanelOpen(true)}
+              className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              まえの ゆめを さがす
+            </button>
+          </div>
+        ) : (
+          <SearchBar
+            query={searchParams.get("query") || undefined}
+            startDate={searchParams.get("startDate") || undefined}
+            endDate={searchParams.get("endDate") || undefined}
+            emotions={emotions}
+            selectedEmotionIds={searchParams.getAll("emotion_ids[]")}
+          />
+        )}
 
         {/* ローディング中: スケルトンカードを表示 */}
         {loading && <DreamListSkeleton count={6} />}

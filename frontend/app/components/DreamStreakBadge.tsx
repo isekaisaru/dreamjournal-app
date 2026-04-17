@@ -14,7 +14,9 @@ function calcStreak(dreams: Dream[]): { current: number; longest: number } {
   // ユニークな日付を降順に並べる
   const uniqueDays = Array.from(
     new Set(dreams.map((d) => getJSTDateStr(d.created_at)))
-  ).sort().reverse();
+  )
+    .sort()
+    .reverse();
 
   const todayStr = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Tokyo",
@@ -31,9 +33,7 @@ function calcStreak(dreams: Dream[]): { current: number; longest: number } {
     for (let i = 1; i < uniqueDays.length; i++) {
       const prev = new Date(uniqueDays[i - 1]);
       const curr = new Date(uniqueDays[i]);
-      const diffDays = Math.round(
-        (prev.getTime() - curr.getTime()) / 86400000
-      );
+      const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000);
       if (diffDays === 1) {
         current++;
       } else {
@@ -75,38 +75,32 @@ export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
     return getJSTYearMonthKey(d.created_at) === currentJSTMonth;
   }).length;
 
-  // 獲得バッジの計算
-  const badges: { icon: string; label: string; color: string }[] = [];
-  if (current >= 3)
-    badges.push({
-      icon: "🔥",
-      label: `${current}日れんぞく！`,
-      color: "text-orange-400 border-orange-400/40 bg-orange-400/10",
-    });
-  if (current >= 7)
-    badges.push({
-      icon: "⭐",
-      label: "1しゅうかん！",
-      color: "text-yellow-400 border-yellow-400/40 bg-yellow-400/10",
-    });
-  if (current >= 30)
-    badges.push({
-      icon: "🏆",
-      label: "1ヶ月かいたよ！",
-      color: "text-sky-400 border-sky-400/40 bg-sky-400/10",
-    });
-  if (thisMonthCount >= 10)
-    badges.push({
-      icon: "🌟",
-      label: `今月${thisMonthCount}かい！`,
-      color: "text-purple-400 border-purple-400/40 bg-purple-400/10",
-    });
-  if (longest >= 7 && current < longest)
-    badges.push({
-      icon: "🎯",
-      label: `さいこう${longest}にち`,
-      color: "text-emerald-400 border-emerald-400/40 bg-emerald-400/10",
-    });
+  const milestone =
+    current === 30
+      ? {
+          icon: "🏆",
+          title: "1ヶ月つづいた！",
+          body: "きょうは とくべつ。たくさん つづけて かけたね。",
+          tone: "border-sky-400/40 bg-sky-400/10 text-sky-500",
+        }
+      : current === 7
+        ? {
+            icon: "⭐",
+            title: "1しゅうかん たっせい！",
+            body: "れんぞくで かけたよ。すごいペース！",
+            tone: "border-yellow-400/40 bg-yellow-400/10 text-yellow-500",
+          }
+        : current === 3
+          ? {
+              icon: "🔥",
+              title: "3日れんぞく！",
+              body: "このリズム、いいかんじ。そのまま つづけよう。",
+              tone: "border-orange-400/40 bg-orange-400/10 text-orange-500",
+            }
+          : null;
+
+  const nextMilestone =
+    current < 3 ? 3 : current < 7 ? 7 : current < 30 ? 30 : null;
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 w-full mb-4">
@@ -137,25 +131,31 @@ export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
         </div>
       </div>
 
-      {/* バッジ表示 */}
-      {badges.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {badges.map((badge, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-1 border rounded-full px-3 py-1 text-xs font-bold ${badge.color}`}
-            >
-              <span>{badge.icon}</span>
-              <span>{badge.label}</span>
-            </div>
-          ))}
+      {milestone ? (
+        <div
+          className={`rounded-2xl border px-4 py-3 shadow-sm transition-colors ${milestone.tone}`}
+        >
+          <div className="flex items-center gap-2 text-sm font-bold">
+            <span>{milestone.icon}</span>
+            <span>{milestone.title}</span>
+          </div>
+          <p className="mt-1 text-xs text-foreground/80">{milestone.body}</p>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          {current === 0
-            ? "きょうも ゆめを かいてみよう！🌙"
-            : `あと ${3 - current} にち れんぞくで バッジ がもらえるよ！`}
-        </p>
+        <div className="rounded-2xl border border-border/70 bg-muted/30 px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            {current === 0
+              ? "きょうも ゆめを かいてみよう！🌙"
+              : nextMilestone
+                ? `つぎの おいわいは ${nextMilestone}日れんぞく。あと ${nextMilestone - current} にち！`
+                : `さいこう きろくは ${longest}日。いいペースで つづいているよ。`}
+          </p>
+          {thisMonthCount >= 10 ? (
+            <p className="mt-2 text-xs font-medium text-primary">
+              今月は もう {thisMonthCount}かい かけているよ。
+            </p>
+          ) : null}
+        </div>
       )}
     </div>
   );
