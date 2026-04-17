@@ -112,7 +112,7 @@ export default function SubscriptionPage() {
             ユメログ プレミアム ✨
           </h1>
           <p className="mt-4 text-base text-muted-foreground">
-            月額500円で、ユメログの全機能を使い放題
+            月額500円で、AI分析・画像生成・月次サマリーが使えます
           </p>
 
           <div className="mt-6 text-left">
