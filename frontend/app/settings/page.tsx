@@ -6,7 +6,6 @@ import { useAuth } from "../../context/AuthContext";
 import Loading from "../loading";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import DonationButton from "../components/DonationButton";
 import { updateProfile } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import type { AgeGroup, AnalysisTone } from "@/app/types";
@@ -46,6 +45,15 @@ const SettingsPage = () => {
   const [profileAgeGroup, setProfileAgeGroup] = useState<AgeGroup>((user?.age_group as AgeGroup) ?? "child");
   const [profileTone, setProfileTone] = useState<AnalysisTone>((user?.analysis_tone as AnalysisTone) ?? "auto");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isToneOpen, setIsToneOpen] = useState(false);
+
+  // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
+  useEffect(() => {
+    if (!user) return;
+    setProfileUsername(user.username ?? "");
+    setProfileAgeGroup((user.age_group as AgeGroup) ?? "child");
+    setProfileTone((user.analysis_tone as AnalysisTone) ?? "auto");
+  }, [user?.id, user?.username, user?.age_group, user?.analysis_tone]);
 
   // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
   useEffect(() => {
@@ -213,36 +221,50 @@ const SettingsPage = () => {
                 </select>
               </div>
 
-              {/* 分析トーン */}
+              {/* 分析トーン（詳細設定・アコーディオン） */}
               <div>
-                <p className="mb-2 block text-sm font-medium text-card-foreground">
-                  ゆめ分析の スタイル
-                </p>
-                <div className="space-y-2">
-                  {ANALYSIS_TONE_OPTIONS.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
-                        profileTone === opt.value
-                          ? "border-primary bg-primary/5"
-                          : "border-border bg-background hover:bg-muted"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="analysis-tone"
-                        value={opt.value}
-                        checked={profileTone === opt.value}
-                        onChange={() => setProfileTone(opt.value)}
-                        className="mt-0.5 accent-primary"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                        <p className="text-xs text-muted-foreground">{opt.desc}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsToneOpen((v) => !v)}
+                  aria-expanded={isToneOpen}
+                  aria-controls="analysis-tone-options"
+                  className="flex w-full items-center justify-between text-sm font-medium text-card-foreground py-1"
+                >
+                  <span>ゆめ分析の スタイル（くわしい せってい）</span>
+                  <span className="text-muted-foreground text-xs">{isToneOpen ? "▲ とじる" : "▼ ひらく"}</span>
+                </button>
+                {!isToneOpen && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    いま：{ANALYSIS_TONE_OPTIONS.find((o) => o.value === profileTone)?.label ?? profileTone}
+                  </p>
+                )}
+                {isToneOpen && (
+                  <div id="analysis-tone-options" className="space-y-2 mt-2">
+                    {ANALYSIS_TONE_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors ${
+                          profileTone === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-background hover:bg-muted"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="analysis-tone"
+                          value={opt.value}
+                          checked={profileTone === opt.value}
+                          onChange={() => setProfileTone(opt.value)}
+                          className="mt-0.5 accent-primary"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                          <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button
@@ -266,26 +288,8 @@ const SettingsPage = () => {
             </h2>
             <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
               このアプリは、あなたの ゆめを 大切にしまっておく場所です。
-              <br />
-              かぞくみんなで、あんしんして つかえるように、
-              <br />
-              いくつかの おやくそくが あります。
-            </p>
-          </div>
-
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold mb-3 text-secondary flex items-center">
-              <span className="text-2xl mr-2">🤫</span>
-              ゆめは じぶんだけの ほうせき
-            </h2>
-            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-              あなたが かいた ゆめは、あなただけのものです。
-              <br />
-              ほかのひとに かってに 見られたり、
-              <br />
-              どこかに いっちゃったり しないように、
-              <br />
-              しっかり まもられています。
+              かいた ゆめは あなただけのものなので、ほかのひとに 見られません。
+              かぞくみんなで、あんしんして つかってね。
             </p>
           </div>
 
@@ -315,11 +319,12 @@ const SettingsPage = () => {
               </div>
             ) : (
               <div>
-                <p className="text-muted-foreground text-sm mb-4">
-                  月額500円でAI分析・画像生成・月次サマリーが使い放題になります。
-                  <br />
-                  いつでもキャンセルできます。
-                </p>
+                <ul className="text-muted-foreground text-sm mb-4 space-y-1">
+                  <li>✓ ゆめのAI分析（むせいげん）</li>
+                  <li>✓ ゆめのえ生成（月30枚）</li>
+                  <li>✓ 月次サマリー</li>
+                </ul>
+                <p className="text-muted-foreground text-xs mb-4">月額500円・いつでもキャンセルできます。</p>
                 <Link
                   href="/subscription"
                   className="block w-full py-3 px-4 rounded-xl bg-primary text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -330,28 +335,6 @@ const SettingsPage = () => {
             )}
           </div>
 
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold mb-3 text-foreground flex items-center">
-              <span className="text-2xl mr-2">👨‍👩‍👧</span>
-              保護者の方へ
-            </h2>
-            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-              応援のための決済ボタンは、お子さまがまちがって押さないよう
-              この画面の中だけに置いています。
-              <br />
-              内容をご確認のうえ、必要なときだけご利用ください。
-            </p>
-            <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/5 p-4">
-              <p className="text-sm font-medium text-foreground">
-                ユメログの開発を気に入っていただけたら、
-                <br />
-                500円のドネーションで応援できます。
-              </p>
-              <div className="mt-4">
-                <DonationButton label="500円で応援する" />
-              </div>
-            </div>
-          </div>
         </section>
 
         {/* 設定・操作セクション */}

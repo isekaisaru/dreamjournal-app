@@ -297,7 +297,7 @@ export default function DreamDetailPage({
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
-            <p className="text-xs text-muted-foreground">AIが夢のイメージを絵にします（1日3回まで）</p>
+            <p className="text-xs text-muted-foreground">AIが夢のイメージを絵にします（月30枚まで）</p>
           </div>
         )}
       </div>

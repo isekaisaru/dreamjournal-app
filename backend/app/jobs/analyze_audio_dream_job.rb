@@ -18,7 +18,11 @@ class AnalyzeAudioDreamJob < ApplicationJob
         type: dream.audio_attachment.content_type
       )
 
-      result = AudioAnalysisService.new(uploaded_file).call
+      result = AudioAnalysisService.new(
+        uploaded_file,
+        age_group:     dream.user&.age_group     || "child",
+        analysis_tone: dream.user&.analysis_tone || "auto"
+      ).call
       # 成功したら、文字起こし結果をcontentに、分析結果をanalysis_jsonに保存
       dream.update!(content: result[:transcript], analysis_json: result, analysis_status: 'done', analyzed_at: Time.current)
     end
