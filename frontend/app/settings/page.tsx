@@ -55,6 +55,14 @@ const SettingsPage = () => {
     setProfileTone((user.analysis_tone as AnalysisTone) ?? "auto");
   }, [user?.id, user?.username, user?.age_group, user?.analysis_tone]);
 
+  // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
+  useEffect(() => {
+    if (!user) return;
+    setProfileUsername(user.username ?? "");
+    setProfileAgeGroup((user.age_group as AgeGroup) ?? "child");
+    setProfileTone((user.analysis_tone as AnalysisTone) ?? "auto");
+  }, [user?.id]);
+
   const handleSaveProfile = async () => {
     if (!profileUsername.trim()) {
       toast.error("ニックネームを いれてね。");
