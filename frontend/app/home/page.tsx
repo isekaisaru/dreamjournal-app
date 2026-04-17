@@ -136,6 +136,21 @@ export default function HomePage() {
     };
   }, [fetchDreams]);
 
+  // 検索フィルターが有効かどうかを判定（フックより前に計算）
+  const isSearchActive = !!(
+    searchParams.get("query") ||
+    searchParams.get("startDate") ||
+    searchParams.get("endDate") ||
+    searchParams.getAll("emotion_ids[]").length > 0
+  );
+
+  // 検索がアクティブになったらパネルを開く（条件分岐より前に置く必要あり）
+  useEffect(() => {
+    if (isSearchActive) {
+      setIsSearchPanelOpen(true);
+    }
+  }, [isSearchActive]);
+
   // 認証確認中
   if (authStatus === "checking") {
     return <Loading />;
@@ -153,25 +168,12 @@ export default function HomePage() {
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);
 
-  // 検索フィルターが有効かどうかを判定
-  const isSearchActive = !!(
-    searchParams.get("query") ||
-    searchParams.get("startDate") ||
-    searchParams.get("endDate") ||
-    searchParams.getAll("emotion_ids[]").length > 0
-  );
   const shouldDeferSearch =
     !loading &&
     !isSearchActive &&
     !isSearchPanelOpen &&
     dreams.length > 0 &&
     dreams.length < 5;
-
-  useEffect(() => {
-    if (isSearchActive) {
-      setIsSearchPanelOpen(true);
-    }
-  }, [isSearchActive]);
 
   return (
     <div className="lg:flex text-foreground">
