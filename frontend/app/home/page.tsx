@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Dream, Emotion } from "@/app/types";
+import { Dream, Emotion, AgeGroup } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
 import { getEmotions } from "@/lib/apiClient";
@@ -16,6 +16,50 @@ import SearchBar from "@/app/components/SearchBar";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import MorpheusAssistant from "./MorpheusAssistant";
 import Loading from "../loading";
+
+/**
+ * 年齢帯別ウェルカムコピー
+ */
+function getHomeCopy(ageGroup: AgeGroup | undefined) {
+  switch (ageGroup) {
+    case "child_small":
+      return {
+        heading: "きょうの ゆめを のこそう",
+        sub: "ことばでも こえでも だいじょうぶだよ。",
+        button: "ゆめを のこす",
+        helper: "おすと えらべるよ",
+      };
+    case "child":
+      return {
+        heading: "きょうの ゆめを すぐ のこそう",
+        sub: "ねむい あさでも だいじょうぶ。ことばでも、こえでも のこせるよ。",
+        button: "きょうの ゆめを のこす",
+        helper: "おすと、のこしかたを えらべるよ",
+      };
+    case "preteen":
+      return {
+        heading: "今日の夢、記録しよう",
+        sub: "テキストでも音声でも残せるよ。忘れる前にメモしておこう。",
+        button: "夢を記録する",
+        helper: "記録方法を選べるよ",
+      };
+    case "teen":
+      return {
+        heading: "今日の夢を残しておこう",
+        sub: "見た夢はすぐ忘れる。テキストでも音声でも、今すぐ記録できる。",
+        button: "夢を記録する",
+        helper: "記録方法を選択",
+      };
+    case "adult":
+    default:
+      return {
+        heading: "今日の夢を記録する",
+        sub: "テキスト入力または音声録音で、すばやく残せます。",
+        button: "夢を記録する",
+        helper: "記録方法を選択できます",
+      };
+  }
+}
 
 /**
  * 夢を月ごとにグループ化する関数
@@ -168,6 +212,8 @@ export default function HomePage() {
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);
 
+  const copy = getHomeCopy(user?.age_group as AgeGroup | undefined);
+
   const shouldDeferSearch =
     !loading &&
     !isSearchActive &&
@@ -184,17 +230,17 @@ export default function HomePage() {
             {user ? `${user.username}さん、おはよう` : "おはよう"}
           </p>
           <h1 className="mt-1 text-2xl font-bold text-foreground">
-            きょうの ゆめを すぐ のこそう
+            {copy.heading}
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            ねむい あさでも だいじょうぶ。ことばでも、こえでも のこせるよ。
+            {copy.sub}
           </p>
           <div className="mt-4 max-w-md">
             <DreamEntryLauncher
-              buttonLabel="きょうの ゆめを のこす"
+              buttonLabel={copy.button}
               buttonSize="lg"
               buttonClassName="min-h-14 w-full text-base font-bold shadow-lg shadow-primary/15"
-              helperText="おすと、のこしかたを えらべるよ"
+              helperText={copy.helper}
               showSparkles
             />
           </div>
