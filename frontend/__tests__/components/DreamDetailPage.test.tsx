@@ -67,6 +67,13 @@ jest.mock("@/hooks/useDream", () => ({
   useDream: jest.fn(),
 }));
 
+jest.mock("@/context/AuthContext", () => ({
+  useAuth: () => ({
+    user: { age_group: "child" },
+    authStatus: "authenticated",
+  }),
+}));
+
 const { useDream } = require("@/hooks/useDream");
 
 describe("DreamDetailPage", () => {

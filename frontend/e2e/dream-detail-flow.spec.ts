@@ -28,7 +28,7 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          user: { id: 1, email: "test@example.com", username: "E2Eユーザー" },
+          user: { id: 1, email: "test@example.com", username: "E2Eユーザー", age_group: "child" },
         }),
       });
     });
