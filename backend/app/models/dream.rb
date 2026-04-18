@@ -1,6 +1,7 @@
 class Dream < ApplicationRecord
   belongs_to :user, optional: false
   has_many :dream_emotions, dependent: :destroy
+  has_many :dream_image_generations, dependent: :destroy
   has_many :emotions, through: :dream_emotions
   has_one_attached :audio
 
@@ -13,8 +14,7 @@ class Dream < ApplicationRecord
   # よく使うクエリパターンをスコープとして定義する
   # current_user.dreams.with_image のように使う
   scope :with_image, -> { where.not(generated_image_url: nil) }
-  # 画像が今月生成 / 再生成された夢に絞り込む（image_generated_at ベース）
-  # updated_at は夢の編集でも変わるため quota カウントには使わない
+  # 画像が今月生成 / 再生成された夢に絞り込む（最後の生成時刻ベース）
   scope :generated_in_month, ->(date = Time.current) {
     where(image_generated_at: date.beginning_of_month..date.end_of_month)
   }

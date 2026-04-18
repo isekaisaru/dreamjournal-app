@@ -552,11 +552,17 @@ RSpec.describe 'Dreams API', type: :request do
           )
         ).and_return({ 'data' => [{ 'url' => generated_url }] })
 
-        authenticated_post "/dreams/#{dream.id}/generate_image", user
+        expect {
+          authenticated_post "/dreams/#{dream.id}/generate_image", user
+        }.to change(DreamImageGeneration, :count).by(1)
 
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['image_url']).to eq(generated_url)
         expect(dream.reload.generated_image_url).to eq(generated_url)
+        expect(dream.image_generated_at).to be_present
+        generation = DreamImageGeneration.order(:id).last
+        expect(generation.dream_id).to eq(dream.id)
+        expect(generation.user_id).to eq(user.id)
       end
 
       it 'gpt-image-1 が b64_json を返す場合はデータURLとして保存し 200 を返す' do
@@ -602,6 +608,27 @@ RSpec.describe 'Dreams API', type: :request do
 
         expect(response).to have_http_status(:service_unavailable)
         expect(JSON.parse(response.body)['error']).to include('画像生成機能は現在利用できません')
+      end
+
+      it '同じ夢の再生成も月次 quota に 1 回ずつ加算する' do
+        create_list(
+          :dream_image_generation,
+          DreamsController::IMAGE_MONTHLY_LIMIT - 1,
+          user: user,
+          dream: dream,
+          generated_at: Time.current
+        )
+        allow(images_client).to receive(:generate).and_return({ 'data' => [{ 'url' => generated_url }] })
+
+        expect {
+          authenticated_post "/dreams/#{dream.id}/generate_image", user
+        }.to change(DreamImageGeneration, :count).by(1)
+        expect(response).to have_http_status(:ok)
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['limit_reached']).to eq(true)
       end
 
       it '他人の夢は画像生成できない（403）' do
@@ -663,6 +690,32 @@ RSpec.describe 'Dreams API', type: :request do
 
     context '認証されていない場合' do
       it_behaves_like 'unauthorized request', :post, '/dreams/1/generate_image'
+    end
+  end
+
+  describe 'GET /dreams/image_quota' do
+    let!(:dream) { create(:dream, user: user) }
+
+    before do
+      create(:dream_image_generation, user: user, dream: dream, generated_at: Time.current)
+      create(:dream_image_generation, user: user, dream: dream, generated_at: Time.current)
+      create(:dream_image_generation, user: user, dream: dream, generated_at: 2.months.ago)
+      create(:dream_image_generation, user: other_user, dream: create(:dream, user: other_user), generated_at: Time.current)
+    end
+
+    context '認証済みユーザーの場合' do
+      it '当月の生成イベント数を返し、同じ夢の再生成も個別に数える' do
+        authenticated_get '/dreams/image_quota', user
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['used']).to eq(2)
+        expect(json_response['limit']).to eq(DreamsController::IMAGE_MONTHLY_LIMIT)
+        expect(json_response['remaining']).to eq(DreamsController::IMAGE_MONTHLY_LIMIT - 2)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :get, '/dreams/image_quota'
     end
   end
 end
