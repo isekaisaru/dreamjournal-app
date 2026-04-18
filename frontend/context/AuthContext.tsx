@@ -10,15 +10,7 @@ import React, {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import apiClient from "@/lib/apiClient";
-
-interface User {
-  id: string;
-  email?: string;
-  username?: string;
-  premium?: boolean;
-  age_group?: string;
-  analysis_tone?: string;
-}
+import type { User } from "@/app/types";
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";
 
