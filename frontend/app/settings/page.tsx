@@ -42,8 +42,8 @@ const SettingsPage = () => {
 
   // プロフィール編集フォーム用 state
   const [profileUsername, setProfileUsername] = useState(user?.username ?? "");
-  const [profileAgeGroup, setProfileAgeGroup] = useState<AgeGroup>((user?.age_group as AgeGroup) ?? "child");
-  const [profileTone, setProfileTone] = useState<AnalysisTone>((user?.analysis_tone as AnalysisTone) ?? "auto");
+  const [profileAgeGroup, setProfileAgeGroup] = useState<AgeGroup>(user?.age_group ?? "child");
+  const [profileTone, setProfileTone] = useState<AnalysisTone>(user?.analysis_tone ?? "auto");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isToneOpen, setIsToneOpen] = useState(false);
 
@@ -51,16 +51,16 @@ const SettingsPage = () => {
   useEffect(() => {
     if (!user) return;
     setProfileUsername(user.username ?? "");
-    setProfileAgeGroup((user.age_group as AgeGroup) ?? "child");
-    setProfileTone((user.analysis_tone as AnalysisTone) ?? "auto");
+    setProfileAgeGroup(user.age_group ?? "child");
+    setProfileTone(user.analysis_tone ?? "auto");
   }, [user?.id, user?.username, user?.age_group, user?.analysis_tone]);
 
   // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
   useEffect(() => {
     if (!user) return;
     setProfileUsername(user.username ?? "");
-    setProfileAgeGroup((user.age_group as AgeGroup) ?? "child");
-    setProfileTone((user.analysis_tone as AnalysisTone) ?? "auto");
+    setProfileAgeGroup(user.age_group ?? "child");
+    setProfileTone(user.analysis_tone ?? "auto");
   }, [user?.id]);
 
   const handleSaveProfile = async () => {

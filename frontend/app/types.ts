@@ -3,10 +3,10 @@ export type AnalysisTone = "auto" | "gentle_kids" | "junior" | "standard" | "dee
 
 export interface User {
   id: string; // FrontendではIDを文字列として扱う
-  username: string;
-  email: string;
-  created_at: string;
-  updated_at: string;
+  username?: string; // トライアルユーザーは未設定の場合がある
+  email?: string;    // トライアルユーザーは未設定の場合がある
+  created_at?: string;
+  updated_at?: string;
   premium?: boolean;
   age_group?: AgeGroup;
   analysis_tone?: AnalysisTone;
@@ -20,6 +20,8 @@ export interface BackendUser {
   created_at: string;
   updated_at: string;
   premium?: boolean;
+  age_group?: AgeGroup;
+  analysis_tone?: AnalysisTone;
 }
 
 export interface Emotion {

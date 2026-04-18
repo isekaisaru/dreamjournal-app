@@ -2,6 +2,7 @@ class User < ApplicationRecord
   # パスワード認証機能を提供
   has_secure_password
   has_many :dreams, dependent: :destroy
+  has_many :dream_image_generations, dependent: :destroy
   has_many :payments, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
 

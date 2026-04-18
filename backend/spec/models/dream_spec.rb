@@ -18,7 +18,7 @@ RSpec.describe Dream, type: :model do
 
   describe 'スコープ' do
     let!(:dream_with_image) do
-      create(:dream, user: user, generated_image_url: 'https://example.com/image.png', updated_at: Time.current)
+      create(:dream, user: user, generated_image_url: 'https://example.com/image.png', image_generated_at: Time.current)
     end
     let!(:dream_without_image) do
       create(:dream, user: user, generated_image_url: nil)
@@ -34,15 +34,15 @@ RSpec.describe Dream, type: :model do
     describe '.generated_in_month' do
       let!(:old_dream) do
         create(:dream, user: user, generated_image_url: 'https://example.com/old.png',
-               updated_at: 2.months.ago)
+               image_generated_at: 2.months.ago)
       end
 
-      it '当月に更新された夢だけを返す（引数省略時）' do
+      it '当月に画像生成された夢だけを返す（引数省略時）' do
         expect(Dream.generated_in_month).to include(dream_with_image)
         expect(Dream.generated_in_month).not_to include(old_dream)
       end
 
-      it '指定した月に更新された夢だけを返す' do
+      it '指定した月に画像生成された夢だけを返す' do
         expect(Dream.generated_in_month(2.months.ago)).to include(old_dream)
         expect(Dream.generated_in_month(2.months.ago)).not_to include(dream_with_image)
       end

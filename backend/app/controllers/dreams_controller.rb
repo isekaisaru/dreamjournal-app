@@ -41,7 +41,7 @@ class DreamsController < ApplicationController
 
   # GET /dreams/image_quota
   def image_quota
-    used  = current_user.dreams.with_image.generated_in_month.count
+    used  = current_month_image_generation_count
     limit = IMAGE_MONTHLY_LIMIT
     render json: {
       used:      used,
@@ -221,7 +221,11 @@ class DreamsController < ApplicationController
       return render json: { error: "画像URLの取得に失敗しました" }, status: :unprocessable_entity
     end
 
-    @dream.update!(generated_image_url: image_url)
+    generated_at = Time.current
+    Dream.transaction do
+      @dream.update!(generated_image_url: image_url, image_generated_at: generated_at)
+      @dream.dream_image_generations.create!(user: current_user, generated_at: generated_at)
+    end
 
     render json: { image_url: image_url }, status: :ok
   rescue Faraday::TimeoutError, Net::ReadTimeout, Net::OpenTimeout => e
@@ -287,7 +291,7 @@ class DreamsController < ApplicationController
 
     # 画像生成の月次上限チェック（全ユーザー共通）
     def check_monthly_image_limit
-      count = current_user.dreams.with_image.generated_in_month.count
+      count = current_month_image_generation_count
 
       if count >= IMAGE_MONTHLY_LIMIT
         render json: {
@@ -297,6 +301,10 @@ class DreamsController < ApplicationController
           monthly_image_limit: DreamsController::IMAGE_MONTHLY_LIMIT
         }, status: :forbidden
       end
+    end
+
+    def current_month_image_generation_count
+      current_user.dream_image_generations.generated_in_month.count
     end
 
     def cached_analysis_request?
