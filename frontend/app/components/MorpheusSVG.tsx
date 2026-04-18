@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type TargetAndTransition } from "framer-motion";
 
 export type MorpheusExpression =
   | "cheerful"
@@ -170,7 +170,7 @@ function Mouth({ expression }: { expression: MorpheusExpression }) {
 }
 
 // 表情ごとの浮遊アニメーション設定
-const floatVariants: Record<MorpheusExpression, object> = {
+const floatVariants: Record<MorpheusExpression, TargetAndTransition> = {
   cheerful: {
     y: [0, -6, 0],
     rotate: [-1, 1, -1],
