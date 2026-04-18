@@ -527,6 +527,8 @@ RSpec.describe 'Dreams API', type: :request do
         analysis_json: { 'analysis' => '自由で穏やかな気持ちを表しています。' }
       )
     end
+    let(:access_token) { AuthService.encode_token(user.id) }
+    let(:auth_headers) { { 'Content-Type' => 'application/json', 'Cookie' => "access_token=#{access_token}", 'HOST' => 'backend' } }
     let(:generated_url) { 'https://oaidalleapiprodscus.blob.core.windows.net/generated/test.png' }
     let(:images_client) { double('OpenAI::Images') }
     let(:openai_client) { double('OpenAI::Client', images: images_client) }
@@ -621,11 +623,11 @@ RSpec.describe 'Dreams API', type: :request do
         allow(images_client).to receive(:generate).and_return({ 'data' => [{ 'url' => generated_url }] })
 
         expect {
-          authenticated_post "/dreams/#{dream.id}/generate_image", user
+          post "/dreams/#{dream.id}/generate_image", params: {}.to_json, headers: auth_headers
         }.to change(DreamImageGeneration, :count).by(1)
         expect(response).to have_http_status(:ok)
 
-        authenticated_post "/dreams/#{dream.id}/generate_image", user
+        post "/dreams/#{dream.id}/generate_image", params: {}.to_json, headers: auth_headers
 
         expect(response).to have_http_status(:forbidden)
         expect(JSON.parse(response.body)['limit_reached']).to eq(true)
