@@ -33,6 +33,7 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         analysis: "🔮 モルペウスの ゆめうらない",
         image: "🎨 ゆめのえ",
         imageAlt: "ゆめのえ",
+        button: "ゆめのえを かく",
         imageRedraw: "かきなおす",
         imageGenerating: "かいています...",
       };
@@ -42,6 +43,7 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         analysis: "🔮 夢の分析",
         image: "🎨 夢のイラスト",
         imageAlt: "夢のイラスト",
+        button: "夢のイラストを生成",
         imageRedraw: "描き直す",
         imageGenerating: "生成中...",
       };
@@ -53,6 +55,7 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         analysis: "🔮 AI分析",
         image: "🎨 生成画像",
         imageAlt: "生成された夢のイメージ",
+        button: "画像を生成する",
         imageRedraw: "再生成",
         imageGenerating: "生成中...",
       };
@@ -90,7 +93,7 @@ export default function DreamDetailPage({
   } = useDream(dreamId);
 
   const { user } = useAuth();
-  const copy = getDreamDetailCopy(user?.age_group as AgeGroup | undefined);
+  const copy = getDreamDetailCopy(user?.age_group);
 
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -335,10 +338,10 @@ export default function DreamDetailPage({
               {isGeneratingImage ? (
                 <>
                   <span className="w-3 h-3 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />
-                  ゆめのえを かいています...
+                  {copy.imageGenerating}
                 </>
               ) : (
-                <>🎨 ゆめのえを かく</>
+                <>🎨 {copy.button}</>
               )}
             </button>
             {imageError && (

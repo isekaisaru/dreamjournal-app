@@ -212,7 +212,7 @@ export default function HomePage() {
   // 夢データを月ごとにグループ化
   const groupedDreams = groupDreamsByMonth(dreams);
 
-  const copy = getHomeCopy(user?.age_group as AgeGroup | undefined);
+  const copy = getHomeCopy(user?.age_group);
 
   const shouldDeferSearch =
     !loading &&

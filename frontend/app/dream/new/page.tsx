@@ -117,7 +117,7 @@ export default function NewDreamPage() {
     );
   }
 
-  const copy = getNewDreamCopy(user?.age_group as AgeGroup | undefined);
+  const copy = getNewDreamCopy(user?.age_group);
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
