@@ -6,6 +6,7 @@ import { clientLogin } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
+import { MorpheusGuideLogin } from "@/app/components/MorpheusGuide";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
@@ -180,6 +181,7 @@ export default function Login() {
         )}
       </form>
       </div>
+      <MorpheusGuideLogin />
     </div>
   );
 }

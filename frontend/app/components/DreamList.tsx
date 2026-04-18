@@ -7,12 +7,15 @@ import Image from "next/image";
 import DreamCard from "./DreamCard";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { MorpheusGuideEmpty } from "./MorpheusGuide";
 
 interface DreamListProps {
   dreams: Dream[];
   onDelete?: (id: number) => void;
   /** 検索フィルターが有効な状態かどうか（空表示メッセージを切り替えるために使用） */
   isSearchActive?: boolean;
+  /** 年齢層（空状態メッセージの切り替えに使用） */
+  ageGroup?: string;
 }
 
 const container = {
@@ -30,7 +33,7 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-const DreamList = ({ dreams, isSearchActive = false }: DreamListProps) => {
+const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps) => {
   return (
     <>
       <motion.div
@@ -74,11 +77,9 @@ const DreamList = ({ dreams, isSearchActive = false }: DreamListProps) => {
               </Button>
             </div>
           ) : (
-            /* 夢がまだない場合の通常メッセージ */
-            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-              <div className="text-4xl mb-4">🌙</div>
-              <p className="text-lg font-bold mb-2">まだ ゆめ は ないよ</p>
-              <p className="text-sm mb-4">きょう みた ゆめ を おしえてね</p>
+            /* 夢がまだない場合 — モルペウスガイド */
+            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center gap-6">
+              <MorpheusGuideEmpty ageGroup={ageGroup} />
               <Button asChild className="rounded-full px-6 text-base font-bold">
                 <Link href="/dream/new">✏️ ゆめを かく</Link>
               </Button>
