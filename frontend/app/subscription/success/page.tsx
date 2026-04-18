@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { ApiError, apiFetch } from "@/lib/apiClient";
 import { getServerAuth } from "@/lib/server-auth";
 
@@ -38,6 +39,18 @@ export default async function SubscriptionSuccessPage({
   const { isAuthenticated, token } = await getServerAuth();
 
   if (!isAuthenticated || !token) {
+    // Try refreshing before forcing /login — access_token may have expired
+    // during Stripe checkout while a valid refresh_token still exists.
+    const cookieStore = await cookies();
+    const hasRefreshToken = !!cookieStore.get("refresh_token")?.value;
+    const currentPath = sessionId
+      ? `/subscription/success?session_id=${encodeURIComponent(sessionId)}`
+      : "/subscription/success";
+    if (hasRefreshToken) {
+      redirect(
+        `/api/auth/refresh?redirect=${encodeURIComponent(currentPath)}`
+      );
+    }
     redirect("/login");
   }
 
