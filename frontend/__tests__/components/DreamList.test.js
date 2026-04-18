@@ -34,6 +34,18 @@ describe("DreamList (integration with DreamCard)", () => {
     // これにより、意図的にエラーを発生させるテストで、コンソールがエラーメッセージで汚れなくなります。
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     jest.resetModules();
+    // MorpheusGuide は useState + framer-motion を使うため isolateModules 内で
+    // React インスタンスが二重になるのを防ぐためにモックする
+    jest.doMock("@/app/components/MorpheusGuide", () => ({
+      __esModule: true,
+      default: () => null,
+      MorpheusGuideEmpty: () => (
+        <div data-testid="morpheus-empty">
+          <p>まだ ゆめ は ないよ</p>
+          <p>きょう みた ゆめ を おしえてね</p>
+        </div>
+      ),
+    }));
     jest.isolateModules(() => {
       DreamList = require("@/app/components/DreamList").default;
     });
@@ -183,6 +195,11 @@ describe("DreamList (props forwarding to DreamCard)", () => {
     jest.doMock("@/app/components/DreamCard", () => ({
       __esModule: true,
       default: mockDreamCard,
+    }));
+    jest.doMock("@/app/components/MorpheusGuide", () => ({
+      __esModule: true,
+      default: () => null,
+      MorpheusGuideEmpty: () => null,
     }));
     jest.isolateModules(() => {
       DreamList = require("@/app/components/DreamList").default;
