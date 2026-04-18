@@ -1,10 +1,11 @@
 class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
-  before_action :check_trial_analysis_limit, only: [:analyze, :preview_analysis]
+  before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
   before_action :check_monthly_image_limit, only: [:generate_image]
 
   TRIAL_ANALYSIS_LIMIT = 3   # トライアルユーザーの分析回数上限
   IMAGE_MONTHLY_LIMIT   = 30 # 全ユーザー共通の画像生成月次上限
+  FREE_ANALYSIS_MONTHLY_LIMIT = User::FREE_ANALYSIS_MONTHLY_LIMIT
   
 
   # GET /dreams
@@ -166,7 +167,7 @@ class DreamsController < ApplicationController
       analysis_json: nil
     )
 
-    current_user.increment!(:trial_analysis_count) if current_user.trial_user?
+    increment_analysis_usage!
 
     # 3. 非同期ジョブをエンキュー
     AnalyzeDreamJob.perform_later(@dream.id)
@@ -256,7 +257,7 @@ class DreamsController < ApplicationController
     if result[:error]
       render json: { error: result[:error] }, status: :unprocessable_content
     else
-      current_user.increment!(:trial_analysis_count) if current_user.trial_user?
+      increment_analysis_usage!
       render json: result
     end
   end
@@ -276,16 +277,38 @@ class DreamsController < ApplicationController
       )
     end
 
-    # トライアルユーザーの分析回数チェック
-    def check_trial_analysis_limit
-      return unless current_user.trial_user?
+    def check_analysis_limit
+      return if current_user.premium?
       return if action_name == "analyze" && cached_analysis_request?
 
-      if current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
+      if current_user.trial_user?
+        return unless current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
+
         render json: {
           error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると無制限に分析できます。",
           limit_reached: true
         }, status: :forbidden
+        return
+      end
+
+      current_user.reset_monthly_analysis_count_if_needed!
+      return unless current_user.monthly_analysis_count >= FREE_ANALYSIS_MONTHLY_LIMIT
+
+      render json: {
+        error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると無制限で利用できます。",
+        limit_reached: true,
+        monthly_analysis_count: current_user.monthly_analysis_count,
+        monthly_analysis_limit: FREE_ANALYSIS_MONTHLY_LIMIT
+      }, status: :forbidden
+    end
+
+    def increment_analysis_usage!
+      return if current_user.premium?
+
+      if current_user.trial_user?
+        current_user.increment!(:trial_analysis_count)
+      else
+        current_user.increment_monthly_analysis_count!
       end
     end
 
