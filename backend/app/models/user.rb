@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  FREE_ANALYSIS_MONTHLY_LIMIT = 10
+
   # パスワード認証機能を提供
   has_secure_password
   has_many :dreams, dependent: :destroy
@@ -61,5 +63,20 @@ class User < ApplicationRecord
 
   def premium_active_subscription?
     subscriptions.where(status: Subscription::ACTIVE_STATUSES).exists?
+  end
+
+  def reset_monthly_analysis_count_if_needed!(now = Time.current)
+    current_month = now.beginning_of_month
+    return if monthly_analysis_count_reset_at.present? && monthly_analysis_count_reset_at >= current_month
+
+    update!(
+      monthly_analysis_count: 0,
+      monthly_analysis_count_reset_at: current_month
+    )
+  end
+
+  def increment_monthly_analysis_count!(now = Time.current)
+    reset_monthly_analysis_count_if_needed!(now)
+    increment!(:monthly_analysis_count)
   end
 end

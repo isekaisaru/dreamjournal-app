@@ -61,6 +61,39 @@ class CheckoutController < ApplicationController
     end
   end
 
+  def show_session
+    session_id = params[:session_id].to_s
+    return render json: { error: 'session_id が必要です。' }, status: :bad_request if session_id.blank?
+
+    session = Stripe::Checkout::Session.retrieve(session_id)
+    return render json: { error: 'プレミアム決済のセッションではありません。' }, status: :unprocessable_content unless session.mode == 'subscription'
+
+    session_user_id = extract_session_user_id(session)
+    if session_user_id != current_user.id.to_s
+      return render json: { error: 'この決済セッションへのアクセス権限がありません。' }, status: :forbidden
+    end
+
+    unless session.status == 'complete'
+      return render json: { error: '決済がまだ完了していません。' }, status: :unprocessable_content
+    end
+
+    render json: {
+      verified: true,
+      session_id: session.id,
+      status: session.status,
+      payment_status: session.payment_status,
+      premium: current_user.premium?
+    }, status: :ok
+  rescue Stripe::InvalidRequestError => e
+    PaymentsObservability.increment('checkout.session_lookup.invalid', user_id: current_user.id)
+    PaymentsObservability.log(event: 'checkout.session_lookup.invalid', level: :warn, user_id: current_user.id, stripe_session_id: session_id, message: e.message)
+    render json: { error: '決済セッションが見つかりません。' }, status: :not_found
+  rescue Stripe::StripeError => e
+    PaymentsObservability.increment('checkout.session_lookup.error', user_id: current_user.id)
+    PaymentsObservability.log(event: 'checkout.session_lookup.error', level: :error, user_id: current_user.id, stripe_session_id: session_id, message: e.message)
+    render json: { error: '決済確認に失敗しました。' }, status: :bad_gateway
+  end
+
   private
 
   def requested_plan
@@ -158,5 +191,16 @@ class CheckoutController < ApplicationController
     PaymentsObservability.increment('checkout.customer.created', user_id: current_user.id)
     PaymentsObservability.log(event: 'checkout.customer.created', user_id: current_user.id, stripe_customer_id: customer.id)
     customer.id
+  end
+
+  def extract_session_user_id(session)
+    metadata_user_id =
+      if session.respond_to?(:metadata)
+        session.metadata.respond_to?(:[]) ? session.metadata['user_id'] : nil
+      end
+
+    client_reference_id = session.respond_to?(:client_reference_id) ? session.client_reference_id : nil
+
+    metadata_user_id.presence || client_reference_id
   end
 end

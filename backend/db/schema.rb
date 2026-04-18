@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_04_18_140000) do
+ActiveRecord::Schema[7.2].define(version: 2026_04_19_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -138,6 +138,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_18_140000) do
     t.string "stripe_customer_id"
     t.integer "trial_analysis_count", default: 0, null: false
     t.integer "trial_audio_count", default: 0, null: false
+    t.integer "monthly_analysis_count", default: 0, null: false
+    t.datetime "monthly_analysis_count_reset_at"
     t.boolean "premium", default: false, null: false
     t.string "age_group", default: "child", null: false
     t.string "analysis_tone", default: "auto", null: false

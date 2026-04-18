@@ -325,6 +325,28 @@ RSpec.describe 'Webhooks API', type: :request do
           expect(subscription.current_period_end.to_i).to eq(period_end)
           expect(user.reload.premium).to be true
         end
+
+        it 'subscription が未作成でも customer から user を解決して作成する' do
+          user = create(:user, stripe_customer_id: 'cus_test_123', premium: false)
+          allow(Stripe::Webhook).to receive(:construct_event).and_return(invoice_event)
+
+          expect do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+          end.to change(Subscription, :count).by(1)
+
+          subscription = Subscription.find_by!(stripe_subscription_id: 'sub_test_renewal')
+          expect(response).to have_http_status(:ok)
+          expect(subscription.user_id).to eq(user.id)
+          expect(subscription.status).to eq('active')
+          expect(subscription.current_period_end.to_i).to eq(period_end)
+          expect(user.reload.premium).to be true
+        end
       end
 
       context 'customer.subscription.deleted の場合' do
@@ -370,6 +392,37 @@ RSpec.describe 'Webhooks API', type: :request do
           expect(response).to have_http_status(:ok)
           expect(subscription.reload.status).to eq('canceled')
           expect(user.reload.premium).to be false
+        end
+
+        it '他に有効な subscription が残っている場合は premium を維持する' do
+          user = create(:user, premium: true)
+          canceled_subscription = create(
+            :subscription,
+            user: user,
+            stripe_subscription_id: 'sub_test_cancelled',
+            stripe_customer_id: 'cus_cancel_123',
+            status: 'active'
+          )
+          create(
+            :subscription,
+            user: user,
+            stripe_subscription_id: 'sub_test_still_active',
+            stripe_customer_id: 'cus_cancel_123',
+            status: 'active'
+          )
+          allow(Stripe::Webhook).to receive(:construct_event).and_return(subscription_deleted_event)
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:ok)
+          expect(canceled_subscription.reload.status).to eq('canceled')
+          expect(user.reload.premium).to be true
         end
       end
 

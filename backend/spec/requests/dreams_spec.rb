@@ -446,6 +446,29 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response['cached']).to be true
         expect(json_response['result']['analysis']).to eq('cached result')
       end
+
+      it '無料プランの月次上限に達している場合は403を返し、ジョブを積まない' do
+        user.update!(
+          monthly_analysis_count: User::FREE_ANALYSIS_MONTHLY_LIMIT,
+          monthly_analysis_count_reset_at: Time.current.beginning_of_month
+        )
+
+        assert_no_enqueued_jobs do
+          authenticated_post "/dreams/#{dream.id}/analyze", user
+        end
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['limit_reached']).to eq(true)
+        expect(json_response['monthly_analysis_limit']).to eq(User::FREE_ANALYSIS_MONTHLY_LIMIT)
+      end
+
+      it '無料プランでは分析受付時に月次カウントを増やす' do
+        expect do
+          authenticated_post "/dreams/#{dream.id}/analyze", user
+        end.to change { user.reload.monthly_analysis_count }.by(1)
+
+        expect(response).to have_http_status(:accepted)
+      end
     end
 
     context '認証されていない場合' do
@@ -462,6 +485,29 @@ RSpec.describe 'Dreams API', type: :request do
         authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
 
         expect(response).to have_http_status(:forbidden)
+      end
+
+      it '無料プランの月次上限に達している場合は403を返す' do
+        user.update!(
+          monthly_analysis_count: User::FREE_ANALYSIS_MONTHLY_LIMIT,
+          monthly_analysis_count_reset_at: Time.current.beginning_of_month
+        )
+
+        expect(DreamAnalysisService).not_to receive(:analyze)
+        authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['limit_reached']).to eq(true)
+      end
+
+      it '無料プランでは成功時に月次カウントを増やす' do
+        allow(DreamAnalysisService).to receive(:analyze).and_return({ analysis: 'result', emotion_tags: ['happy'] })
+
+        expect do
+          authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
+        end.to change { user.reload.monthly_analysis_count }.by(1)
+
+        expect(response).to have_http_status(:ok)
       end
     end
 
