@@ -15,6 +15,7 @@ import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import MorpheusAssistant from "./MorpheusAssistant";
+import { MorpheusGuideHome, MorpheusGuideEmpty } from "@/app/components/MorpheusGuide";
 import Loading from "../loading";
 
 /**
@@ -282,6 +283,7 @@ export default function HomePage() {
           <DreamList
             dreams={dreams}
             isSearchActive={isSearchActive}
+            ageGroup={user?.age_group}
             key={`${dreams[0]?.id}-${dreams.length}`}
           />
         )}
@@ -322,6 +324,12 @@ export default function HomePage() {
           ))}
         </ul>
       </aside>
+      <MorpheusGuideHome
+        title={user?.age_group === "child_small" || user?.age_group === "child"
+          ? "きょうは？"
+          : "今日はどんな夢だった？"}
+        message={copy.sub}
+      />
       <MorpheusAssistant />
     </div>
   );

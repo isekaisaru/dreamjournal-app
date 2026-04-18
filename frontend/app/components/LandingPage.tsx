@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, Mic, Brain, TrendingUp } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
+import { MorpheusGuideLanding } from "./MorpheusGuide";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -339,6 +340,7 @@ export default function LandingPage() {
           ))}
         </div>
       </motion.section>
+      <MorpheusGuideLanding />
     </div>
   );
 }
