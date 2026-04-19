@@ -4,6 +4,29 @@ import userEvent from "@testing-library/user-event";
 import DreamForm from "@/app/components/DreamForm";
 import { createMockEmotion } from "../utils/mockFactory";
 
+// framer-motion uses ESM and breaks Jest — proxy motion.* to plain HTML elements
+jest.mock("framer-motion", () => {
+  const React = require("react");
+  const motion = new Proxy(
+    {},
+    {
+      get: (_, tag) =>
+        // eslint-disable-next-line react/display-name
+        React.forwardRef(({ children, ...props }, ref) => {
+          // Strip framer-specific props so React doesn't warn about unknown attrs
+          const {
+            initial, animate, exit, transition, variants, whileHover, whileTap,
+            whileFocus, whileDrag, whileInView, drag, dragConstraints,
+            layoutId, layout, onAnimationStart, onAnimationComplete,
+            viewport, custom, style, ...rest
+          } = props;
+          return React.createElement(tag, { ...rest, ref, style }, children);
+        }),
+    }
+  );
+  return { motion, AnimatePresence: ({ children }) => children };
+});
+
 // Mocks
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),

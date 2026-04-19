@@ -97,7 +97,8 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     await expect(page.getByText("空を飛んでいる夢を見た。")).toBeVisible();
 
     // 「🔮 モルペウスの ゆめうらない」セクションに分析テキストが表示されていることを確認
-    await expect(page.getByText(/🔮 モルペウスの ゆめうらない/)).toBeVisible();
+    // フリップカードは表面・裏面で同ラベルを2つ持つため first() で先頭要素を指定する
+    await expect(page.getByText(/🔮 モルペウスの ゆめうらない/).first()).toBeVisible();
     await expect(
       page.getByText("空を飛ぶ夢は自由への願望を表しています。")
     ).toBeVisible();

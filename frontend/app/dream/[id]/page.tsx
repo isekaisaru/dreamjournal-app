@@ -311,7 +311,7 @@ export default function DreamDetailPage({
               className="relative min-h-[220px]"
             >
               <div
-                className="absolute inset-0 rounded-[28px] border border-primary/20 p-5 shadow-lg"
+                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-primary/20 p-5 shadow-lg"
                 style={{
                   backfaceVisibility: "hidden",
                   background:
@@ -344,7 +344,7 @@ export default function DreamDetailPage({
                 </p>
               </div>
               <div
-                className="absolute inset-0 rounded-[28px] border border-border bg-muted/50 p-5 shadow-lg"
+                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-border bg-muted/50 p-5 shadow-lg"
                 style={{
                   backfaceVisibility: "hidden",
                   transform: "rotateY(180deg)",
