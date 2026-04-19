@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 
 import { Dream, Emotion, DreamDraftData } from "../types";
 import { getEmotions, previewAnalysis } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
+import MorpheusSVG from "./MorpheusSVG";
 
 interface DreamFormData {
   title: string;
@@ -54,6 +56,7 @@ export default function DreamForm({
   );
   const [isDraftApplied, setIsDraftApplied] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisRevealKey, setAnalysisRevealKey] = useState(0);
   const [morpheusRating, setMorpheusRating] = useState<"good" | "bad" | null>(
     null
   );
@@ -171,6 +174,7 @@ export default function DreamForm({
       setAnalysisText(result.analysis);
       setSuggestedEmotionNames(result.emotion_tags);
       setSelectedEmotionIds(mapEmotionNamesToIds(emotions, result.emotion_tags));
+      setAnalysisRevealKey((current) => current + 1);
       setMorpheusRating(null);
       localStorage.removeItem(morpheusRatingKey);
       toast.success("モルペウスが おへんじ したよ！");
@@ -201,9 +205,13 @@ export default function DreamForm({
       title: title.trim(),
       content: content.trim(),
       emotion_ids: selectedEmotionIds,
-      analysis_json: analysisPayload,
-      analysis_status: analysisPayload ? "done" : undefined,
-      analyzed_at: analysisPayload ? new Date().toISOString() : undefined,
+      ...(analysisPayload
+        ? {
+            analysis_json: analysisPayload,
+            analysis_status: "done",
+            analyzed_at: new Date().toISOString(),
+          }
+        : {}),
     });
   };
 
@@ -250,10 +258,12 @@ export default function DreamForm({
         ></textarea>
         {/* Analysis Button */}
         <div className="mt-3 flex justify-end">
-          <button
+          <motion.button
             type="button"
             onClick={handleAnalyze}
             disabled={isAnalyzing || !content.trim()}
+            whileHover={isAnalyzing || !content.trim() ? undefined : { y: -2, scale: 1.01 }}
+            whileTap={isAnalyzing || !content.trim() ? undefined : { scale: 0.98 }}
             className={`
                 px-4 py-2 rounded-full font-bold text-sm transition-all shadow-md flex items-center gap-2
                 ${
@@ -279,16 +289,64 @@ export default function DreamForm({
                 <span>モルペウスに きく</span>
               </>
             )}
-          </button>
+          </motion.button>
         </div>
+        {isAnalyzing ? (
+          <div className="mt-4 overflow-hidden rounded-[28px] border border-sky-200/50 bg-slate-950 px-4 py-4 text-slate-50 shadow-lg">
+            <div className="flex items-center gap-4">
+              <MorpheusSVG expression="dreaming" size={74} />
+              <div className="flex-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
+                  Morpheus Reading
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  ゆめのつづきを そっと よみといているよ
+                </p>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-sky-950/80">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-300 via-yellow-200 to-sky-400"
+                    initial={{ width: "18%" }}
+                    animate={{ width: ["18%", "76%", "58%", "88%"] }}
+                    transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2 text-lg">
+              {["✦", "⋆", "✧"].map((star, index) => (
+                <motion.span
+                  key={`${star}-${index}`}
+                  initial={{ opacity: 0.35, y: 8 }}
+                  animate={{ opacity: [0.35, 1, 0.35], y: [8, 0, 8] }}
+                  transition={{ duration: 1.8, delay: index * 0.18, repeat: Infinity }}
+                  className="text-sky-200"
+                >
+                  {star}
+                </motion.span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {analysisText && (
-        <div className="mb-6">
+        <motion.div
+          key={`${analysisRevealKey}-${analysisText}`}
+          initial={{ opacity: 0, rotateX: -14, y: 20 }}
+          animate={{ opacity: 1, rotateX: 0, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-6"
+        >
           <label className="block mb-2 font-semibold text-card-foreground">
             モルペウスの ゆめうらない
           </label>
-          <div className="rounded-md border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
+          <div className="rounded-[28px] border border-input bg-muted/50 p-4 text-sm leading-relaxed text-foreground shadow-sm">
+            <div className="mb-3 flex items-center justify-between rounded-2xl bg-background/70 px-3 py-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                Dream Reveal
+              </p>
+              <p className="text-xs text-muted-foreground">ふわっと あらわれたよ</p>
+            </div>
             <p className="whitespace-pre-wrap">{analysisText}</p>
             {suggestedEmotionNames.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -338,7 +396,7 @@ export default function DreamForm({
           <p className="mt-2 text-xs text-muted-foreground">
             ないよう や タグ は、じぶんで なおせるよ。
           </p>
-        </div>
+        </motion.div>
       )}
 
       <div className="mb-6">
@@ -365,6 +423,7 @@ export default function DreamForm({
                 const isSelected = group.ids.some((id) =>
                   selectedEmotionIds.includes(id)
                 );
+                const checkboxId = `emotion-${group.representativeId}`;
 
                 const baseStyle = "border-2 transition-all duration-200";
                 const selectedStyle =
@@ -373,13 +432,18 @@ export default function DreamForm({
                   "bg-card border-border hover:bg-accent hover:border-accent-foreground/50 text-foreground";
 
                 return (
-                  <label
+                  <motion.label
                     key={group.displayLabel}
+                    htmlFor={checkboxId}
+                    whileHover={{ y: -1, scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
                     className={`flex items-center justify-center p-4 rounded-xl cursor-pointer ${baseStyle} ${isSelected ? selectedStyle : unselectedStyle}`}
                   >
                     <input
+                      id={checkboxId}
                       type="checkbox"
-                      className="hidden"
+                      className="sr-only"
+                      aria-label={group.displayLabel}
                       checked={isSelected}
                       onChange={() => {
                         // Toggle logic:
@@ -397,10 +461,20 @@ export default function DreamForm({
                         }
                       }}
                     />
-                    <span className="text-base select-none">
+                    <span className="text-base select-none flex items-center gap-1.5">
                       {group.displayLabel}
+                      {isSelected ? (
+                        <motion.span
+                          aria-hidden="true"
+                          initial={{ opacity: 0, scale: 0.6 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="text-amber-400"
+                        >
+                          ✦
+                        </motion.span>
+                      ) : null}
                     </span>
-                  </label>
+                  </motion.label>
                 );
               });
             })()}

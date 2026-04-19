@@ -243,12 +243,18 @@ export default function DreamEntryLauncher({
                 </div>
                 <div
                   className={cn(
-                    "rounded-full p-3",
+                    "relative rounded-full p-3",
                     status === "recording"
                       ? "bg-red-100 text-red-600"
                       : "bg-sky-100 text-sky-600"
                   )}
                 >
+                  {status === "recording" ? (
+                    <>
+                      <span className="absolute inset-0 rounded-full border border-red-300/80 animate-ping" />
+                      <span className="absolute -inset-2 rounded-full border border-red-200/70 animate-[ping_1.8s_ease-out_infinite]" />
+                    </>
+                  ) : null}
                   {isProcessing ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : status === "recording" ? (

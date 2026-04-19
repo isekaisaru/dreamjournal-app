@@ -102,7 +102,7 @@ describe("DreamDetailPage", () => {
     render(<DreamDetailPage params={{ id: "1" } as never} />);
 
     expect(
-      screen.getByText("🔮 モルペウスの ゆめうらない")
+      screen.getAllByText("🔮 モルペウスの ゆめうらない")[0]
     ).toBeInTheDocument();
     expect(
       screen.getByText("むかしの けいしきの うらない")

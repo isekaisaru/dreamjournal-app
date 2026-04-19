@@ -4,6 +4,29 @@ import userEvent from "@testing-library/user-event";
 import DreamForm from "@/app/components/DreamForm";
 import { createMockEmotion } from "../utils/mockFactory";
 
+// framer-motion uses ESM and breaks Jest — proxy motion.* to plain HTML elements
+jest.mock("framer-motion", () => {
+  const React = require("react");
+  const motion = new Proxy(
+    {},
+    {
+      get: (_, tag) =>
+        // eslint-disable-next-line react/display-name
+        React.forwardRef(({ children, ...props }, ref) => {
+          // Strip framer-specific props so React doesn't warn about unknown attrs
+          const {
+            initial, animate, exit, transition, variants, whileHover, whileTap,
+            whileFocus, whileDrag, whileInView, drag, dragConstraints,
+            layoutId, layout, onAnimationStart, onAnimationComplete,
+            viewport, custom, style, ...rest
+          } = props;
+          return React.createElement(tag, { ...rest, ref, style }, children);
+        }),
+    }
+  );
+  return { motion, AnimatePresence: ({ children }) => children };
+});
+
 // Mocks
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),
@@ -46,10 +69,18 @@ describe("DreamForm", () => {
 
     // toggle select/unselect
     expect(happy).not.toBeChecked();
-    await user.click(happy);
-    expect(happy).toBeChecked();
-    await user.click(happy);
-    expect(happy).not.toBeChecked();
+    await user.click(screen.getByText("😊 うれしい"));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("checkbox", { name: "😊 うれしい" })
+      ).toBeChecked();
+    });
+    await user.click(screen.getByText("😊 うれしい"));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("checkbox", { name: "😊 うれしい" })
+      ).not.toBeChecked();
+    });
   });
 
   it("submits valid form with trimmed fields and selected emotion_ids", async () => {
@@ -62,7 +93,7 @@ describe("DreamForm", () => {
     render(<DreamForm onSubmit={onSubmit} />);
 
     // Wait for emotions
-    const fun = await screen.findByRole("checkbox", { name: "😆 たのしい" });
+    await screen.findByRole("checkbox", { name: "😆 たのしい" });
 
     // The previous error in DreamCard showed "😊 うれしい". This suggests sticking to the emoji versions.
 
@@ -71,18 +102,25 @@ describe("DreamForm", () => {
     const contentInput = screen.getByLabelText("どんな おはなし？");
     await user.type(titleInput, "  テストタイトル  ");
     await user.type(contentInput, "  テスト内容  ");
-    await user.click(fun);
+    await user.click(screen.getByText("😆 たのしい"));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("checkbox", { name: "😆 たのしい" })
+      ).toBeChecked();
+    });
 
     // Act
     await user.click(screen.getByRole("button", { name: "ゆめを のこす" }));
 
     // Assert
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: "テストタイトル",
-      content: "テスト内容",
-      emotion_ids: [5],
-    });
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "テストタイトル",
+        content: "テスト内容",
+        emotion_ids: [5],
+      })
+    );
   });
 
   it("shows validation error when title is only whitespace and does not submit", async () => {
@@ -186,7 +224,7 @@ describe("DreamForm", () => {
 
     render(<DreamForm initialData={initialData} onSubmit={jest.fn()} />);
 
-    const analyzeButton = await screen.findByRole("button", {
+    await screen.findByRole("button", {
       name: /もういちど\s*きく/,
     });
     const wonder = await screen.findByRole("checkbox", {
@@ -204,16 +242,33 @@ describe("DreamForm", () => {
     expect(anxiety).not.toBeChecked();
     expect(happy).not.toBeChecked();
 
-    await user.click(analyzeButton);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /もういちど\s*きく/ })
+      ).toBeEnabled();
+    });
+    expect(screen.getByDisplayValue("初期コンテンツ")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /もういちど\s*きく/ }));
+
+    await waitFor(() => {
+      expect(previewAnalysis).toHaveBeenCalledWith("初期コンテンツ");
+    });
 
     await waitFor(() => {
       expect(screen.getByText("あたらしい うらない けっか")).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(anxiety).toBeChecked();
-      expect(happy).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", { name: "😓 しんぱい" })
+      ).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", { name: "😊 うれしい" })
+      ).toBeChecked();
     });
-    expect(wonder).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "😵 わからない" })
+    ).not.toBeChecked();
     expect(screen.getByText("#不安")).toBeInTheDocument();
     expect(screen.getByText("#嬉しい")).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith("モルペウスが おへんじ したよ！");

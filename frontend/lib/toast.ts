@@ -40,6 +40,15 @@ export const toast = {
   remove: createToastInvoker("remove"),
 };
 
+export function custom(...args: Parameters<ToastInstance["custom"]>) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  void loadToast().then(({ toast }) => {
+    toast.custom(...args);
+  });
+}
+
 export async function promise<T>(
   promise: Promise<T>,
   messages: Parameters<ToastInstance["promise"]>[1]

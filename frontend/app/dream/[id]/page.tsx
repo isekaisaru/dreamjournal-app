@@ -10,9 +10,11 @@ import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import apiClient from "../../../lib/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
+import { MorpheusGuideDetail } from "@/app/components/MorpheusGuide";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,6 +102,7 @@ export default function DreamDetailPage({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isAnalysisFlipped, setIsAnalysisFlipped] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageQuota, setImageQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
@@ -121,6 +124,10 @@ export default function DreamDetailPage({
       setGeneratedImageUrl(dream.generated_image_url);
     }
   }, [dream?.generated_image_url]);
+
+  useEffect(() => {
+    setIsAnalysisFlipped(false);
+  }, [dream?.id]);
 
   const handleGenerateImage = async () => {
     if (!dreamId || isGeneratingImage) return;
@@ -251,6 +258,9 @@ export default function DreamDetailPage({
   const displayTags = aiEmotionTags.length > 0 ? aiEmotionTags : dbEmotionTags;
   const analysisText =
     dream.analysis_json?.analysis || dream.analysis_json?.text || "";
+  const analysisPreview = displayTags.length
+    ? "感じたことを みつけたよ"
+    : "タップすると モルペウスの読み取りがひらくよ";
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
@@ -287,13 +297,73 @@ export default function DreamDetailPage({
 
       {/* モルペウスのゆめうらない */}
       {analysisText && (
-        <div className="bg-muted/50 border border-input rounded-xl p-5 mb-6">
-          <p className="text-sm font-semibold text-muted-foreground mb-2">
-            {copy.analysis}
-          </p>
-          <p className="text-foreground leading-relaxed whitespace-pre-wrap text-sm">
-            {analysisText}
-          </p>
+        <div className="mb-6" style={{ perspective: 1400 }}>
+          <button
+            type="button"
+            onClick={() => setIsAnalysisFlipped((current) => !current)}
+            className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-pressed={isAnalysisFlipped}
+          >
+            <motion.div
+              animate={{ rotateY: isAnalysisFlipped ? 180 : 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              style={{ transformStyle: "preserve-3d" }}
+              className="relative min-h-[220px]"
+            >
+              <div
+                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-primary/20 p-5 shadow-lg"
+                style={{
+                  backfaceVisibility: "hidden",
+                  background:
+                    "linear-gradient(160deg, rgba(255,255,255,0.96), rgba(240,249,255,0.94))",
+                }}
+              >
+                <p className="text-sm font-semibold text-muted-foreground">
+                  {copy.analysis}
+                </p>
+                <div className="mt-4 flex items-center gap-4">
+                  <div className="rounded-3xl bg-primary/10 px-4 py-3 text-3xl">
+                    🔮
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-foreground">
+                      モルペウスが 夢を読みほどいたよ
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {analysisPreview}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6 rounded-2xl bg-background/80 px-4 py-4">
+                  <p className="text-sm leading-relaxed text-foreground/85 line-clamp-4">
+                    {!isAnalysisFlipped ? analysisText : null}
+                  </p>
+                </div>
+                <p className="mt-4 text-xs font-medium text-primary">
+                  タップで くるっと裏返して全文をみる
+                </p>
+              </div>
+              <div
+                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-border bg-muted/50 p-5 shadow-lg"
+                style={{
+                  backfaceVisibility: "hidden",
+                  transform: "rotateY(180deg)",
+                }}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-muted-foreground">
+                    {copy.analysis}
+                  </p>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    flip back
+                  </span>
+                </div>
+                <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                  {isAnalysisFlipped ? analysisText : null}
+                </p>
+              </div>
+            </motion.div>
+          </button>
         </div>
       )}
 
@@ -301,7 +371,15 @@ export default function DreamDetailPage({
       <div className="mb-6">
         {generatedImageUrl ? (
           <div className="space-y-2">
-            <div className="rounded-xl overflow-hidden border border-border">
+            <div className="overflow-hidden rounded-[30px] border border-border bg-card shadow-lg">
+              <div className="flex items-center gap-2 border-b border-border/80 bg-muted/50 px-4 py-3">
+                <span className="h-3 w-3 rounded-full bg-rose-400" />
+                <span className="h-3 w-3 rounded-full bg-amber-300" />
+                <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                <p className="ml-2 text-xs font-medium text-muted-foreground">
+                  dream-window.png
+                </p>
+              </div>
               <Image
                 src={generatedImageUrl}
                 alt={copy.imageAlt}
@@ -310,6 +388,10 @@ export default function DreamDetailPage({
                 className="w-full h-auto"
                 unoptimized
                 onError={handleImageLoadError}
+                style={{
+                  background:
+                    "radial-gradient(circle at top, rgba(125,211,252,0.16), transparent 42%), linear-gradient(180deg, rgba(248,250,252,0.92), rgba(226,232,240,0.65))",
+                }}
               />
               <div className="p-3 bg-card flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">{copy.image}</p>
@@ -392,6 +474,7 @@ export default function DreamDetailPage({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <MorpheusGuideDetail />
     </div>
   );
 }

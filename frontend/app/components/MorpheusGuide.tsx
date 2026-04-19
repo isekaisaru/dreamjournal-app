@@ -146,6 +146,7 @@ export function MorpheusGuideDetail() {
       title="すてきな夢だね。"
       message="ちゃんと記録できてえらいよ。分析結果も見てみてね。"
       size={72}
+      positionClassName="bottom-6 left-4 sm:bottom-10 sm:left-8"
     />
   );
 }
@@ -166,6 +167,21 @@ export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
       }
       size={64}
       defaultOpen={true}
+    />
+  );
+}
+
+/** 新規作成ページ用 */
+export function MorpheusGuideCompose() {
+  return (
+    <MorpheusGuide
+      expression="cheerful"
+      title="思い出せるぶんで大丈夫"
+      message="さいしょは ひとことでも いいよ。あとから ふくらませよう。"
+      size={68}
+      placement="inline"
+      positionClassName=""
+      className="items-start"
     />
   );
 }

@@ -14,8 +14,7 @@ import DreamStatsWidget from "@/app/components/DreamStatsWidget";
 import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
-import MorpheusAssistant from "./MorpheusAssistant";
-import { MorpheusGuideHome, MorpheusGuideEmpty } from "@/app/components/MorpheusGuide";
+import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import Loading from "../loading";
 
 /**
@@ -60,6 +59,31 @@ function getHomeCopy(ageGroup: AgeGroup | undefined) {
         helper: "記録方法を選択できます",
       };
   }
+}
+
+function getToneClassByHour(hour: number) {
+  if (hour < 6) {
+    return {
+      backgroundImage:
+        "radial-gradient(circle at top, rgba(56,189,248,0.16), transparent 32%), linear-gradient(180deg, rgba(15,23,42,0.96), rgba(30,41,59,0.96))",
+    };
+  }
+  if (hour < 11) {
+    return {
+      backgroundImage:
+        "radial-gradient(circle at top, rgba(251,191,36,0.16), transparent 34%), linear-gradient(180deg, rgba(255,255,255,0.95), rgba(239,246,255,0.96))",
+    };
+  }
+  if (hour < 17) {
+    return {
+      backgroundImage:
+        "radial-gradient(circle at top, rgba(125,211,252,0.14), transparent 34%), linear-gradient(180deg, rgba(248,250,252,0.96), rgba(224,242,254,0.96))",
+    };
+  }
+  return {
+    backgroundImage:
+      "radial-gradient(circle at top, rgba(251,146,60,0.18), transparent 34%), linear-gradient(180deg, rgba(255,247,237,0.96), rgba(254,215,170,0.24))",
+  };
 }
 
 /**
@@ -221,9 +245,13 @@ export default function HomePage() {
     !isSearchPanelOpen &&
     dreams.length > 0 &&
     dreams.length < 5;
+  const homeToneStyle = getToneClassByHour(new Date().getHours());
 
   return (
-    <div className="lg:flex text-foreground">
+    <div
+      className="lg:flex text-foreground rounded-[2rem] p-2 md:p-3"
+      style={homeToneStyle}
+    >
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
         <div className="w-full rounded-3xl border border-border/70 bg-card px-5 py-5 shadow-sm">
@@ -330,7 +358,6 @@ export default function HomePage() {
           : "今日はどんな夢だった？"}
         message={copy.sub}
       />
-      <MorpheusAssistant />
     </div>
   );
 }
