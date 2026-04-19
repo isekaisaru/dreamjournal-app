@@ -205,9 +205,13 @@ export default function DreamForm({
       title: title.trim(),
       content: content.trim(),
       emotion_ids: selectedEmotionIds,
-      analysis_json: analysisPayload,
-      analysis_status: analysisPayload ? "done" : undefined,
-      analyzed_at: analysisPayload ? new Date().toISOString() : undefined,
+      ...(analysisPayload
+        ? {
+            analysis_json: analysisPayload,
+            analysis_status: "done",
+            analyzed_at: new Date().toISOString(),
+          }
+        : {}),
     });
   };
 
@@ -419,6 +423,7 @@ export default function DreamForm({
                 const isSelected = group.ids.some((id) =>
                   selectedEmotionIds.includes(id)
                 );
+                const checkboxId = `emotion-${group.representativeId}`;
 
                 const baseStyle = "border-2 transition-all duration-200";
                 const selectedStyle =
@@ -429,13 +434,16 @@ export default function DreamForm({
                 return (
                   <motion.label
                     key={group.displayLabel}
+                    htmlFor={checkboxId}
                     whileHover={{ y: -1, scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     className={`flex items-center justify-center p-4 rounded-xl cursor-pointer ${baseStyle} ${isSelected ? selectedStyle : unselectedStyle}`}
                   >
                     <input
+                      id={checkboxId}
                       type="checkbox"
-                      className="hidden"
+                      className="sr-only"
+                      aria-label={group.displayLabel}
                       checked={isSelected}
                       onChange={() => {
                         // Toggle logic:
@@ -457,6 +465,7 @@ export default function DreamForm({
                       {group.displayLabel}
                       {isSelected ? (
                         <motion.span
+                          aria-hidden="true"
                           initial={{ opacity: 0, scale: 0.6 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className="text-amber-400"

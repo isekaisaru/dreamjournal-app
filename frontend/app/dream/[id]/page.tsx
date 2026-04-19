@@ -259,7 +259,7 @@ export default function DreamDetailPage({
   const analysisText =
     dream.analysis_json?.analysis || dream.analysis_json?.text || "";
   const analysisPreview = displayTags.length
-    ? `感じたこと: ${displayTags.slice(0, 2).join(" / ")}`
+    ? "感じたことを みつけたよ"
     : "タップすると モルペウスの読み取りがひらくよ";
 
   return (
@@ -336,7 +336,7 @@ export default function DreamDetailPage({
                 </div>
                 <div className="mt-6 rounded-2xl bg-background/80 px-4 py-4">
                   <p className="text-sm leading-relaxed text-foreground/85 line-clamp-4">
-                    {analysisText}
+                    {!isAnalysisFlipped ? analysisText : null}
                   </p>
                 </div>
                 <p className="mt-4 text-xs font-medium text-primary">
@@ -359,7 +359,7 @@ export default function DreamDetailPage({
                   </span>
                 </div>
                 <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {analysisText}
+                  {isAnalysisFlipped ? analysisText : null}
                 </p>
               </div>
             </motion.div>

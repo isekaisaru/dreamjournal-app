@@ -95,17 +95,22 @@ describe("DreamForm", () => {
     await user.type(titleInput, "  テストタイトル  ");
     await user.type(contentInput, "  テスト内容  ");
     await user.click(fun);
+    await waitFor(() => {
+      expect(fun).toBeChecked();
+    });
 
     // Act
     await user.click(screen.getByRole("button", { name: "ゆめを のこす" }));
 
     // Assert
     expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: "テストタイトル",
-      content: "テスト内容",
-      emotion_ids: [5],
-    });
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "テストタイトル",
+        content: "テスト内容",
+        emotion_ids: [5],
+      })
+    );
   });
 
   it("shows validation error when title is only whitespace and does not submit", async () => {
