@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DreamForm from "@/app/components/DreamForm";
 import { createMockEmotion } from "../utils/mockFactory";
@@ -70,9 +70,17 @@ describe("DreamForm", () => {
     // toggle select/unselect
     expect(happy).not.toBeChecked();
     await user.click(screen.getByText("😊 うれしい"));
-    expect(happy).toBeChecked();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("checkbox", { name: "😊 うれしい" })
+      ).toBeChecked();
+    });
     await user.click(screen.getByText("😊 うれしい"));
-    expect(happy).not.toBeChecked();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("checkbox", { name: "😊 うれしい" })
+      ).not.toBeChecked();
+    });
   });
 
   it("submits valid form with trimmed fields and selected emotion_ids", async () => {
@@ -85,7 +93,7 @@ describe("DreamForm", () => {
     render(<DreamForm onSubmit={onSubmit} />);
 
     // Wait for emotions
-    const fun = await screen.findByRole("checkbox", { name: "😆 たのしい" });
+    await screen.findByRole("checkbox", { name: "😆 たのしい" });
 
     // The previous error in DreamCard showed "😊 うれしい". This suggests sticking to the emoji versions.
 
@@ -96,7 +104,9 @@ describe("DreamForm", () => {
     await user.type(contentInput, "  テスト内容  ");
     await user.click(screen.getByText("😆 たのしい"));
     await waitFor(() => {
-      expect(fun).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", { name: "😆 たのしい" })
+      ).toBeChecked();
     });
 
     // Act
@@ -214,7 +224,7 @@ describe("DreamForm", () => {
 
     render(<DreamForm initialData={initialData} onSubmit={jest.fn()} />);
 
-    const analyzeButton = await screen.findByRole("button", {
+    await screen.findByRole("button", {
       name: /もういちど\s*きく/,
     });
     const wonder = await screen.findByRole("checkbox", {
@@ -232,7 +242,14 @@ describe("DreamForm", () => {
     expect(anxiety).not.toBeChecked();
     expect(happy).not.toBeChecked();
 
-    fireEvent.click(analyzeButton);
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /もういちど\s*きく/ })
+      ).toBeEnabled();
+    });
+    expect(screen.getByDisplayValue("初期コンテンツ")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /もういちど\s*きく/ }));
 
     await waitFor(() => {
       expect(previewAnalysis).toHaveBeenCalledWith("初期コンテンツ");
