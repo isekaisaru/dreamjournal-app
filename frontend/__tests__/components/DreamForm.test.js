@@ -259,10 +259,16 @@ describe("DreamForm", () => {
       expect(screen.getByText("あたらしい うらない けっか")).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(anxiety).toBeChecked();
-      expect(happy).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", { name: "😓 しんぱい" })
+      ).toBeChecked();
+      expect(
+        screen.getByRole("checkbox", { name: "😊 うれしい" })
+      ).toBeChecked();
     });
-    expect(wonder).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "😵 わからない" })
+    ).not.toBeChecked();
     expect(screen.getByText("#不安")).toBeInTheDocument();
     expect(screen.getByText("#嬉しい")).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith("モルペウスが おへんじ したよ！");
