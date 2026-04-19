@@ -33,6 +33,14 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
+const moonPhases = [
+  { icon: "🌑", label: "はじまり" },
+  { icon: "🌒", label: "うまれそう" },
+  { icon: "🌓", label: "ふくらむ" },
+  { icon: "🌔", label: "もうすぐ" },
+  { icon: "🌕", label: "きょうの ゆめ" },
+];
+
 const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps) => {
   return (
     <>
@@ -80,6 +88,28 @@ const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps)
             /* 夢がまだない場合 — モルペウスガイド */
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-center gap-6">
               <MorpheusGuideEmpty ageGroup={ageGroup} />
+              <div className="rounded-3xl border border-border/70 bg-card/70 px-5 py-4 shadow-sm">
+                <p className="text-sm font-semibold text-card-foreground">
+                  こんやの ゆめカレンダー
+                </p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  {moonPhases.map((phase, index) => (
+                    <div
+                      key={phase.label}
+                      className={`rounded-2xl px-3 py-2 text-center ${
+                        index === moonPhases.length - 1
+                          ? "bg-primary/12 ring-1 ring-primary/25"
+                          : "bg-muted/55"
+                      }`}
+                    >
+                      <div className="text-2xl leading-none">{phase.icon}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {phase.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <Button asChild className="rounded-full px-6 text-base font-bold">
                 <Link href="/dream/new">✏️ ゆめを かく</Link>
               </Button>
