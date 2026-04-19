@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import DreamForm from "@/app/components/DreamForm";
 import { createMockEmotion } from "../utils/mockFactory";
@@ -69,9 +69,9 @@ describe("DreamForm", () => {
 
     // toggle select/unselect
     expect(happy).not.toBeChecked();
-    await user.click(happy);
+    await user.click(screen.getByText("😊 うれしい"));
     expect(happy).toBeChecked();
-    await user.click(happy);
+    await user.click(screen.getByText("😊 うれしい"));
     expect(happy).not.toBeChecked();
   });
 
@@ -94,7 +94,7 @@ describe("DreamForm", () => {
     const contentInput = screen.getByLabelText("どんな おはなし？");
     await user.type(titleInput, "  テストタイトル  ");
     await user.type(contentInput, "  テスト内容  ");
-    await user.click(fun);
+    await user.click(screen.getByText("😆 たのしい"));
     await waitFor(() => {
       expect(fun).toBeChecked();
     });
@@ -232,7 +232,11 @@ describe("DreamForm", () => {
     expect(anxiety).not.toBeChecked();
     expect(happy).not.toBeChecked();
 
-    await user.click(analyzeButton);
+    fireEvent.click(analyzeButton);
+
+    await waitFor(() => {
+      expect(previewAnalysis).toHaveBeenCalledWith("初期コンテンツ");
+    });
 
     await waitFor(() => {
       expect(screen.getByText("あたらしい うらない けっか")).toBeInTheDocument();
