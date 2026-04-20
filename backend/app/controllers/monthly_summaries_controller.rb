@@ -1,5 +1,5 @@
 class MonthlySummariesController < ApplicationController
-  YEAR_MONTH_FORMAT = /\A\d{4}-\d{2}\z/
+  YEAR_MONTH_FORMAT = /\A\d{4}-(0[1-9]|1[0-2])\z/
 
   def create
     unless current_user.premium?

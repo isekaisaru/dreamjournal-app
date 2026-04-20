@@ -16,10 +16,26 @@ RSpec.describe 'MonthlySummaries API', type: :request do
     end
 
     context '不正な year_month フォーマットの場合' do
-      it '400 を返す' do
+      it '文字列は 400 を返す' do
         user = create(:user, premium: true)
 
         authenticated_post '/dreams/month/invalid/ai_summary', user
+
+        expect(response).to have_http_status(:bad_request)
+      end
+
+      it '月が 00 は 400 を返す' do
+        user = create(:user, premium: true)
+
+        authenticated_post '/dreams/month/2026-00/ai_summary', user
+
+        expect(response).to have_http_status(:bad_request)
+      end
+
+      it '月が 13 は 400 を返す' do
+        user = create(:user, premium: true)
+
+        authenticated_post '/dreams/month/2026-13/ai_summary', user
 
         expect(response).to have_http_status(:bad_request)
       end
