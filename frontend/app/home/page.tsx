@@ -335,21 +335,34 @@ export default function HomePage() {
           </p>
         </div>
         <ul className="space-y-2 w-full">
-          {Object.entries(groupedDreams).map(([yearMonth, monthDreams]) => (
-            <li key={yearMonth}>
-              <Link
-                href={`/dream/month/${yearMonth}`}
-                className="text-primary hover:text-primary/90 hover:underline text-sm"
-              >
-                {new Date(monthDreams[0].created_at).toLocaleString("ja-JP", {
-                  year: "numeric",
-                  month: "long",
-                  timeZone: "Asia/Tokyo",
-                })}
-                の夢
-              </Link>
-            </li>
-          ))}
+          {Object.entries(groupedDreams).map(([yearMonth, monthDreams]) => {
+            const monthName = new Date(monthDreams[0].created_at).toLocaleString("ja-JP", {
+              year: "numeric",
+              month: "long",
+              timeZone: "Asia/Tokyo",
+            });
+            return (
+              <li key={yearMonth}>
+                <Link
+                  href={`/dream/month/${yearMonth}`}
+                  className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3 text-sm transition-colors hover:bg-muted"
+                >
+                  <span className="font-medium text-foreground">
+                    {monthName}の夢
+                  </span>
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{monthDreams.length}こ</span>
+                    {user?.premium && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        サマリー
+                      </span>
+                    )}
+                    <span>→</span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </aside>
       <MorpheusGuideHome
