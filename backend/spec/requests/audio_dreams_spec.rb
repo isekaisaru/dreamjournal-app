@@ -12,6 +12,14 @@ RSpec.describe 'AudioDreams API', type: :request do
 
         expect(response).to have_http_status(:forbidden)
       end
+
+      it 'プレミアム会員はtrial_audio_countが上限に達していても403を返さない' do
+        user.update!(premium: true, trial_user: true, trial_audio_count: 1)
+
+        authenticated_post '/analyze_audio_dream', user
+
+        expect(response).not_to have_http_status(:forbidden)
+      end
     end
 
     context '認証されていない場合' do
