@@ -28,6 +28,41 @@ RSpec.describe User, type: :model do
       expect(user.reload.monthly_analysis_count).to eq(4)
       expect(user.monthly_analysis_count_reset_at).to eq(current_month)
     end
+
+    it 'resets the count when reset_at is nil (new user)' do
+      user = create(:user, monthly_analysis_count: 3, monthly_analysis_count_reset_at: nil)
+
+      user.reset_monthly_analysis_count_if_needed!(Time.zone.parse('2026-04-15 10:00:00'))
+
+      expect(user.reload.monthly_analysis_count).to eq(0)
+      expect(user.monthly_analysis_count_reset_at).to eq(Time.zone.parse('2026-04-01 00:00:00'))
+    end
+  end
+
+  describe '#increment_monthly_analysis_count!' do
+    it 'increments the count within the same month' do
+      user = create(
+        :user,
+        monthly_analysis_count: 2,
+        monthly_analysis_count_reset_at: Time.zone.parse('2026-04-01 00:00:00')
+      )
+
+      user.increment_monthly_analysis_count!(Time.zone.parse('2026-04-15 10:00:00'))
+
+      expect(user.reload.monthly_analysis_count).to eq(3)
+    end
+
+    it 'resets then increments to 1 when month is stale' do
+      user = create(
+        :user,
+        monthly_analysis_count: 5,
+        monthly_analysis_count_reset_at: 2.months.ago
+      )
+
+      user.increment_monthly_analysis_count!(Time.zone.parse('2026-04-15 10:00:00'))
+
+      expect(user.reload.monthly_analysis_count).to eq(1)
+    end
   end
 
   describe '#premium_active_subscription?' do
