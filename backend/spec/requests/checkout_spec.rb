@@ -200,4 +200,62 @@ RSpec.describe 'Checkout API', type: :request do
       end
     end
   end
+
+  describe 'GET /checkout/session' do
+    it_behaves_like 'unauthorized request', :get, '/checkout/session'
+
+    it 'session_id が無い場合は 400 を返す' do
+      user = create(:user)
+
+      authenticated_get('/checkout/session', user)
+
+      expect(response).to have_http_status(:bad_request)
+      expect(JSON.parse(response.body)['error']).to include('session_id')
+    end
+
+    it 'session_id を検証して成功レスポンスを返す' do
+      user = create(:user)
+      metadata = { 'user_id' => user.id.to_s }
+      stripe_session = double(
+        'StripeCheckoutSession',
+        id: 'cs_sub_verified_123',
+        mode: 'subscription',
+        status: 'complete',
+        payment_status: 'paid',
+        metadata: metadata,
+        client_reference_id: user.id.to_s
+      )
+
+      expect(Stripe::Checkout::Session).to receive(:retrieve).with('cs_sub_verified_123').and_return(stripe_session)
+
+      authenticated_get('/checkout/session', user, params: { session_id: 'cs_sub_verified_123' })
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to include(
+        'verified' => true,
+        'session_id' => 'cs_sub_verified_123',
+        'status' => 'complete',
+        'payment_status' => 'paid'
+      )
+    end
+
+    it '別ユーザーの session_id は 403 を返す' do
+      user = create(:user)
+      stripe_session = double(
+        'StripeCheckoutSession',
+        id: 'cs_sub_other_user',
+        mode: 'subscription',
+        status: 'complete',
+        payment_status: 'paid',
+        metadata: { 'user_id' => '999999' },
+        client_reference_id: '999999'
+      )
+
+      expect(Stripe::Checkout::Session).to receive(:retrieve).with('cs_sub_other_user').and_return(stripe_session)
+
+      authenticated_get('/checkout/session', user, params: { session_id: 'cs_sub_other_user' })
+
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
 end
