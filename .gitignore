@@ -79,3 +79,9 @@ backend/temp_rspec_output.txt
 docs/target_companies_and_strategy.md
 docs/job_research_results.md
 docs/target_companies.md
+docs/career-roadmap-*.md
+docs/job-hunting-*.md
+docs/ux-improvement-roadmap.md
+
+# Codex/AI エージェント設定（公開禁止）
+AGENTS.md
