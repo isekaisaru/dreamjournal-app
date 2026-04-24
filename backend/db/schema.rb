@@ -138,11 +138,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_04_19_000000) do
     t.string "stripe_customer_id"
     t.integer "trial_analysis_count", default: 0, null: false
     t.integer "trial_audio_count", default: 0, null: false
+    t.integer "monthly_analysis_count", default: 0, null: false
+    t.datetime "monthly_analysis_count_reset_at"
     t.boolean "premium", default: false, null: false
     t.string "age_group", default: "child", null: false
     t.string "analysis_tone", default: "auto", null: false
-    t.integer "monthly_analysis_count", default: 0, null: false
-    t.datetime "monthly_analysis_count_reset_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
