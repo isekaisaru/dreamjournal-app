@@ -52,6 +52,7 @@ class AudioDreamsController < ApplicationController
   # 音声分析は Whisper + GPT で二重課金されるため厳しめに制限
   def check_trial_audio_limit
     user = current_user
+    return if user&.premium?
     return unless user&.trial_user?
 
     if user.trial_audio_count >= TRIAL_AUDIO_LIMIT
