@@ -24,6 +24,7 @@ Rails.application.routes.draw do
       get :image_quota # 画像生成残数
       # /dreams/month/2023-05 のような形式でアクセス
       get 'month/:year_month', to: 'dreams#by_month_index', as: :by_month
+      post 'month/:year_month/ai_summary', to: 'monthly_summaries#create'
     end
   end
 
@@ -47,6 +48,7 @@ Rails.application.routes.draw do
 
   # Stripe決済関連
   post '/checkout', to: 'checkout#create'
+  get '/checkout/session', to: 'checkout#show_session'
   post '/billing_portal', to: 'billing_portal#create'
   post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（署名検証は次回実装）
 
