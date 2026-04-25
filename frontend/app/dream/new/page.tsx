@@ -8,9 +8,11 @@ import React, { useLayoutEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import Loading from "../../loading";
 import { createDream } from "@/lib/apiClient";
-import { toast } from "@/lib/toast";
 import { DreamInput, AgeGroup } from "@/app/types";
 import { triggerDreamConfetti } from "@/lib/confetti";
+import { toast } from "@/lib/toast";
+import { showNightCeremonyToast } from "@/lib/morpheusToast";
+import { MorpheusGuideCompose } from "@/app/components/MorpheusGuide";
 
 function getNewDreamCopy(ageGroup: AgeGroup | undefined) {
   switch (ageGroup) {
@@ -70,7 +72,7 @@ export default function NewDreamPage() {
     try {
       await createDream(formData);
       triggerDreamConfetti();
-      toast.success("夢を保存したよ！");
+      showNightCeremonyToast();
       router.push("/home");
     } catch (error) {
       console.error("Failed to save dream:", error);
@@ -122,6 +124,9 @@ export default function NewDreamPage() {
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">{copy.heading}</h1>
+      <div className="mb-6">
+        <MorpheusGuideCompose />
+      </div>
 
       {/* ドラフト復元バナー（録音データがある場合のみ表示） */}
       {!isDraftChecked ? (
@@ -133,15 +138,7 @@ export default function NewDreamPage() {
             message="モルペウスが きいた おはなしを かわりに かいておいたよ。まちがってたら なおしてね🔮"
           />
         </div>
-      ) : (
-        /* 通常時の励ましメッセージ */
-        <div className="mb-6">
-          <MorpheusSmall
-            message={copy.morpheus}
-            size="sm"
-          />
-        </div>
-      )}
+      ) : null}
 
       <DreamForm onSubmit={handleCreateSubmit} isLoading={isSaving} />
     </div>

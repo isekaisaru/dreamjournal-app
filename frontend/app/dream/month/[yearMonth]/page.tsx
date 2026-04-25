@@ -25,16 +25,21 @@ export default function DreamByMonthPage() {
   const yearMonth =
     typeof yearMonthParam === "string" ? yearMonthParam : yearMonthParam?.[0];
   const monthLabel = formatYearMonthLabel(yearMonth ?? "");
+
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { authStatus } = useAuth();
+
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const { authStatus, user } = useAuth();
 
   const fetchDreamsByMonth = useCallback(async () => {
     if (!yearMonth || authStatus !== "authenticated") return;
 
     setIsLoading(true);
-
     try {
       const response = await apiClient.get<Dream[]>(`/dreams/month/${yearMonth}`);
       setDreams(response);
@@ -54,6 +59,29 @@ export default function DreamByMonthPage() {
       setIsLoading(false);
     }
   }, [authStatus, fetchDreamsByMonth]);
+
+  const handleGenerateAiSummary = async () => {
+    if (!yearMonth) return;
+    setIsGenerating(true);
+    setAiError(null);
+
+    try {
+      const res = await fetch(
+        `/api/dreams/month/${yearMonth}/ai-summary`,
+        { method: "POST" }
+      );
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.summary) {
+        throw new Error(data?.error ?? "サマリーの生成に失敗しました。");
+      }
+      setAiSummary(data.summary);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "エラーが発生しました。");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   if (authStatus === "checking") {
     return <Loading />;
@@ -110,6 +138,7 @@ export default function DreamByMonthPage() {
           </div>
         ) : (
           <>
+            {/* Monthly Summary Card */}
             <section className="mb-6 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <div className="grid gap-0 md:grid-cols-[1.25fr_0.75fr]">
                 <div className="p-5 md:p-7">
@@ -119,9 +148,61 @@ export default function DreamByMonthPage() {
                   <h2 className="mt-2 text-2xl font-bold">
                     モルペウスの ひとこと
                   </h2>
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                    {summary.message}
-                  </p>
+
+                  {user?.premium ? (
+                    /* プレミアム: AIサマリー */
+                    <div className="mt-3">
+                      {aiSummary ? (
+                        <p className="text-sm leading-7 text-muted-foreground">
+                          {aiSummary}
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-sm leading-7 text-muted-foreground">
+                            {summary.message}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleGenerateAiSummary}
+                            disabled={isGenerating}
+                            className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {isGenerating ? (
+                              <>
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                モルペウスが ふりかえりちゅう…
+                              </>
+                            ) : (
+                              "✨ AIサマリーを生成する"
+                            )}
+                          </button>
+                          {aiError && (
+                            <p className="mt-2 text-xs text-destructive">
+                              {aiError}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    /* 非プレミアム: ゲート */
+                    <div className="mt-3 rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-5">
+                      <p className="text-sm font-semibold text-foreground">
+                        ✨ AIサマリーはプレミアム会員限定です
+                      </p>
+                      <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                        モルペウスが この月の夢をAIで分析して、
+                        <br />
+                        あなただけのひとことを つくってくれるよ。
+                      </p>
+                      <Link
+                        href="/subscription"
+                        className="mt-3 inline-flex min-h-9 items-center rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                      >
+                        プレミアムにアップグレード
+                      </Link>
+                    </div>
+                  )}
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     {summary.highlights.map((highlight) => (
@@ -177,6 +258,7 @@ export default function DreamByMonthPage() {
               </div>
             </section>
 
+            {/* Stats */}
             <section className="mb-3 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-border bg-card p-4">
                 <p className="text-xs font-semibold text-muted-foreground">
@@ -198,6 +280,7 @@ export default function DreamByMonthPage() {
               </div>
             </section>
 
+            {/* Dream list */}
             <section>
               <h2 className="px-4 pt-4 text-lg font-bold">この月の ゆめ一覧</h2>
               <DreamList dreams={dreams} />

@@ -7,12 +7,15 @@ import Image from "next/image";
 import DreamCard from "./DreamCard";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
+import { MorpheusGuideEmpty } from "./MorpheusGuide";
 
 interface DreamListProps {
   dreams: Dream[];
   onDelete?: (id: number) => void;
   /** 検索フィルターが有効な状態かどうか（空表示メッセージを切り替えるために使用） */
   isSearchActive?: boolean;
+  /** 年齢層（空状態メッセージの切り替えに使用） */
+  ageGroup?: string;
 }
 
 const container = {
@@ -30,7 +33,15 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-const DreamList = ({ dreams, isSearchActive = false }: DreamListProps) => {
+const moonPhases = [
+  { icon: "🌑", label: "はじまり" },
+  { icon: "🌒", label: "うまれそう" },
+  { icon: "🌓", label: "ふくらむ" },
+  { icon: "🌔", label: "もうすぐ" },
+  { icon: "🌕", label: "きょうの ゆめ" },
+];
+
+const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps) => {
   return (
     <>
       <motion.div
@@ -74,11 +85,31 @@ const DreamList = ({ dreams, isSearchActive = false }: DreamListProps) => {
               </Button>
             </div>
           ) : (
-            /* 夢がまだない場合の通常メッセージ */
-            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-              <div className="text-4xl mb-4">🌙</div>
-              <p className="text-lg font-bold mb-2">まだ ゆめ は ないよ</p>
-              <p className="text-sm mb-4">きょう みた ゆめ を おしえてね</p>
+            /* 夢がまだない場合 — モルペウスガイド */
+            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center gap-6">
+              <MorpheusGuideEmpty ageGroup={ageGroup} />
+              <div className="rounded-3xl border border-border/70 bg-card/70 px-5 py-4 shadow-sm">
+                <p className="text-sm font-semibold text-card-foreground">
+                  こんやの ゆめカレンダー
+                </p>
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+                  {moonPhases.map((phase, index) => (
+                    <div
+                      key={phase.label}
+                      className={`rounded-2xl px-3 py-2 text-center ${
+                        index === moonPhases.length - 1
+                          ? "bg-primary/12 ring-1 ring-primary/25"
+                          : "bg-muted/55"
+                      }`}
+                    >
+                      <div className="text-2xl leading-none">{phase.icon}</div>
+                      <div className="mt-1 text-[11px] text-muted-foreground">
+                        {phase.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <Button asChild className="rounded-full px-6 text-base font-bold">
                 <Link href="/dream/new">✏️ ゆめを かく</Link>
               </Button>
