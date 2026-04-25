@@ -16,6 +16,7 @@ import SearchBar from "@/app/components/SearchBar";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
+import MorpheusHero from "@/app/components/MorpheusHero";
 import Loading from "../loading";
 
 /**
@@ -255,26 +256,25 @@ export default function HomePage() {
     >
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
-        <div className="w-full rounded-3xl border border-border/70 bg-card px-5 py-5 shadow-sm">
-          <p className="text-sm font-semibold text-primary">
-            {user ? `${user.username}さん、おはよう` : "おはよう"}
-          </p>
-          <h1 className="mt-1 text-2xl font-bold text-foreground">
-            {copy.heading}
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {copy.sub}
-          </p>
-          <div className="mt-4 max-w-md">
-            <DreamEntryLauncher
-              buttonLabel={copy.button}
-              buttonSize="lg"
-              buttonClassName="min-h-14 w-full text-base font-bold shadow-lg shadow-primary/15"
-              helperText={copy.helper}
-              showSparkles
-            />
-          </div>
-        </div>
+        <MorpheusHero
+          expression="cheerful"
+          variant="home"
+          title={user ? `${user.username}さん、おはよう！` : "おはよう！"}
+          message={`${copy.heading} ${copy.sub}`}
+          size={164}
+          className="w-full mb-4"
+          action={
+            <div className="max-w-md">
+              <DreamEntryLauncher
+                buttonLabel={copy.button}
+                buttonSize="lg"
+                buttonClassName="min-h-14 w-full text-base font-bold shadow-lg shadow-primary/15"
+                helperText={copy.helper}
+                showSparkles
+              />
+            </div>
+          }
+        />
         {shouldDeferSearch ? (
           <div className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-sm">
             <p className="text-sm font-medium text-card-foreground">
