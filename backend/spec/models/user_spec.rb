@@ -65,6 +65,38 @@ RSpec.describe User, type: :model do
     end
   end
 
+  describe '#reserve_monthly_analysis_slot!' do
+    it 'increments and returns true when under the limit' do
+      user = create(:user, monthly_analysis_count: 5,
+                           monthly_analysis_count_reset_at: Time.zone.parse('2026-04-01'))
+
+      result = user.reserve_monthly_analysis_slot!(Time.zone.parse('2026-04-15 10:00:00'))
+
+      expect(result).to be true
+      expect(user.reload.monthly_analysis_count).to eq(6)
+    end
+
+    it 'returns false and does not increment when at the limit' do
+      user = create(:user, monthly_analysis_count: User::FREE_ANALYSIS_MONTHLY_LIMIT,
+                           monthly_analysis_count_reset_at: Time.zone.parse('2026-04-01'))
+
+      result = user.reserve_monthly_analysis_slot!(Time.zone.parse('2026-04-15 10:00:00'))
+
+      expect(result).to be false
+      expect(user.reload.monthly_analysis_count).to eq(User::FREE_ANALYSIS_MONTHLY_LIMIT)
+    end
+
+    it 'resets stale count then reserves the slot' do
+      user = create(:user, monthly_analysis_count: 8,
+                           monthly_analysis_count_reset_at: 2.months.ago)
+
+      result = user.reserve_monthly_analysis_slot!(Time.zone.parse('2026-04-15 10:00:00'))
+
+      expect(result).to be true
+      expect(user.reload.monthly_analysis_count).to eq(1)
+    end
+  end
+
   describe '#premium_active_subscription?' do
     it 'returns true when the user has an active subscription' do
       user = create(:user)
