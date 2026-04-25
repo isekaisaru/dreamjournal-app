@@ -12,7 +12,7 @@ export function getApiUrl(): string {
   const API_PREFIX_PATTERN = /\/api\/v1\/?$/;
 
   function normalizeBaseUrl(url: string): string {
-    return url.replace(API_PREFIX_PATTERN, "");
+    return url.replace(API_PREFIX_PATTERN, "").replace(/\/+$/, "");
   }
 
   // Check if we're running on the server side
@@ -29,16 +29,10 @@ export function getApiUrl(): string {
       return normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
     }
 
-    // Fallback logic for when NEXT_PUBLIC_API_URL is not set
-    const isVercel =
-      process.env.NEXT_PUBLIC_VERCEL === "1" ||
-      (typeof window !== "undefined" &&
-        window.location.hostname.includes("vercel.app"));
-
-    if (process.env.NODE_ENV === "production" && isVercel) {
-      // Vercel本番環境: Vercel Rewriteを使用（サードパーティCookie問題を回避）
-      // /api/* へのリクエストはnext.config.mjsのrewritesでRenderに転送される
-      return "/api";
+    // NEXT_PUBLIC_API_URL 未設定時のフォールバック
+    // rewriteに依存しないよう本番URLを直接使う（rewriteはai-summaryの動的ルートを壊す）
+    if (process.env.NODE_ENV === "production") {
+      return "https://dreamjournal-app.onrender.com";
     }
     return "http://localhost:3001";
   }
