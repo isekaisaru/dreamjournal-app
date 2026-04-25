@@ -3,12 +3,14 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
-import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
+import type { MorpheusExpression } from "./MorpheusSVG";
+import MorpheusImage, { type MorpheusImageVariant } from "./MorpheusImage";
 
 type MorpheusHeroProps = {
   title: string;
   message: string;
   expression?: MorpheusExpression;
+  imageVariant?: MorpheusImageVariant;
   size?: number;
   variant?: "home" | "compose" | "detail" | "voice";
   className?: string;
@@ -22,16 +24,24 @@ const variantStyles = {
   voice: "from-slate-950 via-indigo-950 to-sky-950 text-white border-white/15",
 } as const;
 
+const expressionToImageVariant: Record<MorpheusExpression, MorpheusImageVariant> = {
+  cheerful: "home",
+  curious: "analysis",
+  dreaming: "analysis",
+  proud: "praise",
+  sleeping: "empty",
+};
+
 /**
  * 画面の主役として使う大きめのモルペウスカード。
- * 小さいフローティングアイコンではなく、モック画面のように
- * 「モルペウスが案内している」ことが一目で伝わる配置にする。
+ * 添付画像版のモルペウスを使い、生成画像の可愛さをそのまま画面へ出す。
  */
 export default function MorpheusHero({
   title,
   message,
   expression = "cheerful",
-  size = 150,
+  imageVariant,
+  size = 190,
   variant = "home",
   className = "",
   action,
@@ -71,14 +81,12 @@ export default function MorpheusHero({
           transition={{ type: "spring", stiffness: 210, damping: 18 }}
           className="mx-auto grid place-items-center sm:mx-0"
         >
-          <div className="relative">
-            <div className="absolute inset-x-3 bottom-1 h-8 rounded-full bg-sky-300/35 blur-xl" />
-            <MorpheusSVG
-              expression={expression}
-              size={size}
-              className="relative drop-shadow-[0_18px_40px_rgba(56,189,248,0.38)]"
-            />
-          </div>
+          <MorpheusImage
+            variant={imageVariant ?? expressionToImageVariant[expression]}
+            size={size}
+            priority={variant === "home"}
+            className="relative"
+          />
         </motion.div>
       </div>
     </section>
