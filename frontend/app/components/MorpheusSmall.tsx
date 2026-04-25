@@ -1,7 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "framer-motion";
+
+import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
 
 interface MorpheusSmallProps {
   /** 吹き出しのメインメッセージ */
@@ -12,6 +13,8 @@ interface MorpheusSmallProps {
   size?: "sm" | "md";
   /** レイアウト方向: "row"=左吹き出し+右画像 / "col"=上画像+下吹き出し（デフォルト row） */
   layout?: "row" | "col";
+  /** モルペウスの表情 */
+  expression?: MorpheusExpression;
   /** 追加のラッパー className */
   className?: string;
 }
@@ -25,21 +28,22 @@ export default function MorpheusSmall({
   title,
   size = "md",
   layout = "row",
+  expression = "cheerful",
   className = "",
 }: MorpheusSmallProps) {
   const imgPx = size === "sm" ? 48 : 64;
+  const mascot = (
+    <MorpheusSVG
+      expression={expression}
+      size={imgPx}
+      className="drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
+    />
+  );
 
   if (layout === "col") {
     return (
       <div className={`flex flex-col items-center gap-2 ${className}`}>
-        <Image
-          src="/images/morpheus.png"
-          alt="モルペウス"
-          width={imgPx}
-          height={imgPx}
-          sizes={`${imgPx}px`}
-          className="opacity-90 drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
-        />
+        {mascot}
         <motion.div
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -72,17 +76,8 @@ export default function MorpheusSmall({
         <div className="absolute -right-2 bottom-3 w-0 h-0 border-t-[8px] border-t-transparent border-b-[8px] border-b-transparent border-l-[8px] border-l-slate-800/90" />
       </motion.div>
 
-      {/* モルペウス画像（右） */}
-      <div className="flex-shrink-0">
-        <Image
-          src="/images/morpheus.png"
-          alt="モルペウス"
-          width={imgPx}
-          height={imgPx}
-          sizes={`${imgPx}px`}
-          className="opacity-90 drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
-        />
-      </div>
+      {/* モルペウス本体（右） */}
+      <div className="flex-shrink-0">{mascot}</div>
     </div>
   );
 }
