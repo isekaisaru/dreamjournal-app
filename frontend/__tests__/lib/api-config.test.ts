@@ -24,18 +24,20 @@ describe("api-config", () => {
     );
   });
 
-  it("uses the Render production URL as fallback when NEXT_PUBLIC_API_URL is unset", () => {
-    process.env.NODE_ENV = "production";
+  it("uses /proxy rewrite on Vercel production so cookies are sent same-origin", () => {
+    process.env.NEXT_PUBLIC_VERCEL_ENV = "production";
 
-    expect(createApiUrl("/auth/login")).toBe(
-      "https://dreamjournal-app.onrender.com/auth/login"
-    );
+    expect(getApiUrl()).toBe("/proxy");
+    expect(createApiUrl("/auth/login")).toBe("/proxy/auth/login");
   });
 
   it("returns empty string for Vercel preview to avoid silently hitting production backend", () => {
-    process.env.NODE_ENV = "production";
     process.env.NEXT_PUBLIC_VERCEL_ENV = "preview";
 
     expect(getApiUrl()).toBe("");
+  });
+
+  it("falls back to localhost when no env vars are set", () => {
+    expect(getApiUrl()).toBe("http://localhost:3001");
   });
 });

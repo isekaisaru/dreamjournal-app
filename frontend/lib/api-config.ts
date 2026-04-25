@@ -24,21 +24,29 @@ export function getApiUrl(): string {
       process.env.INTERNAL_API_URL || "https://dreamjournal-app.onrender.com"
     );
   } else {
-    // Client-side: Use NEXT_PUBLIC_API_URL if set, otherwise use default logic
+    // Client-side (browser)
+    //
+    // Vercel production: always use the same-origin /proxy/ rewrite so that
+    // auth cookies are set on the Vercel domain and sent on every subsequent
+    // request.  Direct cross-origin calls to Render break cookie auth because
+    // browsers apply SameSite restrictions and refuse to attach cookies to
+    // third-party requests.  NEXT_PUBLIC_API_URL is intentionally ignored here
+    // to prevent it from pointing the browser at Render directly.
+    if (process.env.NEXT_PUBLIC_VERCEL_ENV === "production") {
+      return "/proxy";
+    }
+
+    // Vercel preview: return empty string so requests are clearly misconfigured
+    // rather than silently hitting production data.
+    if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview") {
+      return "";
+    }
+
+    // Non-Vercel deployments (self-hosted, Docker): honour the explicit URL.
     if (process.env.NEXT_PUBLIC_API_URL) {
       return normalizeBaseUrl(process.env.NEXT_PUBLIC_API_URL);
     }
 
-    // NEXT_PUBLIC_API_URL 未設定時のフォールバック
-    // rewriteに依存しないよう本番URLを直接使う（rewriteはai-summaryの動的ルートを壊す）
-    // Vercel preview は NODE_ENV=production で動くため、production 判定だけでは不十分。
-    // preview デプロイが NEXT_PUBLIC_API_URL 未設定のまま本番 Render を叩かないよう空文字を返す。
-    if (process.env.NODE_ENV === "production") {
-      if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview") {
-        return "";
-      }
-      return "https://dreamjournal-app.onrender.com";
-    }
     return "http://localhost:3001";
   }
 }
