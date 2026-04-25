@@ -8,6 +8,7 @@ import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
 import type { AnalysisResult } from "@/app/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2 } from "lucide-react";
+import MorpheusSVG from "./MorpheusSVG";
 
 const DreamRecorderFloating: React.FC = () => {
   const router = useRouter();
@@ -21,15 +22,11 @@ const DreamRecorderFloating: React.FC = () => {
   // Whisper 解析結果 → 一覧画面へ遷移（非同期処理のため）
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
-      // 成功メッセージを表示
       toast.success(
         result.message || "こえを きいたよ！ ちょっと まっててね。"
       );
 
-      // 一覧画面へリダイレクト（新しい夢が作成されているはず）
-      // 即時にリストを更新して、pending状態のカードを表示する
-      // 即時にリストを更新して、pending状態のカードを表示する
-      window.dispatchEvent(new Event("dream-created")); // PendingDreamsMonitorに通知
+      window.dispatchEvent(new Event("dream-created"));
       router.refresh();
       router.push("/home");
     },
@@ -102,8 +99,16 @@ const DreamRecorderFloating: React.FC = () => {
     handleToggleRecording();
   };
 
+  const helperCopy = isProcessing
+    ? "モルペウスが ゆめを よみといてるよ"
+    : status === "recording"
+      ? "うんうん、きいてるよ"
+      : status === "preparing"
+        ? "マイクを じゅんびするね"
+        : "こえで ゆめを おしえてね";
+
   return (
-    <div className="fixed bottom-24 left-4 z-[9999] flex flex-col items-end gap-3">
+    <div className="fixed bottom-24 left-4 z-[9999] flex flex-col items-start gap-3">
       <AnimatePresence>
         {error && (
           <motion.div
@@ -116,6 +121,28 @@ const DreamRecorderFloating: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="hidden items-end gap-2 sm:flex"
+      >
+        <MorpheusSVG
+          expression={
+            isProcessing
+              ? "dreaming"
+              : status === "recording"
+                ? "curious"
+                : "cheerful"
+          }
+          size={58}
+          className="drop-shadow-[0_8px_18px_rgba(56,189,248,0.32)]"
+        />
+        <div className="relative max-w-[210px] rounded-2xl rounded-bl-sm border border-sky-200/70 bg-slate-900/88 px-3 py-2 text-xs font-semibold leading-relaxed text-slate-100 shadow-xl backdrop-blur-sm">
+          {helperCopy}
+          <div className="absolute -left-2 bottom-3 h-0 w-0 border-y-[7px] border-y-transparent border-r-[8px] border-r-slate-900/88" />
+        </div>
+      </motion.div>
 
       <motion.button
         type="button"

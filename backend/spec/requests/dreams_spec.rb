@@ -500,7 +500,7 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response['limit_reached']).to eq(true)
       end
 
-      it '無料プランでは成功時に月次カウントを増やす' do
+      it '無料プランではリクエスト受付時にスロットを確保してカウントを増やす' do
         allow(DreamAnalysisService).to receive(:analyze).and_return({ analysis: 'result', emotion_tags: ['happy'] })
 
         expect do
