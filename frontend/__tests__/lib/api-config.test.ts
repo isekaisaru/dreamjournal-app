@@ -8,6 +8,7 @@ describe("api-config", () => {
     process.env = { ...originalEnv };
     delete process.env.NEXT_PUBLIC_API_URL;
     delete process.env.NEXT_PUBLIC_VERCEL;
+    delete process.env.NEXT_PUBLIC_VERCEL_ENV;
   });
 
   afterEach(() => {
