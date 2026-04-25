@@ -14,6 +14,7 @@ import DreamStatsWidget from "@/app/components/DreamStatsWidget";
 import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
+import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import Loading from "../loading";
 
@@ -319,6 +320,9 @@ export default function HomePage() {
 
       {/* サイドバー: 統計・ストリーク・月ごとリンク */}
       <aside className="w-full lg:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 lg:mt-0">
+        {/* 今日の夢クエスト */}
+        {!loading && !errorMessage && <DreamAdventurePanel dreams={dreams} />}
+
         {/* 連続記録バッジ */}
         <DreamStreakBadge dreams={dreams} />
 
