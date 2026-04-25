@@ -31,7 +31,12 @@ export function getApiUrl(): string {
 
     // NEXT_PUBLIC_API_URL 未設定時のフォールバック
     // rewriteに依存しないよう本番URLを直接使う（rewriteはai-summaryの動的ルートを壊す）
+    // Vercel preview は NODE_ENV=production で動くため、production 判定だけでは不十分。
+    // preview デプロイが NEXT_PUBLIC_API_URL 未設定のまま本番 Render を叩かないよう空文字を返す。
     if (process.env.NODE_ENV === "production") {
+      if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview") {
+        return "";
+      }
       return "https://dreamjournal-app.onrender.com";
     }
     return "http://localhost:3001";

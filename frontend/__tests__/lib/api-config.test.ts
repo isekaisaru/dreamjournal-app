@@ -30,4 +30,11 @@ describe("api-config", () => {
       "https://dreamjournal-app.onrender.com/auth/login"
     );
   });
+
+  it("returns empty string for Vercel preview to avoid silently hitting production backend", () => {
+    process.env.NODE_ENV = "production";
+    process.env.NEXT_PUBLIC_VERCEL_ENV = "preview";
+
+    expect(getApiUrl()).toBe("");
+  });
 });
