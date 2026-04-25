@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
+import MorpheusHero from "./MorpheusHero";
 
 export interface MorpheusGuideProps {
   /** 表情 */
@@ -28,7 +29,7 @@ export default function MorpheusGuide({
   expression,
   title,
   message,
-  size = 72,
+  size = 96,
   defaultOpen = true,
   placement = "fixed",
   positionClassName = "bottom-6 right-4 sm:bottom-10 sm:right-8",
@@ -51,10 +52,10 @@ export default function MorpheusGuide({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.92, transition: { duration: 0.15 } }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="relative max-w-[220px] sm:max-w-xs rounded-2xl bg-slate-900/88 px-4 py-3 text-sm text-slate-100 shadow-xl ring-1 ring-white/15 backdrop-blur-sm
+            className="relative max-w-[240px] sm:max-w-sm rounded-3xl bg-slate-900/90 px-4 py-3 text-sm text-slate-100 shadow-2xl ring-1 ring-white/15 backdrop-blur-sm
               before:absolute before:-right-2.5 before:bottom-5 before:h-0 before:w-0
               before:border-y-[8px] before:border-y-transparent
-              before:border-l-[10px] before:border-l-slate-900/88
+              before:border-l-[10px] before:border-l-slate-900/90
               before:content-['']"
           >
             <button
@@ -85,7 +86,7 @@ export default function MorpheusGuide({
         <MorpheusSVG
           expression={expression}
           size={size}
-          className="drop-shadow-[0_8px_24px_rgba(56,189,248,0.3)]"
+          className="drop-shadow-[0_12px_30px_rgba(56,189,248,0.38)]"
         />
       </motion.button>
     </div>
@@ -103,7 +104,7 @@ export function MorpheusGuideLanding() {
       expression="dreaming"
       title="ようこそ、夢の世界へ…"
       message="ぼくはモルペウス。きみの夢を一緒に記録していくよ。"
-      size={80}
+      size={116}
     />
   );
 }
@@ -115,7 +116,7 @@ export function MorpheusGuideLogin() {
       expression="cheerful"
       title="おかえり！"
       message="また来てくれたんだね。今日の夢、楽しみにしてたよ。"
-      size={72}
+      size={108}
     />
   );
 }
@@ -133,7 +134,9 @@ export function MorpheusGuideHome({
       expression="curious"
       title={title}
       message={message}
-      size={72}
+      size={120}
+      positionClassName="bottom-24 right-3 sm:bottom-10 sm:right-8"
+      className="hidden sm:flex"
     />
   );
 }
@@ -145,7 +148,7 @@ export function MorpheusGuideDetail() {
       expression="proud"
       title="すてきな夢だね。"
       message="ちゃんと記録できてえらいよ。分析結果も見てみてね。"
-      size={72}
+      size={110}
       positionClassName="bottom-6 left-4 sm:bottom-10 sm:left-8"
     />
   );
@@ -155,18 +158,17 @@ export function MorpheusGuideDetail() {
 export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
   const isSmallChild = ageGroup === "child_small" || ageGroup === "child";
   return (
-    <MorpheusGuide
+    <MorpheusHero
       expression="sleeping"
-      placement="inline"
-      positionClassName=""
+      variant="compose"
       title={isSmallChild ? "ゆめ、まだかな…" : "夢はまだありません"}
       message={
         isSmallChild
-          ? "ねたら でてくるよ 🌙　おきたら おしえてね。"
-          : "今夜みた夢を、起きたらすぐ記録してみてください。"
+          ? "ねたら でてくるよ 🌙　おきたら モルペウスに おしえてね。"
+          : "今夜みた夢を、起きたらすぐ記録してみてください。モルペウスがそばで待っています。"
       }
-      size={64}
-      defaultOpen={true}
+      size={132}
+      className="w-full"
     />
   );
 }
@@ -174,14 +176,13 @@ export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
 /** 新規作成ページ用 */
 export function MorpheusGuideCompose() {
   return (
-    <MorpheusGuide
+    <MorpheusHero
       expression="cheerful"
-      title="思い出せるぶんで大丈夫"
-      message="さいしょは ひとことでも いいよ。あとから ふくらませよう。"
-      size={68}
-      placement="inline"
-      positionClassName=""
-      className="items-start"
+      variant="compose"
+      title="モルペウスに ゆめを おしえてね"
+      message="さいしょは ひとことでも だいじょうぶ。おもいだせる ぶんだけ、ゆっくり かいてみよう。"
+      size={154}
+      className="w-full"
     />
   );
 }

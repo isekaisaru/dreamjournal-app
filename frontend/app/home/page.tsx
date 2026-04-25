@@ -16,7 +16,7 @@ import SearchBar from "@/app/components/SearchBar";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
-import MorpheusSVG from "@/app/components/MorpheusSVG";
+import MorpheusHero from "@/app/components/MorpheusHero";
 import Loading from "../loading";
 
 /**
@@ -256,68 +256,25 @@ export default function HomePage() {
     >
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
-        {/* Hero card — design system dark gradient with Morpheus */}
-        <div
-          className="w-full rounded-3xl border border-[rgba(124,58,237,0.25)] px-6 py-6 shadow-lg"
-          style={{
-            background:
-              "linear-gradient(135deg, rgba(79,70,229,0.18), rgba(124,58,237,0.12), rgba(15,23,42,0.7))",
-            backdropFilter: "blur(16px)",
-            animation: "fade-up 0.35s both",
-          }}
-        >
-          <div className="flex items-center justify-between gap-6">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#a78bfa] tracking-wide">
-                {user ? `${user.username}さん、おはよう 🌟` : "おはよう 🌟"}
-              </p>
-              <h1 className="mt-1.5 text-2xl font-bold text-[#f8fafc] leading-snug">
-                {copy.heading}
-              </h1>
-              <p className="mt-2 text-sm leading-relaxed text-[rgba(148,163,184,0.75)]">
-                {copy.sub}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <DreamEntryLauncher
-                  buttonLabel={copy.button}
-                  buttonSize="lg"
-                  buttonClassName="min-h-12 text-base font-bold shadow-lg shadow-primary/20"
-                  showSparkles
-                />
-                <Link
-                  href="/dream/new"
-                  className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[rgba(148,163,184,0.25)] bg-transparent px-5 text-sm font-medium text-[rgba(226,232,240,0.8)] transition-colors hover:border-[rgba(148,163,184,0.5)] hover:text-[#f8fafc]"
-                >
-                  <span>✏️</span>
-                  <span>
-                    {user?.age_group === "child_small" ||
-                    user?.age_group === "child"
-                      ? "ことばでかく"
-                      : "テキストで入力"}
-                  </span>
-                </Link>
-              </div>
-            </div>
-            <div className="hidden sm:flex flex-col items-center gap-2 flex-shrink-0">
-              <MorpheusSVG
-                expression={
-                  dreams.length >= 7
-                    ? "proud"
-                    : dreams.length >= 3
-                      ? "cheerful"
-                      : "curious"
-                }
-                size={96}
+        <MorpheusHero
+          expression="cheerful"
+          variant="home"
+          title={user ? `${user.username}さん、おはよう！` : "おはよう！"}
+          message={`${copy.heading} ${copy.sub}`}
+          size={164}
+          className="w-full mb-4"
+          action={
+            <div className="max-w-md">
+              <DreamEntryLauncher
+                buttonLabel={copy.button}
+                buttonSize="lg"
+                buttonClassName="min-h-14 w-full text-base font-bold shadow-lg shadow-primary/15"
+                helperText={copy.helper}
+                showSparkles
               />
-              <span className="text-xs text-[rgba(148,163,184,0.5)] text-center">
-                {user?.age_group === "child_small" ||
-                user?.age_group === "child"
-                  ? "ゆめ まってるよ！"
-                  : "モルペウスが待ってます"}
-              </span>
             </div>
-          </div>
-        </div>
+          }
+        />
         {shouldDeferSearch ? (
           <div className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-sm">
             <p className="text-sm font-medium text-card-foreground">
