@@ -79,4 +79,15 @@ class User < ApplicationRecord
     reset_monthly_analysis_count_if_needed!(now)
     increment!(:monthly_analysis_count)
   end
+
+  # チェックと加算を1回の条件付き UPDATE にまとめて競合状態を防ぐ。
+  # スロットを確保できた場合は true、上限到達で確保できなかった場合は false を返す。
+  def reserve_monthly_analysis_slot!(now = Time.current)
+    reset_monthly_analysis_count_if_needed!(now)
+    updated = User.where(id: id)
+      .where("monthly_analysis_count < ?", FREE_ANALYSIS_MONTHLY_LIMIT)
+      .update_all("monthly_analysis_count = monthly_analysis_count + 1")
+    reload
+    updated > 0
+  end
 end

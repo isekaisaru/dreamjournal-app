@@ -291,25 +291,21 @@ class DreamsController < ApplicationController
         return
       end
 
-      current_user.reset_monthly_analysis_count_if_needed!
-      return unless current_user.monthly_analysis_count >= FREE_ANALYSIS_MONTHLY_LIMIT
-
-      render json: {
-        error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると無制限で利用できます。",
-        limit_reached: true,
-        monthly_analysis_count: current_user.monthly_analysis_count,
-        monthly_analysis_limit: FREE_ANALYSIS_MONTHLY_LIMIT
-      }, status: :forbidden
+      unless current_user.reserve_monthly_analysis_slot!
+        render json: {
+          error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると無制限で利用できます。",
+          limit_reached: true,
+          monthly_analysis_count: current_user.monthly_analysis_count,
+          monthly_analysis_limit: FREE_ANALYSIS_MONTHLY_LIMIT
+        }, status: :forbidden
+      end
     end
 
     def increment_analysis_usage!
       return if current_user.premium?
+      return unless current_user.trial_user?
 
-      if current_user.trial_user?
-        current_user.increment!(:trial_analysis_count)
-      else
-        current_user.increment_monthly_analysis_count!
-      end
+      current_user.increment!(:trial_analysis_count)
     end
 
     # 画像生成の月次上限チェック（全ユーザー共通）
