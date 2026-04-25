@@ -12,6 +12,19 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  async rewrites() {
+    // /proxy/:path* → Render backend (same-origin proxy for auth cookies).
+    // Uses /proxy/ prefix specifically to avoid clashing with Next.js route handlers
+    // under /api/ (e.g. /api/ai-summary/[id], /api/auth/verify, /api/checkout).
+    return {
+      afterFiles: [
+        {
+          source: "/proxy/:path*",
+          destination: "https://dreamjournal-app.onrender.com/:path*",
+        },
+      ],
+    };
+  },
   images: {
     remotePatterns: [
       {
