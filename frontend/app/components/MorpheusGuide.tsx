@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
 import MorpheusHero from "./MorpheusHero";
+import MorpheusImage from "./MorpheusImage";
 
 export interface MorpheusGuideProps {
   /** 表情 */
@@ -160,6 +161,7 @@ export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
   return (
     <MorpheusHero
       expression="sleeping"
+      imageVariant="empty"
       variant="compose"
       title={isSmallChild ? "ゆめ、まだかな…" : "夢はまだありません"}
       message={
@@ -167,7 +169,7 @@ export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
           ? "ねたら でてくるよ 🌙　おきたら モルペウスに おしえてね。"
           : "今夜みた夢を、起きたらすぐ記録してみてください。モルペウスがそばで待っています。"
       }
-      size={132}
+      size={210}
       className="w-full"
     />
   );
@@ -178,11 +180,22 @@ export function MorpheusGuideCompose() {
   return (
     <MorpheusHero
       expression="cheerful"
+      imageVariant="compose"
       variant="compose"
       title="モルペウスに ゆめを おしえてね"
       message="さいしょは ひとことでも だいじょうぶ。おもいだせる ぶんだけ、ゆっくり かいてみよう。"
-      size={154}
+      size={220}
       className="w-full"
     />
   );
+}
+
+/** 夢分析中・読み解き中のインライン表示 */
+export function MorpheusGuideAnalysis() {
+  return <MorpheusImage variant="analysis" size={118} />;
+}
+
+/** ほめる・達成状態のインライン表示 */
+export function MorpheusGuidePraise() {
+  return <MorpheusImage variant="praise" size={132} />;
 }

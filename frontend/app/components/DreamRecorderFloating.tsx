@@ -8,7 +8,7 @@ import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
 import type { AnalysisResult } from "@/app/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2 } from "lucide-react";
-import MorpheusSVG from "./MorpheusSVG";
+import MorpheusImage from "./MorpheusImage";
 
 const DreamRecorderFloating: React.FC = () => {
   const router = useRouter();
@@ -127,16 +127,10 @@ const DreamRecorderFloating: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="hidden items-end gap-2 sm:flex"
       >
-        <MorpheusSVG
-          expression={
-            isProcessing
-              ? "dreaming"
-              : status === "recording"
-                ? "curious"
-                : "cheerful"
-          }
-          size={58}
-          className="drop-shadow-[0_8px_18px_rgba(56,189,248,0.32)]"
+        <MorpheusImage
+          variant={isProcessing ? "analysis" : "voice"}
+          size={86}
+          className={status === "recording" ? "motion-safe:animate-pulse" : ""}
         />
         <div className="relative max-w-[210px] rounded-2xl rounded-bl-sm border border-sky-200/70 bg-slate-900/88 px-3 py-2 text-xs font-semibold leading-relaxed text-slate-100 shadow-xl backdrop-blur-sm">
           {helperCopy}
