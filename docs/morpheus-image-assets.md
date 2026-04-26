@@ -1,12 +1,15 @@
 # モルペウス画像アセット配置ガイド
 
-このPRでは、添付画像のモルペウスをアプリ画面に配置するためのコードを追加しています。
-
 ## 現在の実装方針
 
-`MorpheusImage.tsx` に、添付画像を軽量化した JPEG data URL として直接内包しています。
+画像ファイルを `frontend/public/images/morpheus/` に正式配置し、
+`MorpheusImage.tsx` が `/images/morpheus/*.jpg` を参照する方式を採用しています。
 
-以前は以下のように `frontend/public/images/morpheus/` 配下の画像ファイルを参照する設計でした。
+> **注:** data URL 埋め込み方式は廃止しました。
+> Codex P1 指摘（不正な base64 によるデコード失敗リスク）を受け、
+> Next.js の正式な静的アセット管理に戻しています。
+
+## 配置ファイル一覧
 
 ```text
 frontend/public/images/morpheus/
@@ -17,10 +20,6 @@ frontend/public/images/morpheus/
   morpheus-empty.jpg
   morpheus-praise.jpg
 ```
-
-しかし、画像ファイルの配置漏れがあると本番で SVG フォールバックが表示され、添付画像の可愛さが反映されませんでした。
-
-そのため、現時点では画像配置作業を不要にするため、`MorpheusImage.tsx` に data URL を埋め込んでいます。
 
 ## 画面ごとの使い分け
 
@@ -33,22 +32,38 @@ frontend/public/images/morpheus/
 | `empty` | 夢待ち・空状態 | 夢が0件の空状態 |
 | `praise` | ほめる・達成 | 夢詳細、達成演出 |
 
-## 実装方針
+## フォールバック
 
-- `MorpheusImage` コンポーネントで画像 data URL と alt を集約します。
-- `MorpheusHero` は `MorpheusImage` を使って、大きいモルペウス画像を表示します。
-- 既存の `MorpheusSVG` はすぐ削除せず、小さいフローティング補助や将来のフォールバックとして残します。
+画像が読み込めなかった場合（ファイル欠損・ネットワーク障害など）は、
+`onError` ハンドラが `hasImageError` を `true` にセットし、
+`MorpheusSVG` を表情付きで自動表示します。
 
-## 将来的な改善案
+| variant | フォールバック表情 |
+|---|---|
+| `home` | `cheerful` |
+| `compose` | `dreaming` |
+| `voice` | `curious` |
+| `analysis` | `curious` |
+| `empty` | `sleeping` |
+| `praise` | `proud` |
 
-画像容量やキャッシュ効率をより良くしたい場合は、GitHub に画像ファイルを直接追加できる環境で、data URL から `frontend/public/images/morpheus/` 配置へ戻すのが理想です。
+## 実装構成
 
-ただし、今は「本番で確実に添付画像を表示する」ことを優先して、data URL 方式にしています。
+- `MorpheusImage.tsx` — バリアント別の画像パス・alt・フォールバック表情を管理する共通コンポーネント
+- `MorpheusHero.tsx` — `MorpheusImage` を使って大きいモルペウス画像を表示
+- `MorpheusSVG.tsx` — SVG 版モルペウス。画像読み込み失敗時のフォールバックとして継続利用
+
+## 画像を差し替えるには
+
+1. `frontend/public/images/morpheus/` の該当ファイルを上書き
+2. ファイル名・拡張子（`.jpg`）をコードと完全一致させること
+
+NG 例: `morpheus_home.jpg` / `morpheus-home.jpeg` / `Morpheus-home.jpg`
 
 ## 確認ポイント
 
-- `/home` のヒーローで添付画像のモルペウスが大きく表示されること。
-- `/dream/new` の上部で夢を書くモルペウスが表示されること。
-- 音声入力ボタン付近でマイクのモルペウスが表示されること。
-- 夢が0件の空状態で寝そべりモルペウスが表示されること。
-- 本番でも SVG ではなく添付画像版モルペウスが表示されること。
+- `/home` のヒーローで画像版モルペウスが大きく表示されること
+- `/dream/new` の上部で夢を書くモルペウスが表示されること
+- 音声入力ボタン付近でマイクのモルペウスが表示されること
+- 夢が0件の空状態で空状態モルペウスが表示されること
+- 画像ファイルを削除した場合に MorpheusSVG にフォールバックされること
