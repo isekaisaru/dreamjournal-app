@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
 
@@ -77,6 +77,10 @@ export default function MorpheusImage({
   priority = false,
 }: MorpheusImageProps) {
   const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [variant]);
 
   if (hasImageError) {
     return (
