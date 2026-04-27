@@ -9,6 +9,7 @@ import { ChevronLeft } from "lucide-react";
 import { updateProfile } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import type { AgeGroup, AnalysisTone } from "@/app/types";
+import MorpheusImage from "@/app/components/MorpheusImage";
 
 const AGE_GROUP_OPTIONS: { value: AgeGroup; label: string }[] = [
   { value: "child_small", label: "6さい いか" },
@@ -181,6 +182,21 @@ const SettingsPage = () => {
       </header>
 
       <main className="container max-w-2xl mx-auto px-4 py-8 space-y-8">
+        <section className="overflow-hidden rounded-3xl border border-sky-500/20 bg-gradient-to-br from-slate-900 via-indigo-950 to-sky-950 p-5 text-white shadow-lg">
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+                Settings Guide
+              </p>
+              <h2 className="mt-2 text-xl font-black">モルペウスと せっていしよう</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
+                年れいや分析スタイルを合わせると、ゆめの説明がもっと読みやすくなるよ。
+              </p>
+            </div>
+            <MorpheusImage variant="settings" size={150} />
+          </div>
+        </section>
+
         {/* プロフィール設定 */}
         <section className="space-y-4">
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
