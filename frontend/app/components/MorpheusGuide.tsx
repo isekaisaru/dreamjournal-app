@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
+import type { MorpheusExpression } from "./MorpheusSVG";
 import MorpheusHero from "./MorpheusHero";
-import MorpheusImage from "./MorpheusImage";
+import MorpheusImage, { type MorpheusImageVariant } from "./MorpheusImage";
 
 export interface MorpheusGuideProps {
   /** 表情 */
   expression: MorpheusExpression;
+  /** 表示する画像バリエーション */
+  imageVariant?: MorpheusImageVariant;
   /** 吹き出しタイトル（任意） */
   title?: string;
   /** 吹き出し本文 */
@@ -26,11 +28,20 @@ export interface MorpheusGuideProps {
   className?: string;
 }
 
+const expressionToImageVariant: Record<MorpheusExpression, MorpheusImageVariant> = {
+  cheerful: "landing",
+  curious: "search",
+  dreaming: "analysis",
+  proud: "reward",
+  sleeping: "empty",
+};
+
 export default function MorpheusGuide({
   expression,
+  imageVariant,
   title,
   message,
-  size = 96,
+  size = 108,
   defaultOpen = true,
   placement = "fixed",
   positionClassName = "bottom-6 right-4 sm:bottom-10 sm:right-8",
@@ -84,8 +95,8 @@ export default function MorpheusGuide({
         whileTap={{ scale: 0.95 }}
         className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent rounded-full"
       >
-        <MorpheusSVG
-          expression={expression}
+        <MorpheusImage
+          variant={imageVariant ?? expressionToImageVariant[expression]}
           size={size}
           className="drop-shadow-[0_12px_30px_rgba(56,189,248,0.38)]"
         />
@@ -102,10 +113,11 @@ export default function MorpheusGuide({
 export function MorpheusGuideLanding() {
   return (
     <MorpheusGuide
-      expression="dreaming"
+      expression="cheerful"
+      imageVariant="landing"
       title="ようこそ、夢の世界へ…"
       message="ぼくはモルペウス。きみの夢を一緒に記録していくよ。"
-      size={116}
+      size={126}
     />
   );
 }
@@ -115,9 +127,10 @@ export function MorpheusGuideLogin() {
   return (
     <MorpheusGuide
       expression="cheerful"
+      imageVariant="login"
       title="おかえり！"
       message="また来てくれたんだね。今日の夢、楽しみにしてたよ。"
-      size={108}
+      size={118}
     />
   );
 }
@@ -133,9 +146,10 @@ export function MorpheusGuideHome({
   return (
     <MorpheusGuide
       expression="curious"
+      imageVariant="search"
       title={title}
       message={message}
-      size={120}
+      size={118}
       positionClassName="bottom-24 right-3 sm:bottom-10 sm:right-8"
       className="hidden sm:flex"
     />
@@ -147,9 +161,10 @@ export function MorpheusGuideDetail() {
   return (
     <MorpheusGuide
       expression="proud"
+      imageVariant="reward"
       title="すてきな夢だね。"
       message="ちゃんと記録できてえらいよ。分析結果も見てみてね。"
-      size={110}
+      size={118}
       positionClassName="bottom-6 left-4 sm:bottom-10 sm:left-8"
     />
   );
@@ -197,5 +212,5 @@ export function MorpheusGuideAnalysis() {
 
 /** ほめる・達成状態のインライン表示 */
 export function MorpheusGuidePraise() {
-  return <MorpheusImage variant="praise" size={132} />;
+  return <MorpheusImage variant="reward" size={132} />;
 }
