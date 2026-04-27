@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-
 import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
 
 export type MorpheusImageVariant =
@@ -23,19 +22,20 @@ const MORPHEUS_IMAGE_SRC: Record<MorpheusImageVariant, string> = {
 };
 
 const ALT_BY_VARIANT: Record<MorpheusImageVariant, string> = {
-  home: "手を振って夢の記録へ案内するモルペウス",
-  compose: "夢のノートを開いて書くことを応援するモルペウス",
+  home: "ホーム画面で見守るモルペウス",
+  compose: "夢を書く場面で応援するモルペウス",
   voice: "マイクの前で夢の話を聞いているモルペウス",
   analysis: "夢の本を読んで分析しているモルペウス",
   empty: "月と雲の上で次の夢を待っているモルペウス",
   praise: "星を掲げて夢の記録をほめるモルペウス",
 };
 
+// 画像が読み込めなかった場合に表示する SVG の表情
 const FALLBACK_EXPRESSION: Record<MorpheusImageVariant, MorpheusExpression> = {
   home: "cheerful",
-  compose: "cheerful",
+  compose: "dreaming",
   voice: "curious",
-  analysis: "dreaming",
+  analysis: "curious",
   empty: "sleeping",
   praise: "proud",
 };
@@ -47,12 +47,6 @@ type MorpheusImageProps = {
   priority?: boolean;
 };
 
-/**
- * 添付されたモルペウス画像を画面別に表示する共通コンポーネント。
- *
- * 画像ファイルは frontend/public/images/morpheus/ に配置する。
- * 画像未配置の環境でも UI が壊れないよう、読み込み失敗時は既存の SVG 版へフォールバックする。
- */
 export default function MorpheusImage({
   variant = "home",
   size = 180,
@@ -66,7 +60,7 @@ export default function MorpheusImage({
       <MorpheusSVG
         expression={FALLBACK_EXPRESSION[variant]}
         size={size}
-        className={`drop-shadow-[0_18px_40px_rgba(99,102,241,0.30)] ${className}`}
+        className={className}
       />
     );
   }
