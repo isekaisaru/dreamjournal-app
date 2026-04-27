@@ -2,22 +2,33 @@
 
 import { motion } from "framer-motion";
 
-import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
+import type { MorpheusExpression } from "./MorpheusSVG";
+import MorpheusImage, { type MorpheusImageVariant } from "./MorpheusImage";
 
 interface MorpheusSmallProps {
   /** 吹き出しのメインメッセージ */
   message: string;
   /** 吹き出しのタイトル（任意） */
   title?: string;
-  /** 画像サイズ: sm=48px / md=64px (デフォルト md) */
+  /** 画像サイズ: sm=56px / md=76px (デフォルト md) */
   size?: "sm" | "md";
   /** レイアウト方向: "row"=左吹き出し+右画像 / "col"=上画像+下吹き出し（デフォルト row） */
   layout?: "row" | "col";
   /** モルペウスの表情 */
   expression?: MorpheusExpression;
+  /** 表示する画像バリエーション */
+  imageVariant?: MorpheusImageVariant;
   /** 追加のラッパー className */
   className?: string;
 }
+
+const expressionToImageVariant: Record<MorpheusExpression, MorpheusImageVariant> = {
+  cheerful: "login",
+  curious: "search",
+  dreaming: "analysis",
+  proud: "reward",
+  sleeping: "empty",
+};
 
 /**
  * モルペウスの小型バージョン
@@ -29,12 +40,13 @@ export default function MorpheusSmall({
   size = "md",
   layout = "row",
   expression = "cheerful",
+  imageVariant,
   className = "",
 }: MorpheusSmallProps) {
-  const imgPx = size === "sm" ? 48 : 64;
+  const imgPx = size === "sm" ? 56 : 76;
   const mascot = (
-    <MorpheusSVG
-      expression={expression}
+    <MorpheusImage
+      variant={imageVariant ?? expressionToImageVariant[expression]}
       size={imgPx}
       className="drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
     />
