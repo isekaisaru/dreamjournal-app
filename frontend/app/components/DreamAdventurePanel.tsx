@@ -5,7 +5,7 @@ import { Sparkles, Trophy } from "lucide-react";
 
 import type { Dream } from "@/app/types";
 import { getJSTDateStr, getJSTYearMonthKey } from "@/lib/date";
-import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
+import MorpheusImage, { type MorpheusImageVariant } from "./MorpheusImage";
 
 type DreamAdventurePanelProps = {
   dreams: Dream[];
@@ -64,11 +64,11 @@ function getAdventureTitle(totalDreams: number, completedQuestCount: number) {
   return "今日の小さな夢クエスト";
 }
 
-function getMorpheusExpression(completedQuestCount: number): MorpheusExpression {
-  if (completedQuestCount >= 3) return "proud";
-  if (completedQuestCount >= 2) return "cheerful";
-  if (completedQuestCount >= 1) return "curious";
-  return "dreaming";
+function getMorpheusVariant(completedQuestCount: number): MorpheusImageVariant {
+  if (completedQuestCount >= 3) return "reward";
+  if (completedQuestCount >= 2) return "praise";
+  if (completedQuestCount >= 1) return "search";
+  return "landing";
 }
 
 export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps) {
@@ -111,7 +111,7 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
   const completedQuestCount = quests.filter((quest) => quest.done).length;
   const progress = Math.round((completedQuestCount / quests.length) * 100);
   const title = getAdventureTitle(dreams.length, completedQuestCount);
-  const morpheusExpression = getMorpheusExpression(completedQuestCount);
+  const morpheusVariant = getMorpheusVariant(completedQuestCount);
   const hasWindowBadge = imageDreamCount > 0;
   const hasStreakBadge = currentStreak >= 3;
   const hasMonthBadge = currentMonthDreams.length >= 5;
@@ -127,9 +127,9 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
           initial={{ scale: 0.92, rotate: -4 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: "spring", stiffness: 220, damping: 18 }}
-          className="shrink-0"
+          className="shrink-0 rounded-2xl bg-white/80 p-1 shadow-sm ring-1 ring-white/60 dark:bg-white/10 dark:ring-white/10"
         >
-          <MorpheusSVG expression={morpheusExpression} size={68} />
+          <MorpheusImage variant={morpheusVariant} size={78} />
         </motion.div>
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-300">

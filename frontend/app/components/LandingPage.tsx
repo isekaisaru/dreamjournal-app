@@ -3,11 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, Mic, Brain, TrendingUp } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
 import { MorpheusGuideLanding } from "./MorpheusGuide";
+import MorpheusImage from "./MorpheusImage";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -67,16 +67,13 @@ export default function LandingPage() {
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mb-8"
+          className="relative mb-8 rounded-[2rem] bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur-sm"
         >
-          <Image
-            src="/images/morpheus.png"
-            alt="モルペウス"
-            width={140}
-            height={140}
-            sizes="140px"
-            className="drop-shadow-[0_8px_32px_rgba(56,189,248,0.5)] animate-morpheus-float"
+          <MorpheusImage
+            variant="landing"
+            size={180}
             priority
+            className="animate-morpheus-float"
           />
           <Sparkles
             className="absolute -top-3 -right-3 text-yellow-400/80 dark:text-yellow-300/80 animate-pulse"
@@ -271,13 +268,10 @@ export default function LandingPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <Image
-            src="/images/morpheus.png"
-            alt="モルペウス"
-            width={80}
-            height={80}
-            sizes="80px"
-            className="mx-auto mb-6 drop-shadow-[0_4px_20px_rgba(56,189,248,0.35)]"
+          <MorpheusImage
+            variant="reward"
+            size={120}
+            className="mx-auto mb-6"
           />
           <p className="text-xl sm:text-2xl font-bold text-slate-700 dark:text-slate-200 mb-2">
             今夜の夢が、明日の気づきになる。
