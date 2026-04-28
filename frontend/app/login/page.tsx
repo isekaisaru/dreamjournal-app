@@ -5,7 +5,7 @@ import Link from "next/link";
 import { clientLogin } from "@/lib/apiClient";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import MorpheusSmall from "@/app/components/MorpheusSmall";
+import MorpheusHero from "@/app/components/MorpheusHero";
 import { MorpheusGuideLogin } from "@/app/components/MorpheusGuide";
 
 const hiddenEmailStyle = {
@@ -74,11 +74,15 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-8">
       <div className="w-full max-w-md">
-        <MorpheusSmall
-          message="おかえり！ゆめの世界へ ようこそ"
-          className="mb-4"
+        <MorpheusHero
+          title="おかえり！"
+          message="今日も来てくれてうれしいよ。つづきから、ゆめの世界へ入ろう。"
+          imageVariant="login"
+          variant="compose"
+          size={150}
+          className="mb-5"
         />
       <form
         onSubmit={handleSubmit}
