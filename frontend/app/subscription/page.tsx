@@ -127,7 +127,7 @@ export default function SubscriptionPage() {
               <span className="text-primary">✓</span> 夢のAI分析（無制限）
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-primary">✓</span> 夢の画像生成（月30枚）
+              <span className="text-primary">✓</span> 夢の画像生成（月31枚）
             </li>
             <li className="flex items-center gap-2">
               <span className="text-primary">✓</span> 月次サマリー

@@ -337,7 +337,7 @@ const SettingsPage = () => {
               <div>
                 <ul className="text-muted-foreground text-sm mb-4 space-y-1">
                   <li>✓ ゆめのAI分析（むせいげん）</li>
-                  <li>✓ ゆめのえ生成（月30枚）</li>
+                  <li>✓ ゆめのえ生成（月31枚）</li>
                   <li>✓ 月次サマリー</li>
                 </ul>
                 <p className="text-muted-foreground text-xs mb-4">月額500円・いつでもキャンセルできます。</p>

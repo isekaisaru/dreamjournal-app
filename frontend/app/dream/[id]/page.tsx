@@ -432,7 +432,7 @@ export default function DreamDetailPage({
             <p className="text-xs text-muted-foreground">
               {imageQuota
                 ? `今月あと ${imageQuota.remaining} 枚 生成できます（${imageQuota.used} / ${imageQuota.limit}）`
-                : "AIが夢のイメージを絵にします（月30枚まで）"}
+                : "AIが夢のイメージを絵にします（月31枚まで）"}
             </p>
           </div>
         )}
