@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 import { getJSTYearMonthKey } from "@/lib/date";
+import MorpheusImage from "./MorpheusImage";
 
 interface DreamStatsWidgetProps {
   dreams: Dream[];
@@ -96,17 +96,13 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
 
       {/* モルペウスの今週サマリー */}
       {weekTop && (
-        <div className="flex items-center gap-2 bg-slate-800/60 dark:bg-slate-800/60 bg-slate-100 rounded-xl p-3 border border-slate-700/40 dark:border-slate-700/40 border-slate-200">
-          <Image
-            src="/images/morpheus.png"
-            alt="モルペウス"
-            width={36}
-            height={36}
-            className="opacity-90 shrink-0"
-          />
-          <p className="text-xs leading-relaxed text-slate-200 dark:text-slate-200 text-slate-700">
+        <div className="flex items-center gap-3 rounded-2xl border border-sky-200/60 bg-sky-50/80 p-3 dark:border-sky-500/20 dark:bg-slate-800/70">
+          <div className="shrink-0 rounded-xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
+            <MorpheusImage variant="analysis" size={54} />
+          </div>
+          <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200">
             今週いちばん多い きもちは{" "}
-            <span className="font-bold text-sky-300 dark:text-sky-300 text-sky-600">
+            <span className="font-bold text-sky-600 dark:text-sky-300">
               「{weekTop[0]}」
             </span>{" "}
             だったよ！

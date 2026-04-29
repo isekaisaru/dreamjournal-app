@@ -3,11 +3,11 @@
 import { Dream } from "@/app/types";
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import DreamCard from "./DreamCard";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { MorpheusGuideEmpty } from "./MorpheusGuide";
+import MorpheusImage from "./MorpheusImage";
 
 interface DreamListProps {
   dreams: Dream[];
@@ -65,13 +65,13 @@ const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps)
                   <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-slate-700/60" />
                 </div>
                 {/* モルペウス画像 */}
-                <Image
-                  src="/images/morpheus.png"
-                  alt="モルペウス"
-                  width={72}
-                  height={72}
-                  className="opacity-90 drop-shadow-[0_4px_12px_rgba(56,189,248,0.3)]"
-                />
+                <div className="rounded-2xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
+                  <MorpheusImage
+                    variant="search"
+                    size={88}
+                    className="drop-shadow-[0_8px_20px_rgba(56,189,248,0.30)]"
+                  />
+                </div>
               </div>
               <p className="text-sm text-muted-foreground mb-5">
                 べつの ことばで さがしてみよう！

@@ -2,7 +2,7 @@
 
 import { Dream } from "@/app/types";
 import { getJSTDateStr, getJSTYearMonthKey } from "@/lib/date";
-import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
+import MorpheusImage, { type MorpheusImageVariant } from "./MorpheusImage";
 
 interface DreamStreakBadgeProps {
   dreams: Dream[];
@@ -61,6 +61,13 @@ function calcStreak(dreams: Dream[]): { current: number; longest: number } {
   return { current, longest };
 }
 
+function getMorpheusVariant(current: number): MorpheusImageVariant {
+  if (current === 0) return "empty";
+  if (current < 3) return "search";
+  if (current < 7) return "praise";
+  return "reward";
+}
+
 /**
  * 夢日記の連続記録バッジコンポーネント
  * ストリーク・月間カウント・バッジを表示
@@ -70,8 +77,7 @@ export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
 
   const { current, longest } = calcStreak(dreams);
   const moonProgress = Math.min(current, 30) / 30;
-  const morpheusExpression: MorpheusExpression =
-    current === 0 ? "sleeping" : current < 3 ? "curious" : current < 7 ? "cheerful" : "proud";
+  const morpheusVariant = getMorpheusVariant(current);
 
   // 今月のカウント
   const currentJSTMonth = getJSTYearMonthKey(new Date());
@@ -131,8 +137,8 @@ export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
               : "さいしょの 1こを かくと、月がひかりはじめるよ。"}
           </p>
         </div>
-        <div className="hidden sm:block">
-          <MorpheusSVG expression={morpheusExpression} size={68} />
+        <div className="hidden sm:block rounded-2xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
+          <MorpheusImage variant={morpheusVariant} size={76} />
         </div>
       </div>
 
