@@ -4,7 +4,7 @@ class DreamsController < ApplicationController
   before_action :check_monthly_image_limit, only: [:generate_image]
 
   TRIAL_ANALYSIS_LIMIT = 3   # トライアルユーザーの分析回数上限
-  IMAGE_MONTHLY_LIMIT   = 30 # 全ユーザー共通の画像生成月次上限
+  IMAGE_MONTHLY_LIMIT   = 31 # 全ユーザー共通の画像生成月次上限
   FREE_ANALYSIS_MONTHLY_LIMIT = User::FREE_ANALYSIS_MONTHLY_LIMIT
   
 
@@ -331,10 +331,15 @@ class DreamsController < ApplicationController
     end
 
     def build_image_prompt(content, analysis)
-      base = "A dreamy illustration of a dream: #{content}"
-      base += " The mood is: #{analysis}" if analysis.present?
-      base += ". #{image_style_for_age_group(@current_user&.age_group)} No text, no letters."
-      base.truncate(900)
+      style = image_style_for_age_group(@current_user&.age_group)
+      parts = []
+      parts << "Create a beautiful, peaceful, and wonder-filled dreamscape illustration. #{style}"
+      parts << "Dream content: #{content.truncate(300)}"
+      parts << "Emotional theme: #{analysis.truncate(100)}" if analysis.present?
+      parts << "Focus the composition on ONE specific memorable detail from this dream — a unique object, person, landscape, or magical moment. Let the colors and lighting reflect the emotional mood of this exact dream rather than a generic dream template."
+      parts << "Any dark, scary, or intense elements must be transformed into soft, symbolic, and poetic visual metaphors — never literal horror. The final image must feel safe, comforting, and age-appropriate. No threatening faces, no gore, no dark shadows. Mood: gentle and magical."
+      parts << "No text or letters."
+      parts.join(" ").truncate(900)
     end
 
     def image_style_for_age_group(age_group)
