@@ -50,8 +50,9 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/settings");
 
   if (!token && isProtectedPage) {
-    // No token, and trying to access a protected page -> redirect to login
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Let the page render its in-app login guidance instead of forcing an
+    // immediate redirect. Protected data is still guarded by backend APIs.
+    return NextResponse.next();
   }
 
   if (token) {
@@ -66,8 +67,9 @@ export async function proxy(request: NextRequest) {
         // Logged in, and on an auth page -> redirect to home
         return NextResponse.redirect(new URL("/home", request.url));
       } else if (!response.ok && isProtectedPage) {
-        // Invalid token, and on a protected page -> redirect to login and clear the bad cookie
-        const res = NextResponse.redirect(new URL("/login", request.url));
+        // Invalid token on a protected page: clear the stale cookie, then let
+        // the client show the Morpheus login-required guidance.
+        const res = NextResponse.next();
         res.cookies.delete("access_token");
         return res;
       }

@@ -17,6 +17,7 @@ import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import MorpheusHero from "@/app/components/MorpheusHero";
+import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 import Loading from "../loading";
 
 /**
@@ -230,9 +231,10 @@ export default function HomePage() {
   // 未認証
   if (authStatus === "unauthenticated") {
     return (
-      <div className="container mx-auto p-5 bg-background text-foreground">
-        <p>このページを表示するにはログインが必要です。</p>
-      </div>
+      <MorpheusLoginRequired
+        title="ホームを見るにはログインが必要だよ"
+        message="夢の一覧は、あなた専用の本棚みたいな場所です。ログインすると、前に書いた夢やモルペウスの分析を安全に見られます。"
+      />
     );
   }
 

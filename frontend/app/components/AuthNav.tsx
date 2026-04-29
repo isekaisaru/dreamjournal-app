@@ -11,7 +11,7 @@ import {
   Settings,
   LogOut,
   LogIn,
-  UserPlus,
+  Sparkles,
   Loader2,
 } from "lucide-react";
 
@@ -95,14 +95,14 @@ export default function AuthNav() {
   if (!isAuthenticated) {
     return (
       <nav className="flex justify-center md:justify-end gap-3 w-full">
+        <Link href="/trial">
+          <Button variant="secondary" className="gap-2">
+            <Sparkles size={18} /> まず試す
+          </Button>
+        </Link>
         <Link href="/login">
           <Button variant="ghost" className="gap-2">
             <LogIn size={18} /> つづきから
-          </Button>
-        </Link>
-        <Link href="/register">
-          <Button variant="secondary" className="gap-2">
-            <UserPlus size={18} /> はじめる
           </Button>
         </Link>
       </nav>
