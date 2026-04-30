@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { EmotionTag } from "@/app/components/EmotionTag";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
+import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 import MorpheusImage from "@/app/components/MorpheusImage";
 import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
@@ -89,9 +90,10 @@ export default function DreamByMonthPage() {
 
   if (authStatus === "unauthenticated") {
     return (
-      <div className="container mx-auto p-5 bg-background text-foreground">
-        <p>このページを表示するにはログインが必要です。</p>
-      </div>
+      <MorpheusLoginRequired
+        title={`${monthLabel || "この月"}の夢を見るにはログインが必要だよ`}
+        message="月ごとのふりかえりは、あなたの夢だけを集めた大切なページです。ログインすると、モルペウスと一緒に安全に見返せます。"
+      />
     );
   }
 

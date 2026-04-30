@@ -108,7 +108,7 @@ const DreamRecorderFloating: React.FC = () => {
         : "こえで ゆめを おしえてね";
 
   return (
-    <div className="fixed bottom-24 left-4 z-[9999] flex flex-col items-start gap-3">
+    <div className="fixed bottom-24 right-4 z-[9999] flex flex-col items-end gap-3 sm:right-8">
       <AnimatePresence>
         {error && (
           <motion.div
@@ -125,16 +125,16 @@ const DreamRecorderFloating: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="hidden items-end gap-2 sm:flex"
+        className="hidden flex-row-reverse items-end gap-3 sm:flex"
       >
         <MorpheusImage
           variant={isProcessing ? "analysis" : "voice"}
-          size={86}
+          size={112}
           className={status === "recording" ? "motion-safe:animate-pulse" : ""}
         />
-        <div className="relative max-w-[210px] rounded-2xl rounded-bl-sm border border-sky-200/70 bg-slate-900/88 px-3 py-2 text-xs font-semibold leading-relaxed text-slate-100 shadow-xl backdrop-blur-sm">
+        <div className="relative max-w-[240px] rounded-2xl rounded-br-sm border border-sky-200/70 bg-slate-900/88 px-4 py-3 text-sm font-semibold leading-relaxed text-slate-100 shadow-xl backdrop-blur-sm">
           {helperCopy}
-          <div className="absolute -left-2 bottom-3 h-0 w-0 border-y-[7px] border-y-transparent border-r-[8px] border-r-slate-900/88" />
+          <div className="absolute -right-2 bottom-4 h-0 w-0 border-y-[7px] border-y-transparent border-l-[8px] border-l-slate-900/88" />
         </div>
       </motion.div>
 

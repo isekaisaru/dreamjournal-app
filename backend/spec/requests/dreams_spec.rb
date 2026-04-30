@@ -613,6 +613,22 @@ RSpec.describe 'Dreams API', type: :request do
         expect(generation.user_id).to eq(user.id)
       end
 
+      it '画像生成プロンプトで怖くなりすぎる表現とテンプレート化を避ける' do
+        expect(images_client).to receive(:generate).with(
+          parameters: hash_including(
+            prompt: a_string_including(
+              'generic dream template',
+              'never literal horror',
+              'safe, comforting, and age-appropriate'
+            )
+          )
+        ).and_return({ 'data' => [{ 'url' => generated_url }] })
+
+        authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+        expect(response).to have_http_status(:ok)
+      end
+
       it 'gpt-image-1 が b64_json を返す場合はデータURLとして保存し 200 を返す' do
         b64_data = Base64.strict_encode64('fake_png_binary_data')
         allow(images_client).to receive(:generate).and_return({ 'data' => [{ 'b64_json' => b64_data }] })
