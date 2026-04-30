@@ -49,10 +49,16 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/dream") ||
     pathname.startsWith("/settings");
 
+  // Only these pages render MorpheusLoginRequired for unauthenticated users.
+  // Every other protected page still redirects to /login.
+  const hasInAppLoginGuidance =
+    pathname === "/home" || pathname.startsWith("/dream/month");
+
   if (!token && isProtectedPage) {
-    // Let the page render its in-app login guidance instead of forcing an
-    // immediate redirect. Protected data is still guarded by backend APIs.
-    return NextResponse.next();
+    if (hasInAppLoginGuidance) {
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (token) {
@@ -67,9 +73,11 @@ export async function proxy(request: NextRequest) {
         // Logged in, and on an auth page -> redirect to home
         return NextResponse.redirect(new URL("/home", request.url));
       } else if (!response.ok && isProtectedPage) {
-        // Invalid token on a protected page: clear the stale cookie, then let
-        // the client show the Morpheus login-required guidance.
-        const res = NextResponse.next();
+        // Invalid token: clear the stale cookie, then either show in-app
+        // guidance or redirect to /login depending on the page.
+        const res = hasInAppLoginGuidance
+          ? NextResponse.next()
+          : NextResponse.redirect(new URL("/login", request.url));
         res.cookies.delete("access_token");
         return res;
       }

@@ -617,9 +617,9 @@ RSpec.describe 'Dreams API', type: :request do
         expect(images_client).to receive(:generate).with(
           parameters: hash_including(
             prompt: a_string_including(
-              'avoid repeating a generic template',
-              'avoid horror',
-              'frightening darkness'
+              'generic dream template',
+              'never literal horror',
+              'safe, comforting, and age-appropriate'
             )
           )
         ).and_return({ 'data' => [{ 'url' => generated_url }] })
