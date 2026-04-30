@@ -333,11 +333,12 @@ class DreamsController < ApplicationController
     def build_image_prompt(content, analysis)
       style = image_style_for_age_group(@current_user&.age_group)
       parts = []
-      parts << "Create a beautiful, peaceful, and wonder-filled dreamscape illustration. #{style}"
+      parts << "Create a beautiful, peaceful, and wonder-filled dream illustration for a children-friendly dream journal app. #{style}"
       parts << "Dream content: #{content.truncate(300)}"
       parts << "Emotional theme: #{analysis.truncate(100)}" if analysis.present?
       parts << "Focus the composition on ONE specific memorable detail from this dream — a unique object, person, landscape, or magical moment. Let the colors and lighting reflect the emotional mood of this exact dream rather than a generic dream template."
       parts << "Any dark, scary, or intense elements must be transformed into soft, symbolic, and poetic visual metaphors — never literal horror. The final image must feel safe, comforting, and age-appropriate. No threatening faces, no gore, no dark shadows. Mood: gentle and magical."
+      parts << "Art style requirements: clean digital illustration only — flat or semi-flat, clear outlines, bright warm colors, simple readable composition that works well on a smartphone screen. Avoid: oil painting, painterly texture, heavy brush strokes, watercolor wash, impressionist or expressionist style, photo-realism."
       parts << "No text or letters."
       parts.join(" ").truncate(900)
     end
@@ -345,15 +346,15 @@ class DreamsController < ApplicationController
     def image_style_for_age_group(age_group)
       case age_group
       when "child_small", "child"
-        "Soft watercolor style, pastel colors, child-friendly, gentle and peaceful atmosphere."
+        "Clean digital illustration, soft pastel colors, simple rounded shapes, child-friendly and cheerful."
       when "preteen"
-        "Colorful storybook illustration style, slightly adventurous, vivid but friendly colors."
+        "Clean digital illustration, colorful and vivid, slightly adventurous, friendly and energetic."
       when "teen"
-        "Stylized digital art, cinematic lighting, vivid colors, cool and dramatic dreamlike mood."
+        "Clean digital illustration, dynamic composition, vivid colors, cool and stylish dreamlike mood."
       when "adult"
-        "Surrealist oil painting style, rich detail, deep colors, sophisticated and dreamlike atmosphere."
+        "Clean digital illustration, detailed but clear outlines, warm sophisticated tones, elegant and dreamlike."
       else
-        "Soft watercolor style, gentle colors, peaceful dreamlike atmosphere."
+        "Clean digital illustration, soft warm colors, simple and clear composition, pleasant dreamlike mood."
       end
     end
 
