@@ -9,7 +9,7 @@ class Dream < ApplicationRecord
   validates :content, presence: true, length: { maximum: 1000 }
 
   # analysis_status カラムを enum として定義し、メソッド名の衝突を避けるためにプレフィックスを付けます
-  enum analysis_status: { pending: 'pending', done: 'done', failed: 'failed' }, _prefix: :analysis
+  enum :analysis_status, { pending: 'pending', done: 'done', failed: 'failed' }, prefix: :analysis
 
   # よく使うクエリパターンをスコープとして定義する
   # current_user.dreams.with_image のように使う
