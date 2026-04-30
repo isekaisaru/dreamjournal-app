@@ -200,9 +200,24 @@ export default function Register() {
                 {showPassword ? "🙈" : "👁"}
               </button>
             </div>
-            <p id="password-hint" className="text-xs text-muted-foreground mt-1 ml-1">
-              8文字以上・英字と数字をそれぞれ含む
-            </p>
+            {password.length > 0 ? (
+              <ul id="password-hint" className="mt-2 ml-1 space-y-1 text-xs" aria-label="パスワードの条件">
+                {[
+                  { ok: password.length >= 8, label: "8もじ いじょう" },
+                  { ok: /[a-zA-Z]/.test(password), label: "えいじ（a〜z）を ふくむ" },
+                  { ok: /[0-9]/.test(password), label: "すうじ（0〜9）を ふくむ" },
+                ].map(({ ok, label }) => (
+                  <li key={label} className={`flex items-center gap-1.5 transition-colors ${ok ? "text-green-500" : "text-muted-foreground"}`}>
+                    <span aria-hidden="true" className="font-bold">{ok ? "✓" : "○"}</span>
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p id="password-hint" className="text-xs text-muted-foreground mt-1 ml-1">
+                8文字以上・英字と数字をそれぞれ含む
+              </p>
+            )}
           </div>
           <div>
             <label
