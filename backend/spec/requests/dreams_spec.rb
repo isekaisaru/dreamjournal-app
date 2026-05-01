@@ -747,7 +747,7 @@ RSpec.describe 'Dreams API', type: :request do
 
         context 'age_group がデフォルト（child）のユーザー' do
           let(:age_user) { create(:user) }
-          include_examples 'プロンプトにスタイルが含まれる', 'pleasant'
+          include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
         end
       end
     end
