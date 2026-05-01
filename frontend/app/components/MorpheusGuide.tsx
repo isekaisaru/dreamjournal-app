@@ -164,8 +164,8 @@ export function MorpheusGuideDetail() {
       imageVariant="reward"
       title="すてきな夢だね。"
       message="ちゃんと記録できてえらいよ。分析結果も見てみてね。"
-      size={118}
-      positionClassName="bottom-6 left-4 sm:bottom-10 sm:left-8"
+      size={140}
+      positionClassName="bottom-6 right-4 sm:bottom-10 sm:right-8"
     />
   );
 }
