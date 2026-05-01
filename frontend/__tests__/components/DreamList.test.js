@@ -219,7 +219,7 @@ describe("DreamList (props forwarding to DreamCard)", () => {
 
     // Assert
     expect(mockDreamCard).toHaveBeenCalledTimes(2);
-    expect(mockDreamCard).toHaveBeenNthCalledWith(1, { dream: dreams[0] }, {});
-    expect(mockDreamCard).toHaveBeenNthCalledWith(2, { dream: dreams[1] }, {});
+    expect(mockDreamCard).toHaveBeenNthCalledWith(1, { dream: dreams[0] }, undefined);
+    expect(mockDreamCard).toHaveBeenNthCalledWith(2, { dream: dreams[1] }, undefined);
   });
 });
