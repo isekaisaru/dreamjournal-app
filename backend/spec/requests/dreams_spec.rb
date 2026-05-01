@@ -722,7 +722,7 @@ RSpec.describe 'Dreams API', type: :request do
 
         context 'child ユーザー' do
           let(:age_user) { create(:user, age_group: 'child') }
-          include_examples 'プロンプトにスタイルが含まれる', 'watercolor'
+          include_examples 'プロンプトにスタイルが含まれる', 'pastel colors'
         end
 
         context 'child_small ユーザー' do
@@ -732,22 +732,22 @@ RSpec.describe 'Dreams API', type: :request do
 
         context 'preteen ユーザー' do
           let(:age_user) { create(:user, age_group: 'preteen') }
-          include_examples 'プロンプトにスタイルが含まれる', 'storybook'
+          include_examples 'プロンプトにスタイルが含まれる', 'adventurous'
         end
 
         context 'teen ユーザー' do
           let(:age_user) { create(:user, age_group: 'teen') }
-          include_examples 'プロンプトにスタイルが含まれる', 'cinematic'
+          include_examples 'プロンプトにスタイルが含まれる', 'cool and stylish'
         end
 
         context 'adult ユーザー' do
           let(:age_user) { create(:user, age_group: 'adult') }
-          include_examples 'プロンプトにスタイルが含まれる', 'Surrealist'
+          include_examples 'プロンプトにスタイルが含まれる', 'sophisticated'
         end
 
         context 'age_group がデフォルト（child）のユーザー' do
           let(:age_user) { create(:user) }
-          include_examples 'プロンプトにスタイルが含まれる', 'watercolor'
+          include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
         end
       end
     end
