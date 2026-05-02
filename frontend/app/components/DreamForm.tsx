@@ -169,6 +169,7 @@ export default function DreamForm({
       return;
     }
 
+    setAnalysisLimitReached(false);
     setIsAnalyzing(true);
     try {
       const result = await previewAnalysis(content);
