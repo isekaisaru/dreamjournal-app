@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 import { Dream, Emotion, DreamDraftData } from "../types";
-import { getEmotions, previewAnalysis } from "@/lib/apiClient";
+import { getEmotions, previewAnalysis, ApiError } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
 import MorpheusSVG from "./MorpheusSVG";
@@ -56,6 +56,7 @@ export default function DreamForm({
   );
   const [isDraftApplied, setIsDraftApplied] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
   const [analysisRevealKey, setAnalysisRevealKey] = useState(0);
   const [morpheusRating, setMorpheusRating] = useState<"good" | "bad" | null>(
     null
@@ -179,8 +180,12 @@ export default function DreamForm({
       localStorage.removeItem(morpheusRatingKey);
       toast.success("モルペウスが おへんじ したよ！");
     } catch (error) {
-      console.error("Analysis failed:", error);
-      toast.error("モルペウスと おはなし できなかった...");
+      if (error instanceof ApiError && error.status === 403 && error.data?.limit_reached) {
+        setAnalysisLimitReached(true);
+      } else {
+        console.error("Analysis failed:", error);
+        toast.error("モルペウスと おはなし できなかった...");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -258,38 +263,53 @@ export default function DreamForm({
         ></textarea>
         {/* Analysis Button */}
         <div className="mt-3 flex justify-end">
-          <motion.button
-            type="button"
-            onClick={handleAnalyze}
-            disabled={isAnalyzing || !content.trim()}
-            whileHover={isAnalyzing || !content.trim() ? undefined : { y: -2, scale: 1.01 }}
-            whileTap={isAnalyzing || !content.trim() ? undefined : { scale: 0.98 }}
-            className={`
-                px-4 py-2 rounded-full font-bold text-sm transition-all shadow-md flex items-center gap-2
-                ${
-                  isAnalyzing
-                    ? "bg-slate-200 text-slate-500 cursor-not-allowed"
-                    : "bg-muted text-muted-foreground hover:bg-muted/70 border border-border"
-                }
-              `}
-          >
-            {isAnalyzing ? (
-              <>
-                <span className="animate-spin text-lg">✨</span>
-                <span>かんがえ中...</span>
-              </>
-            ) : analysisText ? (
-              <>
-                <span className="text-lg">🔄</span>
-                <span>もういちど きく</span>
-              </>
-            ) : (
-              <>
-                <span className="text-lg">🔮</span>
-                <span>モルペウスに きく</span>
-              </>
-            )}
-          </motion.button>
+          {analysisLimitReached ? (
+            <div className="flex flex-col items-end gap-2">
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                今月の無料分析回数を使い切ったよ
+              </p>
+              <a
+                href="/donation"
+                className="px-4 py-2 rounded-full font-bold text-sm bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-md hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                <span>✨</span>
+                <span>プレミアムで無制限に使う</span>
+              </a>
+            </div>
+          ) : (
+            <motion.button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing || !content.trim()}
+              whileHover={isAnalyzing || !content.trim() ? undefined : { y: -2, scale: 1.01 }}
+              whileTap={isAnalyzing || !content.trim() ? undefined : { scale: 0.98 }}
+              className={`
+                  px-4 py-2 rounded-full font-bold text-sm transition-all shadow-md flex items-center gap-2
+                  ${
+                    isAnalyzing
+                      ? "bg-slate-200 text-slate-500 cursor-not-allowed"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70 border border-border"
+                  }
+                `}
+            >
+              {isAnalyzing ? (
+                <>
+                  <span className="animate-spin text-lg">✨</span>
+                  <span>かんがえ中...</span>
+                </>
+              ) : analysisText ? (
+                <>
+                  <span className="text-lg">🔄</span>
+                  <span>もういちど きく</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-lg">🔮</span>
+                  <span>モルペウスに きく</span>
+                </>
+              )}
+            </motion.button>
+          )}
         </div>
         {isAnalyzing ? (
           <div className="mt-4 overflow-hidden rounded-[28px] border border-sky-200/50 bg-slate-950 px-4 py-4 text-slate-50 shadow-lg">
