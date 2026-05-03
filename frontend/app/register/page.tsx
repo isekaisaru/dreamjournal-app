@@ -16,6 +16,20 @@ const hiddenEmailStyle = {
 const defaultRegisterError =
   "うまく はじめられなかったよ。もういちど ためしてね。";
 
+function getPasswordStrength(pw: string): { level: 1 | 2 | 3 | null; label: string; color: string } {
+  if (pw.length < 8) return { level: null, label: "", color: "" };
+  const hasLetter = /[a-zA-Z]/.test(pw);
+  const hasNumber = /[0-9]/.test(pw);
+  const hasSymbol = /[!@#$%^&*()\-_=+[\]{};':",.<>/?\\|]/.test(pw);
+  if (hasLetter && hasNumber && (hasSymbol || pw.length >= 12)) {
+    return { level: 3, label: "強い", color: "bg-green-500" };
+  }
+  if (hasLetter && hasNumber) {
+    return { level: 2, label: "普通", color: "bg-yellow-400" };
+  }
+  return { level: 1, label: "弱い", color: "bg-red-400" };
+}
+
 export default function Register() {
   const [email, setEmail] = useState("");
   const [showEmail, setShowEmail] = useState(true);
@@ -200,6 +214,27 @@ export default function Register() {
                 {showPassword ? "🙈" : "👁"}
               </button>
             </div>
+            {password.length >= 8 && (() => {
+              const strength = getPasswordStrength(password);
+              return strength.level ? (
+                <div className="mt-2 flex items-center gap-2" aria-live="polite">
+                  <div className="flex flex-1 gap-1">
+                    {([1, 2, 3] as const).map((seg) => (
+                      <div
+                        key={seg}
+                        className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
+                          strength.level! >= seg ? strength.color : "bg-muted"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className={`text-xs font-medium ${
+                    strength.level === 3 ? "text-green-500" :
+                    strength.level === 2 ? "text-yellow-500" : "text-red-400"
+                  }`}>{strength.label}</span>
+                </div>
+              ) : null;
+            })()}
             {password.length > 0 ? (
               <ul id="password-hint" className="mt-2 ml-1 space-y-1 text-xs" aria-label="パスワードの条件">
                 {[
