@@ -96,7 +96,7 @@ class AudioAnalysisService
 
     response = @client.chat(
       parameters: {
-        model: "gpt-4o-mini",
+        model: ENV["OPENAI_CHAT_MODEL"].presence || "gpt-4o-mini",
         messages: [
           { role: "system", content: system_prompt },
           { role: "user", content: "夢の内容: #{text}" }
