@@ -44,7 +44,7 @@ class MonthlySummaryService
 
     client = OpenAI::Client.new(access_token: ENV.fetch('OPENAI_API_KEY'))
     response = client.chat(parameters: {
-      model: 'gpt-4o-mini',
+      model: ENV.fetch("OPENAI_CHAT_MODEL", "gpt-4o-mini"),
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: prompt }
