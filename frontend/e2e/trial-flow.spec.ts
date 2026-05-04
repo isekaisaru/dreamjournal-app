@@ -27,14 +27,12 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await expect(page.getByText("3回")).toBeVisible();
   });
 
-  test("説明なしでAIボタンを押すとエラーが表示される", async ({ page }) => {
+  test("説明なしではAIボタンが無効になる", async ({ page }) => {
     await page.goto("/trial");
 
-    await page.getByRole("button", { name: "AIにきいてみる" }).click();
-
     await expect(
-      page.getByText("ゆめの おはなしを かいてね")
-    ).toBeVisible();
+      page.getByRole("button", { name: "AIにきいてみる" })
+    ).toBeDisabled();
   });
 
   test("AI分析が成功すると夢リストに追加され残り回数が減る", async ({
@@ -72,7 +70,7 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await expect(
       page.getByText("空を飛ぶ夢は、自由への願望や解放感を象徴しています。")
     ).toBeVisible();
-    await expect(page.getByText("自由")).toBeVisible();
+    await expect(page.getByText("自由", { exact: true })).toBeVisible();
 
     // 夢リストが1件になる
     await expect(page.getByText("かいた ゆめ (1/7)")).toBeVisible();
@@ -117,7 +115,7 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     for (let i = 1; i <= 3; i++) {
       await page.locator("#description").fill(`ゆめ ${i} の内容`);
       await page.getByRole("button", { name: "AIにきいてみる" }).click();
-      await expect(page.getByText("かいた ゆめ")).toBeVisible();
+      await expect(page.getByText(`かいた ゆめ (${i}/7)`)).toBeVisible();
     }
 
     // 4回目でバックエンドが上限エラーを返す
