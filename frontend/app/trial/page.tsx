@@ -15,6 +15,7 @@ type AnalysisResult = {
 };
 
 const MAX_TRIAL_DREAMS = 7;
+const MAX_TRIAL_ANALYSES = 3;
 
 export default function TrialPage() {
   const { authStatus, login } = useAuth();
@@ -32,6 +33,8 @@ export default function TrialPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
+  const [analysisCount, setAnalysisCount] = useState(0);
+  const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
 
   // checking中はボタンを無効化するためのフラグ
   const isAuthChecking = authStatus === "checking";
@@ -105,15 +108,15 @@ export default function TrialPage() {
           analysis: result,
         },
       ]);
+      setAnalysisCount((prev) => prev + 1);
       setTitle("");
       setDescription("");
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "分析に失敗しました";
       if (message.includes("分析上限")) {
-        setAnalysisError(
-          "おためしの ぶんせきは ここまでだよ。とうろくすると もっと つかえるよ！"
-        );
+        setAnalysisLimitReached(true);
+        setAnalysisError("");
       } else {
         setAnalysisError("ぶんせきに しっぱい しちゃった。もういちど ためしてね。");
       }
@@ -190,7 +193,7 @@ export default function TrialPage() {
           <p className="text-sm text-amber-400 mb-3">{analysisError}</p>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
           {/* メインCTA: AI分析 */}
           <button
             type="button"
@@ -198,6 +201,7 @@ export default function TrialPage() {
             disabled={
               isAnalyzing ||
               isAuthChecking ||
+              analysisLimitReached ||
               dreams.length >= MAX_TRIAL_DREAMS ||
               !description.trim()
             }
@@ -241,6 +245,16 @@ export default function TrialPage() {
           >
             かくだけ（ぶんせきなし）
           </button>
+
+          {/* 残り回数バッジ */}
+          {!analysisLimitReached && (
+            <span className="text-xs text-slate-400 sm:ml-1">
+              残りAI分析:{" "}
+              <span className={`font-bold ${MAX_TRIAL_ANALYSES - analysisCount <= 1 ? "text-amber-400" : "text-sky-400"}`}>
+                {Math.max(0, MAX_TRIAL_ANALYSES - analysisCount)}回
+              </span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -297,6 +311,32 @@ export default function TrialPage() {
         )}
       </div>
 
+      {/* 分析上限到達時のアップグレードカード */}
+      {analysisLimitReached && (
+        <div className="mb-6 p-5 bg-gradient-to-br from-sky-900/50 to-blue-900/50 border border-sky-500/40 rounded-2xl text-center shadow-lg shadow-sky-500/10">
+          <p className="text-base font-bold text-white mb-1">
+            おためし ぶんせきを つかいきったよ！
+          </p>
+          <p className="text-sm text-sky-200 mb-4">
+            とうろくすると、ぶんせきが ずっと つかえるよ。
+          </p>
+          <Link
+            href="/register"
+            className="
+              inline-flex items-center gap-2 px-7 py-3
+              bg-gradient-to-r from-sky-500 to-blue-600
+              hover:from-sky-400 hover:to-blue-500
+              text-white font-bold text-sm rounded-xl
+              shadow-lg shadow-sky-500/30
+              transition-all duration-200
+            "
+          >
+            <Sparkles size={16} />
+            いますぐ とうろくする
+          </Link>
+        </div>
+      )}
+
       {/* 注意書き + 登録CTA */}
       <div className="p-4 bg-slate-800/30 border border-slate-700/30 rounded-2xl text-center">
         <p className="text-sm text-slate-400 mb-1">
@@ -309,9 +349,10 @@ export default function TrialPage() {
           href="/register"
           className="
             inline-flex items-center gap-2 px-6 py-2.5
-            bg-slate-700/50 hover:bg-slate-700/70
-            text-slate-200 font-bold text-sm rounded-xl
-            border border-slate-600/40 hover:border-sky-500/40
+            bg-gradient-to-r from-violet-500 to-purple-600
+            hover:from-violet-400 hover:to-purple-500
+            text-white font-bold text-sm rounded-xl
+            shadow-lg shadow-violet-500/20
             transition-all duration-200
           "
         >
