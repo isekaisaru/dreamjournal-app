@@ -190,17 +190,17 @@ make dev-up
 
 GitHub Actions で `main` への Push / PR 時に Playwright、RSpec、Jest を実行し、主要フローの回帰を検知できるようにしています。
 
-**Playwright E2E カバレッジ（主なシナリオ）**
+**Playwright E2E カバレッジ（CI 実行分）**
+
+CI（GitHub Actions）では認証不要なシナリオを自動実行しています。
 
 | シナリオファイル | カバー内容 |
 |---|---|
 | `smoke.spec.ts` | アプリ起動・ログインリンク表示 |
-| `home-flow.spec.ts` | 認証済みユーザーの夢一覧・月別アーカイブ・検索 |
-| `dream-detail-flow.spec.ts` | 夢詳細表示・編集モード切り替え |
-| `month-summary-flow.spec.ts` | 月次サマリー統計・感情 Top 3 表示 |
 | `donation.spec.ts` | 寄付フロー・Stripe Checkout 遷移 |
-| `registration-flow.spec.ts` | パスワード強度バー（弱い/普通/強い）・バリデーション・登録成功→`/home` 遷移 |
-| `trial-flow.spec.ts` | 残り分析回数バッジ・AI分析成功・上限到達時のアップグレードカード表示 |
+| `dream-detail-flow.spec.ts` | 夢詳細表示・編集モード切り替え |
+
+認証が必要なシナリオ（`home-flow.spec.ts`、`month-summary-flow.spec.ts`）および登録・トライアルフロー（`registration-flow.spec.ts`、`trial-flow.spec.ts`）はローカル環境で実行します。
 </details>
 
 ---
