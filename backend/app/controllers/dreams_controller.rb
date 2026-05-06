@@ -200,7 +200,7 @@ class DreamsController < ApplicationController
 
     response = $openai_client.images.generate(
       parameters: {
-        model: "gpt-image-1",
+        model: ENV["OPENAI_IMAGE_MODEL"].presence || "gpt-image-1",
         prompt: prompt,
         n: 1,
         size: "1024x1024",
