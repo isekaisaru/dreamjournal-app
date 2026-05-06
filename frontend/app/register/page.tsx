@@ -119,6 +119,7 @@ export default function Register() {
         />
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
         <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center text-card-foreground">
