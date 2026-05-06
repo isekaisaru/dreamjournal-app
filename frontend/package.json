@@ -83,6 +83,7 @@
     "js-yaml": "^4.1.1",
     "minimatch": "^10.2.4",
     "picomatch": "^4.0.4",
+    "postcss": "^8.5.13",
     "test-exclude": "^7.0.1",
     "rollup": "^4.59.0",
     "flatted": "^3.4.2",
