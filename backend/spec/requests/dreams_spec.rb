@@ -785,7 +785,7 @@ RSpec.describe 'Dreams API', type: :request do
 
   describe 'GET /dreams/analysis_quota' do
     context 'フリープランユーザーの場合' do
-      before { user.update!(monthly_analysis_count: 3) }
+      before { user.update!(monthly_analysis_count: 3, monthly_analysis_count_reset_at: Time.current.beginning_of_month) }
 
       it '使用数・上限・残数を返す' do
         authenticated_get '/dreams/analysis_quota', user
