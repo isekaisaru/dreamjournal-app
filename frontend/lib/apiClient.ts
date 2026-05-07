@@ -315,6 +315,18 @@ export async function previewAnalysis(
   );
 }
 
+export type AnalysisQuota = {
+  unlimited?: boolean;
+  trial?: boolean;
+  used: number | null;
+  limit: number | null;
+  remaining: number | null;
+};
+
+export async function getAnalysisQuota(): Promise<AnalysisQuota> {
+  return apiFetch<AnalysisQuota>("/dreams/analysis_quota");
+}
+
 export async function verifyAuth(): Promise<{ user: User } | null> {
   try {
     const response = await apiFetch<{ user: BackendUser }>("/auth/verify");

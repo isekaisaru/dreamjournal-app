@@ -782,4 +782,47 @@ RSpec.describe 'Dreams API', type: :request do
       it_behaves_like 'unauthorized request', :get, '/dreams/image_quota'
     end
   end
+
+  describe 'GET /dreams/analysis_quota' do
+    context 'フリープランユーザーの場合' do
+      before { user.update!(monthly_analysis_count: 3, monthly_analysis_count_reset_at: Time.current.beginning_of_month) }
+
+      it '使用数・上限・残数を返す' do
+        authenticated_get '/dreams/analysis_quota', user
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['used']).to eq(3)
+        expect(json_response['limit']).to eq(User::FREE_ANALYSIS_MONTHLY_LIMIT)
+        expect(json_response['remaining']).to eq(User::FREE_ANALYSIS_MONTHLY_LIMIT - 3)
+      end
+    end
+
+    context 'プレミアムユーザーの場合' do
+      let!(:premium_user) { create(:user, premium: true) }
+
+      it 'unlimited: true を返す' do
+        authenticated_get '/dreams/analysis_quota', premium_user
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['unlimited']).to be true
+      end
+    end
+
+    context 'トライアルユーザーの場合' do
+      let!(:trial_user) { create(:user, trial_user: true, trial_analysis_count: 1) }
+
+      it 'trial: true と残数を返す' do
+        authenticated_get '/dreams/analysis_quota', trial_user
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['trial']).to be true
+        expect(json_response['used']).to eq(1)
+        expect(json_response['remaining']).to eq(DreamsController::TRIAL_ANALYSIS_LIMIT - 1)
+      end
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :get, '/dreams/analysis_quota'
+    end
+  end
 end

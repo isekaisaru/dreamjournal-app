@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Dream, Emotion, AgeGroup } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
-import { getEmotions } from "@/lib/apiClient";
+import { getEmotions, getAnalysisQuota, AnalysisQuota } from "@/lib/apiClient";
 import { getJSTYearMonthKey } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
@@ -122,6 +122,7 @@ export default function HomePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [emotions, setEmotions] = useState<Emotion[]>([]);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
+  const [analysisQuota, setAnalysisQuota] = useState<AnalysisQuota | null>(null);
 
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
@@ -177,6 +178,16 @@ export default function HomePage() {
         // 感情タグ取得失敗は非致命的: 検索フォームを通常表示するだけ
       });
   }, []);
+
+  // 月次AI分析残数をフリープランユーザーのみ取得
+  useEffect(() => {
+    if (authStatus !== "authenticated" || user?.premium) return;
+    getAnalysisQuota()
+      .then(setAnalysisQuota)
+      .catch(() => {
+        // 非致命的: バッジを表示しないだけ
+      });
+  }, [authStatus, user?.premium]);
 
   // dream-createdイベントをリッスン（夢が新規作成されたときにリストを更新）
   useEffect(() => {
@@ -330,6 +341,48 @@ export default function HomePage() {
 
         {/* 感情タグ統計 */}
         <DreamStatsWidget dreams={dreams} />
+
+        {/* 月次AI分析残数バッジ（フリープランのみ） */}
+        {analysisQuota && !analysisQuota.unlimited && !analysisQuota.trial && (
+          <div className="bg-card border border-border rounded-xl p-4 w-full mb-4">
+            <h3 className="font-bold text-card-foreground mb-2 flex items-center gap-2">
+              <span>✨</span>
+              <span>今月のAI分析</span>
+            </h3>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    analysisQuota.remaining === 0
+                      ? "bg-destructive"
+                      : analysisQuota.remaining! <= 2
+                      ? "bg-amber-400"
+                      : "bg-primary"
+                  }`}
+                  style={{
+                    width: `${Math.min(((analysisQuota.used ?? 0) / (analysisQuota.limit ?? 10)) * 100, 100)}%`,
+                  }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground shrink-0">
+                {analysisQuota.used ?? 0} / {analysisQuota.limit ?? 10}
+              </span>
+            </div>
+            {analysisQuota.remaining === 0 ? (
+              <p className="text-xs text-destructive">
+                今月の上限に達しました。
+                <Link href="/subscription" className="underline ml-1">プレミアムで無制限に</Link>
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                残り{" "}
+                <span className={`font-bold ${analysisQuota.remaining! <= 2 ? "text-amber-500" : "text-foreground"}`}>
+                  {analysisQuota.remaining}回
+                </span>
+              </p>
+            )}
+          </div>
+        )}
 
         {/* 月別アーカイブリンク */}
         <div className="bg-card text-card-foreground shadow-md rounded-xl p-4 mb-4 border border-border w-full">

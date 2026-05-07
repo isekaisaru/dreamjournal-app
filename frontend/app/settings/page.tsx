@@ -48,21 +48,13 @@ const SettingsPage = () => {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isToneOpen, setIsToneOpen] = useState(false);
 
-  // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
+  // verify 完了後 (user が null → 実データ) に state を同期する
   useEffect(() => {
     if (!user) return;
     setProfileUsername(user.username ?? "");
     setProfileAgeGroup(user.age_group ?? "child");
     setProfileTone(user.analysis_tone ?? "auto");
   }, [user?.id, user?.username, user?.age_group, user?.analysis_tone]);
-
-  // 初回レンダー時は user === null (checking中)なので、verify 完了後に再同期する
-  useEffect(() => {
-    if (!user) return;
-    setProfileUsername(user.username ?? "");
-    setProfileAgeGroup(user.age_group ?? "child");
-    setProfileTone(user.analysis_tone ?? "auto");
-  }, [user?.id]);
 
   const handleSaveProfile = async () => {
     if (!profileUsername.trim()) {
