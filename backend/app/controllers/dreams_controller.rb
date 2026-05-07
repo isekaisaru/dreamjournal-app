@@ -51,6 +51,30 @@ class DreamsController < ApplicationController
     }
   end
 
+  # GET /dreams/analysis_quota
+  def analysis_quota
+    if current_user.premium?
+      render json: { unlimited: true, used: nil, limit: nil, remaining: nil }
+    elsif current_user.trial_user?
+      remaining = [TRIAL_ANALYSIS_LIMIT - current_user.trial_analysis_count, 0].max
+      render json: {
+        trial:     true,
+        used:      current_user.trial_analysis_count,
+        limit:     TRIAL_ANALYSIS_LIMIT,
+        remaining: remaining
+      }
+    else
+      current_user.reset_monthly_analysis_count_if_needed!
+      used  = current_user.monthly_analysis_count
+      limit = FREE_ANALYSIS_MONTHLY_LIMIT
+      render json: {
+        used:      used,
+        limit:     limit,
+        remaining: [limit - used, 0].max
+      }
+    end
+  end
+
   # GET /dreams/:id
   def show
     render json: @dream.as_json(
