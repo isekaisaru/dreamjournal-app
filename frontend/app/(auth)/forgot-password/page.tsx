@@ -62,6 +62,7 @@ export default function ForgotPasswordPage() {
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="bg-card p-6 sm:p-8 md:p-10 rounded-lg shadow-lg w-full max-w-md border border-border"
       >
         <h2 className="text-2xl md:text-3xl font-semibold mb-4 md:mb-6 text-center text-card-foreground">
