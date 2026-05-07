@@ -317,9 +317,14 @@ export default function TrialPage() {
           <p className="text-base font-bold text-white mb-1">
             おためし ぶんせきを つかいきったよ！
           </p>
-          <p className="text-sm text-sky-200 mb-4">
-            とうろくすると、ぶんせきが ずっと つかえるよ。
+          <p className="text-sm text-sky-200 mb-1">
+            とうろくすると こんなことが できるよ！
           </p>
+          <ul className="text-sm text-sky-100/80 mb-4 space-y-1 text-left inline-block">
+            <li>✨ AIぶんせきが <span className="font-bold text-white">まいつき10かい</span> つかえる</li>
+            <li>🌙 ゆめを <span className="font-bold text-white">ずっと きろく</span> できる</li>
+            <li>🖼️ ゆめの <span className="font-bold text-white">イラスト生成</span> も つかえる</li>
+          </ul>
           <Link
             href="/register"
             className="
@@ -337,28 +342,30 @@ export default function TrialPage() {
         </div>
       )}
 
-      {/* 注意書き + 登録CTA */}
-      <div className="p-4 bg-slate-800/30 border border-slate-700/30 rounded-2xl text-center">
-        <p className="text-sm text-slate-400 mb-1">
-          おためしの ぶんせきは <span className="text-sky-400 font-medium">3かい</span> まで
-        </p>
-        <p className="text-xs text-slate-500 mb-4">
-          おためしアカウントが じどうで つくられるよ。とうろくすると ぜんぶの きのうが つかえるよ。
-        </p>
-        <Link
-          href="/register"
-          className="
-            inline-flex items-center gap-2 px-6 py-2.5
-            bg-gradient-to-r from-violet-500 to-purple-600
-            hover:from-violet-400 hover:to-purple-500
-            text-white font-bold text-sm rounded-xl
-            shadow-lg shadow-violet-500/20
-            transition-all duration-200
-          "
-        >
-          とうろくして ずっと のこす
-        </Link>
-      </div>
+      {/* 注意書き + 登録CTA（上限到達時は非表示） */}
+      {!analysisLimitReached && (
+        <div className="p-4 bg-slate-800/30 border border-slate-700/30 rounded-2xl text-center">
+          <p className="text-sm text-slate-400 mb-1">
+            おためしの ぶんせきは <span className="text-sky-400 font-medium">3かい</span> まで
+          </p>
+          <p className="text-xs text-slate-500 mb-4">
+            おためしアカウントが じどうで つくられるよ。とうろくすると ぜんぶの きのうが つかえるよ。
+          </p>
+          <Link
+            href="/register"
+            className="
+              inline-flex items-center gap-2 px-6 py-2.5
+              bg-gradient-to-r from-violet-500 to-purple-600
+              hover:from-violet-400 hover:to-purple-500
+              text-white font-bold text-sm rounded-xl
+              shadow-lg shadow-violet-500/20
+              transition-all duration-200
+            "
+          >
+            とうろくして ずっと のこす
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

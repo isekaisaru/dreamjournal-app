@@ -170,6 +170,43 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await expect(ctaLink).toHaveAttribute("href", "/register");
   });
 
+  test("分析上限到達時に下部CTAが非表示になりアップグレードカードのみ表示される", async ({
+    page,
+  }) => {
+    await page.route("**/auth/trial_login", async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: 99, email: "trial_test@example.com", username: "trial_99" },
+        }),
+      });
+    });
+
+    await page.route("**/dreams/preview_analysis", async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "分析上限に達しました" }),
+      });
+    });
+
+    await page.goto("/trial");
+
+    await page.locator("#description").fill("ゆめの内容");
+    await page.getByRole("button", { name: "AIにきいてみる" }).click();
+
+    // アップグレードカードが表示される
+    await expect(
+      page.getByText("おためし ぶんせきを つかいきったよ！")
+    ).toBeVisible();
+
+    // 下部CTAは非表示になる
+    await expect(
+      page.getByRole("link", { name: "とうろくして ずっと のこす" })
+    ).not.toBeVisible();
+  });
+
   test("分析なしで記録だけできる", async ({ page }) => {
     await page.goto("/trial");
 
