@@ -2,7 +2,7 @@ import { GET } from "@/app/api/auth/verify/route";
 
 const originalEnv = process.env;
 const originalResponse = global.Response;
-const fetchMock = jest.fn();
+const fetchMock = jest.fn<typeof fetch>();
 
 describe("GET /api/auth/verify", () => {
   beforeEach(() => {
@@ -12,7 +12,7 @@ describe("GET /api/auth/verify", () => {
       INTERNAL_API_URL: "https://api.example.com",
     };
     fetchMock.mockReset();
-    global.fetch = fetchMock;
+    global.fetch = fetchMock as unknown as typeof fetch;
     global.Response = {
       json: (body: unknown, init?: ResponseInit) =>
         ({
@@ -31,7 +31,7 @@ describe("GET /api/auth/verify", () => {
     fetchMock.mockResolvedValue({
       status: 200,
       json: async () => ({ user: { id: 1 } }),
-    });
+    } as unknown as Response);
 
     const response = await GET({
       headers: { get: () => "access_token=token-value" },

@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import DreamDetailPage from "@/app/dream/[id]/page";
 
 jest.mock("react", () => {
-  const actual = jest.requireActual("react");
+  const actual = jest.requireActual("react") as Record<string, unknown>;
   return {
     ...actual,
     use: (value: unknown) => value,

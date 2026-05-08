@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/jest-globals";
 
 // Mock framer-motion to prevent JSDOM issues
 jest.mock("framer-motion", () => {

@@ -21,7 +21,8 @@
       "node",
       "react",
       "react-dom",
-      "next"
+      "next",
+      "@testing-library/jest-dom"
     ],
     "plugins": [
       {
