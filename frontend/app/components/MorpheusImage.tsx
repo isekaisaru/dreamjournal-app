@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import MorpheusSVG, { type MorpheusExpression } from "./MorpheusSVG";
 
@@ -93,18 +94,22 @@ export default function MorpheusImage({
   }
 
   return (
-    <motion.img
-      src={MORPHEUS_IMAGE_SRC[variant]}
-      alt={ALT_BY_VARIANT[variant]}
-      width={size}
-      height={size}
-      loading={priority ? "eager" : "lazy"}
-      decoding="async"
-      onError={() => setHasImageError(true)}
+    <motion.div
       initial={{ opacity: 0, scale: 0.92, y: 8 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 220, damping: 18 }}
-      className={`object-contain drop-shadow-[0_18px_40px_rgba(99,102,241,0.30)] ${className}`}
-    />
+      className={`drop-shadow-[0_18px_40px_rgba(99,102,241,0.30)] ${className}`}
+    >
+      <Image
+        src={MORPHEUS_IMAGE_SRC[variant]}
+        alt={ALT_BY_VARIANT[variant]}
+        width={size}
+        height={size}
+        priority={priority}
+        onError={() => setHasImageError(true)}
+        className="object-contain block"
+        sizes={`${size}px`}
+      />
+    </motion.div>
   );
 }
