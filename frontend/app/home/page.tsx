@@ -384,15 +384,17 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 月別アーカイブリンク */}
-        <div className="bg-card text-card-foreground shadow-md rounded-xl p-4 mb-4 border border-border w-full">
-          <h3 className="font-bold text-card-foreground mb-2">
-            まえに みた ゆめ
-          </h3>
-          <p className="text-muted-foreground text-sm">
-            まえに みた ゆめ を見てみよう！
-          </p>
-        </div>
+        {/* 月別アーカイブリンク — 夢が記録されている月のみ表示 */}
+        {Object.entries(groupedDreams).length > 0 && (
+          <div className="bg-card text-card-foreground shadow-md rounded-xl p-4 mb-4 border border-border w-full">
+            <h3 className="font-bold text-card-foreground mb-2">
+              まえに みた ゆめ
+            </h3>
+            <p className="text-muted-foreground text-sm">
+              つきごとの ゆめを ふりかえろう！
+            </p>
+          </div>
+        )}
         <ul className="space-y-2 w-full">
           {Object.entries(groupedDreams).map(([yearMonth, monthDreams]) => {
             const monthName = new Date(monthDreams[0].created_at).toLocaleString("ja-JP", {
@@ -423,6 +425,19 @@ export default function HomePage() {
             );
           })}
         </ul>
+
+        {/* 新規ユーザー向け：夢が5件未満かつ非プレミアムならプレミアム案内を表示 */}
+        {!loading && !user?.premium && dreams.length < 5 && (
+          <Link
+            href="/subscription"
+            className="block w-full rounded-xl border border-primary/25 bg-primary/5 p-4 text-sm hover:bg-primary/10 transition-colors"
+          >
+            <p className="font-bold text-primary mb-1">✨ プレミアムを試してみる</p>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              AI分析 無制限・夢の画像生成・月次サマリー。月額¥500で使い放題。
+            </p>
+          </Link>
+        )}
       </aside>
       <MorpheusGuideHome
         title={user?.age_group === "child_small" || user?.age_group === "child"
