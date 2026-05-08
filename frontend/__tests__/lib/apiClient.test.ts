@@ -5,7 +5,7 @@ describe("apiFetch timeout policy", () => {
 
   beforeEach(() => {
     jest.spyOn(global, "setTimeout");
-    global.fetch = jest.fn().mockRejectedValue(new Error("network down")) as typeof fetch;
+    global.fetch = jest.fn<() => Promise<Response>>().mockRejectedValue(new Error("network down")) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -26,12 +26,12 @@ describe("apiFetch timeout policy", () => {
   });
 
   it("preserves plain-text error bodies when the upstream response is not JSON", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn<() => Promise<Response>>().mockResolvedValue({
       ok: false,
       status: 502,
-      json: jest.fn().mockRejectedValue(new Error("invalid json")),
-      text: jest.fn().mockResolvedValue("upstream connect error or disconnect/reset before headers"),
-    } as unknown as Response) as typeof fetch;
+      json: jest.fn<() => Promise<unknown>>().mockRejectedValue(new Error("invalid json")),
+      text: jest.fn<() => Promise<string>>().mockResolvedValue("upstream connect error or disconnect/reset before headers"),
+    } as unknown as Response) as unknown as typeof fetch;
 
     await expect(apiFetch("/dreams")).rejects.toThrow(
       "upstream connect error or disconnect/reset before headers"
