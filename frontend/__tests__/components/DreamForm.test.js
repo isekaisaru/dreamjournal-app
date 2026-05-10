@@ -31,6 +31,13 @@ jest.mock("framer-motion", () => {
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),
   previewAnalysis: jest.fn(),
+  ApiError: class ApiError extends Error {
+    constructor(message, status, data) {
+      super(message);
+      this.status = status;
+      this.data = data;
+    }
+  },
 }));
 
 jest.mock("@/lib/toast", () => ({
@@ -41,6 +48,7 @@ jest.mock("@/lib/toast", () => ({
 }));
 
 const { getEmotions, previewAnalysis } = require("@/lib/apiClient");
+const { ApiError } = require("@/lib/apiClient");
 const { toast } = require("@/lib/toast");
 
 describe("DreamForm", () => {
@@ -272,5 +280,24 @@ describe("DreamForm", () => {
     expect(screen.getByText("#不安")).toBeInTheDocument();
     expect(screen.getByText("#嬉しい")).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith("モルペウスが おへんじ したよ！");
+  });
+
+  it("links free analysis limit users to the premium subscription page", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    previewAnalysis.mockRejectedValueOnce(
+      new ApiError("limit reached", 403, { limit_reached: true })
+    );
+    const user = userEvent.setup();
+
+    render(<DreamForm onSubmit={jest.fn()} />);
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+    await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
+
+    const upgradeLink = await screen.findByRole("link", {
+      name: /プレミアムで無制限に使う/,
+    });
+    expect(upgradeLink).toHaveAttribute("href", "/subscription");
+    expect(screen.getByText("今月の無料分析回数を使い切ったよ")).toBeInTheDocument();
   });
 });
