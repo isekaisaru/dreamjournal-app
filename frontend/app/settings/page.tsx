@@ -328,16 +328,16 @@ const SettingsPage = () => {
             ) : (
               <div>
                 <ul className="text-muted-foreground text-sm mb-4 space-y-1">
-                  <li>✓ ゆめのAI分析（むせいげん）</li>
+                  <li>✓ ゆめのAI分析（たっぷり使える）</li>
                   <li>✓ ゆめのえ生成（月31枚）</li>
                   <li>✓ 月次サマリー</li>
                 </ul>
-                <p className="text-muted-foreground text-xs mb-4">月額500円・いつでもキャンセルできます。</p>
+                <p className="text-muted-foreground text-xs mb-4">月額590円・いつでもキャンセルできます。</p>
                 <Link
                   href="/subscription"
                   className="block w-full py-3 px-4 rounded-xl bg-primary text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  月額500円でプレミアムになる
+                  月額590円でプレミアムになる
                 </Link>
               </div>
             )}
