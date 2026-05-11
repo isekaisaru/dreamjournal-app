@@ -469,6 +469,72 @@ RSpec.describe 'Dreams API', type: :request do
 
         expect(response).to have_http_status(:accepted)
       end
+
+      context 'プレミアムユーザーのフェアユース制限' do
+        let!(:premium_user) { create(:user, premium: true) }
+        let!(:premium_dream) { create(:dream, user: premium_user, content: '空を飛ぶ夢。') }
+
+        around do |example|
+          original_adapter = ActiveJob::Base.queue_adapter
+          ActiveJob::Base.queue_adapter = :test
+          example.run
+        ensure
+          ActiveJob::Base.queue_adapter = original_adapter
+        end
+
+        it '1日50回未満の場合は分析を受け付ける（202）' do
+          create_list(:ai_usage_log, 10, user: premium_user, feature: 'dream_analysis')
+
+          assert_enqueued_with(job: AnalyzeDreamJob) do
+            authenticated_post "/dreams/#{premium_dream.id}/analyze", premium_user
+          end
+
+          expect(response).to have_http_status(:accepted)
+        end
+
+        it '1日50回に達している場合は 429 を返してジョブを積まない' do
+          create_list(:ai_usage_log, DreamsController::PREMIUM_DAILY_ANALYSIS_LIMIT,
+                      user: premium_user, feature: 'dream_analysis')
+
+          assert_no_enqueued_jobs do
+            authenticated_post "/dreams/#{premium_dream.id}/analyze", premium_user
+          end
+
+          expect(response).to have_http_status(:too_many_requests)
+          expect(json_response['limit_reached']).to eq(true)
+          expect(json_response['daily_analysis_limit']).to eq(DreamsController::PREMIUM_DAILY_ANALYSIS_LIMIT)
+        end
+
+        it '上限に達していても分析済みの夢はキャッシュを返す（カウントしない）' do
+          create_list(:ai_usage_log, DreamsController::PREMIUM_DAILY_ANALYSIS_LIMIT,
+                      user: premium_user, feature: 'dream_analysis')
+          premium_dream.mark_done!({ analysis: 'cached result', emotion_tags: [] })
+
+          assert_no_enqueued_jobs do
+            authenticated_post "/dreams/#{premium_dream.id}/analyze", premium_user
+          end
+
+          expect(response).to have_http_status(:ok)
+          expect(json_response['cached']).to be true
+        end
+
+        it '分析実行時に AiUsageLog が1件追加される' do
+          expect do
+            authenticated_post "/dreams/#{premium_dream.id}/analyze", premium_user
+          end.to change { AiUsageLog.where(user: premium_user, feature: 'dream_analysis').count }.by(1)
+        end
+
+        it '昨日のログは今日の上限カウントに含まれない' do
+          create_list(:ai_usage_log, DreamsController::PREMIUM_DAILY_ANALYSIS_LIMIT,
+                      user: premium_user, feature: 'dream_analysis', created_at: 1.day.ago)
+
+          assert_enqueued_with(job: AnalyzeDreamJob) do
+            authenticated_post "/dreams/#{premium_dream.id}/analyze", premium_user
+          end
+
+          expect(response).to have_http_status(:accepted)
+        end
+      end
     end
 
     context '認証されていない場合' do

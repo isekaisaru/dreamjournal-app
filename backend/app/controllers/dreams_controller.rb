@@ -3,9 +3,10 @@ class DreamsController < ApplicationController
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
   before_action :check_monthly_image_limit, only: [:generate_image]
 
-  TRIAL_ANALYSIS_LIMIT = 3   # トライアルユーザーの分析回数上限
-  IMAGE_MONTHLY_LIMIT   = 31 # 全ユーザー共通の画像生成月次上限
-  FREE_ANALYSIS_MONTHLY_LIMIT = User::FREE_ANALYSIS_MONTHLY_LIMIT
+  TRIAL_ANALYSIS_LIMIT          = 3   # トライアルユーザーの分析回数上限
+  IMAGE_MONTHLY_LIMIT           = 31  # 全ユーザー共通の画像生成月次上限
+  FREE_ANALYSIS_MONTHLY_LIMIT   = User::FREE_ANALYSIS_MONTHLY_LIMIT
+  PREMIUM_DAILY_ANALYSIS_LIMIT  = 50  # プレミアムユーザーの1日あたりフェアユース上限
   
 
   # GET /dreams
@@ -302,8 +303,21 @@ class DreamsController < ApplicationController
     end
 
     def check_analysis_limit
-      return if current_user.premium?
+      # キャッシュ済み分析はカウントせずそのまま通す（全プラン共通）
       return if action_name == "analyze" && cached_analysis_request?
+
+      if current_user.premium?
+        daily_count = AiUsageLog.today_for_user(current_user, "dream_analysis").count
+        if daily_count >= PREMIUM_DAILY_ANALYSIS_LIMIT
+          render json: {
+            error: "本日のAI分析上限（#{PREMIUM_DAILY_ANALYSIS_LIMIT}回）に達しました。明日またお試しください。",
+            limit_reached: true,
+            daily_analysis_count: daily_count,
+            daily_analysis_limit: PREMIUM_DAILY_ANALYSIS_LIMIT
+          }, status: :too_many_requests
+        end
+        return
+      end
 
       if current_user.trial_user?
         return unless current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
@@ -326,6 +340,7 @@ class DreamsController < ApplicationController
     end
 
     def increment_analysis_usage!
+      AiUsageLog.create!(user: current_user, feature: "dream_analysis")
       return if current_user.premium?
       return unless current_user.trial_user?
 
