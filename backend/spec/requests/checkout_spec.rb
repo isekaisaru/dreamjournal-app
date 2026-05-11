@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Checkout API', type: :request do
   let(:frontend_url) { 'http://localhost:3000' }
-  let(:premium_price_id) { 'price_premium_500' }
+  let(:premium_price_id) { 'price_premium_test' }
   let(:checkout_url) { 'https://checkout.stripe.com/c/pay/cs_test_123' }
 
   before do
