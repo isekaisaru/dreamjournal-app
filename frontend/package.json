@@ -54,7 +54,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.17",
+    "@tailwindcss/postcss": "^4.3.0",
     "@next/bundle-analyzer": "16.1.7",
     "@playwright/test": "^1.58.2",
     "@testing-library/dom": "^10.4.0",
