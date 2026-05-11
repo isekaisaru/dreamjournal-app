@@ -19,7 +19,7 @@ const FREE_FEATURES = [
 ];
 
 const PREMIUM_FEATURES = [
-  { label: "AI分析", detail: "無制限" },
+  { label: "AI分析", detail: "たっぷり使える" },
   { label: "夢の記録", detail: "無制限" },
   { label: "感情タグ", detail: "利用可" },
   { label: "月次サマリー", detail: "月ごとのAIまとめ" },
@@ -29,8 +29,8 @@ const PREMIUM_FEATURES = [
 const HIGHLIGHTS = [
   {
     icon: Zap,
-    title: "AI分析 無制限",
-    body: "フリープランの月10回制限がなくなる。毎日の夢を全部分析できる。",
+    title: "AI分析 たっぷり使える",
+    body: "フリープランの月10回制限がなくなり、毎日の夢をしっかり分析できる。",
     color: "text-sky-400",
     bg: "bg-sky-500/10",
   },
@@ -170,7 +170,7 @@ export default function SubscriptionPage() {
           variant="home"
           size={160}
           title="ユメログ プレミアム"
-          message="AI分析を無制限に。夢の画像生成と月次サマリーで、毎日の夢がもっと深く楽しめる。"
+          message="AI分析をたっぷり使える。夢の画像生成と月次サマリーで、毎日の夢がもっと深く楽しめる。"
         />
 
         {/* 価格カード */}
@@ -182,7 +182,7 @@ export default function SubscriptionPage() {
         >
           <p className="text-xs font-bold tracking-widest text-primary uppercase mb-2">月額プラン</p>
           <div className="flex items-end justify-center gap-1 mb-1">
-            <span className="text-5xl font-black text-foreground">¥500</span>
+            <span className="text-5xl font-black text-foreground">¥590</span>
             <span className="text-muted-foreground mb-2 text-sm">/ 月</span>
           </div>
           <p className="text-xs text-muted-foreground mb-6">税込み・いつでもキャンセル可能</p>
@@ -259,6 +259,13 @@ export default function SubscriptionPage() {
           })}
         </motion.section>
 
+        {/* 利用規約注記 */}
+        <p className="text-xs text-muted-foreground text-center leading-loose">
+          ※ AI分析は通常利用の範囲内でご利用いただけます。<br />
+          ※ 夢の画像生成は月31枚までです。<br />
+          ※ 短時間の連続利用など、サービス運営に影響する利用は一時的に制限される場合があります。
+        </p>
+
         {/* モルペウスのメッセージ */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -281,7 +288,7 @@ export default function SubscriptionPage() {
             className="inline-flex items-center gap-2.5 px-10 py-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-base rounded-2xl shadow-xl shadow-sky-500/20 transition-all duration-300 hover:shadow-2xl hover:shadow-sky-500/30 hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-60 disabled:translate-y-0"
           >
             <Sparkles size={18} />
-            {isLoading ? "準備中..." : "月額¥500でプレミアムを始める"}
+            {isLoading ? "準備中..." : "月額¥590でプレミアムを始める"}
           </button>
           <p className="mt-3 text-xs text-muted-foreground">いつでもキャンセル可能 · Stripe で安全に決済</p>
           <p className="mt-5 text-sm text-muted-foreground">
