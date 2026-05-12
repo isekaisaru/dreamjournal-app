@@ -10,4 +10,10 @@ class AiUsageLog < ApplicationRecord
     where(user: user, feature: feature)
       .where(created_at: Time.current.beginning_of_day..)
   }
+
+  # 指定ユーザーの今月の利用ログ
+  scope :this_month_for_user, ->(user, feature) {
+    where(user: user, feature: feature)
+      .where(created_at: Time.current.beginning_of_month..)
+  }
 end
