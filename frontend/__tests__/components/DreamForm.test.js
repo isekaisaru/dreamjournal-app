@@ -300,4 +300,21 @@ describe("DreamForm", () => {
     expect(upgradeLink).toHaveAttribute("href", "/subscription");
     expect(screen.getByText("今月の無料分析回数を使い切ったよ")).toBeInTheDocument();
   });
+
+  it("shows the backend analysis error message when analysis fails", async () => {
+    const analysisError =
+      "AI分析サービスの設定が不足しています。時間をおいてもう一度お試しください。";
+    getEmotions.mockResolvedValueOnce([]);
+    previewAnalysis.mockRejectedValueOnce(new ApiError(analysisError, 422));
+    const user = userEvent.setup();
+
+    render(<DreamForm onSubmit={jest.fn()} />);
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+    await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(analysisError);
+    });
+  });
 });

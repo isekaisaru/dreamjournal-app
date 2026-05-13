@@ -5,13 +5,19 @@ class DreamAnalysisService
   # 夢の内容を分析するクラスメソッド
   # age_group / analysis_tone はユーザー設定から渡す。省略時は子ども向けデフォルト。
   def self.analyze(dream_content, age_group: "child", analysis_tone: "auto")
-    client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
-
-    resolved_tone = TonePromptBuilder.resolve_tone(age_group: age_group, analysis_tone: analysis_tone)
-    Rails.logger.info("DreamAnalysisService: tone=#{resolved_tone} (age_group=#{age_group}, analysis_tone=#{analysis_tone})")
-    system_prompt = TonePromptBuilder.build(age_group: age_group, analysis_tone: analysis_tone)
-
     begin
+      api_key = ENV["OPENAI_API_KEY"].presence
+      unless api_key
+        Rails.logger.error "DreamAnalysisService: OPENAI_API_KEY is not configured"
+        return { error: "AI分析サービスの設定が不足しています。時間をおいてもう一度お試しください。" }
+      end
+
+      client = $openai_client || OpenAI::Client.new(access_token: api_key, request_timeout: 55)
+
+      resolved_tone = TonePromptBuilder.resolve_tone(age_group: age_group, analysis_tone: analysis_tone)
+      Rails.logger.info("DreamAnalysisService: tone=#{resolved_tone} (age_group=#{age_group}, analysis_tone=#{analysis_tone})")
+      system_prompt = TonePromptBuilder.build(age_group: age_group, analysis_tone: analysis_tone)
+
       response = client.chat(parameters: {
         model: ENV["OPENAI_CHAT_MODEL"].presence || "gpt-4o-mini",
         messages: [
