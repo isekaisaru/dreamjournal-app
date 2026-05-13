@@ -43,7 +43,7 @@ gem "bootsnap", require: false
 gem "dotenv-rails"
 
 # OpenAI API integration
-gem "ruby-openai", "~> 5.0"
+gem "ruby-openai", "~> 8.3"
 gem 'faraday', '~> 2.12'
 gem 'faraday-multipart'
 gem 'faraday-net_http'
