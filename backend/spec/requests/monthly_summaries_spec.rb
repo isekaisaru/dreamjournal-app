@@ -66,6 +66,56 @@ RSpec.describe 'MonthlySummaries API', type: :request do
         expect(response).to have_http_status(:ok)
         expect(JSON.parse(response.body)['summary']).to eq('モルペウスの月次サマリーテスト文章')
       end
+
+      it '成功時に ai_usage_log が 1 件増える' do
+        user = create(:user, premium: true)
+
+        allow(MonthlySummaryService).to receive(:generate)
+          .and_return({ summary: 'テスト' })
+
+        expect {
+          authenticated_post '/dreams/month/2026-04/ai_summary', user
+        }.to change { AiUsageLog.where(user: user, feature: 'monthly_summary').count }.by(1)
+      end
+    end
+
+    context 'プレミアム会員・月次サマリーのフェアユース制限' do
+      it '今月2回利用済みでも 200 を返す' do
+        user = create(:user, premium: true)
+        create_list(:ai_usage_log, 2, user: user, feature: 'monthly_summary')
+
+        allow(MonthlySummaryService).to receive(:generate)
+          .and_return({ summary: 'テスト' })
+
+        authenticated_post '/dreams/month/2026-04/ai_summary', user
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it '今月3回達成で 429 を返す' do
+        user = create(:user, premium: true)
+        create_list(:ai_usage_log, 3, user: user, feature: 'monthly_summary')
+
+        authenticated_post '/dreams/month/2026-04/ai_summary', user
+
+        expect(response).to have_http_status(:too_many_requests)
+        body = JSON.parse(response.body)
+        expect(body['limit_reached']).to be true
+        expect(body['monthly_summary_limit']).to eq(3)
+      end
+
+      it '先月のログは今月の制限にカウントしない' do
+        user = create(:user, premium: true)
+        create_list(:ai_usage_log, 3, user: user, feature: 'monthly_summary',
+                    created_at: 1.month.ago)
+
+        allow(MonthlySummaryService).to receive(:generate)
+          .and_return({ summary: 'テスト' })
+
+        authenticated_post '/dreams/month/2026-04/ai_summary', user
+
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     context 'サービスがエラーを返す場合' do
