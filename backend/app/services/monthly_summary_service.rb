@@ -42,7 +42,12 @@ class MonthlySummaryService
       この月の夢を振り返って、モルペウスとしてやさしいひとことを送ってください。
     MSG
 
-    client = OpenAI::Client.new(access_token: ENV.fetch('OPENAI_API_KEY'))
+    client = $openai_client
+    unless client
+      Rails.logger.error "MonthlySummaryService: OPENAI_API_KEY is not configured"
+      return { error: "AI分析サービスの設定が不足しています。時間をおいてもう一度お試しください。" }
+    end
+
     response = client.chat(parameters: {
       model: ENV["OPENAI_CHAT_MODEL"].presence || "gpt-4o-mini",
       messages: [

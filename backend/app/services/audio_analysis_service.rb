@@ -10,10 +10,12 @@ class AudioAnalysisService
     @file_source = file_source
     @age_group = age_group
     @analysis_tone = analysis_tone
-    @client = OpenAI::Client.new(access_token: ENV.fetch("OPENAI_API_KEY"))
+    @client = $openai_client
   end
 
   def call
+    return { error: "AI分析サービスの設定が不足しています。時間をおいてもう一度お試しください。" } unless @client
+
     validate_file!
 
     transcript_text = transcribe_audio
