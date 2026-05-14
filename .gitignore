@@ -48,6 +48,7 @@ frontend/.env.local
 # Playwright test results
 /test-results/
 /playwright-report/
+frontend/test-results/
 
 # 個人情報を含むドキュメント（転職活動・日報・面談メモ）
 docs/self-introduction.md

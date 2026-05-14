@@ -183,6 +183,9 @@ export default function DreamForm({
     } catch (error) {
       if (error instanceof ApiError && error.status === 403 && error.data?.limit_reached) {
         setAnalysisLimitReached(true);
+      } else if (error instanceof ApiError && error.message) {
+        console.error("Analysis failed:", error);
+        toast.error(error.message);
       } else {
         console.error("Analysis failed:", error);
         toast.error("モルペウスと おはなし できなかった...");
