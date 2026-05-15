@@ -24,24 +24,25 @@ const themeInitScript = `
 const siteUrl = "https://dreamjournal-app.vercel.app";
 
 export const metadata: Metadata = {
-  title: "ユメログ | AI夢分析・夢日記アプリ",
+  title: "YumeTree | モルペウスと育てるAI夢ノート",
   description:
-    "毎日の夢をAIが分析。感情タグ・検索・月別アーカイブで心の変化を可視化するセルフケア・家族向けアプリ。",
+    "YumeTree（ユメツリー）は、モルペウスと一緒に毎日の夢を記録し、AI分析・感情タグ・月別アーカイブで心の変化を見つめるAI夢ノートです。",
   metadataBase: new URL(siteUrl),
+  manifest: "/manifest.json",
   openGraph: {
-    title: "ユメログ | AI夢分析・夢日記アプリ",
+    title: "YumeTree | モルペウスと育てるAI夢ノート",
     description:
-      "毎日の夢をAIが分析。感情タグ・検索で心の変化を可視化するセルフケア・家族向けアプリ。",
+      "YumeTree（ユメツリー）は、モルペウスと一緒に夢を記録し、AI分析と感情タグで心の変化を見つめるAI夢ノートです。",
     url: siteUrl,
-    siteName: "ユメログ",
+    siteName: "YumeTree",
     locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ユメログ | AI夢分析・夢日記アプリ",
+    title: "YumeTree | モルペウスと育てるAI夢ノート",
     description:
-      "毎日の夢をAIが分析。感情タグ・検索で心の変化を可視化するセルフケア・家族向けアプリ。",
+      "モルペウスと一緒に夢を記録し、AI分析と感情タグで心の変化を見つめるAI夢ノート。",
   },
   robots: {
     index: true,

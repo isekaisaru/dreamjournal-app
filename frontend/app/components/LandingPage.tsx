@@ -87,10 +87,10 @@ export default function LandingPage() {
           transition={{ delay: 0.3, duration: 0.6 }}
           className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight mb-6"
         >
-          <span className="text-slate-800 dark:text-slate-100">夢は、</span>
+          <span className="text-slate-800 dark:text-slate-100">YumeTree</span>
           <br />
           <span className="bg-gradient-to-r from-sky-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-            忘れるためのものじゃない。
+            モルペウスと育てるAI夢ノート
           </span>
         </motion.h1>
 
@@ -102,7 +102,7 @@ export default function LandingPage() {
         >
           朝の数分で夢を残す。AIが意味と感情を返す。
           <br className="hidden sm:block" />
-          親子で使える、
+          ユメツリーは親子で使える、
           <span className="text-slate-700 dark:text-slate-200">心のセルフケア</span>
           アプリ。
         </motion.p>

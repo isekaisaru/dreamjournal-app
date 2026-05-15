@@ -9,7 +9,7 @@ export default function DonationSuccessPage() {
             ありがとうございます！💖
           </h1>
           <p className="mt-4 text-base text-muted-foreground">
-            あなたの応援がユメログの夢を育てます
+            あなたの応援がYumeTreeの夢を育てます
           </p>
           <Link
             href="/home"

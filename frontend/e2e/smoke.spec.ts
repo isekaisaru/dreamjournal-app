@@ -6,7 +6,7 @@ test("Smoke Test: App loads and shows login page", async ({ page }) => {
 
   // 2. Check title
   await expect(page).toHaveTitle(
-    /Dream Journal|ユメログ|夢の記録アプリケーション/i
+    /YumeTree|AI夢ノート/i
   );
 
   // 3. Verify Login functionality is accessible

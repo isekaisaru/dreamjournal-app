@@ -169,7 +169,7 @@ export default function SubscriptionPage() {
           imageVariant="reward"
           variant="home"
           size={160}
-          title="ユメログ プレミアム"
+          title="YumeTree プレミアム"
           message="AI分析をたっぷり使える。夢の画像生成と月次サマリーで、毎日の夢がもっと深く楽しめる。"
         />
 

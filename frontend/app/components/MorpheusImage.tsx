@@ -19,7 +19,7 @@ export type MorpheusImageVariant =
   | "reward";
 
 const MORPHEUS_IMAGE_SRC: Record<MorpheusImageVariant, string> = {
-  // 既存の6枚: ユメログの主要フロー
+  // 既存の6枚: YumeTreeの主要フロー
   home: "/images/morpheus/morpheus-home.jpg",
   compose: "/images/morpheus/morpheus-compose.jpg",
   voice: "/images/morpheus/morpheus-voice.jpg",
@@ -42,7 +42,7 @@ const ALT_BY_VARIANT: Record<MorpheusImageVariant, string> = {
   analysis: "夢の本を読んで分析しているモルペウス",
   empty: "月と雲の上で次の夢を待っているモルペウス",
   praise: "星を掲げて夢の記録をほめるモルペウス",
-  landing: "月を手に持ってユメログへ案内するモルペウス",
+  landing: "月を手に持ってYumeTreeへ案内するモルペウス",
   login: "おかえりと迎えてくれるモルペウス",
   search: "虫眼鏡で夢の記録を探しているモルペウス",
   settings: "魔法の筆とパレットで設定を案内するモルペウス",
