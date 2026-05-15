@@ -102,7 +102,7 @@ export default function LandingPage() {
         >
           朝の数分で夢を残す。AIが意味と感情を返す。
           <br className="hidden sm:block" />
-          ユメツリーは親子で使える、
+          ユメツリーはひとりでも、大切な人とも使える、
           <span className="text-slate-700 dark:text-slate-200">心のセルフケア</span>
           アプリ。
         </motion.p>
