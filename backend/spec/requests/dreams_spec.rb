@@ -505,6 +505,19 @@ RSpec.describe 'Dreams API', type: :request do
           expect(json_response['daily_analysis_limit']).to eq(DreamsController::PREMIUM_DAILY_ANALYSIS_LIMIT)
         end
 
+        it '利用回数の確認に失敗した場合は分析を受け付けない' do
+          allow(AiUsageLog).to receive(:today_for_user).and_raise(
+            ActiveRecord::StatementInvalid.new('missing table')
+          )
+
+          assert_no_enqueued_jobs do
+            authenticated_post "/dreams/#{premium_dream.id}/analyze", premium_user
+          end
+
+          expect(response).to have_http_status(:service_unavailable)
+          expect(json_response['error']).to include('利用状況を確認できませんでした')
+        end
+
         it '上限に達していても分析済みの夢はキャッシュを返す（カウントしない）' do
           create_list(:ai_usage_log, DreamsController::PREMIUM_DAILY_ANALYSIS_LIMIT,
                       user: premium_user, feature: 'dream_analysis')

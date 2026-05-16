@@ -308,6 +308,13 @@ class DreamsController < ApplicationController
 
       if current_user.premium?
         daily_count = premium_daily_analysis_count
+        unless daily_count
+          render json: {
+            error: "AI分析の利用状況を確認できませんでした。時間をおいてもう一度お試しください。"
+          }, status: :service_unavailable
+          return
+        end
+
         if daily_count >= PREMIUM_DAILY_ANALYSIS_LIMIT
           render json: {
             error: "本日のAI分析上限（#{PREMIUM_DAILY_ANALYSIS_LIMIT}回）に達しました。明日またお試しください。",
@@ -351,7 +358,7 @@ class DreamsController < ApplicationController
       AiUsageLog.today_for_user(current_user, "dream_analysis").count
     rescue ActiveRecord::StatementInvalid => e
       Rails.logger.error "[analysis_usage] Failed to count daily usage: #{e.class} - #{e.message}"
-      0
+      nil
     end
 
     def record_analysis_usage_log
