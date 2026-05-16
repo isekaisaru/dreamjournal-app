@@ -307,7 +307,14 @@ class DreamsController < ApplicationController
       return if action_name == "analyze" && cached_analysis_request?
 
       if current_user.premium?
-        daily_count = AiUsageLog.today_for_user(current_user, "dream_analysis").count
+        daily_count = premium_daily_analysis_count
+        unless daily_count
+          render json: {
+            error: "AI分析の利用状況を確認できませんでした。時間をおいてもう一度お試しください。"
+          }, status: :service_unavailable
+          return
+        end
+
         if daily_count >= PREMIUM_DAILY_ANALYSIS_LIMIT
           render json: {
             error: "本日のAI分析上限（#{PREMIUM_DAILY_ANALYSIS_LIMIT}回）に達しました。明日またお試しください。",
@@ -340,11 +347,24 @@ class DreamsController < ApplicationController
     end
 
     def increment_analysis_usage!
-      AiUsageLog.create!(user: current_user, feature: "dream_analysis")
+      record_analysis_usage_log
       return if current_user.premium?
       return unless current_user.trial_user?
 
       current_user.increment!(:trial_analysis_count)
+    end
+
+    def premium_daily_analysis_count
+      AiUsageLog.today_for_user(current_user, "dream_analysis").count
+    rescue ActiveRecord::StatementInvalid => e
+      Rails.logger.error "[analysis_usage] Failed to count daily usage: #{e.class} - #{e.message}"
+      nil
+    end
+
+    def record_analysis_usage_log
+      AiUsageLog.create!(user: current_user, feature: "dream_analysis")
+    rescue ActiveRecord::StatementInvalid => e
+      Rails.logger.error "[analysis_usage] Failed to create usage log: #{e.class} - #{e.message}"
     end
 
     # 画像生成の月次上限チェック（全ユーザー共通）
