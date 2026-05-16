@@ -378,35 +378,36 @@ export default function LandingPage() {
                 key={i}
                 className="rounded-2xl border border-slate-200 dark:border-slate-700/40 bg-white/70 dark:bg-slate-800/30 overflow-hidden"
               >
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
-                  aria-expanded={openFaq === i}
-                >
-                  <dt className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                    {item.q}
-                  </dt>
-                  <ChevronDown
-                    size={16}
-                    className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${
-                      openFaq === i ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                <dt>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
+                    aria-expanded={openFaq === i}
+                  >
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      {item.q}
+                    </span>
+                    <ChevronDown
+                      size={16}
+                      className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${
+                        openFaq === i ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                </dt>
                 <AnimatePresence initial={false}>
                   {openFaq === i && (
-                    <motion.div
+                    <motion.dd
                       key="answer"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.22, ease: "easeInOut" }}
+                      className="px-5 pb-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed"
                     >
-                      <dd className="px-5 pb-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {item.a}
-                      </dd>
-                    </motion.div>
+                      {item.a}
+                    </motion.dd>
                   )}
                 </AnimatePresence>
               </div>
