@@ -575,6 +575,16 @@ RSpec.describe 'Dreams API', type: :request do
 
         expect(response).to have_http_status(:ok)
       end
+
+      it '利用ログの保存に失敗しても分析結果は返す' do
+        allow(DreamAnalysisService).to receive(:analyze).and_return({ analysis: 'result', emotion_tags: ['happy'] })
+        allow(AiUsageLog).to receive(:create!).and_raise(ActiveRecord::StatementInvalid.new('missing table'))
+
+        authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['analysis']).to eq('result')
+      end
     end
 
     context '認証されていない場合' do
