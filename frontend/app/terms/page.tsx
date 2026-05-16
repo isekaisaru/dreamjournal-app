@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "利用規約 | ユメログ",
-  description: "ユメログの利用規約",
+  title: "利用規約 | YumeTree",
+  description: "YumeTree（ユメツリー）の利用規約",
 };
 
 export default function TermsPage() {
@@ -18,7 +18,7 @@ export default function TermsPage() {
           {/* はじめに */}
           <section>
             <p className="text-gray-700 leading-relaxed">
-              ユメログ（以下「当サービス」）をご利用いただき、ありがとうございます。
+              YumeTree（ユメツリー、以下「当サービス」）をご利用いただき、ありがとうございます。
               この利用規約（以下「本規約」）は、当サービスの使い方のルールを定めたものです。
               <strong>ご利用の前に、必ずお読みください。</strong>
             </p>
@@ -256,7 +256,7 @@ export default function TermsPage() {
                 </Link>
               </p>
               <p className="text-sm text-gray-600 mt-4">
-                運営者: ユメログ開発チーム
+                運営者: YumeTree開発チーム
               </p>
             </div>
           </section>

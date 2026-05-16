@@ -48,7 +48,7 @@ const getGreeting = (isFirstVisit: boolean) => {
 };
 
 const defaultGreeting = {
-  title: "ユメログへ ようこそ！",
+  title: "YumeTreeへ ようこそ！",
   message: "きょうの ゆめを おしえてね。",
 };
 

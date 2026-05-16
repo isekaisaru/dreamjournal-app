@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-muted/40 py-4 mt-auto">
       <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-between gap-4 text-xs text-muted-foreground">
-        <span>© {currentYear} ユメログ</span>
+        <span>© {currentYear} YumeTree</span>
         <div className="flex items-center gap-4">
           <Link href="/privacy" className="hover:text-foreground transition-colors">
             プライバシーポリシー

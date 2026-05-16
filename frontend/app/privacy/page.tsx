@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "プライバシーポリシー | ユメログ",
-  description: "ユメログのプライバシーポリシー（個人情報保護方針）",
+  title: "プライバシーポリシー | YumeTree",
+  description: "YumeTree（ユメツリー）のプライバシーポリシー（個人情報保護方針）",
 };
 
 export default function PrivacyPage() {
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           {/* はじめに */}
           <section>
             <p className="text-gray-700 leading-relaxed">
-              ユメログ（以下「当サービス」）は、みなさまの大切な夢の記録を安全に守ります。
+              YumeTree（ユメツリー、以下「当サービス」）は、みなさまの大切な夢の記録を安全に守ります。
               このページでは、どんな情報を集めて、どのように使うかを、わかりやすく説明します。
             </p>
             <p className="text-sm text-gray-600 mt-4">
@@ -270,7 +270,7 @@ export default function PrivacyPage() {
                 </Link>
               </p>
               <p className="text-sm text-gray-600 mt-4">
-                運営者: ユメログ開発チーム
+                運営者: YumeTree開発チーム
               </p>
             </div>
           </section>

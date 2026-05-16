@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "ユメログ | AI夢分析・夢日記アプリ";
+export const alt = "YumeTree | モルペウスと育てるAI夢ノート";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -80,7 +80,7 @@ export default function OGImage() {
               letterSpacing: "-2px",
             }}
           >
-            ユメログ
+            YumeTree
           </span>
           <span style={{ fontSize: 48 }}>✨</span>
         </div>
@@ -93,7 +93,7 @@ export default function OGImage() {
             marginBottom: 12,
           }}
         >
-          AI夢分析・夢日記アプリ
+          モルペウスと育てるAI夢ノート
         </p>
 
         <p
@@ -106,7 +106,7 @@ export default function OGImage() {
           }}
         >
           毎日の夢をAIが分析。感情タグ・検索で心の変化を可視化する
-          セルフケア・家族向けアプリ
+          セルフケア・家族向けAI夢ノート
         </p>
 
         {/* フッター */}

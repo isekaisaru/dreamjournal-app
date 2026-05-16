@@ -33,7 +33,7 @@ export default function DonationPage() {
       <main className="container mx-auto max-w-2xl px-4 py-16">
         <section className="rounded-2xl border border-border/60 bg-card/70 p-8 text-center shadow-sm backdrop-blur-sm">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            ユメログを応援する ☕
+            YumeTreeを応援する ☕
           </h1>
           <p className="mt-4 text-base text-muted-foreground">
             500円であなたの夢日記を応援できます

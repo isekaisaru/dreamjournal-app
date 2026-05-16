@@ -7,13 +7,13 @@ test.describe("Smoke Tests", () => {
     // ページボディが可視であることを確認
     await expect(page.locator("body")).toBeVisible();
 
-    // ページタイトルに「ユメログ」が含まれることを確認
-    await expect(page).toHaveTitle(/夢の記録アプリケーション/);
+    // ページタイトルに「YumeTree」が含まれることを確認
+    await expect(page).toHaveTitle(/YumeTree/);
 
     // 主要な見出し(h1)が表示され、期待したテキストを持っていることを確認
     const mainHeading = page.getByRole("heading", { level: 1 });
     await expect(mainHeading).toBeVisible();
-    await expect(mainHeading).toHaveText(/ユメログ/);
+    await expect(mainHeading).toHaveText(/YumeTree/);
   });
 
   test("navigation is accessible", async ({ page }) => {

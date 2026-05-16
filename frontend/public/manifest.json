@@ -1,0 +1,10 @@
+{
+  "name": "YumeTree - モルペウスと育てるAI夢ノート",
+  "short_name": "ユメツリー",
+  "description": "モルペウスと一緒に夢を記録し、AI分析と感情タグで心の変化を見つめるAI夢ノート。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#38bdf8",
+  "lang": "ja"
+}
