@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
-import { Sparkles, Mic, Brain, TrendingUp } from "lucide-react";
-import { motion, type Variants } from "framer-motion";
+import { Sparkles, Mic, Brain, TrendingUp, ImageIcon, ChevronDown, Lock } from "lucide-react";
+import { motion, type Variants, AnimatePresence } from "framer-motion";
 import { MorpheusGuideLanding } from "./MorpheusGuide";
 import MorpheusImage from "./MorpheusImage";
 
@@ -22,9 +22,45 @@ const fadeIn: Variants = {
   }),
 };
 
+const FAQ_ITEMS = [
+  {
+    q: "YumeTreeは何のアプリですか？",
+    a: "YumeTreeは、朝の夢を忘れる前に記録し、AIガイドのモルペウスと一緒に感情や心の変化を振り返るプライベートAI夢ノートです。テキストでも音声でも記録でき、AI分析・感情タグ・夢の画像生成ができます。",
+  },
+  {
+    q: "AI分析は医療診断ですか？",
+    a: "いいえ。YumeTreeのAI分析は医療診断や心理診断ではありません。夢の記録を楽しく振り返るためのやさしいメッセージです。体調や心の不調が気になる場合は、医療機関にご相談ください。",
+  },
+  {
+    q: "夢の内容は他人に公開されますか？",
+    a: "いいえ、公開されません。YumeTreeに記録した夢はあなただけが見られます。ランキングやみんなの夢日記のような外部公開機能はなく、プライベートなノートとして管理されます。",
+  },
+  {
+    q: "ひとりでも使えますか？",
+    a: "はい。YumeTreeはひとりで使うことを基本に設計されています。自分の夢を毎朝記録して、モルペウスと一緒にゆっくり振り返るだけで十分楽しめます。",
+  },
+  {
+    q: "家族・恋人・友達とも使えますか？",
+    a: "はい。それぞれがアカウントを作って使っていただけます。夢の記録は各自のプライベートなノートですが、共通の話題として「昨夜こんな夢を見た」と話すきっかけにもなります。",
+  },
+  {
+    q: "夢の画像生成とは何ですか？",
+    a: "記録した夢の内容をもとに、AIが夢の世界をイラスト風の画像として生成する機能です。文字では残せない夢の雰囲気をビジュアルで保存できます。プレミアムプランで月31枚まで利用できます。",
+  },
+  {
+    q: "無料で試せますか？",
+    a: "はい。アカウント登録なしでもおためし体験ができます。アカウントを作ると夢の記録・AI分析・感情タグなど基本機能を無料でお使いいただけます。音声入力・画像生成・月次サマリーはプレミアムプランで利用可能です。",
+  },
+  {
+    q: "モルペウスとは何ですか？",
+    a: "モルペウスは、YumeTreeのAIガイドキャラクターです。ギリシャ神話の夢の神「モルペウス」からインスピレーションを受けており、あなたの夢をやさしい言葉で分析し、感情に寄り添ったメッセージを届けます。",
+  },
+];
+
 export default function LandingPage() {
   const router = useRouter();
   const { authStatus } = useAuth();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     if (authStatus === "authenticated") {
@@ -61,7 +97,7 @@ export default function LandingPage() {
         <div className="absolute right-[-10%] top-20 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl" />
       </div>
 
-      {/* ===== Hero: 世界観で引き込む ===== */}
+      {/* ===== Hero ===== */}
       <section className="min-h-[75vh] flex flex-col items-center justify-center text-center px-4 py-16 sm:py-24">
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
@@ -100,11 +136,13 @@ export default function LandingPage() {
           transition={{ delay: 0.55, duration: 0.6 }}
           className="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-lg mx-auto leading-relaxed mb-10"
         >
-          朝の数分で夢を残す。AIが意味と感情を返す。
+          夢は、忘れるためのものじゃない。
           <br className="hidden sm:block" />
-          ユメツリーはひとりでも、大切な人とも使える、
-          <span className="text-slate-700 dark:text-slate-200">心のセルフケア</span>
-          アプリ。
+          声でもテキストでも、起きたままをそっと残す。
+          <br className="hidden sm:block" />
+          <span className="text-slate-700 dark:text-slate-200">AIが感情と意味を読み解き、</span>夢の世界を画像で形に。
+          <br className="hidden sm:block" />
+          ひとりでも、大切な人とも使えるプライベートな夢ノート。
         </motion.p>
 
         <motion.div
@@ -146,7 +184,6 @@ export default function LandingPage() {
             backdrop-blur-sm
           "
         >
-          {/* ステップフロー */}
           <div className="space-y-8">
             {/* Step 1: 入力 */}
             <motion.div variants={fadeIn} custom={0} className="flex items-start gap-4">
@@ -154,7 +191,7 @@ export default function LandingPage() {
                 <Mic className="text-sky-500 dark:text-sky-400" size={20} />
               </div>
               <div>
-                <p className="text-xs text-sky-600 dark:text-sky-400 font-medium mb-1">あなたの夢</p>
+                <p className="text-xs text-sky-600 dark:text-sky-400 font-medium mb-1">声またはテキストで記録</p>
                 <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/40">
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                     「空を飛んでいた。すごく気持ちよくて、
@@ -176,7 +213,7 @@ export default function LandingPage() {
                 <Brain className="text-purple-500 dark:text-purple-400" size={20} />
               </div>
               <div>
-                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">モルペウスの分析</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium mb-1">モルペウスのAI分析</p>
                 <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/40">
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
                     「すごいゆめだね！そらをとぶゆめは、
@@ -217,24 +254,33 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* ===== Benefits: 変化を3つだけ ===== */}
+      {/* ===== Benefits: 4つの価値 ===== */}
       <section className="py-16 sm:py-24 px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
           {[
             {
               title: "すぐ残せる",
               body: "テキストでも声でも。起きた瞬間の記憶を、消える前にキャッチする。",
               accent: "from-sky-400 to-blue-500",
+              icon: <Mic size={16} className="text-sky-500 dark:text-sky-400" />,
             },
             {
               title: "意味が返る",
               body: "AIが夢をやさしい言葉で解釈。感情タグで、自分の気持ちに名前がつく。",
               accent: "from-purple-400 to-violet-500",
+              icon: <Brain size={16} className="text-purple-500 dark:text-purple-400" />,
             },
             {
-              title: "自分が見える",
-              body: "続けるほど蓄積される心のログ。統計で、気づかなかった自分に出会える。",
+              title: "夢を画像に",
+              body: "記録した夢をもとに、AIが夢の世界をビジュアルで生成。言葉にできない雰囲気を形に残す。",
+              accent: "from-pink-400 to-rose-500",
+              icon: <ImageIcon size={16} className="text-pink-500 dark:text-pink-400" />,
+            },
+            {
+              title: "プライベート",
+              body: "記録した夢は自分だけに見える。ランキングや公開機能はなく、安心して本音を残せる。",
               accent: "from-amber-400 to-orange-500",
+              icon: <Lock size={16} className="text-amber-500 dark:text-amber-400" />,
             },
           ].map((item, i) => (
             <motion.div
@@ -249,9 +295,12 @@ export default function LandingPage() {
               <div
                 className={`h-1 w-10 rounded-full bg-gradient-to-r ${item.accent} mb-4 mx-auto sm:mx-0`}
               />
-              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 mb-2">
-                {item.title}
-              </h3>
+              <div className="flex items-center gap-1.5 mb-2 justify-center sm:justify-start">
+                {item.icon}
+                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                  {item.title}
+                </h3>
+              </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 {item.body}
               </p>
@@ -277,7 +326,7 @@ export default function LandingPage() {
             今夜の夢が、明日の気づきになる。
           </p>
           <p className="text-sm text-slate-500 dark:text-slate-500 mb-8">
-            お子さまの夢も、あなたの夢も。家族の心のログを残しませんか？
+            ひとりでも、恋人や家族・友達とも。あなたのペースで続けられます。
           </p>
           <Link
             href="/trial"
@@ -308,6 +357,61 @@ export default function LandingPage() {
               ログイン
             </Link>
           </div>
+        </motion.div>
+      </section>
+
+      {/* ===== FAQ ===== */}
+      <section className="py-16 sm:py-24 px-4 border-t border-slate-200 dark:border-slate-800/50">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-2xl mx-auto"
+        >
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 text-center mb-10">
+            よくある質問
+          </h2>
+          <dl className="space-y-3">
+            {FAQ_ITEMS.map((item, i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-slate-200 dark:border-slate-700/40 bg-white/70 dark:bg-slate-800/30 overflow-hidden"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left gap-4"
+                  aria-expanded={openFaq === i}
+                >
+                  <dt className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    {item.q}
+                  </dt>
+                  <ChevronDown
+                    size={16}
+                    className={`flex-shrink-0 text-slate-400 transition-transform duration-200 ${
+                      openFaq === i ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {openFaq === i && (
+                    <motion.div
+                      key="answer"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.22, ease: "easeInOut" }}
+                    >
+                      <dd className="px-5 pb-4 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {item.a}
+                      </dd>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ))}
+          </dl>
         </motion.div>
       </section>
 
