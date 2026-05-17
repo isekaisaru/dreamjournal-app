@@ -147,27 +147,28 @@ export default function TrialPage() {
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
       {/* ヘッダー */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-2">お試し体験</h1>
+        <h1 className="text-2xl font-bold mb-2">YumeTree を体験する</h1>
         <MorpheusSmall
-          title="ようこそ！ぼくが あんないするよ"
-          message="ゆめを かいて「AIにきいてみる」をおすと、ぼくが ゆめの いみを おしえるよ！"
+          expression="curious"
+          title="夢を記録してみましょう"
+          message="夢の内容を書いて「AIにきいてみる」を押すと、感情と意味を読み解きます。登録すると声での記録や夢の画像化にも対応します。"
         />
       </div>
 
       {/* 入力フォーム */}
       <div className="mb-8 p-5 sm:p-6 bg-slate-800/40 border border-slate-700/40 rounded-2xl">
-        <h2 className="text-lg font-bold mb-4">ゆめを かいてみよう</h2>
+        <h2 className="text-lg font-bold mb-4">夢を記録してみよう</h2>
 
         <div className="mb-3">
           <label htmlFor="title" className="block text-sm text-slate-400 mb-1">
-            ゆめの なまえ（なくてもOK）
+            夢のタイトル（なくてもOK）
           </label>
           <input
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="そらを とんだ ゆめ"
+            placeholder="空を飛んだ夢"
             className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           />
         </div>
@@ -177,13 +178,13 @@ export default function TrialPage() {
             htmlFor="description"
             className="block text-sm text-slate-400 mb-1"
           >
-            みた ゆめの おはなし
+            見た夢の内容
           </label>
           <textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="きのう みた ゆめを ここに かいてね..."
+            placeholder="今朝見た夢を書いてみてください..."
             rows={4}
             className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
           />
@@ -243,7 +244,7 @@ export default function TrialPage() {
               transition-all duration-200
             "
           >
-            かくだけ（ぶんせきなし）
+            記録だけする（分析なし）
           </button>
 
           {/* 残り回数バッジ */}
@@ -261,12 +262,12 @@ export default function TrialPage() {
       {/* 記録した夢リスト */}
       <div className="mb-8">
         <h3 className="text-lg font-bold mb-4">
-          かいた ゆめ ({dreams.length}/{MAX_TRIAL_DREAMS})
+          記録した夢 ({dreams.length}/{MAX_TRIAL_DREAMS})
         </h3>
 
         {dreams.length === 0 ? (
           <p className="text-sm text-slate-500">
-            まだ なにも かいていないよ。うえに ゆめを かいてみよう。
+            まだ記録がありません。上のフォームから夢を記録してみましょう。
           </p>
         ) : (
           <div className="space-y-4">
@@ -292,7 +293,7 @@ export default function TrialPage() {
                       {dream.analysis.analysis}
                     </p>
                     {dream.analysis.emotion_tags.length > 0 && (
-                      <div className="flex gap-1.5 flex-wrap">
+                      <div className="flex gap-1.5 flex-wrap mb-2">
                         {dream.analysis.emotion_tags.map((tag) => (
                           <span
                             key={tag}
@@ -303,6 +304,9 @@ export default function TrialPage() {
                         ))}
                       </div>
                     )}
+                    <p className="text-xs text-slate-500">
+                      🖼️ 登録するとAIがこの夢を画像にしてくれます
+                    </p>
                   </div>
                 )}
               </div>
@@ -315,16 +319,18 @@ export default function TrialPage() {
       {analysisLimitReached && (
         <div className="mb-6 p-5 bg-gradient-to-br from-sky-900/50 to-blue-900/50 border border-sky-500/40 rounded-2xl text-center shadow-lg shadow-sky-500/10">
           <p className="text-base font-bold text-white mb-1">
-            おためし ぶんせきを つかいきったよ！
+            体験版のAI分析を使い切りました
           </p>
-          <p className="text-sm text-sky-200 mb-1">
-            とうろくすると こんなことが できるよ！
+          <p className="text-sm text-sky-200 mb-3">
+            YumeTreeに登録すると、こんなことができます：
           </p>
-          <ul className="text-sm text-sky-100/80 mb-4 space-y-1 text-left inline-block">
-            <li>✨ AIぶんせきが <span className="font-bold text-white">まいつき10かい</span> つかえる</li>
-            <li>🌙 ゆめを <span className="font-bold text-white">ずっと きろく</span> できる</li>
-            <li>🖼️ ゆめの <span className="font-bold text-white">イラスト生成</span> も つかえる</li>
+          <ul className="text-sm text-sky-100/80 mb-4 space-y-1.5 text-left inline-block">
+            <li>✨ AI分析が <span className="font-bold text-white">毎月10回</span> 使える</li>
+            <li>🌙 夢を <span className="font-bold text-white">継続して記録</span> できる</li>
+            <li>🎙️ <span className="font-bold text-white">声で話すだけ</span> で記録できる</li>
+            <li>🖼️ AIが夢を <span className="font-bold text-white">画像にしてくれる</span></li>
           </ul>
+          <p className="text-xs text-sky-300/70 mb-4">ひとりでも、大切な人とも使えます</p>
           <Link
             href="/register"
             className="
@@ -337,7 +343,7 @@ export default function TrialPage() {
             "
           >
             <Sparkles size={16} />
-            いますぐ とうろくする
+            YumeTreeに登録する
           </Link>
         </div>
       )}
@@ -346,10 +352,10 @@ export default function TrialPage() {
       {!analysisLimitReached && (
         <div className="p-4 bg-slate-800/30 border border-slate-700/30 rounded-2xl text-center">
           <p className="text-sm text-slate-400 mb-1">
-            おためしの ぶんせきは <span className="text-sky-400 font-medium">3かい</span> まで
+            体験版のAI分析は <span className="text-sky-400 font-medium">3回</span> まで
           </p>
           <p className="text-xs text-slate-500 mb-4">
-            おためしアカウントが じどうで つくられるよ。とうろくすると ぜんぶの きのうが つかえるよ。
+            体験用アカウントが自動で作成されます。登録すると声での記録・画像生成など全機能が使えます。
           </p>
           <Link
             href="/register"
@@ -362,7 +368,8 @@ export default function TrialPage() {
               transition-all duration-200
             "
           >
-            とうろくして ずっと のこす
+            <Sparkles size={16} />
+            YumeTreeに登録する
           </Link>
         </div>
       )}
