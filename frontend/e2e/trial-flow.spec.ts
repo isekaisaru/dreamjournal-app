@@ -23,8 +23,10 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await page.goto("/trial");
 
     await expect(page.getByRole("heading", { name: "YumeTree を体験する" })).toBeVisible();
-    await expect(page.getByText("残りAI分析:")).toBeVisible();
-    await expect(page.getByText("3回")).toBeVisible();
+    // バッジに「残りAI分析: 3回」が表示されることを確認（下部CTAの「3回」と区別するためfilterを使う）
+    await expect(
+      page.locator("span").filter({ hasText: /残りAI分析:/ })
+    ).toContainText("3回");
   });
 
   test("説明なしではAIボタンが無効になる", async ({ page }) => {
@@ -201,9 +203,10 @@ test.describe("トライアルページ：お試し体験フロー", () => {
       page.getByText("体験版のAI分析を使い切りました")
     ).toBeVisible();
 
-    // 下部CTAは非表示になる
+    // 下部CTA（「体験版のAI分析は〜」の注意書きを含むセクション）が非表示になる
+    // アップグレードカードにも同名リンクがあるためリンクテキストではなくセクション固有テキストで判定する
     await expect(
-      page.getByRole("link", { name: "YumeTreeに登録する" })
+      page.getByText(/体験版のAI分析は/)
     ).not.toBeVisible();
   });
 
