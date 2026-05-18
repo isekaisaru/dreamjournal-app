@@ -22,9 +22,11 @@ test.describe("トライアルページ：お試し体験フロー", () => {
   }) => {
     await page.goto("/trial");
 
-    await expect(page.getByRole("heading", { name: "お試し体験" })).toBeVisible();
-    await expect(page.getByText("残りAI分析:")).toBeVisible();
-    await expect(page.getByText("3回")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "YumeTree を体験する" })).toBeVisible();
+    // バッジに「残りAI分析: 3回」が表示されることを確認（下部CTAの「3回」と区別するためfilterを使う）
+    await expect(
+      page.locator("span").filter({ hasText: /残りAI分析:/ })
+    ).toContainText("3回");
   });
 
   test("説明なしではAIボタンが無効になる", async ({ page }) => {
@@ -73,7 +75,7 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await expect(page.getByText("自由", { exact: true })).toBeVisible();
 
     // 夢リストが1件になる
-    await expect(page.getByText("かいた ゆめ (1/7)")).toBeVisible();
+    await expect(page.getByText("記録した夢 (1/7)")).toBeVisible();
 
     // 残り回数が2回になる
     await expect(page.getByText("2回")).toBeVisible();
@@ -115,7 +117,7 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     for (let i = 1; i <= 3; i++) {
       await page.locator("#description").fill(`ゆめ ${i} の内容`);
       await page.getByRole("button", { name: "AIにきいてみる" }).click();
-      await expect(page.getByText(`かいた ゆめ (${i}/7)`)).toBeVisible();
+      await expect(page.getByText(`記録した夢 (${i}/7)`)).toBeVisible();
     }
 
     // 4回目でバックエンドが上限エラーを返す
@@ -124,10 +126,10 @@ test.describe("トライアルページ：お試し体験フロー", () => {
 
     // アップグレードカードが表示される
     await expect(
-      page.getByText("おためし ぶんせきを つかいきったよ！")
+      page.getByText("体験版のAI分析を使い切りました")
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: /いますぐ とうろくする/ })
+      page.getByRole("link", { name: /YumeTreeに登録する/ })
     ).toBeVisible();
   });
 
@@ -157,7 +159,7 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await page.locator("#description").fill("ゆめの内容");
     await page.getByRole("button", { name: "AIにきいてみる" }).click();
 
-    const registerLink = page.getByRole("link", { name: /いますぐ とうろくする/ });
+    const registerLink = page.getByRole("link", { name: /YumeTreeに登録する/ });
     await expect(registerLink).toBeVisible();
     await expect(registerLink).toHaveAttribute("href", "/register");
   });
@@ -165,7 +167,7 @@ test.describe("トライアルページ：お試し体験フロー", () => {
   test("下部の登録CTAボタンが /register に遷移する", async ({ page }) => {
     await page.goto("/trial");
 
-    const ctaLink = page.getByRole("link", { name: "とうろくして ずっと のこす" });
+    const ctaLink = page.getByRole("link", { name: "YumeTreeに登録する" });
     await expect(ctaLink).toBeVisible();
     await expect(ctaLink).toHaveAttribute("href", "/register");
   });
@@ -198,12 +200,13 @@ test.describe("トライアルページ：お試し体験フロー", () => {
 
     // アップグレードカードが表示される
     await expect(
-      page.getByText("おためし ぶんせきを つかいきったよ！")
+      page.getByText("体験版のAI分析を使い切りました")
     ).toBeVisible();
 
-    // 下部CTAは非表示になる
+    // 下部CTA（「体験版のAI分析は〜」の注意書きを含むセクション）が非表示になる
+    // アップグレードカードにも同名リンクがあるためリンクテキストではなくセクション固有テキストで判定する
     await expect(
-      page.getByRole("link", { name: "とうろくして ずっと のこす" })
+      page.getByText(/体験版のAI分析は/)
     ).not.toBeVisible();
   });
 
@@ -213,9 +216,9 @@ test.describe("トライアルページ：お試し体験フロー", () => {
     await page.locator("#title").fill("タイトルだけ");
     await page.locator("#description").fill("内容を書いた");
 
-    await page.getByRole("button", { name: "かくだけ（ぶんせきなし）" }).click();
+    await page.getByRole("button", { name: "記録だけする（分析なし）" }).click();
 
-    await expect(page.getByText("かいた ゆめ (1/7)")).toBeVisible();
+    await expect(page.getByText("記録した夢 (1/7)")).toBeVisible();
     await expect(page.getByText("タイトルだけ")).toBeVisible();
     // AI分析結果は表示されない
     await expect(page.getByText("モルペウスの分析")).not.toBeVisible();
