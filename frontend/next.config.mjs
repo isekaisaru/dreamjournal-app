@@ -35,7 +35,7 @@ const nextConfig = {
   },
   // 本番環境で必要なファイルのみを .next/standalone に出力する
   // E2Eテスト時は `next start` を使うため standalone を無効にする
-  output: process.env.NEXT_PUBLIC_E2E ? undefined : "standalone",
+  output: process.env.NEXT_PUBLIC_E2E === "1" ? undefined : "standalone",
   compiler: {
     removeConsole: isProd ? { exclude: ["error"] } : false,
   },
