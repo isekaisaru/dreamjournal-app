@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import DreamDetailPage from "@/app/dream/[id]/page";
 
 jest.mock("react", () => {
@@ -14,6 +14,19 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({
     push: jest.fn(),
   }),
+}));
+
+jest.mock("next/image", () => ({
+  __esModule: true,
+  default: ({
+    alt,
+    fill,
+    unoptimized,
+    ...props
+  }: React.ImgHTMLAttributes<HTMLImageElement> & {
+    fill?: boolean;
+    unoptimized?: boolean;
+  }) => <img alt={alt} {...props} />,
 }));
 
 jest.mock("@/app/components/DeleteButton", () => ({
@@ -103,9 +116,46 @@ describe("DreamDetailPage", () => {
 
     expect(
       screen.getAllByText("🔮 モルペウスの ゆめうらない")[0]
-    ).toBeInTheDocument();
+    ).toBeTruthy();
     expect(
       screen.getByText("むかしの けいしきの うらない")
-    ).toBeInTheDocument();
+    ).toBeTruthy();
+  });
+
+  it("does not render dream content inside the share card", () => {
+    useDream.mockReturnValue({
+      dream: {
+        id: 1,
+        title: "星空を走る夢",
+        content: "これは共有カードに出してはいけない夢本文です",
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
+        userId: 1,
+        emotions: [{ id: 1, name: "楽しい" }],
+        analysis_json: {
+          analysis: "楽しい気持ちが強い夢です",
+          emotion_tags: ["楽しい"],
+        },
+        generated_image_url: "data:image/png;base64,ZmFrZQ==",
+      },
+      error: null,
+      isLoading: false,
+      isUpdating: false,
+      updateDream: jest.fn(),
+      deleteDream: jest.fn(),
+    });
+
+    render(<DreamDetailPage params={{ id: "1" } as never} />);
+
+    const shareCard = screen.getByTestId("dream-share-card");
+
+    expect(within(shareCard).getByText("YumeTree")).toBeTruthy();
+    expect(within(shareCard).getByText("ユメツリー")).toBeTruthy();
+    expect(within(shareCard).getByText("星空を走る夢")).toBeTruthy();
+    expect(
+      within(shareCard).queryByText(
+        "これは共有カードに出してはいけない夢本文です"
+      )
+    ).toBeNull();
   });
 });

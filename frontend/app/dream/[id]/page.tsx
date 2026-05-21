@@ -2,6 +2,7 @@
 
 import DreamForm from "../../components/DreamForm";
 import DeleteButton from "../../components/DeleteButton";
+import DreamShareCard from "../../components/DreamShareCard";
 import {
   EmotionTag,
   getChildFriendlyEmotionLabel,
@@ -408,6 +409,13 @@ export default function DreamDetailPage({
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
+            <DreamShareCard
+              imageUrl={generatedImageUrl}
+              title={dream.title}
+              recordedAt={dream.created_at}
+              emotionLabels={displayTags}
+              imageAlt={copy.imageAlt}
+            />
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-6 rounded-xl border border-dashed border-border bg-muted/20">
