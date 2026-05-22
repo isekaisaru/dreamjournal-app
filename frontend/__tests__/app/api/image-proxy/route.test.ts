@@ -177,5 +177,26 @@ describe("GET /api/image-proxy", () => {
       const res = await GET(makeRequest(ALLOWED_URL));
       expect(res.status).toBe(502);
     });
+
+    it("upstream がリダイレクトを返したら 502（redirect: error でSSRFバイパスを防ぐ）", async () => {
+      // redirect: "error" のとき fetch はリダイレクトで TypeError を投げる
+      fetchMock.mockRejectedValue(new TypeError("Failed to fetch: redirect"));
+
+      const res = await GET(makeRequest(ALLOWED_URL));
+      expect(res.status).toBe(502);
+    });
+  });
+
+  describe("fetch オプションの検証", () => {
+    it("redirect: error を指定して fetch を呼ぶ", async () => {
+      fetchMock.mockResolvedValue(makeImageResponse());
+
+      await GET(makeRequest(ALLOWED_URL));
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        ALLOWED_URL,
+        expect.objectContaining({ redirect: "error" })
+      );
+    });
   });
 });

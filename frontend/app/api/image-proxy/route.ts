@@ -54,6 +54,7 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const upstream = await fetch(rawUrl, {
       headers: { Accept: "image/*" },
+      redirect: "error",
     });
 
     if (!upstream.ok) {
