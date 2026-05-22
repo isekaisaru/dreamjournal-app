@@ -58,6 +58,8 @@ describe("DreamShareCard", () => {
   let originalRevokeObjectURL: typeof URL.revokeObjectURL;
   // Capture the real createElement before any spy can intercept it
   const realCreateElement = document.createElement.bind(document);
+  // mockDecode は各テストで参照できるよう describe スコープで宣言
+  let mockDecode: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -65,11 +67,22 @@ describe("DreamShareCard", () => {
     originalRevokeObjectURL = URL.revokeObjectURL;
     URL.createObjectURL = jest.fn(() => "blob:fake-object-url");
     URL.revokeObjectURL = jest.fn();
+    // jsdom は HTMLImageElement.prototype.decode を実装していないため、
+    // waitForImageReady が onload 待ちに入ってテストがハングしないよう
+    // プロトタイプレベルで即時 resolve するモックを注入する
+    mockDecode = jest.fn().mockImplementation(() => Promise.resolve());
+    Object.defineProperty(HTMLImageElement.prototype, "decode", {
+      value: mockDecode,
+      writable: true,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
+    // プロトタイプに追加した decode モックを毎テスト後に削除する
+    delete (HTMLImageElement.prototype as unknown as Record<string, unknown>).decode;
   });
 
   describe("レンダリング", () => {
@@ -218,6 +231,61 @@ describe("DreamShareCard", () => {
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalledTimes(1);
       });
+    });
+  });
+
+  describe("img.decode によるロード待機", () => {
+    it("img.decode が保存時に呼ばれる", async () => {
+      setupFetchMock();
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(mockDecode).toHaveBeenCalled();
+      });
+    });
+
+    it("decode完了後に toPng が呼ばれる（呼び出し順序）", async () => {
+      const callOrder: string[] = [];
+      mockDecode.mockImplementation(async () => {
+        callOrder.push("decode");
+      });
+      jest.mocked(htmlToImage.toPng).mockImplementation(async () => {
+        callOrder.push("toPng");
+        return "data:image/png;base64,abc";
+      });
+      setupFetchMock();
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(callOrder).toEqual(["decode", "toPng"]);
+      });
+    });
+
+    it("decode が失敗したらエラートーストになり toPng は呼ばれない", async () => {
+      setupFetchMock();
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+
+      // インスタンスレベルで reject する decode を上書き（プロトタイプより優先される）
+      const imgEl = screen.getByRole("img") as HTMLImageElement;
+      imgEl.decode = jest
+        .fn()
+        .mockImplementation(() =>
+          Promise.reject(new Error("decode failed"))
+        ) as unknown as () => Promise<void>;
+
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("画像の保存に失敗しました");
+      });
+      expect(htmlToImage.toPng).not.toHaveBeenCalled();
     });
   });
 });

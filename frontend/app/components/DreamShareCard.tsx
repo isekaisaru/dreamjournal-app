@@ -30,6 +30,20 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// blob URL に差し替えた img が描画可能になるまで待つ。
+// decode() が使えない環境では complete チェックか onload にフォールバックする。
+async function waitForImageReady(img: HTMLImageElement): Promise<void> {
+  if (typeof img.decode === "function") {
+    await img.decode();
+    return;
+  }
+  if (img.complete && img.naturalWidth > 0) return;
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("image load failed"));
+  });
+}
+
 export default function DreamShareCard({
   imageUrl,
   title,
@@ -60,6 +74,7 @@ export default function DreamShareCard({
         const blob = await res.blob();
         objectUrl = URL.createObjectURL(blob);
         img.src = objectUrl;
+        await waitForImageReady(img);
       }
 
       const dataUrl = await toPng(card, { pixelRatio: 2 });
