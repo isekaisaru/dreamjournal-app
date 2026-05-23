@@ -234,6 +234,72 @@ describe("DreamShareCard", () => {
     });
   });
 
+  describe("iOS Web Share API", () => {
+    function setupNavigatorShare(rejectWith?: unknown) {
+      const mockShare = rejectWith
+        ? jest.fn().mockImplementation(() => Promise.reject(rejectWith))
+        : jest.fn().mockImplementation(() => Promise.resolve());
+      const mockCanShare = jest.fn().mockReturnValue(true);
+      Object.defineProperty(navigator, "share", {
+        value: mockShare,
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(navigator, "canShare", {
+        value: mockCanShare,
+        writable: true,
+        configurable: true,
+      });
+      return { mockShare, mockCanShare };
+    }
+
+    afterEach(() => {
+      // navigator への追加プロパティを削除
+      try {
+        Object.defineProperty(navigator, "share", {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+        Object.defineProperty(navigator, "canShare", {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+      } catch {
+        // 環境によっては削除できない場合があるため無視
+      }
+    });
+
+    it("ユーザーが共有シートをキャンセルしても <a download> は呼ばれない", async () => {
+      setupFetchMock();
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+
+      const abortError = new DOMException("", "AbortError");
+      setupNavigatorShare(abortError);
+
+      const mockAnchor = { href: "", download: "", click: jest.fn() };
+      jest
+        .spyOn(document, "createElement")
+        .mockImplementation((tag: string) => {
+          if (tag === "a") return mockAnchor as unknown as HTMLElement;
+          return realCreateElement(tag as keyof HTMLElementTagNameMap) as HTMLElement;
+        });
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      // isSaving が false に戻るまで待つ（保存処理完了の代理条件）
+      await waitFor(() => {
+        expect(screen.getByText("画像として保存")).toBeTruthy();
+      });
+
+      expect(mockAnchor.click).not.toHaveBeenCalled();
+      expect(toast.success).not.toHaveBeenCalled();
+      expect(toast.error).not.toHaveBeenCalled();
+    });
+  });
+
   describe("img.decode によるロード待機", () => {
     it("img.decode が保存時に呼ばれる", async () => {
       setupFetchMock();

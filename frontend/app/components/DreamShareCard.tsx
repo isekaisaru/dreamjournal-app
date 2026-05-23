@@ -90,8 +90,10 @@ export default function DreamShareCard({
             toast.success("画像をシェアしました");
             return;
           }
-        } catch {
-          // canShare or share failed — fall through to <a download>
+        } catch (err) {
+          // ユーザーが共有シートをキャンセルした場合は何もしない（<a download> にフォールバックしない）
+          if (err instanceof DOMException && err.name === "AbortError") return;
+          // canShare/share 非対応・その他エラー → <a download> にフォールバック
         }
       }
 
