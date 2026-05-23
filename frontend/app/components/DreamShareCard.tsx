@@ -57,6 +57,18 @@ export default function DreamShareCard({
 
   const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
 
+  const handleCopyLink = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("clipboard unavailable");
+      }
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("リンクをコピーしました");
+    } catch {
+      toast.error("リンクのコピーに失敗しました");
+    }
+  };
+
   const handleSave = async () => {
     if (!cardRef.current || isSaving) return;
     setIsSaving(true);
@@ -160,7 +172,15 @@ export default function DreamShareCard({
         </div>
       </section>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          onClick={handleCopyLink}
+          data-testid="copy-link-button"
+          className="rounded-md border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm hover:bg-sky-50"
+        >
+          リンクをコピー
+        </button>
         <button
           type="button"
           onClick={handleSave}

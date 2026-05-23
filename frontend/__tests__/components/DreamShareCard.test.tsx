@@ -60,6 +60,7 @@ describe("DreamShareCard", () => {
   const realCreateElement = document.createElement.bind(document);
   // mockDecode は各テストで参照できるよう describe スコープで宣言
   let mockDecode: ReturnType<typeof jest.fn>;
+  let writeTextMock: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -76,11 +77,22 @@ describe("DreamShareCard", () => {
       writable: true,
       configurable: true,
     });
+    writeTextMock = jest.fn().mockImplementation(() => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: writeTextMock },
+      writable: true,
+      configurable: true,
+    });
   });
 
   afterEach(() => {
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
     // プロトタイプに追加した decode モックを毎テスト後に削除する
     delete (HTMLImageElement.prototype as unknown as Record<string, unknown>).decode;
   });
@@ -102,16 +114,68 @@ describe("DreamShareCard", () => {
       expect(screen.getByText("画像として保存")).toBeTruthy();
     });
 
-    it("保存ボタンはシェアカードのDOM外にある", () => {
+    it("「リンクをコピー」ボタンが表示される", () => {
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      expect(screen.getByTestId("copy-link-button")).toBeTruthy();
+      expect(screen.getByText("リンクをコピー")).toBeTruthy();
+    });
+
+    it("操作ボタンはシェアカードのDOM外にある", () => {
       render(<DreamShareCard {...DEFAULT_PROPS} />);
       const card = screen.getByTestId("dream-share-card");
       expect(card.contains(screen.getByTestId("save-image-button"))).toBe(false);
+      expect(card.contains(screen.getByTestId("copy-link-button"))).toBe(false);
     });
 
     it("夢本文はカードDOMに含まれない（propsとして受け取らない）", () => {
       render(<DreamShareCard {...DEFAULT_PROPS} />);
       const card = screen.getByTestId("dream-share-card");
       expect(card).toBeTruthy();
+    });
+  });
+
+  describe("リンクコピー", () => {
+    it("リンクコピーボタンをクリックすると現在のURLをクリップボードにコピーする", async () => {
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("copy-link-button"));
+
+      await waitFor(() => {
+        expect(writeTextMock).toHaveBeenCalledWith(window.location.href);
+      });
+    });
+
+    it("コピー対象URLに夢本文は含まれない", async () => {
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("copy-link-button"));
+
+      await waitFor(() => {
+        expect(writeTextMock).toHaveBeenCalled();
+      });
+      expect(writeTextMock.mock.calls[0][0]).not.toContain(
+        "これは共有カードに出してはいけない夢本文です"
+      );
+    });
+
+    it("コピー成功時に成功トーストを表示する", async () => {
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("copy-link-button"));
+
+      await waitFor(() => {
+        expect(toast.success).toHaveBeenCalledWith("リンクをコピーしました");
+      });
+    });
+
+    it("コピー失敗時にエラートーストを表示する", async () => {
+      writeTextMock.mockRejectedValue(new Error("clipboard error"));
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("copy-link-button"));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "リンクのコピーに失敗しました"
+        );
+      });
     });
   });
 
