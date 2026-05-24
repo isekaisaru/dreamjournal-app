@@ -10,7 +10,6 @@ import {
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import apiClient from "../../../lib/apiClient";
 import { useAuth } from "../../../context/AuthContext";
@@ -148,19 +147,6 @@ export default function DreamDetailPage({
     } finally {
       setIsGeneratingImage(false);
     }
-  };
-
-  const handleImageLoadError = () => {
-    const isRemoteBlobUrl =
-      typeof generatedImageUrl === "string" &&
-      generatedImageUrl.startsWith("https://oaidalleapiprodscus.blob.core.windows.net/");
-
-    setImageError(
-      isRemoteBlobUrl
-        ? "ほぞんずみ の ゆめのえ の きげん が きれました。もういちど かいてみてください。"
-        : "ゆめのえ を ひょうじ できませんでした。"
-    );
-    setGeneratedImageUrl(null);
   };
 
   const handleUpdateSubmit = async (formData: DreamInput) => {
@@ -372,40 +358,6 @@ export default function DreamDetailPage({
       <div className="mb-6">
         {generatedImageUrl ? (
           <div className="space-y-2">
-            <div className="overflow-hidden rounded-[30px] border border-border bg-card shadow-lg">
-              <div className="flex items-center gap-2 border-b border-border/80 bg-muted/50 px-4 py-3">
-                <span className="h-3 w-3 rounded-full bg-rose-400" />
-                <span className="h-3 w-3 rounded-full bg-amber-300" />
-                <span className="h-3 w-3 rounded-full bg-emerald-400" />
-                <p className="ml-2 text-xs font-medium text-muted-foreground">
-                  dream-window.png
-                </p>
-              </div>
-              <Image
-                src={generatedImageUrl}
-                alt={copy.imageAlt}
-                width={1024}
-                height={1024}
-                className="w-full h-auto"
-                unoptimized
-                onError={handleImageLoadError}
-                style={{
-                  background:
-                    "radial-gradient(circle at top, rgba(125,211,252,0.16), transparent 42%), linear-gradient(180deg, rgba(248,250,252,0.92), rgba(226,232,240,0.65))",
-                }}
-              />
-              <div className="p-3 bg-card flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">{copy.image}</p>
-                <button
-                  type="button"
-                  onClick={handleGenerateImage}
-                  disabled={isGeneratingImage}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-                >
-                  {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
-                </button>
-              </div>
-            </div>
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
@@ -416,6 +368,16 @@ export default function DreamDetailPage({
               emotionLabels={displayTags}
               imageAlt={copy.imageAlt}
             />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleGenerateImage}
+                disabled={isGeneratingImage}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-6 rounded-xl border border-dashed border-border bg-muted/20">

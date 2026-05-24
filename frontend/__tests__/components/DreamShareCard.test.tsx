@@ -364,6 +364,94 @@ describe("DreamShareCard", () => {
     });
   });
 
+  describe("URLの種類による分岐", () => {
+    function setupAnchorSpy() {
+      const mockAnchor = { href: "", download: "", click: jest.fn() };
+      jest
+        .spyOn(document, "createElement")
+        .mockImplementation((tag: string) => {
+          if (tag === "a") return mockAnchor as unknown as HTMLElement;
+          return realCreateElement(tag as keyof HTMLElementTagNameMap) as HTMLElement;
+        });
+      return { mockAnchor };
+    }
+
+    it("data:image URL の場合は proxy fetch を呼ばず PNG を保存する", async () => {
+      const mockFetch = jest.fn<typeof fetch>();
+      global.fetch = mockFetch as unknown as typeof fetch;
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+      setupAnchorSpy();
+
+      render(
+        <DreamShareCard
+          {...DEFAULT_PROPS}
+          imageUrl="data:image/png;base64,iVBORw0KGgo="
+        />
+      );
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(htmlToImage.toPng).toHaveBeenCalled();
+      });
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith("画像を保存しました");
+    });
+
+    it("https URL の場合は proxy URL で fetch を呼ぶ", async () => {
+      const { mockFetch } = setupFetchMock();
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+      setupAnchorSpy();
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(PROXY_URL);
+      });
+    });
+
+    it.each([
+      ["ftp://example.com/img.png", "ftp:"],
+      ["data:image/svg+xml;base64,PHN2Zy8+", "data:image/svg+xml"],
+      ["blob:https://example.com/fake-id", "blob:"],
+      ["javascript:alert(1)", "javascript:"],
+    ])(
+      "サポート外URLスキーム (%s) の場合はエラートーストを表示し toPng は呼ばれない",
+      async (unsafeUrl) => {
+        jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+
+        render(
+          <DreamShareCard
+            {...DEFAULT_PROPS}
+            imageUrl={unsafeUrl}
+          />
+        );
+        fireEvent.click(screen.getByTestId("save-image-button"));
+
+        await waitFor(() => {
+          expect(toast.error).toHaveBeenCalledWith("画像の保存に失敗しました");
+        });
+        expect(htmlToImage.toPng).not.toHaveBeenCalled();
+      }
+    );
+
+    it("保存失敗時も img.src が元の値に戻る", async () => {
+      setupFetchMock(false);
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      const imgEl = screen.getByRole("img") as HTMLImageElement;
+      const originalSrc = imgEl.src;
+
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith("画像の保存に失敗しました");
+      });
+      expect(imgEl.src).toBe(originalSrc);
+    });
+  });
+
   describe("img.decode によるロード待機", () => {
     it("img.decode が保存時に呼ばれる", async () => {
       setupFetchMock();

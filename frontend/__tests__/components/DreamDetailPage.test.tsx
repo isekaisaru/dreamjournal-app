@@ -122,6 +122,42 @@ describe("DreamDetailPage", () => {
     ).toBeTruthy();
   });
 
+  it("AI画像ありの夢で画像が二重表示されない", () => {
+    const AI_IMAGE_URL =
+      "https://oaidalleapiprodscus.blob.core.windows.net/private/img-dedup-test.png";
+
+    useDream.mockReturnValue({
+      dream: {
+        id: 2,
+        title: "二重表示テスト",
+        content: "テスト本文",
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
+        userId: 1,
+        emotions: [],
+        analysis_json: { emotion_tags: [] },
+        generated_image_url: AI_IMAGE_URL,
+      },
+      error: null,
+      isLoading: false,
+      isUpdating: false,
+      updateDream: jest.fn(),
+      deleteDream: jest.fn(),
+    });
+
+    const { container } = render(<DreamDetailPage params={{ id: "2" } as never} />);
+
+    const allImgs = Array.from(container.querySelectorAll("img"));
+    const dreamImgs = allImgs.filter(
+      (el) => el.getAttribute("src") === AI_IMAGE_URL
+    );
+
+    expect(dreamImgs).toHaveLength(1);
+
+    const shareCard = screen.getByTestId("dream-share-card");
+    expect(shareCard.contains(dreamImgs[0])).toBe(true);
+  });
+
   it("does not render dream content inside the share card", () => {
     useDream.mockReturnValue({
       dream: {
