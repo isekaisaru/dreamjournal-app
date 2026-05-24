@@ -12,6 +12,7 @@ type DreamShareCardProps = {
   recordedAt: string;
   emotionLabels: string[];
   imageAlt: string;
+  onImageError?: () => void;
 };
 
 function formatDate(dateInput: string): string {
@@ -58,6 +59,7 @@ export default function DreamShareCard({
   recordedAt,
   emotionLabels,
   imageAlt,
+  onImageError,
 }: DreamShareCardProps) {
   const formattedDate = formatDate(recordedAt);
   const cardRef = useRef<HTMLElement>(null);
@@ -155,6 +157,7 @@ export default function DreamShareCard({
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover"
             unoptimized
+            onError={onImageError}
           />
         </div>
 

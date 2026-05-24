@@ -149,6 +149,19 @@ export default function DreamDetailPage({
     }
   };
 
+  const handleImageLoadError = () => {
+    const isRemoteBlobUrl =
+      typeof generatedImageUrl === "string" &&
+      generatedImageUrl.startsWith("https://oaidalleapiprodscus.blob.core.windows.net/");
+
+    setImageError(
+      isRemoteBlobUrl
+        ? "ほぞんずみ の ゆめのえ の きげん が きれました。もういちど かいてみてください。"
+        : "ゆめのえ を ひょうじ できませんでした。"
+    );
+    setGeneratedImageUrl(null);
+  };
+
   const handleUpdateSubmit = async (formData: DreamInput) => {
     if (!dreamId) return;
     const success = await hookUpdateDream(formData);
@@ -367,6 +380,7 @@ export default function DreamDetailPage({
               recordedAt={dream.created_at}
               emotionLabels={displayTags}
               imageAlt={copy.imageAlt}
+              onImageError={handleImageLoadError}
             />
             <div className="flex justify-end">
               <button
