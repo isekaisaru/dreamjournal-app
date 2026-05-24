@@ -231,7 +231,7 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     await postRequestPromise;
 
     // 成功後に画像が表示されることを確認
-    await expect(page.locator('img[alt="ゆめのえ"]')).toBeVisible();
+    await expect(page.locator('[data-testid="dream-share-card"] img')).toBeVisible();
 
     // 「かきなおす」ボタンが表示されることを確認
     await expect(

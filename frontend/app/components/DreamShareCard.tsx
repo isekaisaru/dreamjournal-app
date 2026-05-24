@@ -12,6 +12,7 @@ type DreamShareCardProps = {
   recordedAt: string;
   emotionLabels: string[];
   imageAlt: string;
+  onImageError?: () => void;
 };
 
 function formatDate(dateInput: string): string {
@@ -29,6 +30,14 @@ function formatDate(dateInput: string): string {
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
+// data: URL として安全に扱える MIME+エンコーディング のプレフィックス一覧。
+// SVG / HTML / JavaScript などは toPng の文脈でも XSS リスクがあるため除外する。
+const SAFE_DATA_PREFIXES = [
+  "data:image/png;base64,",
+  "data:image/jpeg;base64,",
+  "data:image/webp;base64,",
+] as const;
 
 // blob URL に差し替えた img が描画可能になるまで待つ。
 // decode() が使えない環境では complete チェックか onload にフォールバックする。
@@ -50,6 +59,7 @@ export default function DreamShareCard({
   recordedAt,
   emotionLabels,
   imageAlt,
+  onImageError,
 }: DreamShareCardProps) {
   const formattedDate = formatDate(recordedAt);
   const cardRef = useRef<HTMLElement>(null);
@@ -80,13 +90,20 @@ export default function DreamShareCard({
 
     try {
       if (img) {
-        // Fetch image via same-origin proxy to avoid tainted canvas CORS error
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error("proxy fetch failed");
-        const blob = await res.blob();
-        objectUrl = URL.createObjectURL(blob);
-        img.src = objectUrl;
-        await waitForImageReady(img);
+        if (SAFE_DATA_PREFIXES.some((p) => imageUrl.startsWith(p))) {
+          // png / jpeg / webp base64 data URL は同一オリジン扱い。tainted canvas が発生しないためそのまま使う
+          await waitForImageReady(img);
+        } else if (imageUrl.startsWith("https://")) {
+          // https: URL は same-origin proxy 経由で差し替え（CORS / tainted canvas 回避）
+          const res = await fetch(proxyUrl);
+          if (!res.ok) throw new Error("proxy fetch failed");
+          const blob = await res.blob();
+          objectUrl = URL.createObjectURL(blob);
+          img.src = objectUrl;
+          await waitForImageReady(img);
+        } else {
+          throw new Error("unsupported image URL scheme");
+        }
       }
 
       const dataUrl = await toPng(card, { pixelRatio: 2 });
@@ -140,6 +157,7 @@ export default function DreamShareCard({
             sizes="(max-width: 768px) 100vw, 768px"
             className="object-cover"
             unoptimized
+            onError={onImageError}
           />
         </div>
 
