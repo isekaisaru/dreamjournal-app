@@ -5,11 +5,12 @@ import React, {
   useContext,
   useCallback,
   useLayoutEffect,
+  useRef,
   useState,
   ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import apiClient from "@/lib/apiClient";
+import apiClient, { ApiError } from "@/lib/apiClient";
 import type { User } from "@/app/types";
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";
@@ -67,11 +68,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // isLoggedInは後方互換性のために残す
   const isLoggedIn = authStatus === "authenticated";
 
+  // pathname 変化ごとにリセットされるリトライカウンター・タイマー
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // ---------------------------
-  // 初回マウント時のみ認証チェック
+  // pathname 変化時に認証チェック
   // ---------------------------
   useLayoutEffect(() => {
     let mounted = true;
+    retryCountRef.current = 0;
+
     const shouldVerify = hasAuthHint() || isProtectedPath(pathname);
 
     if (!shouldVerify) {
@@ -96,16 +103,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser({ ...res.user, id: String(res.user.id) });
           setUserId(String(res.user.id));
           setAuthStatus("authenticated");
+          setError(null);
         } else {
           setAuthHint(false);
           setAuthStatus("unauthenticated");
         }
       } catch (err) {
-        if (mounted) {
+        if (!mounted) return;
+
+        // 401 = 正真正銘の認証切れ → ログアウト扱い
+        const status = err instanceof ApiError ? err.status : 0;
+        if (status === 401) {
           setAuthHint(false);
           setAuthStatus("unauthenticated");
           setUser(null);
           setUserId(null);
+          return;
+        }
+
+        // 502 / 503 / 504 / timeout / network error = Render 起動待ちや一時障害
+        // authHint・user・authStatus を即クリアせず、最大3回リトライする
+        if (retryCountRef.current < 3) {
+          retryCountRef.current += 1;
+          setError("サーバーを起動しています。しばらくお待ちください。");
+          retryTimeoutRef.current = setTimeout(() => {
+            if (mounted) verifyToken();
+          }, 6_000);
+        } else {
+          // リトライ上限に達しても authHint は消さず unauthenticated にしない
+          setError("サーバーへの接続に失敗しました。ページを再読み込みしてください。");
         }
       }
     };
@@ -114,6 +140,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       mounted = false;
+      if (retryTimeoutRef.current !== null) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
     };
   }, [pathname]);
 
