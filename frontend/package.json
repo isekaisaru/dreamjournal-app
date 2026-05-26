@@ -74,7 +74,7 @@
     "jest": "30.3.0",
     "jest-environment-jsdom": "30.4.1",
     "postcss": "^8.5.13",
-    "prettier": "^3.5.2",
+    "prettier": "^3.8.3",
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.3",
     "wait-on": "^9.0.4"
