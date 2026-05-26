@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import toast from "react-hot-toast";
+import { Download, Link } from "lucide-react";
 import { EmotionTag } from "./EmotionTag";
 
 type DreamShareCardProps = {
@@ -195,8 +196,9 @@ export default function DreamShareCard({
           type="button"
           onClick={handleCopyLink}
           data-testid="copy-link-button"
-          className="rounded-md border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm hover:bg-sky-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-sky-200 bg-white px-4 py-2 text-sm font-semibold text-sky-700 shadow-sm hover:bg-sky-50"
         >
+          <Link size={15} aria-hidden="true" />
           リンクをコピー
         </button>
         <button
@@ -204,8 +206,9 @@ export default function DreamShareCard({
           onClick={handleSave}
           disabled={isSaving}
           data-testid="save-image-button"
-          className="rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-md bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 disabled:opacity-50"
         >
+          <Download size={15} aria-hidden="true" />
           {isSaving ? "保存中..." : "画像として保存"}
         </button>
       </div>
