@@ -111,9 +111,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (err) {
         if (!mounted) return;
 
-        // 401 = 正真正銘の認証切れ → ログアウト扱い
         const status = err instanceof ApiError ? err.status : 0;
-        if (status === 401) {
+
+        // 明示的な一時障害ステータスのみリトライ対象とする。
+        // 0 = ネットワークエラー / タイムアウト（fetch が例外を投げる場合）
+        // 403 / 404 / 500 など列挙外のエラーは恒久的障害とみなしてログアウト扱いにする。
+        const TRANSIENT_STATUSES = new Set([0, 502, 503, 504]);
+
+        if (!TRANSIENT_STATUSES.has(status)) {
+          // 401 / 403 / 404 / 500 など → 認証切れまたは恒久的エラー → ログアウト扱い
           setAuthHint(false);
           setAuthStatus("unauthenticated");
           setUser(null);
@@ -121,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        // 502 / 503 / 504 / timeout / network error = Render 起動待ちや一時障害
+        // 502 / 503 / 504 / network error = Render 起動待ちや一時障害
         // authHint・user・authStatus を即クリアせず、最大3回リトライする
         if (retryCountRef.current < 3) {
           retryCountRef.current += 1;

@@ -105,7 +105,8 @@ beforeEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// 1. 401 Unauthorized → 正当なログアウト扱い
+// 1. 非一時障害エラー → 恒久的障害としてログアウト扱い
+//    対象: 401 / 403 / 404 / 500 （TRANSIENT_STATUSES 外のすべて）
 // ---------------------------------------------------------------------------
 
 describe("401 Unauthorized", () => {
@@ -143,6 +144,60 @@ describe("401 Unauthorized", () => {
     });
     expect(captured.user).toBeNull();
     expect(captured.userId).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 1b. 403 / 404 / 500 → 恒久的エラーとしてログアウト扱い（リトライしない）
+// ---------------------------------------------------------------------------
+
+describe("403 / 404 / 500 (恒久的エラー)", () => {
+  it.each([403, 404, 500])(
+    "%i の場合は authStatus が unauthenticated になる",
+    async (status) => {
+      localStorage.setItem(AUTH_HINT_KEY, "1");
+      mockedGet.mockRejectedValue(makeApiError(status));
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(captured.authStatus).toBe("unauthenticated");
+      });
+    }
+  );
+
+  it.each([403, 404, 500])(
+    "%i の場合は authHint が消える",
+    async (status) => {
+      localStorage.setItem(AUTH_HINT_KEY, "1");
+      mockedGet.mockRejectedValue(makeApiError(status));
+
+      renderWithProvider();
+
+      await waitFor(() => {
+        expect(captured.authStatus).toBe("unauthenticated");
+      });
+      expect(localStorage.getItem(AUTH_HINT_KEY)).toBeNull();
+    }
+  );
+
+  it("500 の場合はリトライしない（get が1回だけ呼ばれる）", async () => {
+    jest.useFakeTimers();
+    localStorage.setItem(AUTH_HINT_KEY, "1");
+    mockedGet.mockRejectedValue(makeApiError(500));
+
+    renderWithProvider();
+    await act(async () => {});
+
+    expect(mockedGet).toHaveBeenCalledTimes(1);
+
+    // タイマーを進めても再呼び出しされない
+    await act(async () => { jest.advanceTimersByTime(7000); });
+    await act(async () => {});
+    expect(mockedGet).toHaveBeenCalledTimes(1);
+
+    act(() => { jest.runAllTimers(); });
+    jest.useRealTimers();
   });
 });
 
