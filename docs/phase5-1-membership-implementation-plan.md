@@ -332,7 +332,12 @@ end
 
 - 実行できるのは `invitee` のみ
 - 対象は `pending` のmembershipのみ
+- status を `accepted` に変更する前に、`current_user`（invitee）が既存の `accepted` membership を持っていないことを確認する
+- 既存の `accepted` partner がいる場合は更新せず 422 を返す
 - 成功したら `status: "accepted"` を返す
+
+**注意: accept は update 操作のため `no_existing_accepted_partner` バリデーション（`on: :create`）は動作しない。**
+invitee 側の accepted 制限は、コントローラーの accept アクション内で明示的にチェックする。
 
 **エラーケース:**
 
@@ -341,6 +346,7 @@ end
 | 自分が inviter のmembership | 404 |
 | pending でないmembership | 422 |
 | 他人のmembership | 404 |
+| invitee 側に既存の accepted partner がいる | 422 |
 
 ---
 
@@ -357,8 +363,14 @@ end
 - 実行できるのは `inviter` または `invitee`（どちらの当事者でも可）
 - 対象は `accepted` のmembershipのみ
 - 成功したら `status: "removed"` を返す
-- 解除後、相手からの `partner` 夢へのアクセスは即時失効する
-  （Phase 5-2で `dreams.visibility` が実装された時点で自動的に有効になる）
+
+**Phase 5-1 での責務:**
+- Phase 5-1 では membership の status を `removed` に更新するのみ
+- `dreams.visibility` が存在しないため、相手の夢へのアクセス制御はこの時点では実装しない
+
+**Phase 5-2 以降の責務:**
+- `dreams.visibility` の追加により、`removed` 状態の相手は `partner` 夢を閲覧できなくなる
+- この時点で「関係解除と同時にアクセスが失効する」という仕様が有効になる
 
 ---
 
@@ -489,6 +501,19 @@ Phase 5-1実装では、**最も保守的な方針**を採用する。
 新しい招待を作成しようとすると「すでに関係が存在します」エラーにする。
 
 理由: 再招待を後から許可する方向への変更は容易。逆に、いったん許可してから制限するのは難しい。
+
+**将来、再招待を許可する場合の注意:**
+
+現状の一意インデックスは status を含まず、2人のペアのみで一意を保証する。
+そのため、`rejected` / `removed` レコードが残っている限り、同じ2人の新しい招待は作成できない。
+
+再招待を許可したい場合は、以下のいずれかのアプローチで DB インデックス設計の見直しが必要になる:
+
+- status を含めた一意制約に変更する（active な状態のみ一意にする）
+- 既存の `rejected` / `removed` レコードを再利用して status を `pending` に戻す
+- `rejected` / `removed` レコードを削除または論理削除してから新規作成する
+
+いずれもスキーマ変更またはデータ移行を伴う。Phase 5 以降で再招待を検討する際は設計を再レビューすること。
 
 ### 誰が remove できるか
 
