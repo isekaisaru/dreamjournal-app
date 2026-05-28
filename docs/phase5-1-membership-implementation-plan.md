@@ -333,11 +333,25 @@ end
 - 実行できるのは `invitee` のみ
 - 対象は `pending` のmembershipのみ
 - status を `accepted` に変更する前に、`current_user`（invitee）が既存の `accepted` membership を持っていないことを確認する
-- 既存の `accepted` partner がいる場合は更新せず 422 を返す
+- status を `accepted` に変更する前に、`inviter` も既存の `accepted` membership を持っていないことを確認する
+- invitee または inviter のどちらかに既存の `accepted` partner がいる場合は更新せず 422 を返す
 - 成功したら `status: "accepted"` を返す
 
 **注意: accept は update 操作のため `no_existing_accepted_partner` バリデーション（`on: :create`）は動作しない。**
-invitee 側の accepted 制限は、コントローラーの accept アクション内で明示的にチェックする。
+invitee 側・inviter 側の accepted 制限は、コントローラーの accept アクション内で明示的にチェックする。
+これにより、招待作成後にどちらかが別の相手と `accepted` になった場合でも、1ユーザー1 accepted partner 制限を守る。
+
+**accept アクションの処理順序（擬似コード）:**
+
+```ruby
+def accept
+  # invitee? チェック
+  # pending? チェック
+  # invitee に既存 accepted partner がないかチェック
+  # inviter に既存 accepted partner がないかチェック
+  # 両方OKなら status を accepted に更新
+end
+```
 
 **エラーケース:**
 
@@ -347,6 +361,7 @@ invitee 側の accepted 制限は、コントローラーの accept アクショ
 | pending でないmembership | 422 |
 | 他人のmembership | 404 |
 | invitee 側に既存の accepted partner がいる | 422 |
+| inviter 側に既存の accepted partner がいる | 422 |
 
 ---
 
