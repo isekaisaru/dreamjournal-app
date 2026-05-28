@@ -1,6 +1,6 @@
 require 'openai'
 
-# Phase 1: CI/CDの迅速な問題解決のための修正 (Claude's suggestion)
+# CI向け調整: テスト環境でAPIキーが未設定の場合のフォールバック設定
 # テスト環境でAPIキーが設定されていない場合、ダミーキーを設定してCIをパスさせる。
 if Rails.env.test? && ENV['OPENAI_API_KEY'].blank?
   ENV['OPENAI_API_KEY'] = 'dummy-key-for-testing'
