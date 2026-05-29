@@ -26,6 +26,10 @@ module AuthHelpers
     put path, params: params, headers: auth_headers(user), as: :json
   end
 
+  def authenticated_patch(path, user, params: {})
+    patch path, params: params, headers: auth_headers(user), as: :json
+  end
+
   def authenticated_delete(path, user)
     delete path, headers: auth_headers(user)
   end

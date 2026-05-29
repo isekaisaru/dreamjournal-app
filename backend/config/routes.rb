@@ -29,6 +29,13 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :dream_profiles, only: [:index, :create, :update] do
+    member do
+      patch :archive
+      patch :restore
+    end
+  end
+
   resources :emotions, only: [:index]
 
   # ユーザー関連
