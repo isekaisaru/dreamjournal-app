@@ -1,5 +1,6 @@
 class Dream < ApplicationRecord
   belongs_to :user, optional: false
+  belongs_to :dream_profile, optional: true
   has_many :dream_emotions, dependent: :destroy
   has_many :dream_image_generations, dependent: :destroy
   has_many :emotions, through: :dream_emotions

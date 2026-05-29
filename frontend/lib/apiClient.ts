@@ -12,6 +12,8 @@
 import { createApiUrl } from "./api-config";
 import type {
   Dream,
+  DreamProfile,
+  DreamRelationship,
   Emotion,
   BackendUser,
   User,
@@ -325,6 +327,45 @@ export type AnalysisQuota = {
 
 export async function getAnalysisQuota(): Promise<AnalysisQuota> {
   return apiFetch<AnalysisQuota>("/dreams/analysis_quota");
+}
+
+export async function getDreamProfiles(): Promise<DreamProfile[]> {
+  return apiFetch<DreamProfile[]>("/dream_profiles");
+}
+
+export async function createDreamProfile(data: {
+  name: string;
+  avatar_emoji: string;
+  color: string;
+  relationship: DreamRelationship;
+  position?: number;
+}): Promise<DreamProfile> {
+  return apiFetch<DreamProfile>("/dream_profiles", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateDreamProfile(
+  id: number,
+  data: Partial<{ name: string; avatar_emoji: string; color: string; relationship: DreamRelationship; position: number }>
+): Promise<DreamProfile> {
+  return apiFetch<DreamProfile>(`/dream_profiles/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function archiveDreamProfile(id: number): Promise<DreamProfile> {
+  return apiFetch<DreamProfile>(`/dream_profiles/${id}/archive`, {
+    method: "PATCH",
+  });
+}
+
+export async function restoreDreamProfile(id: number): Promise<DreamProfile> {
+  return apiFetch<DreamProfile>(`/dream_profiles/${id}/restore`, {
+    method: "PATCH",
+  });
 }
 
 export async function verifyAuth(): Promise<{ user: User } | null> {

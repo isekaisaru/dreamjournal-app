@@ -287,6 +287,25 @@ const SettingsPage = () => {
           </div>
         </section>
 
+        {/* 夢プロフィール */}
+        <section className="space-y-4">
+          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-3 text-primary flex items-center">
+              <span className="text-2xl mr-2">👨‍👩‍👧‍👦</span>
+              夢プロフィール
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              家族やペットのプロフィールを作って、誰の夢かを記録できます。最大5つまで。
+            </p>
+            <Link
+              href="/profiles"
+              className="block w-full py-3 px-4 rounded-xl border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors text-center"
+            >
+              プロフィールを管理する →
+            </Link>
+          </div>
+        </section>
+
         {/* 安心感を与えるメッセージセクション */}
         <section className="space-y-4">
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">

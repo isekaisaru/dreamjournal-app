@@ -100,6 +100,8 @@ class DreamsController < ApplicationController
       @dream = current_user.dreams.build(dream_params)
     end
 
+    @dream.dream_profile_id ||= current_user.dream_profiles.find_by(relationship: 'self')&.id
+
     if @dream.save
       @dream.reload
       render json: @dream.as_json(include: :emotions), status: :created, location: @dream
@@ -292,9 +294,10 @@ class DreamsController < ApplicationController
     # 認可されたパラメーターを取得する
     def dream_params
       params.require(:dream).permit(
-        :title, 
-        :content, 
-        :audio, 
+        :title,
+        :content,
+        :audio,
+        :dream_profile_id,
         :analysis_status,
         :analyzed_at,
         emotion_ids: [],
