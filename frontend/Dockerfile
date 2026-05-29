@@ -7,6 +7,13 @@ RUN yarn install --frozen-lockfile --network-timeout 1000000
 # Stage 2: ビルドステージ
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# NEXT_PUBLIC_* はビルド時にバンドルへ埋め込まれるため ARG/ENV で受け取る
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN yarn build
