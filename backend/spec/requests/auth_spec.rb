@@ -175,6 +175,18 @@ RSpec.describe 'Authentication API', type: :request do
         expect(json_response['user']['premium']).to be false
         expect(response.cookies['access_token']).to be_present
       end
+
+      it '登録と同時に「自分」プロフィールが自動作成される' do
+        expect {
+          post '/auth/register', params: valid_user_params, as: :json, headers: { 'HOST' => 'backend' }
+        }.to change(DreamProfile, :count).by(1)
+
+        user = User.find_by(email: 'newuser@example.com')
+        self_profile = user.dream_profiles.find_by(relationship: 'self')
+        expect(self_profile).to be_present
+        expect(self_profile.name).to eq('自分')
+        expect(self_profile.active).to eq(true)
+      end
     end
 
     context '無効なパラメータの場合' do
