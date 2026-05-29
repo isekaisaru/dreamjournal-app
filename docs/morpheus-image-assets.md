@@ -6,7 +6,7 @@
 `MorpheusImage.tsx` が Next.js `Image` 経由で `/images/morpheus/*.jpg` を参照する方式を採用しています。
 
 > **注:** data URL 埋め込み方式は廃止しました。
-> Codex P1 指摘（不正な base64 によるデコード失敗リスク）を受け、
+> 設計レビュー指摘（不正な base64 によるデコード失敗リスク）を受け、
 > Next.js の正式な静的アセット管理に戻しています。
 
 ## 配置ファイル一覧
