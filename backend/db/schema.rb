@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_05_12_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_06_02_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -71,6 +71,22 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_000000) do
     t.index ["user_id"], name: "index_dream_image_generations_on_user_id"
   end
 
+  create_table "dream_profiles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "name", null: false
+    t.string "avatar_emoji", default: "😴", null: false
+    t.string "color", default: "#6366f1", null: false
+    t.string "relationship", default: "self", null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "position"], name: "idx_dream_profiles_user_position"
+    t.index ["user_id"], name: "idx_dream_profiles_active", where: "(active = true)"
+    t.index ["user_id"], name: "idx_dream_profiles_unique_self", unique: true, where: "((relationship)::text = 'self'::text)"
+    t.index ["user_id"], name: "index_dream_profiles_on_user_id"
+  end
+
   create_table "dreams", force: :cascade do |t|
     t.string "title"
     t.text "description"
@@ -83,7 +99,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_000000) do
     t.datetime "analyzed_at"
     t.text "generated_image_url"
     t.datetime "image_generated_at"
+    t.bigint "dream_profile_id"
     t.index ["analysis_status"], name: "index_dreams_on_analysis_status"
+    t.index ["dream_profile_id"], name: "index_dreams_on_dream_profile_id"
     t.index ["user_id", "created_at"], name: "index_dreams_on_user_id_and_created_at"
     t.index ["user_id", "image_generated_at"], name: "index_dreams_on_user_id_and_image_generated_at", where: "(image_generated_at IS NOT NULL)"
     t.index ["user_id", "updated_at"], name: "index_dreams_on_user_id_and_updated_at_with_image", where: "(generated_image_url IS NOT NULL)"
@@ -146,11 +164,11 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_000000) do
     t.string "stripe_customer_id"
     t.integer "trial_analysis_count", default: 0, null: false
     t.integer "trial_audio_count", default: 0, null: false
-    t.integer "monthly_analysis_count", default: 0, null: false
-    t.datetime "monthly_analysis_count_reset_at"
     t.boolean "premium", default: false, null: false
     t.string "age_group", default: "child", null: false
     t.string "analysis_tone", default: "auto", null: false
+    t.integer "monthly_analysis_count", default: 0, null: false
+    t.datetime "monthly_analysis_count_reset_at"
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
@@ -163,6 +181,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_05_12_000000) do
   add_foreign_key "dream_emotions", "emotions"
   add_foreign_key "dream_image_generations", "dreams"
   add_foreign_key "dream_image_generations", "users"
+  add_foreign_key "dream_profiles", "users"
+  add_foreign_key "dreams", "dream_profiles"
   add_foreign_key "dreams", "users"
   add_foreign_key "payments", "users"
   add_foreign_key "subscriptions", "users"
