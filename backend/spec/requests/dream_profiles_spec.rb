@@ -77,7 +77,7 @@ RSpec.describe 'DreamProfiles API', type: :request do
           authenticated_post('/dream_profiles', user, params: valid_params.merge(name: ''))
         }.not_to change(DreamProfile, :count)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       context 'active が 5 件のとき' do
@@ -88,7 +88,7 @@ RSpec.describe 'DreamProfiles API', type: :request do
             authenticated_post('/dream_profiles', user, params: valid_params)
           }.not_to change(DreamProfile, :count)
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
           json = JSON.parse(response.body)
           expect(json['error']).to include('5件')
         end
@@ -120,7 +120,7 @@ RSpec.describe 'DreamProfiles API', type: :request do
 
       it '無効なパラメーターで 422 を返す' do
         authenticated_patch("/dream_profiles/#{profile.id}", user, params: { name: '' })
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
       end
 
       it '他ユーザーのプロフィールは更新できない（404）' do
@@ -159,7 +159,7 @@ RSpec.describe 'DreamProfiles API', type: :request do
         self_profile = create(:dream_profile, :self_profile, user: user)
         authenticated_patch("/dream_profiles/#{self_profile.id}/archive", user)
 
-        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response).to have_http_status(:unprocessable_content)
         expect(self_profile.reload.active).to eq(true)
       end
 
@@ -194,7 +194,7 @@ RSpec.describe 'DreamProfiles API', type: :request do
         it '復元は 422 を返す' do
           authenticated_patch("/dream_profiles/#{archived_profile.id}/restore", user)
 
-          expect(response).to have_http_status(:unprocessable_entity)
+          expect(response).to have_http_status(:unprocessable_content)
           json = JSON.parse(response.body)
           expect(json['error']).to include('5件')
           expect(archived_profile.reload.active).to eq(false)
