@@ -8,6 +8,7 @@ class Dream < ApplicationRecord
 
   validates :title, presence: true, length: { maximum: 100 }
   validates :content, presence: true, length: { maximum: 1000 }
+  validate :dream_profile_belongs_to_user, if: -> { dream_profile_id.present? }
 
   # analysis_status カラムを enum として定義し、メソッド名の衝突を避けるためにプレフィックスを付けます
   enum :analysis_status, { pending: 'pending', done: 'done', failed: 'failed' }, prefix: :analysis
@@ -21,6 +22,15 @@ class Dream < ApplicationRecord
   }
   # dream.analysis_done? の代わりに、コレクションの絞り込みにも使える
   scope :analyzed, -> { where(analysis_status: 'done') }
+
+  private
+
+  def dream_profile_belongs_to_user
+    return if dream_profile&.user_id == user_id
+    errors.add(:dream_profile_id, "は自分のプロフィールを指定してください")
+  end
+
+  public
 
   # 分析プロセスを開始するメソッド
   def start_analysis!

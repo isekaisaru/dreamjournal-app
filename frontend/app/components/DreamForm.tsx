@@ -149,7 +149,8 @@ export default function DreamForm({
         const data = await getDreamProfiles();
         const active = data.filter((p) => !p.archived);
         setProfiles(active);
-        if (!selectedProfileId) {
+        // 新規作成時のみ self をデフォルト選択（編集時は initialData.dream_profile_id を優先）
+        if (!initialData) {
           const selfProfile = active.find((p) => p.relationship === "self");
           if (selfProfile) setSelectedProfileId(selfProfile.id);
         }
