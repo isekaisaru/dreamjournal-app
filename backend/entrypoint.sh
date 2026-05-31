@@ -130,6 +130,19 @@ else
             echo "❌ [本番環境] マイグレーション失敗"
             exit 1
         fi
+
+        # 一時対応: Render Free で Shell が使えないため、Phase 5 の self プロフィール補完を起動時に実行する
+        if [ "$RUN_DREAM_PROFILES_BACKFILL" = "true" ]; then
+            echo "🔄 [本番環境] RUN_DREAM_PROFILES_BACKFILL=true を検出 - self プロフィール補完を実行します..."
+            if bundle exec rails dream_profiles:ensure_self_profiles; then
+                echo "✅ [本番環境] self プロフィール補完完了"
+            else
+                echo "❌ [本番環境] self プロフィール補完失敗"
+                exit 1
+            fi
+        else
+            echo "ℹ️  [本番環境] self プロフィール補完をスキップします (RUN_DREAM_PROFILES_BACKFILL != true)"
+        fi
     else
         echo "ℹ️  [本番環境] 自動マイグレーションをスキップします (RUN_MIGRATIONS != true)"
     fi
