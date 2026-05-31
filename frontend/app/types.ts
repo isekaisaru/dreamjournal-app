@@ -1,6 +1,21 @@
 export type AgeGroup = "child_small" | "child" | "preteen" | "teen" | "adult";
 export type AnalysisTone = "auto" | "gentle_kids" | "junior" | "standard" | "deep";
 
+export type DreamRelationship = "self" | "partner" | "child" | "parent" | "friend" | "pet" | "other";
+
+export interface DreamProfile {
+  id: number;
+  name: string;
+  avatar_emoji: string;
+  color: string;
+  relationship: DreamRelationship;
+  active: boolean;
+  position: number;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface User {
   id: string; // FrontendではIDを文字列として扱う
   username?: string; // トライアルユーザーは未設定の場合がある
@@ -34,6 +49,7 @@ export interface Dream {
   title: string;
   content?: string;
   userId: number;
+  dream_profile_id?: number;
   created_at: string;
   updated_at: string;
   emotions?: Emotion[];
@@ -82,6 +98,7 @@ export interface DreamDraftData {
 export interface DreamInput {
   title: string;
   content?: string;
+  dream_profile_id?: number;
   emotion_ids?: number[];
   analysis_json?: {
     analysis: string;

@@ -79,7 +79,7 @@ class DreamsController < ApplicationController
   # GET /dreams/:id
   def show
     render json: @dream.as_json(
-      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url],
+      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id],
       include: :emotions
     )
   end
@@ -99,6 +99,8 @@ class DreamsController < ApplicationController
     else
       @dream = current_user.dreams.build(dream_params)
     end
+
+    @dream.dream_profile_id ||= current_user.dream_profiles.find_by(relationship: 'self')&.id
 
     if @dream.save
       @dream.reload
@@ -292,9 +294,10 @@ class DreamsController < ApplicationController
     # 認可されたパラメーターを取得する
     def dream_params
       params.require(:dream).permit(
-        :title, 
-        :content, 
-        :audio, 
+        :title,
+        :content,
+        :audio,
+        :dream_profile_id,
         :analysis_status,
         :analyzed_at,
         emotion_ids: [],

@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
-import { Dream, Emotion, DreamDraftData } from "../types";
-import { getEmotions, previewAnalysis, ApiError } from "@/lib/apiClient";
+import { Dream, DreamProfile, Emotion, DreamDraftData } from "../types";
+import { getDreamProfiles, getEmotions, previewAnalysis, ApiError } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
 import MorpheusSVG from "./MorpheusSVG";
@@ -12,6 +12,7 @@ import MorpheusSVG from "./MorpheusSVG";
 interface DreamFormData {
   title: string;
   content?: string;
+  dream_profile_id?: number;
   emotion_ids?: number[];
   analysis_json?: {
     analysis: string;
@@ -58,6 +59,10 @@ export default function DreamForm({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
   const [analysisRevealKey, setAnalysisRevealKey] = useState(0);
+  const [profiles, setProfiles] = useState<DreamProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<number | undefined>(
+    initialData?.dream_profile_id
+  );
   const [morpheusRating, setMorpheusRating] = useState<"good" | "bad" | null>(
     null
   );
@@ -131,8 +136,6 @@ export default function DreamForm({
     const fetchEmotions = async () => {
       setIsFetchingEmotions(true);
       try {
-        // 以前: 汎用のapiClient.getを使っていました。
-        // 今回: 感情リスト取得専用の `getEmotions` 関数を使います。
         const emotionsData = await getEmotions();
         setEmotions(emotionsData);
       } catch {
@@ -141,7 +144,22 @@ export default function DreamForm({
         setIsFetchingEmotions(false);
       }
     };
+    const fetchProfiles = async () => {
+      try {
+        const data = await getDreamProfiles();
+        const active = data.filter((p) => !p.archived);
+        setProfiles(active);
+        // 新規作成時のみ self をデフォルト選択（編集時は initialData.dream_profile_id を優先）
+        if (!initialData) {
+          const selfProfile = active.find((p) => p.relationship === "self");
+          if (selfProfile) setSelectedProfileId(selfProfile.id);
+        }
+      } catch {
+        // プロフィール取得失敗はフォームを壊さない
+      }
+    };
     fetchEmotions();
+    fetchProfiles();
   }, []);
 
   useEffect(() => {
@@ -213,6 +231,7 @@ export default function DreamForm({
     onSubmit({
       title: title.trim(),
       content: content.trim(),
+      dream_profile_id: selectedProfileId,
       emotion_ids: selectedEmotionIds,
       ...(analysisPayload
         ? {
@@ -229,6 +248,35 @@ export default function DreamForm({
       onSubmit={handleSubmit}
       className="p-6 border border-border rounded-lg bg-card text-card-foreground shadow"
     >
+      {profiles.length > 1 && (
+        <div className="mb-5">
+          <label className="block mb-2 font-semibold text-card-foreground text-sm">
+            誰の夢？
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {profiles.map((p) => {
+              const isSelected = selectedProfileId === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSelectedProfileId(p.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
+                    isSelected
+                      ? "bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                  style={isSelected ? { borderColor: p.color } : {}}
+                >
+                  <span>{p.avatar_emoji}</span>
+                  <span>{p.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {isDraftApplied && (
         <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
           モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
