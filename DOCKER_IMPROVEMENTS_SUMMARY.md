@@ -207,5 +207,4 @@ make db-setup
 ---
 
 📅 **実装完了日**: 2025-08-17  
-🏗️ **実装者**: Claude Code  
 📖 **技術スタック**: Docker, Docker Compose, Ruby on Rails, Next.js, PostgreSQL
