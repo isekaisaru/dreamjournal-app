@@ -6,7 +6,7 @@ RSpec.describe User, type: :model do
       user = create(
         :user,
         monthly_analysis_count: 7,
-        monthly_analysis_count_reset_at: 2.months.ago
+        monthly_analysis_count_reset_at: Time.zone.parse('2026-02-01 00:00:00')
       )
 
       user.reset_monthly_analysis_count_if_needed!(Time.zone.parse('2026-04-15 10:00:00'))
@@ -56,7 +56,7 @@ RSpec.describe User, type: :model do
       user = create(
         :user,
         monthly_analysis_count: 5,
-        monthly_analysis_count_reset_at: 2.months.ago
+        monthly_analysis_count_reset_at: Time.zone.parse('2026-02-01 00:00:00')
       )
 
       user.increment_monthly_analysis_count!(Time.zone.parse('2026-04-15 10:00:00'))
@@ -88,7 +88,7 @@ RSpec.describe User, type: :model do
 
     it 'resets stale count then reserves the slot' do
       user = create(:user, monthly_analysis_count: 8,
-                           monthly_analysis_count_reset_at: 2.months.ago)
+                           monthly_analysis_count_reset_at: Time.zone.parse('2026-02-01 00:00:00'))
 
       result = user.reserve_monthly_analysis_slot!(Time.zone.parse('2026-04-15 10:00:00'))
 
