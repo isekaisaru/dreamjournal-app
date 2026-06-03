@@ -17,13 +17,16 @@ class DreamsController < ApplicationController
     # generated_image_url は base64 で最大 1MB になるため一覧では SELECT 時点で除外する。
     # as_json(only:) だけでは ActiveRecord が SELECT * でロードするためメモリに乗る。
     # 詳細画面（show）でのみ返す。
-    index_columns = %i[id title content created_at analysis_json analysis_status analyzed_at user_id]
+    index_columns = %i[id title content created_at analysis_json analysis_status analyzed_at user_id dream_profile_id]
     initial_scope = current_user.dreams.select(index_columns).order(created_at: :desc)
     filter_params = params.permit(:query, :start_date, :end_date, emotion_ids: [])
-    @dreams = DreamFilterQuery.new(initial_scope, filter_params).call.includes(:emotions)
+    @dreams = DreamFilterQuery.new(initial_scope, filter_params).call.includes(:emotions, :dream_profile)
     render json: @dreams.as_json(
       only: index_columns - [:user_id],
-      include: :emotions
+      include: {
+        emotions: {},
+        dream_profile: { only: [:id, :name, :avatar_emoji, :color, :active] }
+      }
     )
   end
 

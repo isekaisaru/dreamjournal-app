@@ -271,6 +271,32 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response.length).to eq(3)
       end
 
+      it '夢プロフィールの軽量情報を含める' do
+        profile = create(
+          :dream_profile,
+          user: user,
+          name: '長男',
+          avatar_emoji: '👦',
+          color: '#10b981',
+          active: true
+        )
+        dream = create(:dream, user: user, dream_profile: profile)
+
+        authenticated_get('/dreams', user)
+
+        expect(response).to have_http_status(:ok)
+
+        json_response = JSON.parse(response.body)
+        returned_dream = json_response.find { |item| item['id'] == dream.id }
+        expect(returned_dream['dream_profile']).to eq(
+          'id' => profile.id,
+          'name' => '長男',
+          'avatar_emoji' => '👦',
+          'color' => '#10b981',
+          'active' => true
+        )
+      end
+
       context 'フィルタリング' do
         it 'emotion_idsパラメーターでフィルタリングできる' do
           dream_with_emotion = create(:dream, user: user)
