@@ -175,8 +175,9 @@ export default function ProfilesPage() {
       </header>
 
       <main className="container max-w-2xl mx-auto px-4 py-8 space-y-6">
-        <p className="text-sm text-muted-foreground">
-          家族やペットのプロフィールを作って、誰の夢かを記録できます。最大5つまで。
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          夢プロフィールを作ると、自分・家族・ペットなど、誰の夢かを分けて記録できます。
+          夢を書くときに選ぶと、あとから人ごとに見返しやすくなります。最大5つまで。
         </p>
 
         {isLoading ? (

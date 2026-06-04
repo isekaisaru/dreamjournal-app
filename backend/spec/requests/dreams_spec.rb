@@ -271,6 +271,32 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response.length).to eq(3)
       end
 
+      it '夢プロフィールの軽量情報を含める' do
+        profile = create(
+          :dream_profile,
+          user: user,
+          name: '長男',
+          avatar_emoji: '👦',
+          color: '#10b981',
+          active: true
+        )
+        dream = create(:dream, user: user, dream_profile: profile)
+
+        authenticated_get('/dreams', user)
+
+        expect(response).to have_http_status(:ok)
+
+        json_response = JSON.parse(response.body)
+        returned_dream = json_response.find { |item| item['id'] == dream.id }
+        expect(returned_dream['dream_profile']).to eq(
+          'id' => profile.id,
+          'name' => '長男',
+          'avatar_emoji' => '👦',
+          'color' => '#10b981',
+          'active' => true
+        )
+      end
+
       context 'フィルタリング' do
         it 'emotion_idsパラメーターでフィルタリングできる' do
           dream_with_emotion = create(:dream, user: user)
@@ -320,12 +346,23 @@ RSpec.describe 'Dreams API', type: :request do
   end
 
   describe 'GET /dreams/month/:year_month' do
+    let!(:may_profile) do
+      create(
+        :dream_profile,
+        user: user,
+        name: '長男',
+        avatar_emoji: '👦',
+        color: '#10b981',
+        active: true
+      )
+    end
     let!(:may_dream) do
       create(
         :dream,
         user: user,
         title: '5月の夢',
         content: '空の上を歩く夢',
+        dream_profile: may_profile,
         created_at: Time.zone.parse('2025-05-10 12:00:00'),
         analysis_status: 'done',
         analysis_json: { analysis: '明るい気持ち', emotion_tags: ['嬉しい', '安心'] }
@@ -365,6 +402,21 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response.first['analysis_json']['analysis']).to eq('明るい気持ち')
         expect(json_response.first['emotions'].map { |emotion| emotion['id'] }).to match_array(
           [emotions.first.id, emotions.third.id]
+        )
+      end
+
+      it '指定月の夢に夢プロフィールの軽量情報を含める' do
+        authenticated_get('/dreams/month/2025-05', user)
+
+        expect(response).to have_http_status(:ok)
+        json_response = JSON.parse(response.body)
+        expect(json_response.first['dream_profile_id']).to eq(may_profile.id)
+        expect(json_response.first['dream_profile']).to eq(
+          'id' => may_profile.id,
+          'name' => '長男',
+          'avatar_emoji' => '👦',
+          'color' => '#10b981',
+          'active' => true
         )
       end
 

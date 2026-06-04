@@ -49,6 +49,13 @@ const DreamCard = ({ dream }: DreamCardProps) => {
     emotionLabels[0] != null
       ? getEmotionTone(emotionLabels[0]).accentClassName
       : "from-sky-300 via-blue-200 to-indigo-400";
+  const profile = dream.dream_profile;
+  const profileBadgeStyle = profile?.color
+    ? {
+        borderColor: `${profile.color}66`,
+        backgroundColor: `${profile.color}1A`,
+      }
+    : undefined;
 
   return (
     <Link
@@ -77,12 +84,23 @@ const DreamCard = ({ dream }: DreamCardProps) => {
           {/* Header: Date & Title */}
           <div className="mb-3">
             <div className="flex justify-between items-start">
-              <p
-                className="text-xs text-muted-foreground mb-1 font-medium"
-                suppressHydrationWarning
-              >
-                {formatDate(dream.created_at)}
-              </p>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <p
+                  className="text-xs text-muted-foreground font-medium"
+                  suppressHydrationWarning
+                >
+                  {formatDate(dream.created_at)}
+                </p>
+                {profile ? (
+                  <span
+                    className="inline-flex max-w-[9rem] items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold text-foreground/80"
+                    style={profileBadgeStyle}
+                  >
+                    <span aria-hidden="true">{profile.avatar_emoji}</span>
+                    <span className="truncate">{profile.name}</span>
+                  </span>
+                ) : null}
+              </div>
               {dream.analysis_status === "pending" && (
                 <div className="flex flex-col gap-1 w-24">
                   <span className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200/50">
