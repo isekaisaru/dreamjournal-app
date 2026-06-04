@@ -21,13 +21,7 @@ class DreamsController < ApplicationController
     initial_scope = current_user.dreams.select(index_columns).order(created_at: :desc)
     filter_params = params.permit(:query, :start_date, :end_date, emotion_ids: [])
     @dreams = DreamFilterQuery.new(initial_scope, filter_params).call.includes(:emotions, :dream_profile)
-    render json: @dreams.as_json(
-      only: index_columns - [:user_id],
-      include: {
-        emotions: {},
-        dream_profile: { only: [:id, :name, :avatar_emoji, :color, :active] }
-      }
-    )
+    render json: @dreams.as_json(dream_list_json_options(only: index_columns - [:user_id]))
   end
 
   # GET /dreams/statuses?ids=1,2,3
@@ -151,11 +145,12 @@ class DreamsController < ApplicationController
       end_date = Date.new(year, month, 1).end_of_month
       @dreams = current_user.dreams
                            .where(created_at: start_date..end_date)
-                           .includes(:emotions)
+                           .includes(:emotions, :dream_profile)
                            .order(created_at: :desc)
       render json: @dreams.as_json(
-        only: [:id, :title, :content, :created_at, :analysis_json, :analysis_status, :analyzed_at],
-        include: :emotions
+        dream_list_json_options(
+          only: [:id, :title, :content, :created_at, :analysis_json, :analysis_status, :analyzed_at, :dream_profile_id]
+        )
       )
     rescue ArgumentError, TypeError
       render json: { error: "無効な日付フォーマットです。YYYY-MM 形式で指定してください。" }, status: :bad_request
@@ -306,6 +301,20 @@ class DreamsController < ApplicationController
         emotion_ids: [],
         analysis_json: [:analysis, :text, { emotion_tags: [] }]
       )
+    end
+
+    def dream_list_json_options(only:)
+      {
+        only: only,
+        include: {
+          emotions: {},
+          dream_profile: dream_profile_json_options
+        }
+      }
+    end
+
+    def dream_profile_json_options
+      { only: [:id, :name, :avatar_emoji, :color, :active] }
     end
 
     def check_analysis_limit
