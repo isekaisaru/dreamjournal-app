@@ -39,7 +39,7 @@
     "framer-motion": "^12.23.24",
     "glob": "^13.0.6",
     "html-to-image": "^1.11.13",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.2.0",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.18.1",
     "lucide-react": "^0.503.0",
@@ -55,7 +55,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "16.1.7",
+    "@next/bundle-analyzer": "16.2.6",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/dom": "^10.4.0",
@@ -81,7 +81,7 @@
   },
   "resolutions": {
     "glob": "^13.0.6",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.2.0",
     "minimatch": "^10.2.5",
     "picomatch": "^4.0.4",
     "postcss": "^8.5.15",
