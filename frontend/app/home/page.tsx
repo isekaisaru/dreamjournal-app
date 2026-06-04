@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Dream, Emotion, AgeGroup } from "@/app/types";
+import { Dream, Emotion, AgeGroup, DreamProfile } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
-import { getEmotions, getAnalysisQuota, AnalysisQuota } from "@/lib/apiClient";
+import { getEmotions, getAnalysisQuota, AnalysisQuota, getDreamProfiles } from "@/lib/apiClient";
 import { getJSTYearMonthKey } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import DreamStatsWidget from "@/app/components/DreamStatsWidget";
 import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
+import ProfileFilterChips from "@/app/components/ProfileFilterChips";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
@@ -115,12 +116,14 @@ function groupDreamsByMonth(dreams: Dream[]) {
  */
 export default function HomePage() {
   const { authStatus, user } = useAuth();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [emotions, setEmotions] = useState<Emotion[]>([]);
+  const [profiles, setProfiles] = useState<DreamProfile[]>([]);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [analysisQuota, setAnalysisQuota] = useState<AnalysisQuota | null>(null);
 
@@ -138,11 +141,13 @@ export default function HomePage() {
       const query = searchParams.get("query");
       const startDate = searchParams.get("startDate");
       const endDate = searchParams.get("endDate");
+      const dreamProfileId = searchParams.get("dream_profile_id");
       const emotionIds = searchParams.getAll("emotion_ids[]");
 
       if (query) queryParams.set("query", query);
       if (startDate) queryParams.set("start_date", startDate);
       if (endDate) queryParams.set("end_date", endDate);
+      if (dreamProfileId) queryParams.set("dream_profile_id", dreamProfileId);
       emotionIds.forEach((id) => queryParams.append("emotion_ids[]", id));
 
       // APIから夢データを取得
@@ -178,6 +183,16 @@ export default function HomePage() {
         // 感情タグ取得失敗は非致命的: 検索フォームを通常表示するだけ
       });
   }, []);
+
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+
+    getDreamProfiles()
+      .then(setProfiles)
+      .catch(() => {
+        // 非致命的: プロフィール絞り込みを表示しないだけ
+      });
+  }, [authStatus]);
 
   // 月次AI分析残数をフリープランユーザーのみ取得
   useEffect(() => {
@@ -224,7 +239,26 @@ export default function HomePage() {
     searchParams.get("query") ||
     searchParams.get("startDate") ||
     searchParams.get("endDate") ||
+    searchParams.get("dream_profile_id") ||
     searchParams.getAll("emotion_ids[]").length > 0
+  );
+
+  const selectedDreamProfileId = searchParams.get("dream_profile_id");
+
+  const handleProfileFilterChange = useCallback(
+    (profileId: string | null) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+
+      if (profileId) {
+        nextParams.set("dream_profile_id", profileId);
+      } else {
+        nextParams.delete("dream_profile_id");
+      }
+
+      const queryString = nextParams.toString();
+      router.push(queryString ? `/home?${queryString}` : "/home");
+    },
+    [router, searchParams]
   );
 
   // 検索がアクティブになったらパネルを開く（条件分岐より前に置く必要あり）
@@ -288,6 +322,11 @@ export default function HomePage() {
             </div>
           }
         />
+        <ProfileFilterChips
+          profiles={profiles}
+          selectedProfileId={selectedDreamProfileId}
+          onSelect={handleProfileFilterChange}
+        />
         {shouldDeferSearch ? (
           <div className="mt-4 w-full rounded-2xl border border-border/70 bg-card px-4 py-4 shadow-sm">
             <p className="text-sm font-medium text-card-foreground">
@@ -309,6 +348,7 @@ export default function HomePage() {
             query={searchParams.get("query") || undefined}
             startDate={searchParams.get("startDate") || undefined}
             endDate={searchParams.get("endDate") || undefined}
+            dreamProfileId={selectedDreamProfileId || undefined}
             emotions={emotions}
             selectedEmotionIds={searchParams.getAll("emotion_ids[]")}
           />

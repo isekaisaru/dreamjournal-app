@@ -28,6 +28,15 @@ describe("SearchBar", () => {
       expect(screen.queryByLabelText("いつから")).not.toBeInTheDocument();
       expect(screen.queryByText("😊 うれしい")).not.toBeInTheDocument();
     });
+
+    it("プロフィール絞り込みをhidden inputで保持する", () => {
+      const { container } = render(
+        <SearchBar emotions={mockEmotions} dreamProfileId="2" />
+      );
+
+      const input = container.querySelector('input[name="dream_profile_id"]');
+      expect(input).toHaveValue("2");
+    });
   });
 
   describe("詳細フィルターの展開", () => {
