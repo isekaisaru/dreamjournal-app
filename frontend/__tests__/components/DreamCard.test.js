@@ -77,6 +77,27 @@ describe("DreamCard", () => {
     expect(screen.getByText("😢 かなしい")).toBeInTheDocument();
   });
 
+  test("AAA: 夢プロフィールが渡されたらバッジを表示する（props）", () => {
+    // Arrange
+    const dream = {
+      ...baseDream,
+      dream_profile: {
+        id: 2,
+        name: "長男",
+        avatar_emoji: "👦",
+        color: "#10b981",
+        active: true,
+      },
+    };
+
+    // Act
+    render(<DreamCard dream={dream} />);
+
+    // Assert
+    expect(screen.getByText("👦")).toBeInTheDocument();
+    expect(screen.getByText("長男")).toBeInTheDocument();
+  });
+
   test("AAA: 詳細ページへのリンクがあり、href に id が入っている（リンク/イベント）", async () => {
     // Arrange
     const user = userEvent.setup();
