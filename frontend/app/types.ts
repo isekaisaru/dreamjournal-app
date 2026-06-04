@@ -50,6 +50,10 @@ export interface Dream {
   content?: string;
   userId: number;
   dream_profile_id?: number;
+  dream_profile?: Pick<
+    DreamProfile,
+    "id" | "name" | "avatar_emoji" | "color" | "active"
+  > | null;
   created_at: string;
   updated_at: string;
   emotions?: Emotion[];
