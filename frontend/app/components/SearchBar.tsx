@@ -10,6 +10,7 @@ type SearchBarProps = {
   query?: string | string[] | undefined;
   startDate?: string | string[] | undefined;
   endDate?: string | string[] | undefined;
+  dreamProfileId?: string | string[] | undefined;
   emotions?: Emotion[];
   selectedEmotionIds?: string[];
 };
@@ -25,10 +26,12 @@ export default function SearchBar({
   query,
   startDate,
   endDate,
+  dreamProfileId,
   emotions = [],
   selectedEmotionIds = [],
 }: SearchBarProps) {
   const normalizedSelectedEmotionIds = selectedEmotionIds.map((id) => Number(id));
+  const normalizedDreamProfileId = normalizeParam(dreamProfileId);
   const selectedIdsKey = normalizedSelectedEmotionIds.join(",");
   const [queryValue, setQueryValue] = useState(normalizeParam(query));
   const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
@@ -110,6 +113,13 @@ export default function SearchBar({
       {selectedIds.map((id) => (
         <input key={id} type="hidden" name="emotion_ids[]" value={id} />
       ))}
+      {normalizedDreamProfileId && (
+        <input
+          type="hidden"
+          name="dream_profile_id"
+          value={normalizedDreamProfileId}
+        />
+      )}
       {/* 折りたたみ時も日付フィルターを保持する */}
       {!isExpanded && dateFrom && (
         <input type="hidden" name="startDate" value={dateFrom} />

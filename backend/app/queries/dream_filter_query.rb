@@ -7,6 +7,7 @@ class DreamFilterQuery
   def call
     filter_by_query
     filter_by_date_range
+    filter_by_dream_profile
     filter_by_emotions
     @scope
   end
@@ -25,6 +26,12 @@ class DreamFilterQuery
     end
     if @params[:end_date].present?
       @scope = @scope.where("created_at <= ?", Date.parse(@params[:end_date]).end_of_day)
+    end
+  end
+
+  def filter_by_dream_profile
+    if @params[:dream_profile_id].present?
+      @scope = @scope.where(dream_profile_id: @params[:dream_profile_id])
     end
   end
 

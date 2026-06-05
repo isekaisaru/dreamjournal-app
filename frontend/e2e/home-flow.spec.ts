@@ -31,6 +31,33 @@ const MOCK_EMOTIONS = [
   { id: 3, name: "scary" },
 ];
 
+const MOCK_DREAM_PROFILES = [
+  {
+    id: 1,
+    name: "自分",
+    avatar_emoji: "😴",
+    color: "#6366f1",
+    relationship: "self",
+    active: true,
+    position: 0,
+    archived: false,
+    created_at: "2026-06-01T00:00:00Z",
+    updated_at: "2026-06-01T00:00:00Z",
+  },
+  {
+    id: 2,
+    name: "モカ",
+    avatar_emoji: "🐱",
+    color: "#10b981",
+    relationship: "pet",
+    active: true,
+    position: 1,
+    archived: false,
+    created_at: "2026-06-01T00:00:00Z",
+    updated_at: "2026-06-01T00:00:00Z",
+  },
+];
+
 test.describe("ホームページ：認証済みユーザーの夢一覧表示", () => {
   test.beforeEach(async ({ page }) => {
     // 認証チェックをモック
@@ -66,6 +93,14 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
       });
     });
 
+    await page.route("**/dream_profiles", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(MOCK_DREAM_PROFILES),
+      });
+    });
+
     // E2E バイパス用クッキーを設定
     await page.context().addCookies([
       {
@@ -88,7 +123,7 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
 
     // ユーザー名を含む見出しが表示されていることを確認
     await expect(
-      page.getByRole("heading", { name: /E2Eテスト太郎ちゃんの ゆめ日記/ })
+      page.getByRole("heading", { name: /E2Eテスト太郎さん、おはよう！/ })
     ).toBeVisible();
 
     // 夢カードが2件表示されていることを確認
@@ -140,12 +175,14 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
 
     await page.goto("/home");
 
+    await page.getByRole("button", { name: "まえの ゆめを さがす" }).click();
+
     // SearchBar の検索入力欄（id="search-query"）が表示されていることを確認
     const searchInput = page.locator("#search-query");
     await expect(searchInput).toBeVisible();
 
     // 送信ボタンが表示されていることを確認
-    const submitButton = page.getByRole("button", { name: /さがす|検索/i });
+    const submitButton = page.getByRole("button", { name: "さがす", exact: true });
     await expect(submitButton).toBeVisible();
 
     // 実際に検索条件を入力して送信し、URL と API リクエストの双方に反映されることを確認
@@ -169,6 +206,45 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
     await expect(page.getByText("海の夢")).toHaveCount(0);
   });
 
+  test("プロフィールチップで絞り込み、検索時もdream_profile_idを保持する", async ({
+    page,
+  }) => {
+    const dreamRequestUrls: string[] = [];
+
+    await page.route("**/dreams**", async (route) => {
+      const requestUrl = route.request().url();
+      dreamRequestUrls.push(requestUrl);
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(
+          requestUrl.includes("dream_profile_id=2") ? [MOCK_DREAMS[0]] : MOCK_DREAMS
+        ),
+      });
+    });
+
+    await page.goto("/home");
+
+    await page.getByRole("button", { name: /モカ/ }).click();
+
+    await expect(page).toHaveURL(/\/home\?dream_profile_id=2/);
+    await expect
+      .poll(() =>
+        dreamRequestUrls.some((url) => url.includes("dream_profile_id=2"))
+      )
+      .toBe(true);
+
+    const searchInput = page.locator("#search-query");
+    await searchInput.fill("空");
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
+      page.getByRole("button", { name: "さがす", exact: true }).click(),
+    ]);
+
+    await expect(page).toHaveURL(/dream_profile_id=2/);
+    await expect(page).toHaveURL(/query=%E7%A9%BA/);
+  });
+
   test("夢が0件のとき空状態メッセージが表示される", async ({ page }) => {
     // 夢0件をモック（beforeEach のルートを上書き）
     await page.route("**/dreams**", async (route) => {
@@ -183,11 +259,12 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
 
     // ユーザー名見出しは表示される
     await expect(
-      page.getByRole("heading", { name: /E2Eテスト太郎ちゃんの ゆめ日記/ })
+      page.getByRole("heading", { name: /E2Eテスト太郎さん、おはよう！/ })
     ).toBeVisible();
 
     // 空状態のメッセージが表示されることを確認
-    // DreamList コンポーネントが "まだ ゆめ は ないよ" を表示する
-    await expect(page.getByText("まだ ゆめ は ないよ")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "夢はまだありません" })
+    ).toBeVisible();
   });
 });
