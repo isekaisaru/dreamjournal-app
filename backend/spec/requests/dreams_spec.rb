@@ -337,6 +337,46 @@ RSpec.describe 'Dreams API', type: :request do
           expect(json_response.length).to eq(1)
           expect(json_response.first['id']).to eq(today_dream.id)
         end
+
+        it 'dream_profile_idパラメーターでフィルタリングできる' do
+          self_profile = create(:dream_profile, user: user, name: '自分')
+          child_profile = create(:dream_profile, user: user, name: '長男')
+          self_dream = create(:dream, user: user, dream_profile: self_profile)
+          child_dream = create(:dream, user: user, dream_profile: child_profile)
+
+          authenticated_get('/dreams', user, params: { dream_profile_id: self_profile.id })
+
+          expect(response).to have_http_status(:ok)
+          json_response = JSON.parse(response.body)
+          expect(json_response.map { |dream| dream['id'] }).to contain_exactly(self_dream.id)
+          expect(json_response.map { |dream| dream['id'] }).not_to include(child_dream.id)
+        end
+
+        it '他ユーザーのdream_profile_idを指定しても他人の夢は返らない' do
+          other_profile = create(:dream_profile, user: other_user)
+          create(:dream, user: other_user, dream_profile: other_profile)
+          create(:dream, user: user)
+
+          authenticated_get('/dreams', user, params: { dream_profile_id: other_profile.id })
+
+          expect(response).to have_http_status(:ok)
+          json_response = JSON.parse(response.body)
+          expect(json_response).to eq([])
+        end
+
+        it 'dream_profile_idとqueryパラメーターを併用できる' do
+          profile = create(:dream_profile, user: user, name: '長女')
+          other_profile = create(:dream_profile, user: user, name: '自分')
+          matched_dream = create(:dream, user: user, dream_profile: profile, title: '森を歩く夢')
+          create(:dream, user: user, dream_profile: profile, title: '海の夢')
+          create(:dream, user: user, dream_profile: other_profile, title: '森を飛ぶ夢')
+
+          authenticated_get('/dreams', user, params: { dream_profile_id: profile.id, query: '森' })
+
+          expect(response).to have_http_status(:ok)
+          json_response = JSON.parse(response.body)
+          expect(json_response.map { |dream| dream['id'] }).to contain_exactly(matched_dream.id)
+        end
       end
     end
 
