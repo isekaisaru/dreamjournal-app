@@ -99,7 +99,7 @@ describe("apiFetch timeout policy", () => {
     expect(fetchMock.mock.calls[2][0]).toContain("/auth/verify");
   });
 
-  it.each(["/auth/login", "/auth/logout", "/auth/refresh"])(
+  it.each(["/auth/login", "/auth/logout", "/auth/refresh", "/auth/register"])(
     "does not try refresh when %s returns 401",
     async (endpoint) => {
       const fetchMock = jest.fn<() => Promise<Response>>().mockResolvedValue({

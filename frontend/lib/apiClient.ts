@@ -39,6 +39,7 @@ const REFRESH_EXCLUDED_ENDPOINTS = new Set([
   "/auth/login",
   "/auth/logout",
   "/auth/refresh",
+  "/auth/register",
 ]);
 
 function endpointPath(endpoint: string): string {
