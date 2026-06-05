@@ -15,6 +15,16 @@ test.describe("トライアルページ：お試し体験フロー", () => {
         body: JSON.stringify({ error: "Unauthorized" }),
       });
     });
+
+    // apiFetch は /auth/verify の 401 時に refresh を試す。
+    // トライアルE2Eでは未認証状態を維持したいので、refresh も明示的に 401 で返す。
+    await page.route("**/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Unauthorized" }),
+      });
+    });
   });
 
   test("ページが表示され残りAI分析回数バッジが初期3回を示す", async ({
