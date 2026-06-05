@@ -35,6 +35,20 @@ type ApiFetchOptions = RequestInit & { token?: string; timeoutMs?: number };
 const DEFAULT_TIMEOUT_MS =
   process.env.NODE_ENV === "development" ? 30_000 : 15_000;
 const AUTH_TIMEOUT_MS = 45_000;
+const REFRESH_EXCLUDED_ENDPOINTS = new Set([
+  "/auth/login",
+  "/auth/logout",
+  "/auth/refresh",
+  "/auth/register",
+]);
+
+function endpointPath(endpoint: string): string {
+  return endpoint.split("?")[0];
+}
+
+function shouldAttemptTokenRefresh(endpoint: string, isServer: boolean): boolean {
+  return !isServer && !REFRESH_EXCLUDED_ENDPOINTS.has(endpointPath(endpoint));
+}
 
 function resolveTimeoutMs(endpoint: string, timeoutMs?: number): number {
   if (typeof timeoutMs === "number") {
@@ -142,9 +156,9 @@ export async function apiFetch<T>(
   response = await fetchWithTimeout(url, finalOptions, TIMEOUT_MS, endpoint);
 
   // ⑤ アクセストークン自動リフレッシュ
-  // 401 を受け取ったとき、/auth/ エンドポイント以外なら refresh を試みて1回だけリトライする。
-  // これにより 15分ごとの強制ログアウトを防ぐ。
-  if (response.status === 401 && !isServer && !endpoint.startsWith("/auth/")) {
+  // 401 を受け取ったとき、login/logout/refresh 以外なら refresh を試みて1回だけリトライする。
+  // /auth/verify や /auth/me でも access_token 期限切れから復旧できるようにする。
+  if (response.status === 401 && shouldAttemptTokenRefresh(endpoint, isServer)) {
     const refreshRes = await fetchWithTimeout(
       createApiUrl("/auth/refresh"),
       {

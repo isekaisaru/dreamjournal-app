@@ -37,4 +37,102 @@ describe("apiFetch timeout policy", () => {
       "upstream connect error or disconnect/reset before headers"
     );
   });
+
+  it.each(["/auth/verify", "/auth/me"])(
+    "tries refresh and retries the original request when %s returns 401",
+    async (endpoint) => {
+      const fetchMock = jest
+        .fn<() => Promise<Response>>()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+        } as unknown as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+        } as unknown as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: jest.fn<() => Promise<unknown>>().mockResolvedValue({
+            user: { id: 1, email: "test@example.com" },
+          }),
+        } as unknown as Response);
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      await expect(apiFetch(endpoint)).resolves.toEqual({
+        user: { id: 1, email: "test@example.com" },
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock.mock.calls[1][0]).toContain("/auth/refresh");
+      expect(fetchMock.mock.calls[2][0]).toContain(endpoint);
+    }
+  );
+
+  it("does not try refresh again when the retried original request still returns 401", async () => {
+    const fetchMock = jest
+      .fn<() => Promise<Response>>()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+      } as unknown as Response);
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(apiFetch("/auth/verify")).rejects.toMatchObject({ status: 401 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[1][0]).toContain("/auth/refresh");
+    expect(fetchMock.mock.calls[2][0]).toContain("/auth/verify");
+  });
+
+  it.each(["/auth/login", "/auth/logout", "/auth/refresh", "/auth/register"])(
+    "does not try refresh when %s returns 401",
+    async (endpoint) => {
+      const fetchMock = jest.fn<() => Promise<Response>>().mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+      } as unknown as Response);
+      global.fetch = fetchMock as unknown as typeof fetch;
+
+      await expect(apiFetch(endpoint)).rejects.toMatchObject({ status: 401 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it("returns the original 401 when refresh fails", async () => {
+    const fetchMock = jest
+      .fn<() => Promise<Response>>()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+      } as unknown as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: jest.fn<() => Promise<string>>().mockResolvedValue(""),
+      } as unknown as Response);
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(apiFetch("/auth/verify")).rejects.toMatchObject({ status: 401 });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toContain("/auth/refresh");
+  });
 });
