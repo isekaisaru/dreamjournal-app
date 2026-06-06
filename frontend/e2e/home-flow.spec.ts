@@ -267,4 +267,26 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
       page.getByRole("heading", { name: "夢はまだありません" })
     ).toBeVisible();
   });
+
+  test("[すべて]チップで dream_profile_id を解除し query を保持する", async ({
+    page,
+  }) => {
+    await page.goto("/home?dream_profile_id=2&query=%E7%A9%BA");
+
+    await page.getByRole("button", { name: "すべて" }).click();
+
+    await expect(page).toHaveURL(/\/home\?query=%E7%A9%BA/);
+    await expect(page).not.toHaveURL(/dream_profile_id/);
+  });
+
+  test("[すべて]チップで dream_profile_id だけある場合は /home になる", async ({
+    page,
+  }) => {
+    await page.goto("/home?dream_profile_id=2");
+
+    await page.getByRole("button", { name: "すべて" }).click();
+
+    await expect(page).toHaveURL(/^.*\/home$/);
+    await expect(page).not.toHaveURL(/dream_profile_id/);
+  });
 });
