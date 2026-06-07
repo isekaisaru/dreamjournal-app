@@ -98,6 +98,46 @@ describe("DreamCard", () => {
     expect(screen.getByText("長男")).toBeInTheDocument();
   });
 
+  test("AAA: active: false のプロフィールでは「アーカイブ済み」バッジが表示される", () => {
+    // Arrange
+    const dream = {
+      ...baseDream,
+      dream_profile: {
+        id: 3,
+        name: "旧プロフィール",
+        avatar_emoji: "👤",
+        color: "#94a3b8",
+        active: false,
+      },
+    };
+
+    // Act
+    render(<DreamCard dream={dream} />);
+
+    // Assert
+    expect(screen.getByText("アーカイブ済み")).toBeInTheDocument();
+  });
+
+  test("AAA: active: true のプロフィールでは「アーカイブ済み」バッジが表示されない", () => {
+    // Arrange
+    const dream = {
+      ...baseDream,
+      dream_profile: {
+        id: 2,
+        name: "長男",
+        avatar_emoji: "👦",
+        color: "#10b981",
+        active: true,
+      },
+    };
+
+    // Act
+    render(<DreamCard dream={dream} />);
+
+    // Assert
+    expect(screen.queryByText("アーカイブ済み")).not.toBeInTheDocument();
+  });
+
   test("AAA: 詳細ページへのリンクがあり、href に id が入っている（リンク/イベント）", async () => {
     // Arrange
     const user = userEvent.setup();

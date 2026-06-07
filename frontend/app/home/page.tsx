@@ -247,7 +247,7 @@ export default function HomePage() {
 
   const handleProfileFilterChange = useCallback(
     (profileId: string | null) => {
-      const nextParams = new URLSearchParams(searchParams.toString());
+      const nextParams = new URLSearchParams(window.location.search);
 
       if (profileId) {
         nextParams.set("dream_profile_id", profileId);
@@ -258,7 +258,7 @@ export default function HomePage() {
       const queryString = nextParams.toString();
       router.push(queryString ? `/home?${queryString}` : "/home");
     },
-    [router, searchParams]
+    [router]
   );
 
   // 検索がアクティブになったらパネルを開く（条件分岐より前に置く必要あり）
