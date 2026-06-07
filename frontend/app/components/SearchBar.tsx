@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Emotion } from "@/app/types";
 import { getJSTDateStr } from "@/lib/date";
 import { Button } from "./ui/button";
@@ -10,7 +11,8 @@ type SearchBarProps = {
   query?: string | string[] | undefined;
   startDate?: string | string[] | undefined;
   endDate?: string | string[] | undefined;
-  dreamProfileId?: string | string[] | undefined;
+  // dreamProfileId は prop で受け取らず、submit 時に window.location.search から読む
+  // （ProfileFilterChips の router.push 後も含め、常に現在の URL の値を使うため）
   emotions?: Emotion[];
   selectedEmotionIds?: string[];
 };
@@ -26,12 +28,11 @@ export default function SearchBar({
   query,
   startDate,
   endDate,
-  dreamProfileId,
   emotions = [],
   selectedEmotionIds = [],
 }: SearchBarProps) {
+  const router = useRouter();
   const normalizedSelectedEmotionIds = selectedEmotionIds.map((id) => Number(id));
-  const normalizedDreamProfileId = normalizeParam(dreamProfileId);
   const selectedIdsKey = normalizedSelectedEmotionIds.join(",");
   const [queryValue, setQueryValue] = useState(normalizeParam(query));
   const [dateFrom, setDateFrom] = useState(normalizeParam(startDate));
@@ -72,6 +73,43 @@ export default function SearchBar({
     }
   }, [hasAdvancedFilters]);
 
+  /**
+   * フォーム送信を router.push に委譲する。
+   *
+   * - ネイティブ form 送信（action="/home" GET）を preventDefault で止める
+   * - dream_profile_id は window.location.search から読む
+   *   → [すべて]チップが router.push で URL を変更した後でも正しい値を取得できる
+   * - これにより「[すべて]クリック後にフォームが再送信して dream_profile_id を復元する」
+   *   バグを防ぐ
+   */
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // 現在の URL から dream_profile_id を取得する
+    const currentParams = new URLSearchParams(window.location.search);
+    const nextParams = new URLSearchParams();
+
+    if (queryValue) {
+      nextParams.set("query", queryValue);
+    }
+    if (dateFrom) {
+      nextParams.set("startDate", dateFrom);
+    }
+    if (dateTo) {
+      nextParams.set("endDate", dateTo);
+    }
+    selectedIds.forEach((id) => nextParams.append("emotion_ids[]", String(id)));
+
+    // dream_profile_id は現在の URL から引き継ぐ（prop や hidden input は使わない）
+    const dreamProfileId = currentParams.get("dream_profile_id");
+    if (dreamProfileId) {
+      nextParams.set("dream_profile_id", dreamProfileId);
+    }
+
+    const queryString = nextParams.toString();
+    router.push(queryString ? `/home?${queryString}` : "/home");
+  };
+
   const applyPreset = (from: Date, to: Date) => {
     setDateFrom(getJSTDateStr(from));
     setDateTo(getJSTDateStr(to));
@@ -106,20 +144,13 @@ export default function SearchBar({
 
   return (
     <form
-      action="/home"
-      method="get"
+      onSubmit={handleSubmit}
       className="mb-6 w-full rounded-2xl border border-border bg-card p-4 shadow-sm"
     >
+      {/* dream_profile_id の hidden input は削除 — handleSubmit で window.location.search から読む */}
       {selectedIds.map((id) => (
         <input key={id} type="hidden" name="emotion_ids[]" value={id} />
       ))}
-      {normalizedDreamProfileId && (
-        <input
-          type="hidden"
-          name="dream_profile_id"
-          value={normalizedDreamProfileId}
-        />
-      )}
       {/* 折りたたみ時も日付フィルターを保持する */}
       {!isExpanded && dateFrom && (
         <input type="hidden" name="startDate" value={dateFrom} />
