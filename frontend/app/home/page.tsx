@@ -348,7 +348,6 @@ export default function HomePage() {
             query={searchParams.get("query") || undefined}
             startDate={searchParams.get("startDate") || undefined}
             endDate={searchParams.get("endDate") || undefined}
-            dreamProfileId={selectedDreamProfileId || undefined}
             emotions={emotions}
             selectedEmotionIds={searchParams.getAll("emotion_ids[]")}
           />

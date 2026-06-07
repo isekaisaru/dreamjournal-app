@@ -236,13 +236,56 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
 
     const searchInput = page.locator("#search-query");
     await searchInput.fill("空");
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: "domcontentloaded" }),
-      page.getByRole("button", { name: "さがす", exact: true }).click(),
-    ]);
+
+    // SearchBar が router.push を使うようになったため soft navigation になる
+    // waitForNavigation の代わりに toHaveURL で完了を待つ
+    await page.getByRole("button", { name: "さがす", exact: true }).click();
 
     await expect(page).toHaveURL(/dream_profile_id=2/);
     await expect(page).toHaveURL(/query=%E7%A9%BA/);
+  });
+
+  test("[すべて]チップで dream_profile_id を解除し query を保持する", async ({
+    page,
+  }) => {
+    await page.goto("/home?dream_profile_id=2&query=%E7%A9%BA");
+
+    await page.getByRole("button", { name: "すべて" }).click();
+
+    await expect(page).toHaveURL(/\/home\?query=%E7%A9%BA/);
+    await expect(page).not.toHaveURL(/dream_profile_id/);
+  });
+
+  test("[すべて]チップで dream_profile_id だけある場合は /home になる", async ({
+    page,
+  }) => {
+    await page.goto("/home?dream_profile_id=2");
+
+    await page.getByRole("button", { name: "すべて" }).click();
+
+    await expect(page).toHaveURL(/^.*\/home$/);
+    await expect(page).not.toHaveURL(/dream_profile_id/);
+  });
+
+  test("[すべて]後に検索フォームを送信しても dream_profile_id が戻らない", async ({
+    page,
+  }) => {
+    // dream_profile_id=2&query=空 の状態で開始
+    await page.goto("/home?dream_profile_id=2&query=%E7%A9%BA");
+
+    // [すべて] をクリックして dream_profile_id を削除
+    await page.getByRole("button", { name: "すべて" }).click();
+    await expect(page).toHaveURL(/\/home\?query=%E7%A9%BA/);
+    await expect(page).not.toHaveURL(/dream_profile_id/);
+
+    // [すべて] 後に検索フォームを送信する
+    const searchInput = page.locator("#search-query");
+    await searchInput.fill("海");
+    await page.getByRole("button", { name: "さがす", exact: true }).click();
+
+    // dream_profile_id が戻っていないことを確認（SearchBar の hidden input 再送信バグの回帰テスト）
+    await expect(page).not.toHaveURL(/dream_profile_id/);
+    await expect(page).toHaveURL(/query=%E6%B5%B7/);
   });
 
   test("夢が0件のとき空状態メッセージが表示される", async ({ page }) => {

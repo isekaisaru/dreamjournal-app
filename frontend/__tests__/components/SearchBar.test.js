@@ -2,6 +2,21 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import SearchBar from "@/app/components/SearchBar";
 
+// SearchBar 内部の useRouter をモックする
+const mockPush = jest.fn();
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+    refresh: jest.fn(),
+  }),
+  useSearchParams: () => new URLSearchParams(),
+  usePathname: () => "/home",
+}));
+
 const mockEmotions = [
   { id: 1, name: "嬉しい" },
   { id: 2, name: "楽しい" },
@@ -29,13 +44,14 @@ describe("SearchBar", () => {
       expect(screen.queryByText("😊 うれしい")).not.toBeInTheDocument();
     });
 
-    it("プロフィール絞り込みをhidden inputで保持する", () => {
-      const { container } = render(
-        <SearchBar emotions={mockEmotions} dreamProfileId="2" />
-      );
+    it("dream_profile_id の hidden input はレンダリングされない（router.push 経由で管理）", () => {
+      // SearchBar は dreamProfileId prop を持たない。
+      // dream_profile_id は submit 時に window.location.search から読む設計のため、
+      // hidden input が DOM に存在しないことを確認する。
+      const { container } = render(<SearchBar emotions={mockEmotions} />);
 
       const input = container.querySelector('input[name="dream_profile_id"]');
-      expect(input).toHaveValue("2");
+      expect(input).not.toBeInTheDocument();
     });
   });
 
