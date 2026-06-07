@@ -100,6 +100,11 @@ const DreamCard = ({ dream }: DreamCardProps) => {
                     <span className="truncate">{profile.name}</span>
                   </span>
                 ) : null}
+                {profile && !profile.active ? (
+                  <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    アーカイブ済み
+                  </span>
+                ) : null}
               </div>
               {dream.analysis_status === "pending" && (
                 <div className="flex flex-col gap-1 w-24">
