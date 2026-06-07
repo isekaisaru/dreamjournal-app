@@ -7,7 +7,7 @@ import { Dream, DreamProfile, Emotion, DreamDraftData } from "../types";
 import { getDreamProfiles, getEmotions, previewAnalysis, ApiError } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
-import MorpheusSVG from "./MorpheusSVG";
+import MorpheusImage from "./MorpheusImage";
 
 interface DreamFormData {
   title: string;
@@ -368,7 +368,9 @@ export default function DreamForm({
         {isAnalyzing ? (
           <div className="mt-4 overflow-hidden rounded-[28px] border border-sky-200/50 bg-slate-950 px-4 py-4 text-slate-50 shadow-lg">
             <div className="flex items-center gap-4">
-              <MorpheusSVG expression="dreaming" size={74} />
+              <div className="shrink-0 rounded-2xl bg-white/90 p-1 shadow-sm ring-1 ring-white/30">
+                <MorpheusImage variant="analysis" size={74} />
+              </div>
               <div className="flex-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
                   Morpheus Reading
