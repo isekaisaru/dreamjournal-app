@@ -189,8 +189,6 @@ export default function DreamForm({
 
     setAnalysisLimitReached(false);
     setIsAnalyzing(true);
-    setAnalysisText(null); // 分析中は旧結果を消す
-    setSuggestedEmotionNames([]);
     try {
       const result = await previewAnalysis(content);
       setAnalysisText(result.analysis);
