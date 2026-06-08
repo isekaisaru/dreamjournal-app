@@ -77,7 +77,7 @@
     "prettier": "^3.8.3",
     "tailwindcss": "^4.1.17",
     "typescript": "5.9.3",
-    "wait-on": "^9.0.4"
+    "wait-on": "^9.0.10"
   },
   "resolutions": {
     "glob": "^13.0.6",
