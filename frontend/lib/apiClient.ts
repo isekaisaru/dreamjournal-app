@@ -277,16 +277,58 @@ export async function updateProfile(data: {
 
 // --- Client Component Functions ---
 
+// Render Free のコールドスタート対策（フロント側のみ）。
+// 無アクセス15分でスリープしたバックエンドは、初回リクエストの起動に30〜60秒かかり、
+// 1回目のログインだけ /auth/login が 45秒のタイムアウト（504）で失敗することがある。
+// その場合に限り、短い間隔を空けて1回だけ自動リトライしてユーザーを自動復帰させる。
+// 認証本体（トークン発行・cookie・refresh）や apiFetch の挙動は変更しない。
+const LOGIN_COLD_START_RETRY_DELAY_MS = 2_000;
+const LOGIN_COLD_START_MAX_RETRIES = 1;
+// AuthContext の TRANSIENT_STATUSES と揃える。
+// 0 = fetch が例外（ネットワーク/タイムアウト）、502/503/504 = Render 起動中・タイムアウト。
+const COLD_START_STATUSES = new Set([0, 502, 503, 504]);
+
+function isColdStartError(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return COLD_START_STATUSES.has(error.status);
+  }
+  // ApiError でない = fetch がネットワークレベルで失敗（status 不明）→ 一時障害として扱う。
+  return true;
+}
+
+export type ClientLoginOptions = {
+  // コールドスタートで自動リトライに入る直前に呼ばれる（attempt は 1 始まり）。
+  // ログイン画面が「サーバーを起動中...」の表示を出すために使う。
+  onColdStartRetry?: (attempt: number) => void;
+  // リトライ前の待機時間。テストで実待ちを避けるために注入可能。
+  retryDelayMs?: number;
+};
+
 export async function clientLogin(
-  credentials: LoginCredentials
+  credentials: LoginCredentials,
+  options: ClientLoginOptions = {}
 ): Promise<{ user: User }> {
-  const response = await apiFetch<{ user: BackendUser }>("/auth/login", {
-    method: "POST",
-    body: JSON.stringify(credentials),
-  });
-  return {
-    user: { ...response.user, id: String(response.user.id) },
-  };
+  const { onColdStartRetry, retryDelayMs = LOGIN_COLD_START_RETRY_DELAY_MS } =
+    options;
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await apiFetch<{ user: BackendUser }>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      });
+      return {
+        user: { ...response.user, id: String(response.user.id) },
+      };
+    } catch (error) {
+      // コールドスタート（タイムアウト/起動中）以外（401誤パスワード・422等）は即座に投げる。
+      if (attempt >= LOGIN_COLD_START_MAX_RETRIES || !isColdStartError(error)) {
+        throw error;
+      }
+      onColdStartRetry?.(attempt + 1);
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+    }
+  }
 }
 
 export async function clientRegister(
