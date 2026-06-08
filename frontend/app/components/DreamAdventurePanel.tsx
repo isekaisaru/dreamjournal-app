@@ -94,15 +94,15 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
     },
     {
       id: "emotion-star",
-      label: "気持ちの星を3つ集める",
-      helper: "感情タグつきの夢が増えると、あとで探しやすいよ",
+      label: "きもちタグつきの夢を3つのこす",
+      helper: "夢を書くとき「きもち」をえらぶとたまるよ",
       done: taggedDreamCount >= 3,
       progressLabel: `${Math.min(taggedDreamCount, 3)}/3`,
     },
     {
       id: "month-map",
-      label: "今月の夢マップを5ページにする",
-      helper: "今月の夢が増えるほど、月次サマリーが楽しくなるよ",
+      label: "今月の夢を5つのこす",
+      helper: "5こたまると、月のまとめが楽しくなるよ",
       done: currentMonthDreams.length >= 5,
       progressLabel: `${Math.min(currentMonthDreams.length, 5)}/5`,
     },
@@ -199,14 +199,17 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
           <div className={`rounded-2xl px-2 py-3 ${hasStreakBadge ? "bg-amber-100 text-amber-900 dark:bg-amber-300/20 dark:text-amber-100" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
             <div className="text-lg">🌙</div>
             <div className="mt-1 font-bold">3日月</div>
+            <div className="mt-0.5 text-[10px] opacity-70">3日れんぞく</div>
           </div>
           <div className={`rounded-2xl px-2 py-3 ${hasMonthBadge ? "bg-sky-100 text-sky-900 dark:bg-sky-300/20 dark:text-sky-100" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
             <div className="text-lg">🗺️</div>
             <div className="mt-1 font-bold">夢地図</div>
+            <div className="mt-0.5 text-[10px] opacity-70">今月5こ記録</div>
           </div>
           <div className={`rounded-2xl px-2 py-3 ${hasWindowBadge ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-300/20 dark:text-indigo-100" : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"}`}>
             <div className="text-lg">🪟</div>
             <div className="mt-1 font-bold">夢の窓</div>
+            <div className="mt-0.5 text-[10px] opacity-70">夢の絵を生成</div>
           </div>
         </div>
       </div>

@@ -120,20 +120,25 @@ export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
       </h3>
 
       <div className="mb-4 flex items-center gap-4 rounded-3xl border border-border/70 bg-muted/25 px-4 py-4">
-        <div className="relative h-16 w-16 shrink-0 rounded-full border border-amber-200/70 bg-slate-950/80 shadow-inner">
-          <div
-            className="absolute inset-y-1 left-1 rounded-full bg-gradient-to-b from-amber-100 via-yellow-200 to-amber-400 transition-all duration-500"
-            style={{ width: `${16 + moonProgress * 40}px` }}
-          />
-          <div className="absolute left-2 top-2 h-1.5 w-1.5 rounded-full bg-white/80 shadow-[18px_6px_0_rgba(255,255,255,0.55)]" />
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <div className="relative h-16 w-16 rounded-full border border-amber-200/70 bg-slate-950/80 shadow-inner">
+            <div
+              className="absolute inset-y-1 left-1 rounded-full bg-gradient-to-b from-amber-100 via-yellow-200 to-amber-400 transition-all duration-500"
+              style={{ width: `${16 + moonProgress * 40}px` }}
+            />
+            <div className="absolute left-2 top-2 h-1.5 w-1.5 rounded-full bg-white/80 shadow-[18px_6px_0_rgba(255,255,255,0.55)]" />
+          </div>
+          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+            {current}/30日
+          </p>
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-card-foreground">
-            月がすこしずつ満ちていく
+            まいにちゆめをかくと 月が満ちてくるよ
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {current > 0
-              ? `いまは ${current}日れんぞく。${current >= 7 ? "モルペウスも ちょっと ほこらしげ。" : "きょうも もうひとつ ふくらむよ。"}`
+              ? `${current}日れんぞくちゅう！${current >= 7 ? "モルペウスも ちょっと ほこらしげ。" : "きょうも かいて ふくらませよう。"}`
               : "さいしょの 1こを かくと、月がひかりはじめるよ。"}
           </p>
         </div>
