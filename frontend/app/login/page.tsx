@@ -23,6 +23,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [pageError, setPageError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Render Free のコールドスタートで自動リトライ中かどうか。
+  // リトライに入ったらボタン文言と案内メッセージを切り替える。
+  const [isColdStartRetrying, setIsColdStartRetrying] = useState(false);
   const { login, authStatus, error: authError } = useAuth();
   const router = useRouter();
 
@@ -42,6 +45,7 @@ export default function Login() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPageError("");
+    setIsColdStartRetrying(false);
     setIsLoading(true);
     if (!email || !password) {
       setPageError("メールアドレス と パスワード を いれてね。");
@@ -51,7 +55,12 @@ export default function Login() {
     try {
       // 以前: 汎用のapiClient.postを使っていました。
       // 今回: ログイン専用の `clientLogin` 関数を呼び出します。コードが何をしたいのか分かりやすくなりますね！
-      const { user } = await clientLogin({ email, password });
+      // コールドスタートで初回がタイムアウトした場合、clientLogin が自動で1回リトライする。
+      // リトライに入ったら「サーバーを起動中...」の案内を出す。
+      const { user } = await clientLogin(
+        { email, password },
+        { onColdStartRetry: () => setIsColdStartRetrying(true) }
+      );
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
       login(user);
       // ログイン成功後、直接リダイレクト＋refresh
@@ -70,6 +79,7 @@ export default function Login() {
       setPageError(defaultLoginError);
     } finally {
       setIsLoading(false);
+      setIsColdStartRetrying(false);
     }
   };
 
@@ -167,7 +177,11 @@ export default function Login() {
             disabled={isLoading}
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            {isLoading ? "はいっているよ..." : "つづける"}
+            {isColdStartRetrying
+              ? "サーバーを起動中..."
+              : isLoading
+                ? "はいっているよ..."
+                : "つづける"}
           </button>
           <div className="text-right">
             <Link
@@ -178,6 +192,14 @@ export default function Login() {
             </Link>
           </div>
         </div>
+        {isColdStartRetrying && !pageError && (
+          <p
+            className="text-muted-foreground mt-4 text-center"
+            aria-live="polite"
+          >
+            サーバーを起動しています。初回は少し時間がかかります。
+          </p>
+        )}
         {pageError && (
           <p className="text-destructive mt-4 text-center" aria-live="assertive">
             {pageError}
