@@ -234,14 +234,19 @@ export default function HomePage() {
     };
   }, [fetchDreams]);
 
-  // 検索フィルターが有効かどうかを判定（フックより前に計算）
-  const isSearchActive = !!(
+  // 文字・日付・感情での検索が有効か（プロフィール切り替えは含めない）
+  const isTextSearchActive = !!(
     searchParams.get("query") ||
     searchParams.get("startDate") ||
     searchParams.get("endDate") ||
-    searchParams.get("dream_profile_id") ||
     searchParams.getAll("emotion_ids[]").length > 0
   );
+
+  // プロフィール切り替え中か
+  const isProfileFilterActive = !!searchParams.get("dream_profile_id");
+
+  // 検索パネル開閉や検索後回しの判定では「どちらか有効なら検索中」とみなす
+  const isSearchActive = isTextSearchActive || isProfileFilterActive;
 
   const selectedDreamProfileId = searchParams.get("dream_profile_id");
 
@@ -363,7 +368,8 @@ export default function HomePage() {
         {!loading && !errorMessage && (
           <DreamList
             dreams={dreams}
-            isSearchActive={isSearchActive}
+            isSearchActive={isTextSearchActive}
+            isProfileFilterActive={isProfileFilterActive}
             ageGroup={user?.age_group}
             key={`${dreams[0]?.id}-${dreams.length}`}
           />

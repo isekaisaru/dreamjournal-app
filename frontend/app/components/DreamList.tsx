@@ -12,10 +12,51 @@ import MorpheusImage from "./MorpheusImage";
 interface DreamListProps {
   dreams: Dream[];
   onDelete?: (id: number) => void;
-  /** 検索フィルターが有効な状態かどうか（空表示メッセージを切り替えるために使用） */
+  /** 文字・日付・感情での検索が有効かどうか（空表示メッセージを切り替えるために使用） */
   isSearchActive?: boolean;
+  /** プロフィール切り替え中かどうか（空表示メッセージを切り替えるために使用） */
+  isProfileFilterActive?: boolean;
   /** 年齢層（空状態メッセージの切り替えに使用） */
   ageGroup?: string;
+}
+
+/**
+ * プロフィール切り替え後にそのプロフィールの夢が0件のときのコピー（年齢層別）
+ */
+function getProfileEmptyCopy(ageGroup: string | undefined) {
+  switch (ageGroup) {
+    case "child_small":
+      return {
+        title: "このプロフィールには ゆめが ないよ",
+        sub: "さっそく ひとつ かいてみよう！",
+        button: "ゆめを かく",
+      };
+    case "child":
+      return {
+        title: "このプロフィールには まだ ゆめが ないよ",
+        sub: "さっそく ひとつ きろくしてみよう！",
+        button: "ゆめを かく",
+      };
+    case "preteen":
+      return {
+        title: "このプロフィールにはまだ夢がないよ",
+        sub: "さっそく最初の夢を記録してみよう！",
+        button: "夢を記録する",
+      };
+    case "teen":
+      return {
+        title: "このプロフィールにはまだ夢がない",
+        sub: "最初の夢を記録してみよう。",
+        button: "夢を記録する",
+      };
+    case "adult":
+    default:
+      return {
+        title: "このプロフィールにはまだ夢がありません",
+        sub: "最初の夢を記録してみましょう。",
+        button: "夢を記録する",
+      };
+  }
 }
 
 const container = {
@@ -41,7 +82,13 @@ const moonPhases = [
   { icon: "🌕", label: "きょうの ゆめ" },
 ];
 
-const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps) => {
+const DreamList = ({
+  dreams,
+  isSearchActive = false,
+  isProfileFilterActive = false,
+  ageGroup,
+}: DreamListProps) => {
+  const profileEmptyCopy = getProfileEmptyCopy(ageGroup);
   return (
     <>
       <motion.div
@@ -51,7 +98,39 @@ const DreamList = ({ dreams, isSearchActive = false, ageGroup }: DreamListProps)
         className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
       >
         {dreams.length === 0 ? (
-          isSearchActive ? (
+          isProfileFilterActive ? (
+            /* プロフィール切り替え後、そのプロフィールにまだ夢がない場合 */
+            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+              {/* モルペウスのキャラクターと吹き出し */}
+              <div className="relative flex flex-col items-center mb-6">
+                {/* 吹き出し */}
+                <div className="relative bg-slate-800 border border-slate-700/60 rounded-2xl px-5 py-3 mb-3 shadow-md">
+                  <p className="text-sm font-bold text-slate-100 leading-relaxed">
+                    {profileEmptyCopy.title}
+                  </p>
+                  {/* 吹き出しの尻尾 */}
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-slate-700/60" />
+                </div>
+                {/* モルペウス画像 */}
+                <div className="rounded-2xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
+                  <MorpheusImage
+                    variant="empty"
+                    size={88}
+                    className="drop-shadow-[0_8px_20px_rgba(56,189,248,0.30)]"
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground mb-5">
+                {profileEmptyCopy.sub}
+              </p>
+              <Button
+                asChild
+                className="rounded-full px-6 text-base font-bold"
+              >
+                <Link href="/dream/new">✏️ {profileEmptyCopy.button}</Link>
+              </Button>
+            </div>
+          ) : isSearchActive ? (
             /* 検索結果ゼロ時の専用メッセージ */
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
               {/* モルペウスのキャラクターと吹き出し */}
