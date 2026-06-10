@@ -389,6 +389,13 @@ export async function getDreamProfiles(): Promise<DreamProfile[]> {
   return apiFetch<DreamProfile[]>("/dream_profiles");
 }
 
+/** あるプロフィールの夢を新しい順で全件取得する（夢の木用）。 */
+export async function getDreamsForProfile(profileId: number): Promise<Dream[]> {
+  return apiFetch<Dream[]>(`/dreams?dream_profile_id=${profileId}`, {
+    cache: "no-store",
+  });
+}
+
 export async function createDreamProfile(data: {
   name: string;
   avatar_emoji: string;

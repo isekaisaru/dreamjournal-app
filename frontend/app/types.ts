@@ -14,6 +14,7 @@ export interface DreamProfile {
   archived: boolean;
   created_at: string;
   updated_at: string;
+  dreams_count?: number; // 夢の森で木の大きさに使う（/dream_profiles が返す）
 }
 
 export interface User {
