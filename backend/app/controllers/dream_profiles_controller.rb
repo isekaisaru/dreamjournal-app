@@ -6,7 +6,9 @@ class DreamProfilesController < ApplicationController
   # GET /dream_profiles
   def index
     profiles = current_user.dream_profiles.order(:position, :created_at)
-    render json: profiles.map { |p| profile_json(p) }
+    # プロフィールごとの夢の数を1クエリでまとめて取得（N+1を避ける）
+    counts = current_user.dreams.group(:dream_profile_id).count
+    render json: profiles.map { |p| profile_json(p, counts.fetch(p.id, 0)) }
   end
 
   # POST /dream_profiles
@@ -96,9 +98,12 @@ class DreamProfilesController < ApplicationController
     params.permit(:name, :avatar_emoji, :color, :relationship, :position)
   end
 
-  def profile_json(profile)
+  def profile_json(profile, dreams_count = nil)
+    # 一覧（index）からは集計済みの件数が渡る。create/update/archive/restore からは
+    # 引数なしで呼ばれるため、その場合だけ単発クエリでフォールバックする。
+    dreams_count ||= profile.dreams.count
     profile.as_json(
       only: %i[id name avatar_emoji color relationship active position created_at updated_at]
-    ).merge("archived" => !profile.active)
+    ).merge("archived" => !profile.active, "dreams_count" => dreams_count)
   end
 end

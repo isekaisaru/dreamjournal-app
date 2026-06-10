@@ -5,6 +5,7 @@ class DreamProfile < ApplicationRecord
   MAX_ACTIVE_COUNT = 5
 
   belongs_to :user
+  has_many :dreams, dependent: :nullify
 
   validates :name,         presence: true, length: { maximum: 30 }
   validates :avatar_emoji, presence: true
