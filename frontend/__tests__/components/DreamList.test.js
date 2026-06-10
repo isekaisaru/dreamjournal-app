@@ -46,6 +46,10 @@ describe("DreamList (integration with DreamCard)", () => {
         </div>
       ),
     }));
+    jest.doMock("@/app/components/MorpheusImage", () => ({
+      __esModule: true,
+      default: () => <div data-testid="morpheus-image" />,
+    }));
     jest.isolateModules(() => {
       DreamList = require("@/app/components/DreamList").default;
     });
@@ -108,6 +112,45 @@ describe("DreamList (integration with DreamCard)", () => {
       "href",
       "/dream/new"
     );
+  });
+
+  it("renders profile empty state when only a profile filter is active", () => {
+    render(
+      <DreamList
+        dreams={[]}
+        isProfileFilterActive
+        ageGroup="adult"
+      />
+    );
+
+    expect(
+      screen.getByText("このプロフィールにはまだ夢がありません")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "✏️ 夢を記録する" })).toHaveAttribute(
+      "href",
+      "/dream/new"
+    );
+    expect(
+      screen.queryByText("その ゆめは みつからなかったよ...")
+    ).not.toBeInTheDocument();
+  });
+
+  it("prioritizes search empty state when profile and search filters are both active", () => {
+    render(
+      <DreamList
+        dreams={[]}
+        isSearchActive
+        isProfileFilterActive
+        ageGroup="adult"
+      />
+    );
+
+    expect(
+      screen.getByText("その ゆめは みつからなかったよ...")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("このプロフィールにはまだ夢がありません")
+    ).not.toBeInTheDocument();
   });
 
   it("preserves order of dreams (sorting responsibility upstream)", () => {

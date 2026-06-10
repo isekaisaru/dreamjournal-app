@@ -89,6 +89,7 @@ const DreamList = ({
   ageGroup,
 }: DreamListProps) => {
   const profileEmptyCopy = getProfileEmptyCopy(ageGroup);
+  const shouldShowProfileEmpty = isProfileFilterActive && !isSearchActive;
   return (
     <>
       <motion.div
@@ -98,7 +99,7 @@ const DreamList = ({
         className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
       >
         {dreams.length === 0 ? (
-          isProfileFilterActive ? (
+          shouldShowProfileEmpty ? (
             /* プロフィール切り替え後、そのプロフィールにまだ夢がない場合 */
             <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
               {/* モルペウスのキャラクターと吹き出し */}
