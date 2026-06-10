@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import DreamEntryLauncher from "./DreamEntryLauncher";
 import {
   House,
+  Trees,
   Settings,
   LogOut,
   LogIn,
@@ -114,6 +115,7 @@ export default function AuthNav() {
       {/* 行動（左側）：毎日つかうもの */}
       <div className="flex items-center bg-secondary/30 p-1 rounded-full gap-1">
         <NavItem href="/home" icon={House} label="おうち" />
+        <NavItem href="/forest" icon={Trees} label="もり" />
         {pathname !== "/home" ? (
           <DreamEntryLauncher
             buttonLabel="きろくする"
