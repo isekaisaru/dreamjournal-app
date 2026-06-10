@@ -13,6 +13,7 @@ import { triggerDreamConfetti } from "@/lib/confetti";
 import { toast } from "@/lib/toast";
 import { showNightCeremonyToast } from "@/lib/morpheusToast";
 import { MorpheusGuideCompose } from "@/app/components/MorpheusGuide";
+import HarvestCelebration from "@/app/components/forest/HarvestCelebration";
 
 function getNewDreamCopy(ageGroup: AgeGroup | undefined) {
   switch (ageGroup) {
@@ -51,6 +52,7 @@ export default function NewDreamPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [isDraftChecked, setIsDraftChecked] = useState(false);
+  const [showHarvest, setShowHarvest] = useState(false);
 
   useLayoutEffect(() => {
     setHasDraft(!!sessionStorage.getItem("dream_draft_data"));
@@ -73,7 +75,8 @@ export default function NewDreamPage() {
       await createDream(formData);
       triggerDreamConfetti();
       showNightCeremonyToast();
-      router.push("/home");
+      // 「実がなった！」お祝いを表示。閉じると /home へ、「もりを みる」で /forest へ。
+      setShowHarvest(true);
     } catch (error) {
       console.error("Failed to save dream:", error);
       toast.error("保存に失敗しました。");
@@ -141,6 +144,11 @@ export default function NewDreamPage() {
       ) : null}
 
       <DreamForm onSubmit={handleCreateSubmit} isLoading={isSaving} />
+
+      <HarvestCelebration
+        open={showHarvest}
+        onClose={() => router.push("/home")}
+      />
     </div>
   );
 }
