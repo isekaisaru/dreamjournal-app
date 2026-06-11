@@ -41,6 +41,20 @@ RSpec.describe 'DreamProfiles API', type: :request do
         active_profile = json.find { |p| p['name'] == '自分' }
         expect(active_profile['archived']).to eq(false)
       end
+
+      it '各プロフィールに dreams_count を含む' do
+        self_profile = DreamProfile.find_by(user: user, name: "自分")
+        create(:dream, user: user, dream_profile: self_profile)
+        create(:dream, user: user, dream_profile: self_profile)
+
+        authenticated_get('/dream_profiles', user)
+
+        json = JSON.parse(response.body)
+        self_json = json.find { |p| p['name'] == '自分' }
+        partner_json = json.find { |p| p['name'] == 'パートナー' }
+        expect(self_json['dreams_count']).to eq(2)
+        expect(partner_json['dreams_count']).to eq(0)
+      end
     end
 
     context '未認証の場合' do
