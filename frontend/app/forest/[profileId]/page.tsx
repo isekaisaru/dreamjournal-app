@@ -39,7 +39,9 @@ export default function ForestProfilePage() {
       setProfile(found);
       setDreams(profileDreams);
     } catch {
+      // 取得失敗時は空白画面に落とさず、森へ退避する
       toast.error("きを よみこめませんでした。");
+      router.replace("/forest");
     } finally {
       setIsLoading(false);
     }

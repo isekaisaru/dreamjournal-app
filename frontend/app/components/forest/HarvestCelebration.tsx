@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import MorpheusImage from "@/app/components/MorpheusImage";
 
@@ -16,6 +16,7 @@ export default function HarvestCelebration({
   open: boolean;
   onClose: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   return (
     <AnimatePresence>
       {open && (
@@ -28,14 +29,15 @@ export default function HarvestCelebration({
         >
           <motion.div
             className="relative rounded-3xl bg-card p-6 text-center shadow-2xl"
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.6, opacity: 0 }}
+            initial={reduceMotion ? { opacity: 0 } : { scale: 0.6, opacity: 0 }}
+            animate={reduceMotion ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { scale: 0.6, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 弾ける光 */}
+            {/* 弾ける光（視覚過敏配慮: reduced motion 時は飛散させない） */}
             <div className="relative mx-auto mb-3 h-20 w-20">
-              {SPARKS.map((s, i) => (
+              {!reduceMotion &&
+                SPARKS.map((s, i) => (
                 <motion.span
                   key={i}
                   className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-amber-300"
