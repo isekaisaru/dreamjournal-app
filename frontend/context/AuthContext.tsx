@@ -188,15 +188,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const deleteUser = useCallback(async () => {
     if (!userId) {
       setError("ユーザーIDが存在しません");
-      return;
+      throw new Error("ユーザーIDが存在しません");
     }
     try {
       await apiClient.delete(`/users/${userId}`);
-      await logout();
     } catch (err) {
       setError("アカウント削除に失敗しました");
+      throw err;
     }
-  }, [userId, logout]);
+    // バックエンドの destroy が認証Cookieを破棄済みのため、
+    // /auth/logout は呼ばずローカルの認証状態だけをクリアする
+    setAuthHint(false);
+    setAuthStatus("unauthenticated");
+    setUser(null);
+    setUserId(null);
+    setError(null);
+  }, [userId]);
 
   return (
     <AuthContext.Provider
