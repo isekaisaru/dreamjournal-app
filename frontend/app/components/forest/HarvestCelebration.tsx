@@ -63,7 +63,7 @@ export default function HarvestCelebration({
                 onClick={onClose}
                 className="flex-1 rounded-xl bg-muted px-4 py-2 text-sm font-bold text-muted-foreground"
               >
-                とじる
+                ホームへ
               </button>
               <Link
                 href="/forest"
