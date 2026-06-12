@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import Loading from "../loading";
 import Link from "next/link";
@@ -10,6 +9,7 @@ import { updateProfile } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import type { AgeGroup, AnalysisTone } from "@/app/types";
 import MorpheusImage from "@/app/components/MorpheusImage";
+import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 
 const AGE_GROUP_OPTIONS: { value: AgeGroup; label: string }[] = [
   { value: "child_small", label: "6さい いか" },
@@ -38,8 +38,7 @@ const generateMathProblem = () => {
 };
 
 const SettingsPage = () => {
-  const { authStatus, userId, user, logout, deleteUser } = useAuth();
-  const router = useRouter();
+  const { authStatus, userId, user, deleteUser } = useAuth();
 
   // プロフィール編集フォーム用 state
   const [profileUsername, setProfileUsername] = useState(user?.username ?? "");
@@ -110,12 +109,15 @@ const SettingsPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
 
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeleted, setIsDeleted] = useState(false);
 
   // モーダルを開くたびに問題を再生成
   const openDeleteModal = () => {
     setMathProblem(generateMathProblem());
     setUserAnswer("");
     setErrorMsg("");
+    setDeleteError("");
     setStep("lock");
     setIsDeleteModalOpen(true);
   };
@@ -131,28 +133,66 @@ const SettingsPage = () => {
   };
 
   const handleDelete = async () => {
+    if (!userId) {
+      setDeleteError(
+        "ログイン情報を確認できませんでした。もう一度ログインしてください。"
+      );
+      return;
+    }
     setIsDeleting(true);
+    setDeleteError("");
     try {
-      if (userId) {
-        await deleteUser();
-        logout();
-        router.push("/");
-      } else {
-        console.error("ユーザーIDが見つかりません。");
-      }
-    } catch (error) {
-      console.error("ユーザー削除に失敗しました。", error);
-      alert(
-        "アカウントの削除に失敗しました。 しばらくしてから実行してください。"
+      // 削除成功時のローカル認証状態クリアは deleteUser() が行う
+      await deleteUser();
+      setIsDeleteModalOpen(false);
+      setIsDeleted(true);
+    } catch {
+      // 失敗時はモーダルを開いたままエラーを表示し、ログアウト・遷移しない
+      setDeleteError(
+        "さくじょに しっぱいしました。しばらくしてから もういちど ためしてね。"
       );
     } finally {
       setIsDeleting(false);
-      setIsDeleteModalOpen(false);
     }
   };
 
+  // 削除完了画面（認証状態クリア後も「おかえり！」等を出さずに完了を伝える）
+  if (isDeleted) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
+        <div className="w-full max-w-md text-center space-y-4 bg-card border border-border/50 rounded-2xl p-8 shadow-sm">
+          <div className="text-4xl" aria-hidden="true">
+            🌙
+          </div>
+          <h1 className="text-xl font-bold">アカウントを さくじょしました</h1>
+          <p className="text-sm text-muted-foreground">
+            これまで つかってくれて ありがとう。
+            <br />
+            また あそびに きてね。
+          </p>
+          <Link
+            href="/"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            トップページへ
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (authStatus === "checking") {
     return <Loading />;
+  }
+
+  // 未認証ガード: 設定画面（削除導線を含む）を表示しない
+  if (authStatus === "unauthenticated") {
+    return (
+      <MorpheusLoginRequired
+        title="設定を開くにはログインが必要だよ"
+        message="保護者メニューは、アカウントの大切な設定を行う場所です。ログインすると、プロフィールやアカウントの設定ができます。"
+      />
+    );
   }
 
   return (
@@ -483,6 +523,15 @@ const SettingsPage = () => {
                     ※このそうさは とりけせません。
                   </p>
                 </div>
+
+                {deleteError && (
+                  <p
+                    role="alert"
+                    className="text-destructive text-sm font-bold"
+                  >
+                    {deleteError}
+                  </p>
+                )}
 
                 <div className="flex flex-col gap-3 pt-4">
                   <button

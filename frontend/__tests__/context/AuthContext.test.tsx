@@ -46,7 +46,12 @@ jest.mock("@/lib/apiClient", () => {
 const AUTH_HINT_KEY = "dreamjournal_auth_hint";
 const mockedGet = apiClient.get as jest.MockedFunction<typeof apiClient.get>;
 const mockedPost = apiClient.post as jest.MockedFunction<typeof apiClient.post>;
-const mockedUsePathname = usePathname as jest.MockedFunction<typeof usePathname>;
+const mockedDelete = apiClient.delete as jest.MockedFunction<
+  typeof apiClient.delete
+>;
+const mockedUsePathname = usePathname as jest.MockedFunction<
+  typeof usePathname
+>;
 const mockedUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 
 function makeApiError(status: number): ApiError {
@@ -66,6 +71,7 @@ type CapturedContext = {
   userId: string | null;
   error: string | null;
   logout: () => Promise<void>;
+  deleteUser: () => Promise<void>;
 };
 const captured: CapturedContext = {
   authStatus: "",
@@ -73,6 +79,7 @@ const captured: CapturedContext = {
   userId: null,
   error: null,
   logout: async () => {},
+  deleteUser: async () => {},
 };
 
 function ContextReader() {
@@ -82,6 +89,7 @@ function ContextReader() {
   captured.userId = ctx.userId;
   captured.error = ctx.error;
   captured.logout = ctx.logout;
+  captured.deleteUser = ctx.deleteUser;
   return null;
 }
 
@@ -166,20 +174,17 @@ describe("403 / 404 / 500 (恒久的エラー)", () => {
     }
   );
 
-  it.each([403, 404, 500])(
-    "%i の場合は authHint が消える",
-    async (status) => {
-      localStorage.setItem(AUTH_HINT_KEY, "1");
-      mockedGet.mockRejectedValue(makeApiError(status));
+  it.each([403, 404, 500])("%i の場合は authHint が消える", async (status) => {
+    localStorage.setItem(AUTH_HINT_KEY, "1");
+    mockedGet.mockRejectedValue(makeApiError(status));
 
-      renderWithProvider();
+    renderWithProvider();
 
-      await waitFor(() => {
-        expect(captured.authStatus).toBe("unauthenticated");
-      });
-      expect(localStorage.getItem(AUTH_HINT_KEY)).toBeNull();
-    }
-  );
+    await waitFor(() => {
+      expect(captured.authStatus).toBe("unauthenticated");
+    });
+    expect(localStorage.getItem(AUTH_HINT_KEY)).toBeNull();
+  });
 
   it("500 の場合はリトライしない（get が1回だけ呼ばれる）", async () => {
     jest.useFakeTimers();
@@ -192,11 +197,15 @@ describe("403 / 404 / 500 (恒久的エラー)", () => {
     expect(mockedGet).toHaveBeenCalledTimes(1);
 
     // タイマーを進めても再呼び出しされない
-    await act(async () => { jest.advanceTimersByTime(7000); });
+    await act(async () => {
+      jest.advanceTimersByTime(7000);
+    });
     await act(async () => {});
     expect(mockedGet).toHaveBeenCalledTimes(1);
 
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
     jest.useRealTimers();
   });
 });
@@ -209,7 +218,9 @@ describe("一時障害 (502/503/504/network error)", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => {
     // 残っているタイマーをすべて消化してから実タイマーに戻す
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
     jest.useRealTimers();
   });
 
@@ -224,7 +235,9 @@ describe("一時障害 (502/503/504/network error)", () => {
 
     expect(captured.authStatus).not.toBe("unauthenticated");
     expect(localStorage.getItem(AUTH_HINT_KEY)).toBe("1");
-    expect(captured.error).toBe("サーバーを起動しています。しばらくお待ちください。");
+    expect(captured.error).toBe(
+      "サーバーを起動しています。しばらくお待ちください。"
+    );
   }
 
   it("502: authStatus が unauthenticated にならない", async () => {
@@ -276,7 +289,9 @@ describe("一時障害 (502/503/504/network error)", () => {
     expect(mockedGet).toHaveBeenCalledTimes(1);
 
     // 6秒進める → retry タイマー発火
-    await act(async () => { jest.advanceTimersByTime(6100); });
+    await act(async () => {
+      jest.advanceTimersByTime(6100);
+    });
     // 2回目のリトライ非同期を消化
     await act(async () => {});
 
@@ -292,19 +307,27 @@ describe("一時障害 (502/503/504/network error)", () => {
     // 1回目
     await act(async () => {});
     // 2回目
-    await act(async () => { jest.advanceTimersByTime(6100); });
+    await act(async () => {
+      jest.advanceTimersByTime(6100);
+    });
     await act(async () => {});
     // 3回目
-    await act(async () => { jest.advanceTimersByTime(6100); });
+    await act(async () => {
+      jest.advanceTimersByTime(6100);
+    });
     await act(async () => {});
     // 4回目（上限超え → タイマーは設定されない）
-    await act(async () => { jest.advanceTimersByTime(6100); });
+    await act(async () => {
+      jest.advanceTimersByTime(6100);
+    });
     await act(async () => {});
 
     // 初回 + リトライ3回 = 4回まで
     expect(mockedGet).toHaveBeenCalledTimes(4);
     // 5回目以上のタイマーは存在しないので、さらに進めても get は増えない
-    await act(async () => { jest.advanceTimersByTime(6100); });
+    await act(async () => {
+      jest.advanceTimersByTime(6100);
+    });
     await act(async () => {});
     expect(mockedGet).toHaveBeenCalledTimes(4);
   });
@@ -317,7 +340,9 @@ describe("一時障害 (502/503/504/network error)", () => {
 describe("リトライ上限 (3回) 到達後", () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => {
-    act(() => { jest.runAllTimers(); });
+    act(() => {
+      jest.runAllTimers();
+    });
     jest.useRealTimers();
   });
 
@@ -329,7 +354,9 @@ describe("リトライ上限 (3回) 到達後", () => {
     // 初回 + 3回リトライ = 4回分の失敗を消化
     await act(async () => {});
     for (let i = 0; i < 3; i++) {
-      await act(async () => { jest.advanceTimersByTime(6100); });
+      await act(async () => {
+        jest.advanceTimersByTime(6100);
+      });
       await act(async () => {});
     }
   }
@@ -410,5 +437,75 @@ describe("logout()", () => {
 
     expect(captured.user).toBeNull();
     expect(captured.userId).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. deleteUser() — アカウント削除
+// ---------------------------------------------------------------------------
+
+describe("deleteUser()", () => {
+  async function renderAuthenticated() {
+    localStorage.setItem(AUTH_HINT_KEY, "1");
+    mockedGet.mockResolvedValue({ user: { id: 1, email: "a@b.com" } } as never);
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(captured.authStatus).toBe("authenticated");
+    });
+  }
+
+  it("API削除が失敗したら例外を再throwする", async () => {
+    await renderAuthenticated();
+    mockedDelete.mockRejectedValue(makeApiError(500));
+
+    await act(async () => {
+      await expect(captured.deleteUser()).rejects.toThrow();
+    });
+  });
+
+  it("API削除が失敗したら認証状態を維持し logout API を呼ばない", async () => {
+    await renderAuthenticated();
+    mockedDelete.mockRejectedValue(makeApiError(500));
+
+    await act(async () => {
+      await captured.deleteUser().catch(() => {});
+    });
+
+    expect(captured.authStatus).toBe("authenticated");
+    expect(localStorage.getItem(AUTH_HINT_KEY)).toBe("1");
+    expect(mockedPost).not.toHaveBeenCalledWith("/auth/logout");
+  });
+
+  it("削除成功時は logout API を呼ばずローカル認証状態をクリアする", async () => {
+    await renderAuthenticated();
+    mockedDelete.mockResolvedValue(null as never);
+
+    await act(async () => {
+      await captured.deleteUser();
+    });
+
+    // バックエンドの destroy が Cookie を破棄済みのため /auth/logout は呼ばない
+    expect(mockedPost).not.toHaveBeenCalledWith("/auth/logout");
+    expect(captured.authStatus).toBe("unauthenticated");
+    expect(captured.user).toBeNull();
+    expect(captured.userId).toBeNull();
+    expect(localStorage.getItem(AUTH_HINT_KEY)).toBeNull();
+  });
+
+  it("userId が無い場合は例外を投げ、削除APIを呼ばない", async () => {
+    mockedGet.mockRejectedValue(makeApiError(401));
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(captured.authStatus).toBe("unauthenticated");
+    });
+
+    await act(async () => {
+      await expect(captured.deleteUser()).rejects.toThrow();
+    });
+    expect(mockedDelete).not.toHaveBeenCalled();
   });
 });
