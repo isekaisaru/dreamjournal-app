@@ -43,6 +43,15 @@ class UsersController < ApplicationController
 
   # ユーザー削除
   def destroy
+    # 削除前に Stripe 側のサブスクを即時解約する。失敗したら削除を中断。
+    begin
+      SubscriptionCanceler.new(current_user).call
+    rescue SubscriptionCanceler::CancellationError => e
+      Rails.logger.error("[AccountDeletion] Stripe解約失敗 user_id=#{current_user.id}: #{e.message}")
+      return render json: { error: "サブスクリプションの解約に失敗しました。時間をおいて再度お試しください。" },
+                    status: :unprocessable_content
+    end
+
     # 削除対象は常に現在のユーザーに限定する
     if current_user.destroy
       # ログアウト処理も忘れずに行う
