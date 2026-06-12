@@ -47,6 +47,7 @@ export async function proxy(request: NextRequest) {
   const isProtectedPage =
     pathname.startsWith("/home") ||
     pathname.startsWith("/dream") ||
+    pathname.startsWith("/forest") ||
     pathname.startsWith("/settings");
 
   // Only these pages render MorpheusLoginRequired for unauthenticated users.
@@ -91,6 +92,7 @@ export const config = {
   matcher: [
     "/home/:path*",
     "/dream/:path*",
+    "/forest/:path*",
     "/settings/:path*",
     "/login",
     "/register",
