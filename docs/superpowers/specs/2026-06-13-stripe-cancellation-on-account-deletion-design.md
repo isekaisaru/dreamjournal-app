@@ -73,7 +73,7 @@ DELETE /users/:id  (UsersController#destroy)
 
 `backend/app/services/subscription_canceler.rb`
 
-- 責務: 渡された User の active な Stripe サブスクを全て即時解約する。**DBには触れない**。
+- 責務: 渡された User の active な Stripe サブスクを全て即時解約する。**DB更新はしない**（`Subscription` を query するが、行の更新・削除は行わない）。
 - 依存: `Stripe::Subscription`, `Subscription::ACTIVE_STATUSES`
 - インターフェース: `SubscriptionCanceler.new(user).call` → 成功時は正常 return、失敗時は `CancellationError` を raise
 
@@ -182,6 +182,8 @@ Stripe のスタブは既存の `spec/requests/billing_portal_spec.rb` の作法
 
 - active サブスクあり + 解約成功 → user が削除される・200・Cookie 削除
 - 解約失敗（`CancellationError`） → **user は DB に残る**・422・エラーJSON・`current_user.destroy` 未到達
+- 解約成功 + `current_user.destroy` が false → 既存の destroy false 分岐に入る・**user は残る**・Cookie は削除しない・401（[users_controller.rb:45](../../../backend/app/controllers/users_controller.rb#L45) の既存挙動を維持）
+  - 課金安全上は許容（Stripe 停止は完了済み）。再試行時は `resource_missing` で冪等にスキップされる
 - サブスクなし → user 削除・200（Stripe 未呼出）
 - 未認証 → 401（既存挙動を維持）
 
