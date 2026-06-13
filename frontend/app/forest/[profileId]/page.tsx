@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import Loading from "@/app/loading";
 import { getDreamProfiles, getDreamsForProfile } from "@/lib/apiClient";
@@ -20,6 +21,7 @@ export default function ForestProfilePage() {
   const params = useParams();
   const profileId = Number(params.profileId);
 
+  const reduceMotion = useReducedMotion();
   const [profile, setProfile] = useState<DreamProfile | null>(null);
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,9 +77,26 @@ export default function ForestProfilePage() {
 
       <main className="container mx-auto max-w-3xl px-4 pt-10">
         {dreams.length === 0 ? (
-          <p className="mt-20 text-center text-white/70">
-            まだ ゆめが ないよ。ゆめを かいて きを そだてよう。
-          </p>
+          <div className="mt-16 flex flex-col items-center gap-4 text-center">
+            <motion.span
+              className="text-6xl"
+              animate={reduceMotion ? undefined : { y: [-4, 4, -4], scale: [1, 1.04, 1] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              aria-hidden="true"
+            >
+              🌱
+            </motion.span>
+            <p className="text-lg font-bold text-white/90">まだ みが ないね</p>
+            <p className="text-sm leading-relaxed text-white/60">
+              ゆめを かいて、さいしょの みを ならせよう。
+            </p>
+            <Link
+              href={`/dream/new?dream_profile_id=${profile.id}`}
+              className="mt-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
+            >
+              ゆめを かく
+            </Link>
+          </div>
         ) : (
           <DreamTree profile={profile} dreams={dreams} />
         )}

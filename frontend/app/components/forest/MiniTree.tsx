@@ -28,7 +28,7 @@ export default function MiniTree({ profile }: { profile: DreamProfile }) {
           width: 96 * scale,
           height: 96 * scale,
           background: `radial-gradient(circle at 40% 35%, ${profile.color}cc, ${profile.color}55 70%, transparent)`,
-          boxShadow: `0 0 28px ${profile.color}55`,
+          boxShadow: `0 0 32px ${profile.color}66, 0 0 12px ${profile.color}33`,
         }}
         animate={reduceMotion ? undefined : { scale: [1, 1.04, 1] }}
         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -44,6 +44,17 @@ export default function MiniTree({ profile }: { profile: DreamProfile }) {
       <div
         className="w-2.5 rounded-b-sm bg-[#6b4a2b]"
         style={{ height: 18 + level * 4 }}
+      />
+      {/* 根元の光輪 */}
+      <div
+        className="rounded-full"
+        style={{
+          width: Math.round(40 * scale),
+          height: 5,
+          background: `radial-gradient(ellipse, ${profile.color}55, transparent 70%)`,
+          marginBottom: 3,
+        }}
+        aria-hidden="true"
       />
       {/* 名前と件数 */}
       <span className="mt-1 text-xs font-semibold text-foreground/90">

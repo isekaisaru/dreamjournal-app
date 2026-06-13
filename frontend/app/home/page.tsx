@@ -16,6 +16,7 @@ import SearchBar from "@/app/components/SearchBar";
 import ProfileFilterChips from "@/app/components/ProfileFilterChips";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
+import ForestPreviewWidget from "@/app/components/forest/ForestPreviewWidget";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import MorpheusHero from "@/app/components/MorpheusHero";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
@@ -204,10 +205,13 @@ export default function HomePage() {
       });
   }, [authStatus, user?.premium]);
 
-  // dream-createdイベントをリッスン（夢が新規作成されたときにリストを更新）
+  // dream-createdイベントをリッスン（夢が新規作成されたときにリストとプロフィールの dreams_count を更新）
   useEffect(() => {
     const handleDreamCreated = () => {
       fetchDreams();
+      getDreamProfiles()
+        .then(setProfiles)
+        .catch(() => {});
     };
 
     window.addEventListener("dream-created", handleDreamCreated);
@@ -380,6 +384,9 @@ export default function HomePage() {
       <aside className="w-full lg:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 lg:mt-0">
         {/* 今日の夢クエスト */}
         {!loading && !errorMessage && <DreamAdventurePanel dreams={dreams} />}
+
+        {/* もりプレビュー */}
+        {!loading && profiles.length > 0 && <ForestPreviewWidget profiles={profiles} />}
 
         {/* 連続記録バッジ */}
         <DreamStreakBadge dreams={dreams} />

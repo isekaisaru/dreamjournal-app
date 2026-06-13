@@ -25,12 +25,14 @@ interface DreamFormData {
 
 interface DreamFormProps {
   initialData?: Dream;
+  defaultProfileId?: number;
   onSubmit: (data: DreamFormData) => void;
   isLoading?: boolean;
 }
 
 export default function DreamForm({
   initialData,
+  defaultProfileId,
   onSubmit,
   isLoading = false,
 }: DreamFormProps) {
@@ -61,7 +63,7 @@ export default function DreamForm({
   const [analysisRevealKey, setAnalysisRevealKey] = useState(0);
   const [profiles, setProfiles] = useState<DreamProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<number | undefined>(
-    initialData?.dream_profile_id
+    defaultProfileId ?? initialData?.dream_profile_id
   );
   const [morpheusRating, setMorpheusRating] = useState<"good" | "bad" | null>(
     null
@@ -149,8 +151,8 @@ export default function DreamForm({
         const data = await getDreamProfiles();
         const active = data.filter((p) => !p.archived);
         setProfiles(active);
-        // 新規作成時のみ self をデフォルト選択（編集時は initialData.dream_profile_id を優先）
-        if (!initialData) {
+        // 新規作成時のみ self をデフォルト選択（編集時 or defaultProfileId 指定時はスキップ）
+        if (!initialData && !defaultProfileId) {
           const selfProfile = active.find((p) => p.relationship === "self");
           if (selfProfile) setSelectedProfileId(selfProfile.id);
         }
