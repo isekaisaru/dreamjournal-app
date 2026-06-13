@@ -3,7 +3,7 @@
 import DreamForm from "../../components/DreamForm";
 import MorpheusSmall from "../../components/MorpheusSmall";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useLayoutEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import Loading from "../../loading";
@@ -48,7 +48,11 @@ function getNewDreamCopy(ageGroup: AgeGroup | undefined) {
 
 export default function NewDreamPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { authStatus, user } = useAuth();
+  const preselectedProfileId = searchParams.get("dream_profile_id")
+    ? Number(searchParams.get("dream_profile_id"))
+    : undefined;
   const [isSaving, setIsSaving] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [isDraftChecked, setIsDraftChecked] = useState(false);
@@ -143,7 +147,11 @@ export default function NewDreamPage() {
         </div>
       ) : null}
 
-      <DreamForm onSubmit={handleCreateSubmit} isLoading={isSaving} />
+      <DreamForm
+        onSubmit={handleCreateSubmit}
+        isLoading={isSaving}
+        initialData={preselectedProfileId ? { dream_profile_id: preselectedProfileId } : undefined}
+      />
 
       <HarvestCelebration
         open={showHarvest}

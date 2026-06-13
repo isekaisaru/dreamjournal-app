@@ -205,10 +205,13 @@ export default function HomePage() {
       });
   }, [authStatus, user?.premium]);
 
-  // dream-createdイベントをリッスン（夢が新規作成されたときにリストを更新）
+  // dream-createdイベントをリッスン（夢が新規作成されたときにリストとプロフィールの dreams_count を更新）
   useEffect(() => {
     const handleDreamCreated = () => {
       fetchDreams();
+      getDreamProfiles()
+        .then(setProfiles)
+        .catch(() => {});
     };
 
     window.addEventListener("dream-created", handleDreamCreated);

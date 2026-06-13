@@ -91,7 +91,7 @@ export default function ForestProfilePage() {
               ゆめを かいて、さいしょの みを ならせよう。
             </p>
             <Link
-              href="/dream/new"
+              href={`/dream/new?dream_profile_id=${profile.id}`}
               className="mt-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20"
             >
               ゆめを かく
