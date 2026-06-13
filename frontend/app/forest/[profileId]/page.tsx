@@ -71,10 +71,11 @@ export default function ForestProfilePage() {
 
   return (
     <div
-      className="relative min-h-screen overflow-hidden pb-24 text-white"
+      className="relative min-h-screen pb-24 text-white"
       style={{ background: sky }}
     >
-      {/* 季節パーティクル（本文の背面に降らせて可読性を保つ） */}
+      {/* 季節パーティクル（本文の背面・自前で overflow-hidden するのでルートは clip しない。
+          ルートに overflow-hidden を付けると sticky ヘッダーが流れて消えるため外している） */}
       <SeasonalParticles season={season} behind />
 
       <header className="sticky top-0 z-10 bg-black/20 backdrop-blur-md">
