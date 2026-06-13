@@ -1,9 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import type { DreamProfile } from "@/app/types";
+import {
+  getTimePhase,
+  getSeason,
+  getSkyGradient,
+  getCelestial,
+} from "@/lib/forestAtmosphere";
 import MiniTree from "./MiniTree";
+import SeasonalParticles from "./SeasonalParticles";
 
 const STARS = Array.from({ length: 40 }, (_, i) => ({
   left: (i * 53) % 100,
@@ -33,25 +41,49 @@ const GROUND_DECO = [
 export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
   const reduceMotion = useReducedMotion();
 
+  // 読込時の時刻・季節を1回だけ確定（再レンダーで動かないよう useMemo）
+  const now = useMemo(() => new Date(), []);
+  const phase = getTimePhase(now);
+  const season = getSeason(now);
+  const sky = getSkyGradient(phase);
+  const { moonXPct, moonYPct, starOpacity } = getCelestial(phase);
+
   return (
-    <div className="relative min-h-[70vh] overflow-hidden rounded-3xl bg-gradient-to-b from-[#241a40] via-[#1a1336] to-[#0e0a1c]">
-      {/* 星空 */}
+    <div
+      className="relative min-h-[70vh] overflow-hidden rounded-3xl"
+      style={{ background: sky }}
+    >
+      {/* 星空（時間帯で濃さが変わる: 夜=濃い / 昼=ほぼ見えない） */}
       {STARS.map((s, i) => (
         <motion.span
           key={i}
           className="absolute rounded-full bg-white"
-          style={{ left: `${s.left}%`, top: `${s.top}%`, width: s.size, height: s.size }}
-          animate={reduceMotion ? undefined : { opacity: [0.2, 1, 0.2] }}
+          style={{
+            left: `${s.left}%`,
+            top: `${s.top}%`,
+            width: s.size,
+            height: s.size,
+            opacity: starOpacity,
+          }}
+          animate={
+            reduceMotion
+              ? undefined
+              : { opacity: [0.2 * starOpacity, starOpacity, 0.2 * starOpacity] }
+          }
           transition={{ duration: 3, repeat: Infinity, delay: s.delay }}
           aria-hidden="true"
         />
       ))}
 
-      {/* 月 */}
+      {/* 月（位置が時間帯で変わる） */}
       <div
-        className="absolute right-8 top-8 h-16 w-16 rounded-full bg-[#fef3c7] shadow-[0_0_50px_20px_rgba(254,243,199,0.35)]"
+        className="absolute h-16 w-16 -translate-x-1/2 rounded-full bg-[#fef3c7] shadow-[0_0_50px_20px_rgba(254,243,199,0.35)]"
+        style={{ left: `${moonXPct}%`, top: `${moonYPct}%` }}
         aria-hidden="true"
       />
+
+      {/* 季節パーティクル（🌸/🍃/🍁/❄️） */}
+      <SeasonalParticles season={season} />
 
       {/* ほたる（reduced-motion 時は静止した光点として表示） */}
       {FIREFLIES.map((f, i) => (

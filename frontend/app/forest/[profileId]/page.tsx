@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -10,10 +10,12 @@ import Loading from "@/app/loading";
 import { getDreamProfiles, getDreamsForProfile } from "@/lib/apiClient";
 import type { Dream, DreamProfile } from "@/app/types";
 import { RECENT_FRUIT_COUNT } from "@/lib/forest";
+import { getTimePhase, getSeason, getSkyGradient } from "@/lib/forestAtmosphere";
 import { toast } from "@/lib/toast";
 import DreamTree from "@/app/components/forest/DreamTree";
 import PastDreamsList from "@/app/components/forest/PastDreamsList";
 import ForestGuide from "@/app/components/forest/ForestGuide";
+import SeasonalParticles from "@/app/components/forest/SeasonalParticles";
 
 export default function ForestProfilePage() {
   const { authStatus } = useAuth();
@@ -25,6 +27,11 @@ export default function ForestProfilePage() {
   const [profile, setProfile] = useState<DreamProfile | null>(null);
   const [dreams, setDreams] = useState<Dream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 読込時の時刻・季節を1回だけ確定（森シーンと同じ雰囲気に揃える）
+  const now = useMemo(() => new Date(), []);
+  const sky = getSkyGradient(getTimePhase(now));
+  const season = getSeason(now);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -63,7 +70,14 @@ export default function ForestProfilePage() {
   const pastDreams = dreams.slice(RECENT_FRUIT_COUNT);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#241a40] via-[#1a1336] to-[#0e0a1c] pb-24 text-white">
+    <div
+      className="relative min-h-screen pb-24 text-white"
+      style={{ background: sky }}
+    >
+      {/* 季節パーティクル（本文の背面・自前で overflow-hidden するのでルートは clip しない。
+          ルートに overflow-hidden を付けると sticky ヘッダーが流れて消えるため外している） */}
+      <SeasonalParticles season={season} behind />
+
       <header className="sticky top-0 z-10 bg-black/20 backdrop-blur-md">
         <div className="container mx-auto flex h-14 max-w-3xl items-center px-4">
           <Link href="/forest" className="flex items-center text-white/80 hover:text-white">
@@ -75,7 +89,7 @@ export default function ForestProfilePage() {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-3xl px-4 pt-10">
+      <main className="container relative z-[2] mx-auto max-w-3xl px-4 pt-10">
         {dreams.length === 0 ? (
           <div className="mt-16 flex flex-col items-center gap-4 text-center">
             <motion.span
