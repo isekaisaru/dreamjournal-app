@@ -1,66 +1,92 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { DreamProfile } from "@/app/types";
 import { getGrowthLevel, getCanopyScale } from "@/lib/forest";
+import ForestTree from "./ForestTree";
 
-export default function MiniTree({ profile }: { profile: DreamProfile }) {
-  const router = useRouter();
-  const reduceMotion = useReducedMotion();
+interface MiniTreeProps {
+  profile: DreamProfile;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  height?: number;
+}
+
+/**
+ * 森の一覧画面に並ぶ木。
+ * - 選択中 / ホバー中は光のリング + ラベル強調
+ * - ラベルは 2 行: 「🌙 そら」 / 「若木｜ゆめ 14こ」
+ * - CSS keyframe sway（forest-sway）で軽く揺れる（JS rAF なし）
+ *
+ * 注: 一覧APIは各プロフィールの夢本体（dreams）を返さないため、
+ *     一覧の木には実を出さない（showFruits=false）。実は詳細画面で表示する。
+ */
+export default function MiniTree({ profile, isSelected = false, onSelect, height }: MiniTreeProps) {
+  const [hovered, setHovered] = useState(false);
   const count = profile.dreams_count ?? 0;
-  const { level, name } = getGrowthLevel(count);
-  const scale = getCanopyScale(level);
+  const lvl = getGrowthLevel(count);
+  const treeH = height ?? Math.round((120 + lvl.level * 22) * getCanopyScale(lvl.level) * 0.9 + 80);
+  const active = isSelected || hovered;
 
   return (
-    <motion.button
-      type="button"
-      onClick={() => router.push(`/forest/${profile.id}`)}
-      className="relative flex flex-col items-center justify-end rounded-2xl px-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      whileHover={{ scale: 1.06 }}
-      whileTap={{ scale: 0.97 }}
-      aria-label={`${profile.name} の木（夢 ${count} 件・${name}）を見る`}
+    <div
+      className={`forest-tree-group${active ? " selected" : ""}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
     >
-      {/* 茂み（ゆっくり呼吸するように揺れる） */}
-      <motion.div
-        className="rounded-full"
-        style={{
-          width: 96 * scale,
-          height: 96 * scale,
-          background: `radial-gradient(circle at 40% 35%, ${profile.color}cc, ${profile.color}55 70%, transparent)`,
-          boxShadow: `0 0 32px ${profile.color}66, 0 0 12px ${profile.color}33`,
-        }}
-        animate={reduceMotion ? undefined : { scale: [1, 1.04, 1] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <span
-          className="flex h-full w-full items-center justify-center text-2xl"
-          aria-hidden
-        >
-          {profile.avatar_emoji}
-        </span>
-      </motion.div>
-      {/* 幹 */}
+      {/* selection / hover ring */}
       <div
-        className="w-2.5 rounded-b-sm bg-[#6b4a2b]"
-        style={{ height: 18 + level * 4 }}
-      />
-      {/* 根元の光輪 */}
-      <div
-        className="rounded-full"
-        style={{
-          width: Math.round(40 * scale),
-          height: 5,
-          background: `radial-gradient(ellipse, ${profile.color}55, transparent 70%)`,
-          marginBottom: 3,
-        }}
         aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: Math.round(treeH * 0.12),
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: Math.round(treeH * 0.62),
+          height: Math.round(treeH * 0.62),
+          borderRadius: "50%",
+          boxShadow: `0 0 0 3px ${profile.color}cc, 0 0 26px 6px ${profile.color}66`,
+          opacity: active ? 1 : 0,
+          transition: "opacity .18s",
+          pointerEvents: "none",
+          zIndex: 4,
+        }}
       />
-      {/* 名前と件数 */}
-      <span className="mt-1 text-xs font-semibold text-foreground/90">
-        {profile.name}
-      </span>
-      <span className="text-[10px] text-muted-foreground">夢 {count}</span>
-    </motion.button>
+
+      {/* the lush SVG tree */}
+      <ForestTree
+        profile={profile}
+        dreams={[]}
+        level={lvl.level}
+        height={treeH}
+        variant="mini"
+        usePhysics={false}
+        showFruits={false}
+        onTapTree={onSelect}
+      />
+
+      {/* label */}
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-label={`${profile.name}の き。${lvl.name}、ゆめ ${count}こ。タップで くわしく見る`}
+        className="forest-tree-btn mt-[-4px] flex flex-col items-center gap-0.5 rounded-[14px] px-3 py-1.5 backdrop-blur-md transition-all"
+        style={{
+          background: active ? "rgba(18,18,46,0.92)" : "rgba(10,11,30,0.78)",
+          border: `1.5px solid ${active ? profile.color : profile.color + "55"}`,
+          boxShadow: active ? `0 6px 18px ${profile.color}44` : "0 4px 12px rgba(6,4,20,0.4)",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          color: "#fff",
+        }}
+      >
+        <span style={{ fontWeight: 800, fontSize: 14.5 }}>{profile.avatar_emoji} {profile.name}</span>
+        <span style={{ fontSize: 11.5, color: "#aeb8d6", fontWeight: 600 }}>
+          <span style={{ color: profile.color, fontWeight: 800 }}>{lvl.name}</span>
+          ｜ゆめ {count}こ
+        </span>
+      </button>
+    </div>
   );
 }

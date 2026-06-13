@@ -149,6 +149,54 @@
       transform: scale(1);
     }
   }
+
+  /* 夢の森リデザイン: forest-* アニメ（既存名と衝突しないプレフィックス） */
+  --animate-forest-sway:      forest-sway 5.5s ease-in-out infinite;
+  --animate-forest-fruit-bob: forest-fruit-bob 3s ease-in-out infinite;
+  --animate-forest-pop:       forest-pop 0.3s cubic-bezier(.2,1.3,.4,1) both;
+  --animate-forest-sheet-up:  forest-sheet-up 0.32s cubic-bezier(.2,1,.3,1) both;
+  --animate-forest-leaf-fall: forest-leaf-fall 1.4s ease-out forwards;
+  --animate-forest-confetti:  forest-confetti 1.5s cubic-bezier(.2,.7,.3,1) forwards;
+
+  @keyframes forest-sway {
+    0%, 100% { transform: rotate(-1.3deg); }
+    50%      { transform: rotate( 1.3deg); }
+  }
+  @keyframes forest-fruit-bob {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50%      { transform: translate(-50%, calc(-50% - 4px)); }
+  }
+  @keyframes forest-pop {
+    0%   { transform: translateX(-50%) scale(0.75); opacity: 0; }
+    100% { transform: translateX(-50%) scale(1);    opacity: 1; }
+  }
+  @keyframes forest-sheet-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes forest-leaf-fall {
+    0%   { transform: translate(0, 0) rotate(0);                          opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+  }
+  @keyframes forest-confetti {
+    0%   { transform: translate(0, 0) rotate(0);                          opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+  }
+}
+
+/* 夢の森リデザイン: 木グループのホバー/選択とラベルのフォーカスリング */
+.forest-tree-group {
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1);
+  will-change: transform;
+}
+.forest-tree-group:hover,
+.forest-tree-group.selected {
+  transform: translateY(-5px) scale(1.05);
+}
+.forest-tree-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
 }
 
 /*
