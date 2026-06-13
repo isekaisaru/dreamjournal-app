@@ -150,7 +150,7 @@ export default function NewDreamPage() {
       <DreamForm
         onSubmit={handleCreateSubmit}
         isLoading={isSaving}
-        initialData={preselectedProfileId ? { dream_profile_id: preselectedProfileId } : undefined}
+        defaultProfileId={preselectedProfileId}
       />
 
       <HarvestCelebration
