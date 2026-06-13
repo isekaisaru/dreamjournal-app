@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { DreamProfile } from "@/app/types";
 import {
   getTimePhase,
@@ -11,6 +12,7 @@ import {
   getCelestial,
 } from "@/lib/forestAtmosphere";
 import MiniTree from "./MiniTree";
+import ForestTodayCard from "./ForestTodayCard";
 import SeasonalParticles from "./SeasonalParticles";
 
 const STARS = Array.from({ length: 40 }, (_, i) => ({
@@ -40,6 +42,7 @@ const GROUND_DECO = [
 
 export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
   const reduceMotion = useReducedMotion();
+  const router = useRouter();
 
   // 読込時の時刻・季節を1回だけ確定（再レンダーで動かないよう useMemo）
   const now = useMemo(() => new Date(), []);
@@ -47,6 +50,14 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   const season = getSeason(now);
   const sky = getSkyGradient(phase);
   const { moonXPct, moonYPct, starOpacity } = getCelestial(phase);
+
+  // 「きょうの もり」カード用の集計
+  const totalDreams = profiles.reduce((s, p) => s + (p.dreams_count ?? 0), 0);
+  const topProfile = profiles.reduce<DreamProfile | null>((top, p) => {
+    if ((p.dreams_count ?? 0) === 0) return top;
+    if (!top || (p.dreams_count ?? 0) > (top.dreams_count ?? 0)) return p;
+    return top;
+  }, null);
 
   return (
     <div
@@ -81,6 +92,13 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         style={{ left: `${moonXPct}%`, top: `${moonYPct}%` }}
         aria-hidden="true"
       />
+
+      {/* きょうの もり ダッシュボード（右上オーバーレイ） */}
+      {profiles.length > 0 && (
+        <div className="absolute right-3 top-3 z-20">
+          <ForestTodayCard totalDreams={totalDreams} topProfile={topProfile} />
+        </div>
+      )}
 
       {/* 季節パーティクル（🌸/🍃/🍁/❄️） */}
       <SeasonalParticles season={season} />
@@ -148,7 +166,13 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
             </Link>
           </div>
         ) : (
-          profiles.map((p) => <MiniTree key={p.id} profile={p} />)
+          profiles.map((p) => (
+            <MiniTree
+              key={p.id}
+              profile={p}
+              onSelect={() => router.push(`/forest/${p.id}`)}
+            />
+          ))
         )}
       </div>
     </div>
