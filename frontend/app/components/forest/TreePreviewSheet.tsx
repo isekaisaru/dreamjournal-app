@@ -31,6 +31,7 @@ export default function TreePreviewSheet({ profile, onOpen, onClose }: TreePrevi
     if (!profile) { setRecentDream(null); return; }
     let cancelled = false;
     setLoading(true);
+    setRecentDream(null);
     getDreamsForProfile(profile.id)
       .then((dreams) => { if (!cancelled) setRecentDream(dreams[0] ?? null); })
       .catch(() => {/* silently ignore — sheet still useful without recent dream */})
