@@ -77,6 +77,7 @@ export default function ParticleField({ phase, season, weather = "firefly", star
       canvas.height = Math.max(1, H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       seed();
+      if (!propsRef.current.motion) frame(performance.now());
     }
 
     const GLYPH: Record<string, string> = { spring: "🌸", summer: "🍃", autumn: "🍁", winter: "❄️" };
@@ -84,12 +85,17 @@ export default function ParticleField({ phase, season, weather = "firefly", star
     let raf = 0, lastT = 0;
 
     function frame(now: number) {
-      raf = requestAnimationFrame(frame);
-      if (now - lastT < FRAME_MS) return;
-      lastT = now;
-      if (!st) return;
       const P = propsRef.current;
       const moving = P.motion;
+      if (moving && now - lastT < FRAME_MS) {
+        raf = requestAnimationFrame(frame);
+        return;
+      }
+      lastT = now;
+      if (!st) {
+        if (moving) raf = requestAnimationFrame(frame);
+        return;
+      }
       st.t++;
       ctx.clearRect(0, 0, W, H);
 
@@ -169,14 +175,15 @@ export default function ParticleField({ phase, season, weather = "firefly", star
       } else if (st.rain.length) st.rain = [];
 
       ctx.globalAlpha = 1;
+      if (moving) raf = requestAnimationFrame(frame);
     }
 
     resize();
-    raf = requestAnimationFrame(frame);
+    if (propsRef.current.motion) raf = requestAnimationFrame(frame);
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     return () => { cancelAnimationFrame(raf); ro.disconnect(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reduceMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <canvas
