@@ -15,23 +15,10 @@ import {
 import { getGrowthLevel, getCanopyScale } from "@/lib/forest";
 import MiniTree from "./MiniTree";
 import ForestTodayCard from "./ForestTodayCard";
-import SeasonalParticles from "./SeasonalParticles";
+import ParticleField from "./ParticleField";
+import Critters from "./Critters";
+import WalkingMorpheus from "./WalkingMorpheus";
 import TreePreviewSheet from "./TreePreviewSheet";
-
-const STARS = Array.from({ length: 40 }, (_, i) => ({
-  left: (i * 53) % 100,
-  top: (i * 37) % 70,
-  delay: (i % 7) * 0.4,
-  size: (i % 3) + 1,
-}));
-
-const FIREFLIES = Array.from({ length: 8 }, (_, i) => ({
-  left: (i * 13 + 8) % 85 + 7,
-  top: 55 + (i * 7) % 28,
-  delay: (i * 0.7) % 2.8,
-  dx: ((i % 3) - 1) * 18,
-  dy: -(8 + (i % 5) * 4),
-}));
 
 export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
   const reduceMotion = useReducedMotion();
@@ -187,27 +174,14 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
       style={{ background: sky }}
     >
       {/* === 固定アンビエント（パンしても動かない背景） === */}
-      {/* 星空（時間帯で濃さが変わる） */}
-      {STARS.map((s, i) => (
-        <motion.span
-          key={i}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${s.left}%`,
-            top: `${s.top}%`,
-            width: s.size,
-            height: s.size,
-            opacity: cel.starOpacity,
-          }}
-          animate={
-            reduceMotion
-              ? undefined
-              : { opacity: [0.2 * cel.starOpacity, cel.starOpacity, 0.2 * cel.starOpacity] }
-          }
-          transition={{ duration: 3, repeat: Infinity, delay: s.delay }}
-          aria-hidden="true"
-        />
-      ))}
+      {/* 星・ほたる・季節パーティクルを1枚のCanvasに集約（30fps・reduced-motion対応） */}
+      <ParticleField
+        phase={phase}
+        season={season}
+        weather="firefly"
+        starOpacity={cel.starOpacity}
+        density={1}
+      />
 
       {/* 月（位置・色が時間帯で変わる） */}
       <div
@@ -220,25 +194,6 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         }}
         aria-hidden="true"
       />
-
-      {/* 季節パーティクル */}
-      <SeasonalParticles season={season} />
-
-      {/* ほたる */}
-      {FIREFLIES.map((f, i) => (
-        <motion.span
-          key={i}
-          className="absolute h-1.5 w-1.5 rounded-full bg-amber-200"
-          style={{ left: `${f.left}%`, top: `${f.top}%`, opacity: 0.5 }}
-          animate={
-            reduceMotion
-              ? undefined
-              : { x: [0, f.dx, 0], y: [0, f.dy, 0], opacity: [0.15, 0.9, 0.15] }
-          }
-          transition={{ duration: 2.5 + f.delay, repeat: Infinity, ease: "easeInOut", delay: f.delay }}
-          aria-hidden="true"
-        />
-      ))}
 
       {/* きょうの もり カード（右上・固定） */}
       {!isEmpty && (
@@ -323,6 +278,12 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
                 />
               </div>
             ))}
+
+            {/* 小動物・歩くモルペウス（reduced-motion時は非表示） */}
+            {!reduceMotion && (
+              <Critters fieldW={fieldW} count={Math.min(4, 2 + profiles.length)} />
+            )}
+            {!reduceMotion && <WalkingMorpheus fieldW={fieldW} baseY={H * 0.06} />}
           </div>
         </div>
       )}

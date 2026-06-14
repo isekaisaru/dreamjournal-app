@@ -112,7 +112,9 @@ test.describe("夢の森", () => {
     await expect(seeTreeButton).toBeVisible();
     await seeTreeButton.click();
 
-    await expect(page).toHaveURL(/\/forest\/1$/);
+    // dev サーバーは /forest/[id] を初回オンデマンドコンパイルするため、
+    // 遷移完了まで余裕を持って待つ（既定5秒だと初回コンパイルに間に合わずflakyになる）
+    await expect(page).toHaveURL(/\/forest\/1$/, { timeout: 30000 });
     await expect(page.getByRole("heading", { name: /の き$/ })).toBeVisible();
   });
 });
