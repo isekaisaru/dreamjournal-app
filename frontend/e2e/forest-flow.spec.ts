@@ -97,15 +97,20 @@ test.describe("夢の森", () => {
     ]);
   });
 
-  test("森 → 木 → へ遷移できる", async ({ page }) => {
+  test("森 → 木タップ → プレビューシート → 詳細へ遷移できる", async ({ page }) => {
     await page.goto("/forest");
 
     await expect(
       page.getByRole("heading", { name: "ゆめの もり" })
     ).toBeVisible();
 
-    // 「自分」の木をクリック（aria-label の前方一致で絞り込み）
-    await page.getByRole("button", { name: /自分 の木/ }).first().click();
+    // 「自分」の木をタップ → 下からプレビューシートが出る（直接遷移ではない）
+    await page.getByRole("button", { name: /自分の き/ }).first().click();
+
+    // プレビューシートの「この きを 見る ›」で詳細へ遷移
+    const seeTreeButton = page.getByRole("button", { name: /この きを 見る/ });
+    await expect(seeTreeButton).toBeVisible();
+    await seeTreeButton.click();
 
     await expect(page).toHaveURL(/\/forest\/1$/);
     await expect(page.getByRole("heading", { name: /の き$/ })).toBeVisible();
