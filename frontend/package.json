@@ -35,7 +35,7 @@
     "cors": "^2.8.6",
     "delayed-stream": "^1.0.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "form-data": "^4.0.4",
+    "form-data": "^4.0.6",
     "framer-motion": "^12.23.24",
     "glob": "^13.0.6",
     "html-to-image": "^1.11.13",
