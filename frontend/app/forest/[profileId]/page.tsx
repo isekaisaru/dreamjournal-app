@@ -54,7 +54,7 @@ function DreamPreviewModal({
         initial={reduceMotion ? undefined : { opacity: 0, scale: 0.9, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 22 }}
-        className="w-[min(360px,90%)] rounded-[22px] p-5 text-white"
+        className="w-[min(360px,90%)] max-h-[85vh] overflow-y-auto rounded-[22px] p-5 text-white"
         style={{
           background: "linear-gradient(160deg, rgba(30,28,66,0.96), rgba(18,16,44,0.96))",
           border: `1px solid ${profileColor}55`,

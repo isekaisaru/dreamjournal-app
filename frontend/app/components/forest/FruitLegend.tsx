@@ -2,21 +2,29 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { EMOTION_COLORS } from "@/lib/forest";
 
-const LEGEND_ROWS = [
-  ["#fbbf24", "うれしい・たのしい"],
-  ["#34d399", "あんしん・しあわせ"],
-  ["#22d3ee", "きたい・ふしぎ"],
-  ["#60a5fa", "かなしい"],
-  ["#f87171", "こわい・おこり"],
-  ["#a78bfa", "おどろき"],
-] as const;
+// EMOTION_COLORS のキーに対応するひらがな読み
+const READINGS: Record<string, string> = {
+  喜び: "よろこび",
+  楽しい: "たのしい",
+  幸せ: "しあわせ",
+  愛: "あい",
+  安心: "あんしん",
+  期待: "きたい",
+  驚き: "おどろき",
+  悲しい: "かなしい",
+  不安: "ふあん",
+  怒り: "おこり",
+  恐怖: "こわい",
+  混乱: "こんらん",
+};
 
-/**
- * 実の色 = 感情タグ の凡例。詳細画面（/forest/:id）の左上に配置する。
- * 「みの いろって？」トグルで展開。YumeTree 独自の感情タグ機能と
- * 視覚的につながり、子どもに意味を教えられる。
- */
+const LEGEND_ROWS = Object.entries(EMOTION_COLORS).map(([name, color]) => ({
+  color,
+  label: READINGS[name] ?? name,
+}));
+
 export default function FruitLegend() {
   const [open, setOpen] = useState(false);
 
@@ -39,14 +47,14 @@ export default function FruitLegend() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.96 }}
             transition={{ duration: 0.18 }}
-            className="mt-2 w-48 rounded-2xl border border-white/20 bg-[rgba(14,14,36,0.92)] p-3 backdrop-blur-xl"
+            className="mt-2 max-h-[60vh] w-48 overflow-y-auto rounded-2xl border border-white/20 bg-[rgba(14,14,36,0.92)] p-3 backdrop-blur-xl"
           >
             <p className="mb-2 text-[12px] leading-relaxed text-white/70">
               みの いろは、ゆめの{" "}
               <b className="text-white">きもち</b> を あらわしているよ。
             </p>
             <div className="flex flex-col gap-1.5">
-              {LEGEND_ROWS.map(([color, label]) => (
+              {LEGEND_ROWS.map(({ color, label }) => (
                 <div key={color} className="flex items-center gap-2">
                   <span
                     className="h-3 w-3 flex-none rounded-full"
