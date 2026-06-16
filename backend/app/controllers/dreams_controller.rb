@@ -2,7 +2,9 @@ class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
   before_action :check_monthly_image_limit, only: [:generate_image]
+  before_action :check_trial_dream_limit, only: [:create]
 
+  TRIAL_DREAM_LIMIT             = 7   # トライアルユーザーの夢作成件数上限
   TRIAL_ANALYSIS_LIMIT          = 3   # トライアルユーザーの分析回数上限
   IMAGE_MONTHLY_LIMIT           = 31  # 全ユーザー共通の画像生成月次上限
   FREE_ANALYSIS_MONTHLY_LIMIT   = User::FREE_ANALYSIS_MONTHLY_LIMIT
@@ -315,6 +317,18 @@ class DreamsController < ApplicationController
 
     def dream_profile_json_options
       { only: [:id, :name, :avatar_emoji, :color, :active] }
+    end
+
+    # トライアルユーザーの夢作成件数を制限する（backend側で必ず弾く）
+    def check_trial_dream_limit
+      return unless current_user.trial_user?
+      return if current_user.dreams.count < TRIAL_DREAM_LIMIT
+
+      render json: {
+        error: "お試しで のこせる ゆめは #{TRIAL_DREAM_LIMIT}こ までだよ。アカウント登録すると、ずっと のこせるよ。",
+        limit_reached: true,
+        trial_dream_limit: TRIAL_DREAM_LIMIT
+      }, status: :forbidden
     end
 
     def check_analysis_limit

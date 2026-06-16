@@ -14,6 +14,39 @@ RSpec.describe 'Dreams API', type: :request do
     ]
   end
 
+  describe 'POST /dreams トライアルユーザーの件数制限' do
+    let!(:trial_user) { create(:user, trial_user: true) }
+    let(:trial_dream_params) { { dream: { title: 'ゆめ', content: 'ゆめの ないようを かいたよ。' } } }
+
+    it 'トライアルユーザーは上限件数未満なら作成できる' do
+      create_list(:dream, DreamsController::TRIAL_DREAM_LIMIT - 1, user: trial_user)
+
+      expect {
+        authenticated_post('/dreams', trial_user, params: trial_dream_params)
+      }.to change(Dream, :count).by(1)
+      expect(response).to have_http_status(:created)
+    end
+
+    it 'トライアルユーザーが上限に達したら403で作成されない' do
+      create_list(:dream, DreamsController::TRIAL_DREAM_LIMIT, user: trial_user)
+
+      expect {
+        authenticated_post('/dreams', trial_user, params: trial_dream_params)
+      }.not_to change(Dream, :count)
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)['limit_reached']).to be true
+    end
+
+    it '通常ユーザーは上限件数を超えても作成できる' do
+      create_list(:dream, DreamsController::TRIAL_DREAM_LIMIT, user: user)
+
+      expect {
+        authenticated_post('/dreams', user, params: trial_dream_params)
+      }.to change(Dream, :count).by(1)
+      expect(response).to have_http_status(:created)
+    end
+  end
+
   describe 'POST /dreams' do
     let(:valid_dream_params) do
       {
