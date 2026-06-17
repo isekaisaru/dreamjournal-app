@@ -186,8 +186,8 @@ export default function ForestProfilePage() {
       {/* sticky ヘッダー */}
       <header className="sticky top-0 z-10 bg-black/20 backdrop-blur-md">
         <div className="container mx-auto flex h-14 max-w-3xl items-center px-4">
-          <Link href="/forest" className="flex items-center text-white/80 hover:text-white">
-            <ChevronLeft className="mr-1 h-5 w-5" /> もり
+          <Link href="/forest" className="flex min-h-[44px] items-center px-1 text-white/80 hover:text-white">
+            <ChevronLeft className="mr-1 h-5 w-5" /> もりに もどる
           </Link>
           <h1 className="ml-3 whitespace-nowrap text-lg font-bold">
             {profile.avatar_emoji} {profile.name} の き
