@@ -15,6 +15,7 @@ import DreamStreakBadge from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
 import ProfileFilterChips from "@/app/components/ProfileFilterChips";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
+import TrialBanner from "@/app/components/TrialBanner";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import ForestPreviewWidget from "@/app/components/forest/ForestPreviewWidget";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
@@ -312,6 +313,13 @@ export default function HomePage() {
     >
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
+        {/* お試しユーザー向けバナー（残回数・本登録CTA） */}
+        {user?.trial_user && (
+          <TrialBanner
+            analysisCount={user.trial_analysis_count}
+            audioCount={user.trial_audio_count}
+          />
+        )}
         <MorpheusHero
           expression="cheerful"
           variant="home"

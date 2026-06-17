@@ -26,6 +26,9 @@ export interface User {
   premium?: boolean;
   age_group?: AgeGroup;
   analysis_tone?: AnalysisTone;
+  trial_user?: boolean;          // お試しユーザーかどうか
+  trial_analysis_count?: number; // お試しのAI分析 使用回数
+  trial_audio_count?: number;    // お試しの音声記録 使用回数
 }
 
 // Backendから直接受け取るユーザー情報の型。IDは数値。
@@ -38,6 +41,9 @@ export interface BackendUser {
   premium?: boolean;
   age_group?: AgeGroup;
   analysis_tone?: AnalysisTone;
+  trial_user?: boolean;
+  trial_analysis_count?: number;
+  trial_audio_count?: number;
 }
 
 export interface Emotion {
