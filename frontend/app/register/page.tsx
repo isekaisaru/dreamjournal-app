@@ -41,15 +41,15 @@ export default function Register() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, authStatus } = useAuth();
+  const { login, authStatus, user } = useAuth();
   const router = useRouter();
 
-  // 1. 既にログインしているユーザーをホームページに案内する機能
+  // 認証済みでも trial_user は本登録フォームに進めるため除外する
   useEffect(() => {
-    if (authStatus === "authenticated") {
+    if (authStatus === "authenticated" && !user?.trial_user) {
       router.push("/home");
     }
-  }, [authStatus, router]);
+  }, [authStatus, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

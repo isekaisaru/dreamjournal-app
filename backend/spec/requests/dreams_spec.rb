@@ -45,6 +45,16 @@ RSpec.describe 'Dreams API', type: :request do
       }.to change(Dream, :count).by(1)
       expect(response).to have_http_status(:created)
     end
+
+    it 'premium: true かつ trial_user: true のユーザーは上限を超えても作成できる' do
+      premium_trial_user = create(:user, trial_user: true, premium: true)
+      create_list(:dream, DreamsController::TRIAL_DREAM_LIMIT, user: premium_trial_user)
+
+      expect {
+        authenticated_post('/dreams', premium_trial_user, params: trial_dream_params)
+      }.to change(Dream, :count).by(1)
+      expect(response).to have_http_status(:created)
+    end
   end
 
   describe 'POST /dreams' do

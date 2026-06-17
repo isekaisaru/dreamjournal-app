@@ -320,8 +320,10 @@ class DreamsController < ApplicationController
     end
 
     # トライアルユーザーの夢作成件数を制限する（backend側で必ず弾く）
+    # premium? を先に確認する: trial→課金後は premium: true, trial_user: true になり得るため
     def check_trial_dream_limit
       return unless current_user.trial_user?
+      return if current_user.premium?
       return if current_user.dreams.count < TRIAL_DREAM_LIMIT
 
       render json: {
