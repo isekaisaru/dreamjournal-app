@@ -37,6 +37,20 @@ class ApplicationController < ActionController::API
     end
   end
 
+  # ユーザー情報のJSON表現（trial判定に必要な項目を含める）
+  # 各コントローラ（auth / trial_users 等）で共通利用する
+  def user_json(user)
+    user.as_json(
+      only: [
+        :id, :email, :username, :premium, :age_group, :analysis_tone,
+        :trial_analysis_count, :trial_audio_count
+      ]
+    ).merge(
+      # カラムが nil の既存ユーザーでも frontend が確実に真偽値で判定できるようにする
+      "trial_user" => user.trial_user?
+    )
+  end
+
   def set_token_cookies(access_token, refresh_token)
     # 環境に応じてSameSiteとSecure属性を調整
     same_site_policy = Rails.env.production? ? :none : :lax

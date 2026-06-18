@@ -103,9 +103,7 @@ class AuthController < ApplicationController
 
   private
 
-  def user_json(user)
-    user.as_json(only: [:id, :email, :username, :premium, :age_group, :analysis_tone])
-  end
+  # user_json は ApplicationController で共通定義（trial判定項目を含む）
 
   def profile_params
     params.require(:user).permit(:username, :age_group, :analysis_tone)
