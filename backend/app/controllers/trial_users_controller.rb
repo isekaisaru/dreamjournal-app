@@ -35,7 +35,7 @@ class TrialUsersController < ApplicationController
       render json: error_response[:body], status: error_response[:status]
     else
       set_token_cookies(result[:access_token], result[:refresh_token])
-      render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium, :age_group, :analysis_tone]) }, status: :created
+      render json: { user: user_json(result[:user]) }, status: :created
     end
   end
 end

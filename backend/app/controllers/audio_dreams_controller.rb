@@ -6,10 +6,11 @@ class AudioDreamsController < ApplicationController
   TRIAL_AUDIO_LIMIT = 1 # トライアルユーザーの音声分析上限（Whisper+GPTで高コスト）
 
   def create
-    # ユーザー認証: トークンからcurrent_userを取得するロジックが必要
-    # ApplicationControllerでcurrent_userがセットされている前提
-    # なければ User.first (仮: 開発用) またはエラーにする
-    user = current_user || User.first 
+    user = current_user
+    unless user
+      render json: { error: "認証されていません。ログインしてください。" }, status: :unauthorized
+      return
+    end
 
     # 1. Dreamレコードを作成 (ステータス: pending)
     dream = user.dreams.new(

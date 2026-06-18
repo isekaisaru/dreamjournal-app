@@ -92,6 +92,23 @@ RSpec.describe 'Authentication API', type: :request do
         expect(json_response['user']['email']).to eq(user.email)
         expect(json_response['user']['username']).to eq(user.username)
         expect(json_response['user']['premium']).to be false
+        # trial判定に必要な項目が含まれる（通常ユーザーは trial_user=false）
+        expect(json_response['user']['trial_user']).to be false
+        expect(json_response['user']).to have_key('trial_analysis_count')
+        expect(json_response['user']).to have_key('trial_audio_count')
+      end
+    end
+
+    context 'トライアルユーザーの場合' do
+      let!(:trial_user) { create(:user, trial_user: true) }
+
+      it 'trial_user=true と各カウントを返す' do
+        authenticated_get('/auth/me', trial_user)
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['user']['trial_user']).to be true
+        expect(json_response['user']['trial_analysis_count']).to eq(0)
+        expect(json_response['user']['trial_audio_count']).to eq(0)
       end
     end
 
