@@ -52,7 +52,8 @@ const DEFAULT_FORM: ProfileFormState = {
 };
 
 export default function ProfilesPage() {
-  const { authStatus } = useAuth();
+  const { authStatus, user } = useAuth();
+  const isTrial = user?.trial_user === true;
   const router = useRouter();
 
   const [profiles, setProfiles] = useState<DreamProfile[]>([]);
@@ -88,7 +89,9 @@ export default function ProfilesPage() {
 
   const activeProfiles = profiles.filter((p) => !p.archived);
   const archivedProfiles = profiles.filter((p) => p.archived);
-  const remaining = 5 - activeProfiles.length;
+  const profileLimit = isTrial ? 1 : 5;
+  const remaining = profileLimit - activeProfiles.length;
+  const canAddProfile = !isTrial || activeProfiles.length < 1;
 
   const openCreate = () => {
     setEditingProfile(null);
@@ -175,10 +178,27 @@ export default function ProfilesPage() {
       </header>
 
       <main className="container max-w-2xl mx-auto px-4 py-8 space-y-6">
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          夢プロフィールを作ると、自分・家族・ペットなど、誰の夢かを分けて記録できます。
-          夢を書くときに選ぶと、あとから人ごとに見返しやすくなります。最大5つまで。
-        </p>
+        {isTrial ? (
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
+            <p className="font-medium text-foreground mb-1">
+              お試し中は プロフィールは 1つ まで
+            </p>
+            <p className="text-muted-foreground mb-3">
+              とうろくすると、さいだい5つ まで つくれるよ。かぞくや ペットの ゆめも わけて のこせるよ。
+            </p>
+            <Link
+              href="/register"
+              className="inline-flex min-h-10 items-center gap-1 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              とうろくして もっと つかう
+            </Link>
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            夢プロフィールを作ると、自分・家族・ペットなど、誰の夢かを分けて記録できます。
+            夢を書くときに選ぶと、あとから人ごとに見返しやすくなります。最大5つまで。
+          </p>
+        )}
 
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3">
@@ -197,7 +217,7 @@ export default function ProfilesPage() {
               />
             ))}
 
-            {remaining > 0 && (
+            {canAddProfile && remaining > 0 && (
               <button
                 onClick={openCreate}
                 className="flex flex-col items-center justify-center gap-2 h-36 rounded-2xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
