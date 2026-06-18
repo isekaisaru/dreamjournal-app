@@ -2,7 +2,6 @@
 
 class DreamProfilesController < ApplicationController
   before_action :set_profile, only: [:update, :archive, :restore]
-  before_action :check_trial_profile_limit, only: [:create]
 
   TRIAL_PROFILE_LIMIT = 1  # トライアルユーザーのプロフィール作成上限
 
@@ -20,6 +19,13 @@ class DreamProfilesController < ApplicationController
     result = :ok
 
     current_user.with_lock do
+      # トライアル制限をロック内で確認（ロック外だと同時リクエストで2件作られる恐れがある）
+      if current_user.trial_user? && !current_user.premium? &&
+         current_user.dream_profiles.count >= TRIAL_PROFILE_LIMIT
+        result = :trial_limit_exceeded
+        raise ActiveRecord::Rollback
+      end
+
       active_count = current_user.dream_profiles.where(active: true).count
       if active_count >= DreamProfile::MAX_ACTIVE_COUNT
         result = :limit_exceeded
@@ -36,6 +42,12 @@ class DreamProfilesController < ApplicationController
     case result
     when :ok
       render json: profile_json(profile), status: :created
+    when :trial_limit_exceeded
+      render json: {
+        error: "お試しでは プロフィールは #{TRIAL_PROFILE_LIMIT}つ までだよ。アカウント登録すると、もっと つくれるよ。",
+        limit_reached: true,
+        trial_profile_limit: TRIAL_PROFILE_LIMIT
+      }, status: :forbidden
     when :limit_exceeded
       render json: { error: "アクティブなプロフィールは#{DreamProfile::MAX_ACTIVE_COUNT}件までです" },
              status: :unprocessable_entity
@@ -95,20 +107,6 @@ class DreamProfilesController < ApplicationController
   def set_profile
     @profile = current_user.dream_profiles.find_by(id: params[:id])
     render json: { error: "プロフィールが見つかりません" }, status: :not_found unless @profile
-  end
-
-  # トライアルユーザーのプロフィール作成件数を制限する（backend側で必ず弾く）
-  # premium? を先に確認: trial→課金後は premium:true, trial_user:true になり得るため
-  def check_trial_profile_limit
-    return unless current_user.trial_user?
-    return if current_user.premium?
-    return if current_user.dream_profiles.count < TRIAL_PROFILE_LIMIT
-
-    render json: {
-      error: "お試しでは プロフィールは #{TRIAL_PROFILE_LIMIT}つ までだよ。アカウント登録すると、もっと つくれるよ。",
-      limit_reached: true,
-      trial_profile_limit: TRIAL_PROFILE_LIMIT
-    }, status: :forbidden
   end
 
   def profile_params

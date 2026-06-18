@@ -53,7 +53,8 @@ const DEFAULT_FORM: ProfileFormState = {
 
 export default function ProfilesPage() {
   const { authStatus, user } = useAuth();
-  const isTrial = user?.trial_user === true;
+  // premium+trial（trial→課金済み）はバックエンドで制限されないためUIも通常扱いにする
+  const isTrial = user?.trial_user === true && !user?.premium;
   const router = useRouter();
 
   const [profiles, setProfiles] = useState<DreamProfile[]>([]);
