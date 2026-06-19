@@ -6,12 +6,14 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
 
 import type { AnalysisResult } from "@/app/types";
+import { useAuth } from "@/context/AuthContext";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
 import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 import { Button, type ButtonProps } from "./ui/button";
+import { TRIAL_AUDIO_LIMIT } from "./TrialBanner";
 
 type DreamEntryLauncherProps = {
   buttonLabel: string;
@@ -31,11 +33,20 @@ export default function DreamEntryLauncher({
   showSparkles = false,
 }: DreamEntryLauncherProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [status, setStatus] = useState<"idle" | "preparing" | "recording">(
-    "idle"
+  const [status, setStatus] = useState<
+    "idle" | "confirming" | "preparing" | "recording"
+  >("idle");
+
+  // お試しユーザー（課金前）だけ音声の残り回数を表示・制限する
+  const isTrial = user?.trial_user === true && !user?.premium;
+  const audioRemaining = Math.max(
+    0,
+    TRIAL_AUDIO_LIMIT - (user?.trial_audio_count ?? 0)
   );
+  const audioLimitReached = isTrial && audioRemaining === 0;
 
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
@@ -79,6 +90,8 @@ export default function DreamEntryLauncher({
     if (isRecording) {
       stopRecording();
     }
+    // 次に開いたときに「かくにん中」が残らないよう待機状態へ戻す
+    setStatus("idle");
     setIsOpen(false);
   }, [isProcessing, isRecording, stopRecording]);
 
@@ -118,18 +131,31 @@ export default function DreamEntryLauncher({
   const handleVoiceToggle = async () => {
     if (isProcessing) return;
 
-    if (navigator?.vibrate) navigator.vibrate(200);
-
+    // 録音中なら止める
     if (status === "recording") {
+      if (navigator?.vibrate) navigator.vibrate(200);
       stopRecording();
       return;
     }
 
-    setStatus("preparing");
-    try {
-      await startRecording();
-    } catch {
-      setStatus("idle");
+    // お試しの残り回数が0なら開始させない
+    if (audioLimitReached) return;
+
+    // 1回目のタップでは録音せず、説明を見せて一拍おく
+    if (status === "idle") {
+      setStatus("confirming");
+      return;
+    }
+
+    // 「かくにん中」からもう一度押されたら録音を始める
+    if (status === "confirming") {
+      if (navigator?.vibrate) navigator.vibrate(200);
+      setStatus("preparing");
+      try {
+        await startRecording();
+      } catch {
+        setStatus("idle");
+      }
     }
   };
 
@@ -196,10 +222,11 @@ export default function DreamEntryLauncher({
             </div>
 
             <div className="mt-6 space-y-3">
+              {/* ことばで かく：むらさき系のタイルで「文字」を表す */}
               <Link
                 href="/dream/new"
                 onClick={() => setIsOpen(false)}
-                className="flex min-h-16 w-full items-center justify-between rounded-2xl border border-border bg-background px-4 py-4 text-left transition-colors hover:bg-muted"
+                className="flex min-h-16 w-full items-center justify-between rounded-2xl border border-violet-200/70 bg-violet-50/60 px-4 py-4 text-left transition-colors hover:bg-violet-50"
               >
                 <div>
                   <p className="text-base font-bold text-foreground">
@@ -209,41 +236,60 @@ export default function DreamEntryLauncher({
                     おもいだせる ぶんだけ、ゆっくり かけるよ
                   </p>
                 </div>
-                <div className="rounded-full bg-primary/10 p-3 text-primary">
-                  <Pencil className="h-5 w-5" />
+                <div className="rounded-full bg-violet-100 p-3.5 text-violet-600">
+                  <Pencil className="h-6 w-6" />
                 </div>
               </Link>
 
+              {/* こえで はなす：みず色系のタイルで「音声」を表す */}
               <button
                 type="button"
                 onClick={handleVoiceToggle}
-                disabled={isProcessing}
+                disabled={isProcessing || audioLimitReached}
                 className={cn(
                   "flex min-h-16 w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   status === "recording"
                     ? "border-red-300 bg-red-50 text-red-700"
-                    : "border-border bg-background hover:bg-muted",
-                  isProcessing ? "cursor-not-allowed opacity-70" : ""
+                    : status === "confirming"
+                      ? "border-sky-400 bg-sky-100/70"
+                      : "border-sky-200/70 bg-sky-50/60 hover:bg-sky-50",
+                  isProcessing || audioLimitReached
+                    ? "cursor-not-allowed opacity-70"
+                    : ""
                 )}
                 aria-pressed={status === "recording"}
               >
                 <div>
-                  <p className="text-base font-bold text-foreground">
-                    {status === "recording"
-                      ? "こえを とめる"
-                      : "こえで はなす"}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-bold text-foreground">
+                      {status === "recording"
+                        ? "こえを とめる"
+                        : status === "confirming"
+                          ? "はなしはじめる"
+                          : "こえで はなす"}
+                    </p>
+                    {/* お試しユーザーには残り回数バッジを見せる */}
+                    {isTrial && status !== "recording" ? (
+                      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
+                        のこり {audioRemaining}かい
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {isProcessing
                       ? "モルペウスが まとめているよ"
                       : status === "recording"
                         ? "おわったら もういちど おしてね"
-                        : "ボタンを おして、そのまま はなしてみよう"}
+                        : status === "confirming"
+                          ? "マイクを つかうよ。よういが できたら もういちど おしてね"
+                          : audioLimitReached
+                            ? "きょうの おためしは おしまい だよ"
+                            : "ボタンを おして、そのまま はなしてみよう"}
                   </p>
                 </div>
                 <div
                   className={cn(
-                    "relative rounded-full p-3",
+                    "relative rounded-full p-3.5",
                     status === "recording"
                       ? "bg-red-100 text-red-600"
                       : "bg-sky-100 text-sky-600"
@@ -254,18 +300,31 @@ export default function DreamEntryLauncher({
                       <span className="absolute inset-0 rounded-full border border-red-300/80 animate-ping" />
                       <span className="absolute -inset-2 rounded-full border border-red-200/70 animate-[ping_1.8s_ease-out_infinite]" />
                     </>
+                  ) : status === "confirming" ? (
+                    <span className="absolute inset-0 rounded-full border border-sky-300/80 animate-ping" />
                   ) : null}
                   {isProcessing ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   ) : status === "recording" ? (
-                    <Square className="h-5 w-5 fill-current" />
+                    <Square className="h-6 w-6 fill-current" />
                   ) : status === "preparing" ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
-                    <Mic className="h-5 w-5" />
+                    <Mic className="h-6 w-6" />
                   )}
                 </div>
               </button>
+
+              {/* お試しの音声が残り0回のときは本登録へ誘導する */}
+              {audioLimitReached ? (
+                <Link
+                  href="/register"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center justify-center gap-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  とうろくして もっと はなす
+                </Link>
+              ) : null}
             </div>
 
             {error ? (
