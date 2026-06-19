@@ -3,6 +3,8 @@
 class DreamProfilesController < ApplicationController
   before_action :set_profile, only: [:update, :archive, :restore]
 
+  TRIAL_PROFILE_LIMIT = 1  # トライアルユーザーのプロフィール作成上限
+
   # GET /dream_profiles
   def index
     profiles = current_user.dream_profiles.order(:position, :created_at)
@@ -17,6 +19,13 @@ class DreamProfilesController < ApplicationController
     result = :ok
 
     current_user.with_lock do
+      # トライアル制限をロック内で確認（ロック外だと同時リクエストで2件作られる恐れがある）
+      if current_user.trial_user? && !current_user.premium? &&
+         current_user.dream_profiles.count >= TRIAL_PROFILE_LIMIT
+        result = :trial_limit_exceeded
+        raise ActiveRecord::Rollback
+      end
+
       active_count = current_user.dream_profiles.where(active: true).count
       if active_count >= DreamProfile::MAX_ACTIVE_COUNT
         result = :limit_exceeded
@@ -33,6 +42,12 @@ class DreamProfilesController < ApplicationController
     case result
     when :ok
       render json: profile_json(profile), status: :created
+    when :trial_limit_exceeded
+      render json: {
+        error: "お試しでは プロフィールは #{TRIAL_PROFILE_LIMIT}つ までだよ。アカウント登録すると、もっと つくれるよ。",
+        limit_reached: true,
+        trial_profile_limit: TRIAL_PROFILE_LIMIT
+      }, status: :forbidden
     when :limit_exceeded
       render json: { error: "アクティブなプロフィールは#{DreamProfile::MAX_ACTIVE_COUNT}件までです" },
              status: :unprocessable_entity

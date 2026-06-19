@@ -214,6 +214,21 @@ const SettingsPage = () => {
       </header>
 
       <main className="container max-w-2xl mx-auto px-4 py-8 space-y-8">
+        {user?.trial_user && (
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
+            <p className="font-medium text-foreground mb-1">お試し中</p>
+            <p className="text-muted-foreground mb-3">
+              とうろくすると、プロフィールを5つまで作れたり、ゆめをずっと のこせるよ。
+            </p>
+            <Link
+              href="/register"
+              className="inline-flex min-h-10 items-center gap-1 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              とうろくして ぜんぶ つかう
+            </Link>
+          </div>
+        )}
+
         <section className="overflow-hidden rounded-3xl border border-sky-500/20 bg-gradient-to-br from-slate-900 via-indigo-950 to-sky-950 p-5 text-white shadow-lg">
           <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
