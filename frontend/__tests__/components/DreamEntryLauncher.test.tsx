@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import { useAuth } from "@/context/AuthContext";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
+import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
+import type { User } from "@/app/types";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
@@ -30,16 +32,25 @@ const mockedUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockedUseVoiceRecorder = useVoiceRecorder as jest.MockedFunction<
   typeof useVoiceRecorder
 >;
+const mockedUpload = uploadAndAnalyzeAudio as jest.MockedFunction<
+  typeof uploadAndAnalyzeAudio
+>;
 
 type AuthValue = ReturnType<typeof useAuth>;
 
-const makeAuthValue = (user: Partial<NonNullable<AuthValue["user"]>> | null) =>
+// 可変の user。login で更新され、useAuth は毎レンダーこれを読む
+let currentUser: Partial<User> | null = null;
+
+const makeAuthValue = (): AuthValue =>
   ({
     authStatus: "authenticated",
     isLoggedIn: true,
-    user: user as AuthValue["user"],
+    user: currentUser as AuthValue["user"],
     userId: "1",
-    login: jest.fn(),
+    // login は本物と同じく user を差し替える（残り回数の即時反映を再現）
+    login: ((u: User) => {
+      currentUser = u;
+    }) as AuthValue["login"],
     logout: jest.fn(),
     deleteUser: jest.fn(),
     error: null,
@@ -47,6 +58,7 @@ const makeAuthValue = (user: Partial<NonNullable<AuthValue["user"]>> | null) =>
 
 const startRecording = jest.fn(() => Promise.resolve());
 const stopRecording = jest.fn();
+let capturedOnBlobReady: ((blob: Blob) => Promise<void> | void) | null = null;
 
 const openSheet = () => {
   fireEvent.click(screen.getByRole("button", { name: /ゆめを のこす/ }));
@@ -54,19 +66,23 @@ const openSheet = () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockedUseVoiceRecorder.mockReturnValue({
-    isRecording: false,
-    error: null,
-    startRecording,
-    stopRecording,
-  } as ReturnType<typeof useVoiceRecorder>);
+  currentUser = null;
+  capturedOnBlobReady = null;
+  mockedUseAuth.mockImplementation(() => makeAuthValue());
+  mockedUseVoiceRecorder.mockImplementation((opts) => {
+    capturedOnBlobReady = opts?.onBlobReady ?? null;
+    return {
+      isRecording: false,
+      error: null,
+      startRecording,
+      stopRecording,
+    } as ReturnType<typeof useVoiceRecorder>;
+  });
 });
 
 describe("DreamEntryLauncher", () => {
   it("トライアルユーザーには残り回数バッジを表示する", () => {
-    mockedUseAuth.mockReturnValue(
-      makeAuthValue({ trial_user: true, premium: false, trial_audio_count: 0 })
-    );
+    currentUser = { trial_user: true, premium: false, trial_audio_count: 0 };
     render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
     openSheet();
 
@@ -74,7 +90,7 @@ describe("DreamEntryLauncher", () => {
   });
 
   it("通常ユーザーには残り回数バッジを表示しない", () => {
-    mockedUseAuth.mockReturnValue(makeAuthValue({ trial_user: false }));
+    currentUser = { trial_user: false };
     render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
     openSheet();
 
@@ -82,9 +98,7 @@ describe("DreamEntryLauncher", () => {
   });
 
   it("残り0回のトライアルユーザーは録音できず本登録CTAが出る", () => {
-    mockedUseAuth.mockReturnValue(
-      makeAuthValue({ trial_user: true, premium: false, trial_audio_count: 1 })
-    );
+    currentUser = { trial_user: true, premium: false, trial_audio_count: 1 };
     render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
     openSheet();
 
@@ -98,9 +112,7 @@ describe("DreamEntryLauncher", () => {
   });
 
   it("こえで はなすは1回目で録音せず、2回目で録音を始める", () => {
-    mockedUseAuth.mockReturnValue(
-      makeAuthValue({ trial_user: false, premium: false })
-    );
+    currentUser = { trial_user: false, premium: false };
     render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
     openSheet();
 
@@ -112,5 +124,27 @@ describe("DreamEntryLauncher", () => {
     // 2回目: 録音を始める
     fireEvent.click(screen.getByRole("button", { name: /はなしはじめる/ }));
     expect(startRecording).toHaveBeenCalledTimes(1);
+  });
+
+  it("トライアルユーザーは録音完了後に残り0回のCTAへ切り替わる", async () => {
+    currentUser = { trial_user: true, premium: false, trial_audio_count: 0 };
+    mockedUpload.mockResolvedValue({ message: "ok" } as Awaited<
+      ReturnType<typeof uploadAndAnalyzeAudio>
+    >);
+    render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+    openSheet();
+    expect(screen.getByText("のこり 1かい")).toBeInTheDocument();
+
+    // 録音完了（onBlobReady 呼び出し）をシミュレート
+    await act(async () => {
+      await capturedOnBlobReady?.(new Blob());
+    });
+
+    // 成功でシートは自動で閉じるので、もう一度開く
+    openSheet();
+    expect(screen.getByText("のこり 0かい")).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /とうろくして もっと はなす/ })
+    ).toBeInTheDocument();
   });
 });

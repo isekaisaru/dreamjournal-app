@@ -33,7 +33,7 @@ export default function DreamEntryLauncher({
   showSparkles = false,
 }: DreamEntryLauncherProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<
@@ -64,6 +64,15 @@ export default function DreamEntryLauncher({
       setIsProcessing(true);
       try {
         const result = await uploadAndAnalyzeAudio(blob);
+        // お試しユーザーは録音成功で使用回数が1増える。backendの再取得を待たず
+        // グローバルのuserを更新し、残り回数表示（このボタン・/homeのTrialBanner）を
+        // 即座に最新化する（premiumは制限対象外なので更新しない）
+        if (user && user.trial_user && !user.premium) {
+          login({
+            ...user,
+            trial_audio_count: (user.trial_audio_count ?? 0) + 1,
+          });
+        }
         handleAnalysisResult(result);
       } catch (err) {
         console.error("Failed to analyze audio dream", err);
@@ -76,7 +85,7 @@ export default function DreamEntryLauncher({
         setIsProcessing(false);
       }
     },
-    [handleAnalysisResult]
+    [handleAnalysisResult, login, user]
   );
 
   const { isRecording, error, startRecording, stopRecording } =
