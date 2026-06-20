@@ -45,6 +45,12 @@ export function buildMonthlySummary(
     .slice(0, 3)
     .map(([label, count]) => ({ label, count }));
 
+  // 同率1位をすべて拾う（メッセージで「と」つなぎにするため）
+  const maxCount = Math.max(0, ...Object.values(emotionCounts));
+  const topTiedLabels = Object.entries(emotionCounts)
+    .filter(([, count]) => count === maxCount)
+    .map(([label]) => label);
+
   const highlights = [
     `${dreamCount}この ゆめ`,
     `${recordedDays}にち きろく`,
@@ -52,8 +58,13 @@ export function buildMonthlySummary(
   ];
 
   let message = `${fallbackMonthLabel}は ${dreamCount}この ゆめを きろくしたよ。`;
-  if (topEmotions[0]) {
-    message += ` いちばん多かった きもちは「${topEmotions[0].label}」だったよ。`;
+  if (topTiedLabels.length > 0) {
+    // 多すぎると読みにくいので3つまで表示し、残りは「など」でまとめる
+    const TIE_DISPLAY_LIMIT = 3;
+    const shown = topTiedLabels.slice(0, TIE_DISPLAY_LIMIT);
+    const joined = shown.map((label) => `「${label}」`).join("と");
+    const suffix = topTiedLabels.length > TIE_DISPLAY_LIMIT ? "など" : "";
+    message += ` いちばん多かった きもちは${joined}${suffix}だったよ。`;
   } else if (dreamCount > 0) {
     message += " これから きもちタグが ふえると、もっと たのしく ふりかえれるよ。";
   }
