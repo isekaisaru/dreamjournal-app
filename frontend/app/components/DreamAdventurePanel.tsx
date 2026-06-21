@@ -71,6 +71,28 @@ function getMorpheusVariant(completedQuestCount: number): MorpheusImageVariant {
   return "landing";
 }
 
+// クエスト達成時の「できた！」を伝える報酬メッセージ
+// 達成数が増えるほど、すこしずつ喜びが大きくなる
+function getRewardMessage(completedQuestCount: number, totalQuestCount: number) {
+  if (completedQuestCount <= 0) return null;
+  if (completedQuestCount >= totalQuestCount) {
+    return {
+      title: "今日の夢クエスト ぜんぶ達成！",
+      detail: "森に新しいきらめきが増えたよ",
+    };
+  }
+  if (completedQuestCount >= 2) {
+    return {
+      title: "夢クエスト達成中！",
+      detail: "小さな夢バッジに近づいたよ",
+    };
+  }
+  return {
+    title: "今日の夢クエスト達成！",
+    detail: "夢の地図が少し光ったよ",
+  };
+}
+
 export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps) {
   const todayStr = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Tokyo",
@@ -94,14 +116,14 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
     },
     {
       id: "emotion-star",
-      label: "きもちタグつきの夢を3つのこす",
-      helper: "夢を書くとき「きもち」をえらぶとたまるよ",
-      done: taggedDreamCount >= 3,
-      progressLabel: `${Math.min(taggedDreamCount, 3)}/3`,
+      label: "きもちを1つえらぶ",
+      helper: "夢を書いたあと、今のきもちを1つえらんでみよう",
+      done: taggedDreamCount >= 1,
+      progressLabel: `${Math.min(taggedDreamCount, 1)}/1`,
     },
     {
       id: "month-map",
-      label: "今月の夢を5つのこす",
+      label: "今月の夢を5つあつめる",
       helper: "5こたまると、月のまとめが楽しくなるよ",
       done: currentMonthDreams.length >= 5,
       progressLabel: `${Math.min(currentMonthDreams.length, 5)}/5`,
@@ -112,6 +134,7 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
   const progress = Math.round((completedQuestCount / quests.length) * 100);
   const title = getAdventureTitle(dreams.length, completedQuestCount);
   const morpheusVariant = getMorpheusVariant(completedQuestCount);
+  const reward = getRewardMessage(completedQuestCount, quests.length);
   const hasWindowBadge = imageDreamCount > 0;
   const hasStreakBadge = currentStreak >= 3;
   const hasMonthBadge = currentMonthDreams.length >= 5;
@@ -189,6 +212,31 @@ export default function DreamAdventurePanel({ dreams }: DreamAdventurePanelProps
           </motion.li>
         ))}
       </ul>
+
+      {reward && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32 }}
+          role="status"
+          className="relative mt-4 flex items-center gap-3 rounded-2xl border border-amber-200/70 bg-gradient-to-r from-amber-50 to-sky-50 px-3 py-3 dark:border-amber-300/20 dark:from-amber-300/10 dark:to-sky-300/10"
+        >
+          <span
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-200 text-base text-amber-900 dark:bg-amber-300/30 dark:text-amber-100"
+            aria-hidden="true"
+          >
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold leading-snug text-amber-900 dark:text-amber-100">
+              {reward.title}
+            </p>
+            <p className="mt-0.5 text-xs text-amber-800/80 dark:text-amber-100/80">
+              {reward.detail}
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       <div className="relative mt-4 rounded-2xl border border-white/70 bg-white/60 px-3 py-3 dark:border-white/10 dark:bg-white/5">
         <div className="mb-2 flex items-center gap-2 text-sm font-bold">
