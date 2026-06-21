@@ -156,11 +156,11 @@ export default function TrialPage() {
       </div>
 
       {/* 入力フォーム */}
-      <div className="mb-8 p-5 sm:p-6 bg-slate-800/40 border border-slate-700/40 rounded-2xl">
+      <div className="mb-8 p-5 sm:p-6 bg-card border border-border rounded-2xl">
         <h2 className="text-lg font-bold mb-4">夢を記録してみよう</h2>
 
         <div className="mb-3">
-          <label htmlFor="title" className="block text-sm text-slate-400 mb-1">
+          <label htmlFor="title" className="block text-sm text-muted-foreground mb-1">
             夢のタイトル（なくてもOK）
           </label>
           <input
@@ -169,14 +169,14 @@ export default function TrialPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="空を飛んだ夢"
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            className="w-full px-3 py-2 bg-background border border-input rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
           />
         </div>
 
         <div className="mb-4">
           <label
             htmlFor="description"
-            className="block text-sm text-slate-400 mb-1"
+            className="block text-sm text-muted-foreground mb-1"
           >
             見た夢の内容
           </label>
@@ -186,12 +186,12 @@ export default function TrialPage() {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="今朝見た夢を書いてみてください..."
             rows={4}
-            className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/50 rounded-xl text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
+            className="w-full px-3 py-2 bg-background border border-input rounded-xl text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-sky-500/50 resize-none"
           />
         </div>
 
         {analysisError && (
-          <p className="text-sm text-amber-400 mb-3">{analysisError}</p>
+          <p className="text-sm text-amber-600 dark:text-amber-400 mb-3">{analysisError}</p>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
@@ -210,7 +210,7 @@ export default function TrialPage() {
               inline-flex items-center justify-center gap-2 px-6 py-2.5
               bg-gradient-to-r from-sky-500 to-blue-600
               hover:from-sky-400 hover:to-blue-500
-              disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed
+              disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:cursor-not-allowed
               text-white font-bold text-sm rounded-xl
               shadow-lg shadow-sky-500/20
               transition-all duration-200
@@ -238,9 +238,9 @@ export default function TrialPage() {
             }
             className="
               inline-flex items-center justify-center px-5 py-2.5
-              bg-slate-700/50 hover:bg-slate-700/70
+              bg-muted hover:bg-muted/80
               disabled:opacity-40 disabled:cursor-not-allowed
-              text-slate-300 text-sm rounded-xl border border-slate-600/40
+              text-foreground text-sm rounded-xl border border-border
               transition-all duration-200
             "
           >
@@ -249,9 +249,9 @@ export default function TrialPage() {
 
           {/* 残り回数バッジ */}
           {!analysisLimitReached && (
-            <span className="text-xs text-slate-400 sm:ml-1">
+            <span className="text-xs text-muted-foreground sm:ml-1">
               残りAI分析:{" "}
-              <span className={`font-bold ${MAX_TRIAL_ANALYSES - analysisCount <= 1 ? "text-amber-400" : "text-sky-400"}`}>
+              <span className={`font-bold ${MAX_TRIAL_ANALYSES - analysisCount <= 1 ? "text-amber-600 dark:text-amber-400" : "text-sky-600 dark:text-sky-400"}`}>
                 {Math.max(0, MAX_TRIAL_ANALYSES - analysisCount)}回
               </span>
             </span>
@@ -266,7 +266,7 @@ export default function TrialPage() {
         </h3>
 
         {dreams.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted-foreground">
             まだ記録がありません。上のフォームから夢を記録してみましょう。
           </p>
         ) : (
@@ -274,22 +274,22 @@ export default function TrialPage() {
             {dreams.map((dream, index) => (
               <div
                 key={index}
-                className="p-4 bg-slate-800/40 border border-slate-700/30 rounded-2xl"
+                className="p-4 bg-card border border-border rounded-2xl"
               >
-                <h4 className="font-bold text-sm text-slate-200 mb-1">
+                <h4 className="font-bold text-sm text-foreground mb-1">
                   {dream.title}
                 </h4>
-                <p className="text-sm text-slate-400 mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   {dream.description}
                 </p>
 
                 {/* AI分析結果 */}
                 {dream.analysis && (
-                  <div className="p-3 bg-slate-900/50 border border-sky-500/20 rounded-xl">
-                    <p className="text-xs text-sky-400 font-medium mb-1">
+                  <div className="p-3 bg-muted/50 border border-sky-500/20 rounded-xl">
+                    <p className="text-xs text-sky-600 dark:text-sky-400 font-medium mb-1">
                       モルペウスの分析
                     </p>
-                    <p className="text-sm text-slate-300 leading-relaxed mb-2">
+                    <p className="text-sm text-foreground leading-relaxed mb-2">
                       {dream.analysis.analysis}
                     </p>
                     {dream.analysis.emotion_tags.length > 0 && (
@@ -297,14 +297,14 @@ export default function TrialPage() {
                         {dream.analysis.emotion_tags.map((tag) => (
                           <span
                             key={tag}
-                            className="px-2 py-0.5 rounded-full text-xs bg-sky-500/15 text-sky-300 border border-sky-500/20"
+                            className="px-2 py-0.5 rounded-full text-xs bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/20"
                           >
                             {tag}
                           </span>
                         ))}
                       </div>
                     )}
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground">
                       🖼️ 登録後は保存した夢からAI画像生成も試せます
                     </p>
                   </div>
@@ -350,11 +350,11 @@ export default function TrialPage() {
 
       {/* 注意書き + 登録CTA（上限到達時は非表示） */}
       {!analysisLimitReached && (
-        <div className="p-4 bg-slate-800/30 border border-slate-700/30 rounded-2xl text-center">
-          <p className="text-sm text-slate-400 mb-1">
-            体験版のAI分析は <span className="text-sky-400 font-medium">3回</span> まで
+        <div className="p-4 bg-card border border-border rounded-2xl text-center">
+          <p className="text-sm text-muted-foreground mb-1">
+            体験版のAI分析は <span className="text-sky-600 dark:text-sky-400 font-medium">3回</span> まで
           </p>
-          <p className="text-xs text-slate-500 mb-4">
+          <p className="text-xs text-muted-foreground/80 mb-4">
             体験用アカウントが自動で作成されます。登録後は継続保存、声での記録、夢からのAI画像生成に進めます。
           </p>
           <Link
