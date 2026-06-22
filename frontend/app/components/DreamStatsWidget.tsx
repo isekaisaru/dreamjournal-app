@@ -3,6 +3,7 @@
 import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 import { getJSTYearMonthKey } from "@/lib/date";
+import { formatTopEmotionLabels, pickTopEmotionLabels } from "@/lib/emotionTie";
 import MorpheusImage from "./MorpheusImage";
 
 interface DreamStatsWidgetProps {
@@ -59,9 +60,8 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
       weekEmotionCounts[label] = (weekEmotionCounts[label] ?? 0) + 1;
     });
   });
-  const weekTop = Object.entries(weekEmotionCounts).sort(
-    ([, a], [, b]) => b - a
-  )[0];
+  // 同率1位もすべて表示する（月間ふりかえりと同じ共通ヘルパーを使用）
+  const weekTopLabels = pickTopEmotionLabels(weekEmotionCounts);
 
   if (sortedEmotions.length === 0) return null;
 
@@ -95,7 +95,7 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
       </div>
 
       {/* モルペウスの今週サマリー */}
-      {weekTop && (
+      {weekTopLabels.length > 0 && (
         <div className="flex items-center gap-3 rounded-2xl border border-sky-200/60 bg-sky-50/80 p-3 dark:border-sky-500/20 dark:bg-slate-800/70">
           <div className="shrink-0 rounded-xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
             <MorpheusImage variant="analysis" size={54} />
@@ -103,7 +103,7 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
           <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200">
             今週いちばん多い きもちは{" "}
             <span className="font-bold text-sky-600 dark:text-sky-300">
-              「{weekTop[0]}」
+              {formatTopEmotionLabels(weekTopLabels)}
             </span>{" "}
             だったよ！
           </p>
