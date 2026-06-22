@@ -440,7 +440,7 @@ const SettingsPage = () => {
                 </div>
                 <button
                   onClick={openDeleteModal}
-                  className="shrink-0 ml-4 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all duration-300 font-bold px-4 py-2 rounded-lg text-sm border border-destructive/20"
+                  className="shrink-0 ml-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all duration-300 font-bold px-4 py-2 rounded-lg text-sm shadow-sm"
                 >
                   さくじょ
                 </button>
