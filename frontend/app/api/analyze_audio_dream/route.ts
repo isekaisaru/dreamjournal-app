@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!audioFile.type.startsWith("audio/")) {
+    if (audioFile.type && !audioFile.type.startsWith("audio/")) {
       return NextResponse.json(
         { error: "無効なファイルタイプです。" },
         { status: 400 }
