@@ -4,7 +4,7 @@ import Link from "next/link";
 import React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { clientRegister } from "@/lib/apiClient";
+import { clientRegister, convertTrial } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
 
@@ -91,16 +91,19 @@ export default function Register() {
     }
 
     try {
-      // 以前: 汎用のapiClient.postを使っていました。
-      // 今回: ユーザー登録専用の `clientRegister` 関数を使います。
-      const { user } = await clientRegister({
+      const credentials = {
         email,
         username,
         password,
         password_confirmation: passwordConfirmation,
-      });
+      };
+      // トライアルユーザーは「昇格」して同じアカウントのまま夢を引き継ぐ。
+      // それ以外は従来どおり新規登録する。
+      const { user: nextUser } = user?.trial_user
+        ? await convertTrial(credentials)
+        : await clientRegister(credentials);
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
-      login(user);
+      login(nextUser);
     } catch (err: any) {
       // 以前: エラーメッセージは err.response.data.errors など、複数の可能性がありました。
       // 今回: apiClientから来るエラーメッセージを直接表示します。シンプル！

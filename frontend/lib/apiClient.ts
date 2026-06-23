@@ -344,6 +344,20 @@ export async function clientRegister(
   };
 }
 
+// トライアルユーザーを本登録へ昇格する（同じアカウントのまま夢を引き継ぐ）。
+// 認証済みCookieで呼ぶため、登録と違いトークン再発行は不要。
+export async function convertTrial(
+  credentials: RegisterCredentials
+): Promise<{ user: User }> {
+  const response = await apiFetch<{ user: BackendUser }>("/auth/convert_trial", {
+    method: "PATCH",
+    body: JSON.stringify({ user: credentials }),
+  });
+  return {
+    user: { ...response.user, id: String(response.user.id) },
+  };
+}
+
 export async function clientLogout(): Promise<null> {
   return apiFetch("/auth/logout", {
     method: "POST",

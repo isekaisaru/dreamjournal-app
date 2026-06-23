@@ -83,6 +83,27 @@ class AuthService
      raise RegistrationError, "トライアルユーザー登録中にエラーが発生しました。"
   end
 
+  # トライアルユーザーを本登録ユーザーへ昇格する
+  # 同じ User レコードの認証情報を更新し trial_user を外すだけなので、
+  # 夢・プロフィール（user_id 紐づき）はそのまま引き継がれる。
+  # JWT は user_id のみで構成されるため、id が不変な本処理では再発行不要。
+  def self.convert_trial(user, params)
+    raise RegistrationError, "すでに本登録済みのアカウントです。" unless user.trial_user?
+
+    user.email = params[:email]&.downcase
+    user.username = params[:username]
+    user.password = params[:password]
+    user.password_confirmation = params[:password_confirmation]
+    user.trial_user = false
+
+    if user.save
+      Rails.logger.info "ユーザーID: #{user.id} をトライアルから本登録へ昇格しました。" if Rails.env.development?
+      user
+    else
+      raise RegistrationError, user.errors.full_messages.join(", ")
+    end
+  end
+
   # JWTトークンを生成する
   def self.encode_token(user_id)
     raise ArgumentError, "User ID is missing" if user_id.nil?
