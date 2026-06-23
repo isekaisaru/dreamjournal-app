@@ -20,6 +20,16 @@ import Critters from "./Critters";
 import WalkingMorpheus from "./WalkingMorpheus";
 import TreePreviewSheet from "./TreePreviewSheet";
 
+type ForestView = { x: number; y: number; z: number };
+
+export function getInitialForestView(profileCount: number, fieldW: number, viewportW: number): ForestView {
+  if (profileCount === 1 && viewportW < 768 && viewportW < fieldW) {
+    return { x: Math.round(viewportW / 2 - fieldW / 2), y: 0, z: 1 };
+  }
+
+  return { x: 0, y: 0, z: 1 };
+}
+
 export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
   const reduceMotion = useReducedMotion();
   const router = useRouter();
@@ -51,6 +61,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
 
   // パン & ズーム
   const [view, setView] = useState({ x: 0, y: 0, z: 1 });
+  const hasUserAdjustedViewRef = useRef(false);
   const dragRef = useRef<{ sx: number; sy: number; vx: number; vy: number } | null>(null);
   const movedRef = useRef(false);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -69,12 +80,23 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
     [fieldW, W, H]
   );
 
+  const initialView = useMemo(
+    () => clamp(getInitialForestView(profiles.length, fieldW, W)),
+    [clamp, profiles.length, fieldW, W]
+  );
+
+  useEffect(() => {
+    if (profiles.length === 0 || hasUserAdjustedViewRef.current) return;
+    setView(initialView);
+  }, [initialView, profiles.length]);
+
   // ポインタ捕捉は「ドラッグと判定してから」遅延して行う。
   // pointerdown で即捕捉すると子の木ボタンの click が発火せず、タップで
   // プレビューシートが開かなくなるため（重要）。
   const capturedRef = useRef(false);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    hasUserAdjustedViewRef.current = true;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     movedRef.current = false;
     capturedRef.current = false;
@@ -130,6 +152,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   };
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
+    hasUserAdjustedViewRef.current = true;
     setView((v) => clamp({ ...v, z: v.z * (e.deltaY > 0 ? 0.92 : 1.08) }));
     setHinted(false);
   };
@@ -293,9 +316,30 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         <div className="absolute left-3 top-3 z-30 flex flex-col gap-2">
           {(
             [
-              ["＋", "ズームイン", () => setView((v) => clamp({ ...v, z: v.z * 1.2 }))],
-              ["－", "ズームアウト", () => setView((v) => clamp({ ...v, z: v.z * 0.83 }))],
-              ["⟳", "もとに もどす", () => setView({ x: 0, y: 0, z: 1 })],
+              [
+                "＋",
+                "ズームイン",
+                () => {
+                  hasUserAdjustedViewRef.current = true;
+                  setView((v) => clamp({ ...v, z: v.z * 1.2 }));
+                },
+              ],
+              [
+                "－",
+                "ズームアウト",
+                () => {
+                  hasUserAdjustedViewRef.current = true;
+                  setView((v) => clamp({ ...v, z: v.z * 0.83 }));
+                },
+              ],
+              [
+                "⟳",
+                "もとに もどす",
+                () => {
+                  hasUserAdjustedViewRef.current = false;
+                  setView(initialView);
+                },
+              ],
             ] as const
           ).map(([t, lab, fn], i) => (
             <button
