@@ -14,6 +14,21 @@ interface TreePreviewSheetProps {
   onClose: () => void;
 }
 
+function normalizeRecentDreamsResponse(value: unknown): Dream[] {
+  if (Array.isArray(value)) return value as Dream[];
+
+  console.error("Unexpected dreams response for tree preview sheet", value);
+  return [];
+}
+
+function dreamTitle(dream: Dream): string | null {
+  return typeof dream.title === "string" ? dream.title : null;
+}
+
+function dreamEmotions(dream: Dream): NonNullable<Dream["emotions"]> {
+  return Array.isArray(dream.emotions) ? dream.emotions : [];
+}
+
 /**
  * 木をタップしたときに下からスライドアップするプレビューシート。
  * プロフィール・直近の夢・感情タグを表示し、「この きを 見る ›」で詳細へ遷移。
@@ -33,13 +48,17 @@ export default function TreePreviewSheet({ profile, onOpen, onClose }: TreePrevi
     setLoading(true);
     setRecentDream(null);
     getDreamsForProfile(profile.id)
-      .then((dreams) => { if (!cancelled) setRecentDream(dreams[0] ?? null); })
+      .then((dreams) => {
+        if (!cancelled) setRecentDream(normalizeRecentDreamsResponse(dreams)[0] ?? null);
+      })
       .catch(() => {/* silently ignore — sheet still useful without recent dream */})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [profile?.id]);
 
   const lvl = profile ? getGrowthLevel(profile.dreams_count ?? 0) : null;
+  const recentDreamTitle = recentDream ? dreamTitle(recentDream) : null;
+  const recentDreamEmotions = recentDream ? dreamEmotions(recentDream) : [];
 
   return (
     <AnimatePresence>
@@ -79,13 +98,13 @@ export default function TreePreviewSheet({ profile, onOpen, onClose }: TreePrevi
           </div>
 
           {/* recent dream */}
-          {!loading && recentDream && (
+          {!loading && recentDream && recentDreamTitle && (
             <div className="mb-3 text-[13px] leading-relaxed text-white/80">
               <span className="text-white/50">さいきんの ゆめ：</span>
-              「{recentDream.title}」
-              {(recentDream.emotions?.length ?? 0) > 0 && (
+              「{recentDreamTitle}」
+              {recentDreamEmotions.length > 0 && (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  {recentDream.emotions!.map((e) => (
+                  {recentDreamEmotions.map((e) => (
                     <span
                       key={e.id}
                       className="rounded-full px-2 py-0.5 text-[11.5px] font-bold"

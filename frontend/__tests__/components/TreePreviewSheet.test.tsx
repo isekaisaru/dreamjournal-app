@@ -42,8 +42,15 @@ function dream(overrides: Partial<Dream>): Dream {
 }
 
 describe("TreePreviewSheet", () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  });
+
   afterEach(() => {
     jest.clearAllMocks();
+    consoleErrorSpy.mockRestore();
   });
 
   it("clears the previous recent dream when loading another profile fails", async () => {
@@ -75,6 +82,69 @@ describe("TreePreviewSheet", () => {
 
     await waitFor(() => {
       expect(screen.queryByText(/前の木のゆめ/)).not.toBeInTheDocument();
+      expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
+    });
+  });
+
+  it("ignores a non-array dreams response without crashing", async () => {
+    mockedGetDreamsForProfile.mockResolvedValueOnce({ error: "bad response" } as any);
+
+    render(
+      <TreePreviewSheet
+        profile={profile({ id: 1, name: "自分" })}
+        onOpen={jest.fn()}
+        onClose={jest.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(mockedGetDreamsForProfile).toHaveBeenCalledWith(1);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Unexpected dreams response for tree preview sheet",
+        { error: "bad response" }
+      );
+    });
+  });
+
+  it("treats malformed recent dream emotions as empty", async () => {
+    mockedGetDreamsForProfile.mockResolvedValueOnce([
+      dream({ title: "ふしぎな森", emotions: "bad" as any }),
+    ]);
+
+    render(
+      <TreePreviewSheet
+        profile={profile({ id: 1, name: "自分" })}
+        onOpen={jest.fn()}
+        onClose={jest.fn()}
+      />
+    );
+
+    expect(await screen.findByText(/ふしぎな森/)).toBeInTheDocument();
+    expect(screen.queryByText("喜び")).not.toBeInTheDocument();
+  });
+
+  it("does not render malformed recent dream titles", async () => {
+    mockedGetDreamsForProfile.mockResolvedValueOnce([
+      dream({ title: null as any }),
+    ]);
+
+    render(
+      <TreePreviewSheet
+        profile={profile({ id: 1, name: "自分" })}
+        onOpen={jest.fn()}
+        onClose={jest.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(mockedGetDreamsForProfile).toHaveBeenCalledWith(1);
+    });
+
+    await waitFor(() => {
       expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
     });
   });

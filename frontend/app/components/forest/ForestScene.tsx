@@ -30,6 +30,29 @@ export function getInitialForestView(profileCount: number, fieldW: number, viewp
   return { x: 0, y: 0, z: 1 };
 }
 
+export function clampForestView(v: ForestView, fieldW: number, viewportW: number, viewportH: number): ForestView {
+  const safeZ = Number.isFinite(v.z) ? v.z : 1;
+  const safeX = Number.isFinite(v.x) ? v.x : 0;
+  const safeY = Number.isFinite(v.y) ? v.y : 0;
+  const z = Math.max(0.7, Math.min(2.2, safeZ));
+
+  return {
+    z,
+    x: Math.max(Math.min(safeX, 40), Math.min(-(fieldW * z - viewportW) - 40, 40)),
+    y: Math.max(Math.min(safeY, 60), Math.min(-(viewportH * z - viewportH) - 40, 60)),
+  };
+}
+
+export function getSafePinchZoom(startZoom: number, currentDistance: number, startDistance: number): number | null {
+  if (!Number.isFinite(startZoom) || !Number.isFinite(currentDistance) || !Number.isFinite(startDistance)) {
+    return null;
+  }
+  if (startDistance <= 0) return null;
+
+  const nextZoom = startZoom * (currentDistance / startDistance);
+  return Number.isFinite(nextZoom) ? nextZoom : null;
+}
+
 export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
   const reduceMotion = useReducedMotion();
   const router = useRouter();
@@ -69,14 +92,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   const [hinted, setHinted] = useState(true);
 
   const clamp = useCallback(
-    (v: { x: number; y: number; z: number }) => {
-      const z = Math.max(0.7, Math.min(2.2, v.z));
-      return {
-        z,
-        x: Math.max(Math.min(v.x, 40), Math.min(-(fieldW * z - W) - 40, 40)),
-        y: Math.max(Math.min(v.y, 60), Math.min(-(H * z - H) - 40, 60)),
-      };
-    },
+    (v: ForestView) => clampForestView(v, fieldW, W, H),
     [fieldW, W, H]
   );
 
@@ -105,7 +121,8 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
       dragRef.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y };
     } else if (pointers.current.size === 2) {
       const pts = [...pointers.current.values()];
-      pinch.current = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), z: view.z };
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinch.current = Number.isFinite(dist) && dist > 0 ? { dist, z: view.z } : null;
       dragRef.current = null;
     }
   };
@@ -123,7 +140,9 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
       }
       const pts = [...pointers.current.values()];
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      setView((v) => clamp({ ...v, z: pinch.current!.z * (dist / pinch.current!.dist) }));
+      const nextZoom = getSafePinchZoom(pinch.current.z, dist, pinch.current.dist);
+      if (nextZoom === null) return;
+      setView((v) => clamp({ ...v, z: nextZoom }));
     } else if (dragRef.current) {
       const dx = e.clientX - dragRef.current.sx;
       const dy = e.clientY - dragRef.current.sy;
