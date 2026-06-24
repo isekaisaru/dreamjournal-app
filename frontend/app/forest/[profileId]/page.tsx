@@ -31,6 +31,31 @@ import SeasonalParticles from "@/app/components/forest/SeasonalParticles";
 import FruitLegend from "@/app/components/forest/FruitLegend";
 import ParticleField from "@/app/components/forest/ParticleField";
 
+export function isValidForestProfileId(profileId: number): boolean {
+  return Number.isInteger(profileId) && profileId > 0;
+}
+
+export function normalizeDreamProfilesResponse(value: unknown): DreamProfile[] | null {
+  if (Array.isArray(value)) return value as DreamProfile[];
+
+  console.error("Unexpected dream profiles response for forest detail", value);
+  return null;
+}
+
+export function normalizeProfileDreamsResponse(value: unknown): Dream[] {
+  if (Array.isArray(value)) return value as Dream[];
+
+  console.error("Unexpected dreams response for forest detail", value);
+  return [];
+}
+
+export function findActiveForestProfile(
+  profiles: DreamProfile[],
+  profileId: number
+): DreamProfile | null {
+  return profiles.find((p) => p.id === profileId && !p.archived) ?? null;
+}
+
 // ---- 実タップで開く夢プレビューモーダル -----------------------------------
 function DreamPreviewModal({
   dream,
@@ -110,7 +135,8 @@ export default function ForestProfilePage() {
   const { authStatus } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const profileId = Number(params.profileId);
+  const rawProfileId = params.profileId;
+  const profileId = Number(rawProfileId);
   const reduceMotion = useReducedMotion();
 
   const [profile, setProfile] = useState<DreamProfile | null>(null);
@@ -127,25 +153,40 @@ export default function ForestProfilePage() {
 
   const load = useCallback(async () => {
     setIsLoading(true);
+    if (!isValidForestProfileId(profileId)) {
+      console.error("Invalid forest profileId", rawProfileId);
+      router.replace("/forest");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const [allProfiles, profileDreams] = await Promise.all([
+      const [profilesResponse, dreamsResponse]: [unknown, unknown] = await Promise.all([
         getDreamProfiles(),
         getDreamsForProfile(profileId),
       ]);
-      const found = allProfiles.find((p) => p.id === profileId && !p.archived);
+      const allProfiles = normalizeDreamProfilesResponse(profilesResponse);
+      if (!allProfiles) {
+        router.replace("/forest");
+        return;
+      }
+
+      const found = findActiveForestProfile(allProfiles, profileId);
       if (!found) {
         router.replace("/forest");
         return;
       }
+      const profileDreams = normalizeProfileDreamsResponse(dreamsResponse);
       setProfile(found);
       setDreams(profileDreams);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load forest profile detail", error);
       toast.error("きを よみこめませんでした。");
       router.replace("/forest");
     } finally {
       setIsLoading(false);
     }
-  }, [profileId, router]);
+  }, [profileId, rawProfileId, router]);
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
