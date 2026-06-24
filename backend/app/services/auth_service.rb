@@ -86,7 +86,9 @@ class AuthService
   # トライアルユーザーを本登録ユーザーへ昇格する
   # 同じ User レコードの認証情報を更新し trial_user を外すだけなので、
   # 夢・プロフィール（user_id 紐づき）はそのまま引き継がれる。
-  # JWT は user_id のみで構成されるため、id が不変な本処理では再発行不要。
+  # セキュリティ: 昇格時に refresh_token をローテーションし、
+  # 旧トライアル時に漏れていた可能性のあるトークンを無効化する
+  # （アクセストークンも新規発行し、Cookie を入れ替える）。
   def self.convert_trial(user, params)
     raise RegistrationError, "すでに本登録済みのアカウントです。" unless user.trial_user?
 
@@ -97,8 +99,12 @@ class AuthService
     user.trial_user = false
 
     if user.save
+      access_token = encode_token(user.id)
+      refresh_token = generate_refresh_token
+      # バリデーションとコールバックをスキップして refresh_token のみを更新（旧トークンは即無効化）
+      user.update_column(:refresh_token, refresh_token)
       Rails.logger.info "ユーザーID: #{user.id} をトライアルから本登録へ昇格しました。" if Rails.env.development?
-      user
+      { access_token: access_token, refresh_token: refresh_token, user: user }
     else
       raise RegistrationError, user.errors.full_messages.join(", ")
     end

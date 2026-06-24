@@ -321,6 +321,17 @@ RSpec.describe 'Authentication API', type: :request do
       expect(trial_user.authenticate('newpass123')).to be_truthy
     end
 
+    it '昇格時に refresh_token をローテーションして旧トークンを無効化する' do
+      trial_user.update_column(:refresh_token, 'old-trial-refresh-token')
+
+      authenticated_patch('/auth/convert_trial', trial_user, params: convert_params)
+      expect(response).to have_http_status(:ok)
+
+      trial_user.reload
+      expect(trial_user.refresh_token).to be_present
+      expect(trial_user.refresh_token).not_to eq('old-trial-refresh-token')
+    end
+
     it '昇格しても同じ user.id のまま夢・プロフィールが引き継がれる' do
       dream = create(:dream, user: trial_user)
       profile = create(:dream_profile, user: trial_user)
