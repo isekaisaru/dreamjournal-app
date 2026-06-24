@@ -40,6 +40,22 @@ class AuthController < ApplicationController
     end
   end
 
+  # トライアル→本登録 昇格 PATCH /auth/convert_trial
+  # 同じ User レコードを更新するため、夢・プロフィールはそのまま引き継がれる。
+  # セキュリティ: 昇格時にトークンをローテーションし、旧トライアルの
+  # refresh_token を無効化するため、新しい access/refresh を Cookie に再設定する。
+  def convert_trial
+    unless @current_user.trial_user?
+      return render json: { error: "すでに 本登録 ずみだよ。" }, status: :unprocessable_entity
+    end
+
+    result = AuthService.convert_trial(@current_user, convert_trial_params)
+    set_token_cookies(result[:access_token], result[:refresh_token])
+    render json: { user: user_json(result[:user]) }, status: :ok
+  rescue AuthService::RegistrationError => e
+    render json: { error: e.message }, status: :unprocessable_entity
+  end
+
   # トークンをリフレッシュする
   def refresh
     refresh_token = cookies[:refresh_token]
@@ -107,5 +123,9 @@ class AuthController < ApplicationController
 
   def profile_params
     params.require(:user).permit(:username, :age_group, :analysis_tone)
+  end
+
+  def convert_trial_params
+    params.require(:user).permit(:email, :username, :password, :password_confirmation)
   end
 end
