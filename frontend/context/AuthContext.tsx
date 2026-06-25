@@ -28,7 +28,14 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_HINT_KEY = "dreamjournal_auth_hint";
-const PROTECTED_PATH_PREFIXES = ["/home", "/dream", "/forest", "/settings", "/subscription"];
+const AUTH_VERIFY_PATH_PREFIXES = [
+  "/home",
+  "/dream",
+  "/forest",
+  "/settings",
+  "/subscription",
+  "/register",
+];
 
 function hasAuthHint(): boolean {
   if (typeof window === "undefined") return false;
@@ -44,15 +51,15 @@ function setAuthHint(enabled: boolean): void {
   }
 }
 
-function isProtectedPath(pathname: string | null): boolean {
+function shouldVerifyPath(pathname: string | null): boolean {
   if (!pathname) return false;
-  return PROTECTED_PATH_PREFIXES.some(
+  return AUTH_VERIFY_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
 
 function getInitialAuthStatus(pathname: string | null): AuthStatus {
-  return isProtectedPath(pathname) ? "checking" : "unauthenticated";
+  return shouldVerifyPath(pathname) ? "checking" : "unauthenticated";
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -79,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let mounted = true;
     retryCountRef.current = 0;
 
-    const shouldVerify = hasAuthHint() || isProtectedPath(pathname);
+    const shouldVerify = hasAuthHint() || shouldVerifyPath(pathname);
 
     if (!shouldVerify) {
       setAuthStatus("unauthenticated");

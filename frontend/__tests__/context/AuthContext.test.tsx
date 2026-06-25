@@ -112,6 +112,38 @@ beforeEach(() => {
   mockedUseRouter.mockReturnValue({ push: jest.fn() } as never);
 });
 
+describe("/register の認証確認", () => {
+  it("authHint がなくても /register では verify を実行する", async () => {
+    mockedUsePathname.mockReturnValue("/register");
+    mockedGet.mockResolvedValue({
+      user: { id: 9, trial_user: true },
+    } as never);
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(mockedGet).toHaveBeenCalledWith("/auth/verify");
+      expect(captured.authStatus).toBe("authenticated");
+    });
+    expect(captured.user).toEqual({ id: "9", trial_user: true });
+    expect(localStorage.getItem(AUTH_HINT_KEY)).toBe("1");
+  });
+
+  it("未認証の新規ユーザーが /register を開くと verify 後に unauthenticated になる", async () => {
+    mockedUsePathname.mockReturnValue("/register");
+    mockedGet.mockRejectedValue(makeApiError(401));
+
+    renderWithProvider();
+
+    await waitFor(() => {
+      expect(mockedGet).toHaveBeenCalledWith("/auth/verify");
+      expect(captured.authStatus).toBe("unauthenticated");
+    });
+    expect(captured.user).toBeNull();
+    expect(localStorage.getItem(AUTH_HINT_KEY)).toBeNull();
+  });
+});
+
 // ---------------------------------------------------------------------------
 // 1. 非一時障害エラー → 恒久的障害としてログアウト扱い
 //    対象: 401 / 403 / 404 / 500 （TRANSIENT_STATUSES 外のすべて）
