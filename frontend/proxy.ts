@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { shouldAllowAuthPageForUser } from "./lib/authPageRedirect";
 
 const API_PREFIX_PATTERN = /\/api\/v1\/?$/;
 
@@ -70,7 +71,13 @@ export async function proxy(request: NextRequest) {
       });
 
       if (response.ok && isAuthPage) {
-        // Logged in, and on an auth page -> redirect to home
+        const data = await response.json().catch(() => null);
+        if (shouldAllowAuthPageForUser(pathname, data?.user)) {
+          return NextResponse.next();
+        }
+
+        // Logged in, and on an auth page -> redirect to home.
+        // Trial users are allowed through /register so they can convert in-place.
         return NextResponse.redirect(new URL("/home", request.url));
       } else if (!response.ok && isProtectedPage) {
         // Invalid token on a protected page: clear the stale cookie, then let

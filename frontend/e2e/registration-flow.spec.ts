@@ -10,6 +10,13 @@ test.describe("ユーザー登録フロー", () => {
         body: JSON.stringify({ error: "Unauthorized" }),
       });
     });
+    await page.route("**/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Unauthorized" }),
+      });
+    });
   });
 
   test("登録フォームが表示される", async ({ page }) => {
