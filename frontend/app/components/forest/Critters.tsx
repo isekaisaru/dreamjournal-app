@@ -28,8 +28,12 @@ function Critter({ data, fieldW, motion }: CritterProps) {
       el.style.transform = `translateX(-50%) scaleX(${st.current.dir})`;
       return;
     }
-    let raf: number;
+    let raf = 0;
+    let disposed = false;
     const tick = () => {
+      if (disposed) return;
+      const el = elRef.current;
+      if (!el) return;
       const s = st.current;
       s.ph += 0.016;
       s.x += s.dir * data.speed;
@@ -48,7 +52,10 @@ function Critter({ data, fieldW, motion }: CritterProps) {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+    };
   }, [motion, fieldW, data]);
 
   return (

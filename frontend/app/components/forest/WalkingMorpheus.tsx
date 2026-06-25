@@ -59,15 +59,18 @@ export default function WalkingMorpheus({ fieldW, baseY = 0 }: WalkingMorpheusPr
 
   // walk animation (DOM writes, no React state per frame)
   useEffect(() => {
-    const outer = outerRef.current;
-    const photo = photoRef.current;
-    if (!outer) return;
+    if (!outerRef.current) return;
     if (!motion) {
-      outer.style.left = st.current.x + "px";
+      outerRef.current.style.left = st.current.x + "px";
       return;
     }
-    let raf: number, t0 = performance.now();
+    let raf = 0, t0 = performance.now();
+    let disposed = false;
     const step = (now: number) => {
+      if (disposed) return;
+      const outer = outerRef.current;
+      if (!outer) return;
+      const photo = photoRef.current;
       const dt = Math.min(48, now - t0); t0 = now;
       const s = st.current;
       const diff = s.target - s.x;
@@ -80,7 +83,10 @@ export default function WalkingMorpheus({ fieldW, baseY = 0 }: WalkingMorpheusPr
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+    };
   }, [motion]);
 
   return (
