@@ -43,6 +43,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, authStatus, user } = useAuth();
   const router = useRouter();
+  const isAuthChecking = authStatus === "checking";
 
   // 認証済みでも trial_user は本登録フォームに進めるため除外する
   useEffect(() => {
@@ -54,6 +55,12 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (isAuthChecking) {
+      setError("ログインじょうたいを かくにんしているよ。すこし まってね。");
+      return;
+    }
+
     setIsLoading(true);
 
     // 2. 入力内容のチェックを強化
@@ -97,9 +104,14 @@ export default function Register() {
         password,
         password_confirmation: passwordConfirmation,
       };
-      // トライアルユーザーは「昇格」して同じアカウントのまま夢を引き継ぐ。
-      // それ以外は従来どおり新規登録する。
-      const { user: nextUser } = user?.trial_user
+      // トライアル判定が不明な状態では通常登録にフォールバックしない。
+      // 認証済み通常ユーザーは既存アカウントを保護するため /home へ戻す。
+      if (authStatus === "authenticated" && user?.trial_user !== true) {
+        router.push("/home");
+        return;
+      }
+
+      const { user: nextUser } = authStatus === "authenticated"
         ? await convertTrial(credentials)
         : await clientRegister(credentials);
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
@@ -330,10 +342,10 @@ export default function Register() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isAuthChecking}
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            {isLoading ? "じゅんび しているよ..." : "はじめる"}
+            {isLoading || isAuthChecking ? "じゅんび しているよ..." : "はじめる"}
           </button>
         </div>
         {error && (

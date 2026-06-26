@@ -4,8 +4,10 @@ import RegisterPage from "@/app/register/page";
 import { useAuth } from "@/context/AuthContext";
 import { clientRegister, convertTrial } from "@/lib/apiClient";
 
+const mockPush = jest.fn();
+
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock("@/context/AuthContext", () => ({
@@ -73,6 +75,34 @@ beforeEach(() => {
 });
 
 describe("RegisterPage トライアル昇格の分岐", () => {
+  it("認証確認中は submit ボタンが disabled になる", () => {
+    mockedUseAuth.mockReturnValue(
+      makeAuth({
+        authStatus: "checking",
+      })
+    );
+
+    render(<RegisterPage />);
+
+    expect(screen.getByRole("button", { name: /じゅんび/ })).toBeDisabled();
+  });
+
+  it("認証確認中に submit されても register / convert は呼ばない", async () => {
+    mockedUseAuth.mockReturnValue(
+      makeAuth({
+        authStatus: "checking",
+      })
+    );
+
+    render(<RegisterPage />);
+    fireEvent.submit(document.querySelector("form") as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(mockedClientRegister).not.toHaveBeenCalled();
+      expect(mockedConvertTrial).not.toHaveBeenCalled();
+    });
+  });
+
   it("トライアルユーザーは convertTrial を呼ぶ（clientRegisterは呼ばない）", async () => {
     mockedUseAuth.mockReturnValue(
       makeAuth({
@@ -96,6 +126,40 @@ describe("RegisterPage トライアル昇格の分岐", () => {
     fillAndSubmit();
 
     await waitFor(() => expect(mockedClientRegister).toHaveBeenCalledTimes(1));
+    expect(mockedConvertTrial).not.toHaveBeenCalled();
+  });
+
+  it("認証済みだが user が null の場合は clientRegister にフォールバックしない", async () => {
+    mockedUseAuth.mockReturnValue(
+      makeAuth({
+        authStatus: "authenticated",
+        isLoggedIn: true,
+        user: null,
+      })
+    );
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/home"));
+    expect(mockedClientRegister).not.toHaveBeenCalled();
+    expect(mockedConvertTrial).not.toHaveBeenCalled();
+  });
+
+  it("認証済み通常ユーザーは clientRegister を呼ばず /home に戻す", async () => {
+    mockedUseAuth.mockReturnValue(
+      makeAuth({
+        authStatus: "authenticated",
+        isLoggedIn: true,
+        user: { id: "2", trial_user: false } as AuthValue["user"],
+      })
+    );
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/home"));
+    expect(mockedClientRegister).not.toHaveBeenCalled();
     expect(mockedConvertTrial).not.toHaveBeenCalled();
   });
 });
