@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import Loading from "./loading";
 import { Providers } from "./providers";
 import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
+import { SITE_URL, GOOGLE_SITE_VERIFICATION } from "@/lib/site";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 // Hydration前にテーマを合わせて、ライト→ダークのちらつきを防ぐ。
@@ -21,7 +22,7 @@ const themeInitScript = `
   }
 `;
 
-const siteUrl = "https://dreamjournal-app.vercel.app";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   title: "YumeTree | モルペウスと育てるAI夢ノート",
@@ -48,6 +49,10 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // Search Console の HTMLタグ検証。環境変数が無ければ verification 自体を省略する。
+  ...(GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export default function RootLayout({
