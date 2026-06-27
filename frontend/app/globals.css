@@ -99,10 +99,10 @@
 
   @keyframes moon-pulse {
     0%, 100% {
-      box-shadow: 0 0 12px rgba(251, 191, 36, 0.2);
+      box-shadow: 0 0 12px rgb(var(--glow-active) / 0.2);
     }
     50% {
-      box-shadow: 0 0 28px rgba(251, 191, 36, 0.45), 0 0 55px rgba(251, 191, 36, 0.15);
+      box-shadow: 0 0 28px rgb(var(--glow-active) / 0.45), 0 0 55px rgb(var(--glow-active) / 0.15);
     }
   }
 

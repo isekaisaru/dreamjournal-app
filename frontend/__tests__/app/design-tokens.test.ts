@@ -43,3 +43,18 @@ describe("design tokens (#0 foundation)", () => {
     expect(css).toMatch(/--emotion-fun:\s*#f59e0b/i);
   });
 });
+
+describe("moon-pulse 後光のテーマ連動", () => {
+  const block = css.slice(
+    css.indexOf("@keyframes moon-pulse"),
+    css.indexOf("@keyframes moon-pulse") + 300
+  );
+
+  it("moon-pulseは--glow-activeを参照する", () => {
+    expect(block).toContain("var(--glow-active)");
+  });
+
+  it("moon-pulseに固定琥珀rgba(251, 191, 36)を残さない", () => {
+    expect(block).not.toMatch(/rgba\(251,\s*191,\s*36/);
+  });
+});
