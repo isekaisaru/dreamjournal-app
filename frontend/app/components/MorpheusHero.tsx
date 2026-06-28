@@ -41,11 +41,13 @@ export default function MorpheusHero({
   message,
   expression = "cheerful",
   imageVariant,
-  size = 190,
+  size,
   variant = "home",
   className = "",
   action,
 }: MorpheusHeroProps) {
+  const heroCssSize = size === undefined ? "var(--morpheus-hero)" : undefined;
+
   return (
     <section
       className={`relative overflow-hidden rounded-[2rem] border bg-gradient-to-br p-5 shadow-xl ${variantStyles[variant]} ${className}`}
@@ -79,11 +81,16 @@ export default function MorpheusHero({
           initial={{ opacity: 0, scale: 0.86, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 210, damping: 18 }}
-          className="mx-auto grid place-items-center sm:mx-0"
+          className="relative mx-auto grid place-items-center motion-safe:animate-morpheus-float sm:mx-0"
         >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-[14%] rounded-full animate-moon-pulse"
+          />
           <MorpheusImage
             variant={imageVariant ?? expressionToImageVariant[expression]}
             size={size}
+            cssSize={heroCssSize}
             priority={variant === "home"}
             className="relative"
           />

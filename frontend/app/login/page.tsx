@@ -91,7 +91,6 @@ export default function Login() {
           message="今日も来てくれてうれしいよ。つづきから、ゆめの世界へ入ろう。"
           imageVariant="login"
           variant="compose"
-          size={150}
           className="mb-5"
         />
       <form

@@ -325,7 +325,6 @@ export default function HomePage() {
           variant="home"
           title={user ? `${user.username}さん、おはよう！` : "おはよう！"}
           message={`${copy.heading} ${copy.sub}`}
-          size={164}
           className="w-full mb-4"
           action={
             <div className="max-w-md">

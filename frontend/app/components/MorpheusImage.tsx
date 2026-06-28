@@ -67,27 +67,45 @@ const FALLBACK_EXPRESSION: Record<MorpheusImageVariant, MorpheusExpression> = {
 type MorpheusImageProps = {
   variant?: MorpheusImageVariant;
   size?: number;
+  cssSize?: string;
   className?: string;
   priority?: boolean;
 };
 
 export default function MorpheusImage({
   variant = "home",
-  size = 180,
+  size,
+  cssSize,
   className = "",
   priority = false,
 }: MorpheusImageProps) {
   const [hasImageError, setHasImageError] = useState(false);
+  const intrinsicSize = cssSize ? size ?? 320 : size ?? 180;
+  const responsiveStyle = cssSize
+    ? { width: cssSize, height: cssSize }
+    : undefined;
 
   useEffect(() => {
     setHasImageError(false);
   }, [variant]);
 
   if (hasImageError) {
+    if (cssSize) {
+      return (
+        <div style={responsiveStyle} className={className}>
+          <MorpheusSVG
+            expression={FALLBACK_EXPRESSION[variant]}
+            size={intrinsicSize}
+            className="h-full w-full"
+          />
+        </div>
+      );
+    }
+
     return (
       <MorpheusSVG
         expression={FALLBACK_EXPRESSION[variant]}
-        size={size}
+        size={intrinsicSize}
         className={className}
       />
     );
@@ -103,12 +121,13 @@ export default function MorpheusImage({
       <Image
         src={MORPHEUS_IMAGE_SRC[variant]}
         alt={ALT_BY_VARIANT[variant]}
-        width={size}
-        height={size}
+        width={intrinsicSize}
+        height={intrinsicSize}
         priority={priority}
         onError={() => setHasImageError(true)}
         className="object-contain block"
-        sizes={`${size}px`}
+        style={responsiveStyle}
+        sizes={cssSize ?? `${intrinsicSize}px`}
       />
     </motion.div>
   );
