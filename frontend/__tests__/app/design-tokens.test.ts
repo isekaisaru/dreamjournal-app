@@ -81,3 +81,13 @@ describe("forest moon pulse", () => {
     expect(block).toMatch(/rgba\(251,\s*191,\s*36,\s*0\.15\)/);
   });
 });
+
+describe("bottom-nav clearance (#3a)", () => {
+  it("--bottom-nav-h を既定0pxで定義する", () => {
+    expect(css).toMatch(/--bottom-nav-h:\s*0px/);
+  });
+  it("モバイルでバー表示時に --bottom-nav-h を実値化する規則がある", () => {
+    expect(css).toContain("body.has-bottom-nav");
+    expect(css).toMatch(/max-width:\s*767\.98px/);
+  });
+});

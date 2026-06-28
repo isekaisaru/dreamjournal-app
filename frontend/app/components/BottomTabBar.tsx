@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { House, Trees, Moon, Settings, type LucideIcon } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
@@ -27,7 +28,17 @@ export default function BottomTabBar(): React.JSX.Element | null {
   const pathname = usePathname();
   const { authStatus, isLoggedIn } = useAuth();
 
-  if (authStatus === "checking" || !isLoggedIn) return null;
+  const show = authStatus !== "checking" && isLoggedIn;
+
+  useEffect(() => {
+    if (!show) return;
+    document.body.classList.add("has-bottom-nav");
+    return () => {
+      document.body.classList.remove("has-bottom-nav");
+    };
+  }, [show]);
+
+  if (!show) return null;
 
   const renderTab = ({ href, label, icon: Icon }: Tab) => {
     const active =

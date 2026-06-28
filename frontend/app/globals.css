@@ -312,6 +312,9 @@
     --sky-dawn: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(239,246,255,0.96));
     --sky-day: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(224,242,254,0.96));
     --sky-dusk: linear-gradient(180deg, rgba(255,247,237,0.96), rgba(254,215,170,0.24));
+
+    /* #3a: ボトムバー高さ（既定0。BottomTabBar表示時にmedia queryで実値化） */
+    --bottom-nav-h: 0px;
   }
 
   .dark {
@@ -454,6 +457,13 @@
       hsla(var(--night-card-bg) / 0.65)
     );
     box-shadow: 0 20px 45px rgba(6, 12, 28, 0.55);
+  }
+}
+
+/* #3a: モバイル幅かつボトムバー表示時のみ、固定要素が逃げる量を与える */
+@media (max-width: 767.98px) {
+  body.has-bottom-nav {
+    --bottom-nav-h: calc(env(safe-area-inset-bottom) + 5rem);
   }
 }
 
