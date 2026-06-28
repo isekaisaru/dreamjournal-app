@@ -24,6 +24,10 @@ beforeEach(() => {
   mockUseAuth.mockReturnValue({ authStatus: "authenticated", isLoggedIn: true });
 });
 
+afterEach(() => {
+  document.body.classList.remove("has-bottom-nav");
+});
+
 describe("BottomTabBar", () => {
   it("未ログインでは何も描画しない", () => {
     mockUseAuth.mockReturnValue({ authStatus: "unauthenticated", isLoggedIn: false });
@@ -51,5 +55,23 @@ describe("BottomTabBar", () => {
     render(<BottomTabBar />);
     expect(screen.getByRole("link", { name: "もり" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "おうち" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("ログイン時に body へ has-bottom-nav を付与する", () => {
+    render(<BottomTabBar />);
+    expect(document.body.classList.contains("has-bottom-nav")).toBe(true);
+  });
+
+  it("未ログインでは has-bottom-nav を付与しない", () => {
+    mockUseAuth.mockReturnValue({ authStatus: "unauthenticated", isLoggedIn: false });
+    render(<BottomTabBar />);
+    expect(document.body.classList.contains("has-bottom-nav")).toBe(false);
+  });
+
+  it("アンマウントで has-bottom-nav を除去する", () => {
+    const { unmount } = render(<BottomTabBar />);
+    expect(document.body.classList.contains("has-bottom-nav")).toBe(true);
+    unmount();
+    expect(document.body.classList.contains("has-bottom-nav")).toBe(false);
   });
 });
