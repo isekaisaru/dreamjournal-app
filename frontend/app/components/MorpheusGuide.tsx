@@ -184,7 +184,6 @@ export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
           ? "ねたら でてくるよ 🌙　おきたら モルペウスに おしえてね。"
           : "今夜みた夢を、起きたらすぐ記録してみてください。モルペウスがそばで待っています。"
       }
-      size={210}
       className="w-full"
     />
   );
@@ -199,7 +198,6 @@ export function MorpheusGuideCompose() {
       variant="compose"
       title="モルペウスに ゆめを おしえてね"
       message="さいしょは ひとことでも だいじょうぶ。おもいだせる ぶんだけ、ゆっくり かいてみよう。"
-      size={220}
       className="w-full"
     />
   );

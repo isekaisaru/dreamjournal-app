@@ -1,7 +1,7 @@
 # Morpheusヒーロー基盤（サブPJ #1）設計仕様
 
 - 日付: 2026-06-28
-- 対象: YumeTree フロントエンド（Next.js 15 App Router + Tailwind v4 + framer-motion）
+- 対象: YumeTree フロントエンド（Next.js 16 App Router + Tailwind v4 + framer-motion）
 - 前提: #0 デザインシステム基盤（PR #394, main `51432e9`）がマージ済み。`--morpheus-hero`(clamp 120–160) / `--glow-active`(明=紫/夜=琥珀, `moon-pulse`連動) / `animate-morpheus-float` が利用可能。
 - 位置づけ: 全画面リデザインの#1。既存 `MorpheusHero` を**#0トークン駆動の正準ヒーロープリミティブ**へ格上げし、全消費先を掛け替える。
 - スコープ判断: ユーザーが「広め（全画面掛け替え）」を選択。
