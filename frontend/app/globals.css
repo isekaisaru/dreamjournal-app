@@ -54,6 +54,7 @@
   --animate-morpheus-entry: morpheus-entry 0.8s ease-out both;
   --animate-morpheus-float: morpheus-float 6s ease-in-out infinite;
   --animate-moon-pulse: moon-pulse 3.5s ease-in-out infinite;
+  --animate-forest-moon-pulse: forest-moon-pulse 3.5s ease-in-out infinite;
   --animate-star-twinkle: star-twinkle 2s ease-in-out infinite;
   --animate-fade-up: fade-up 0.35s ease both;
   --animate-book-open: book-open 0.5s ease both;
@@ -103,6 +104,15 @@
     }
     50% {
       box-shadow: 0 0 28px rgb(var(--glow-active) / 0.45), 0 0 55px rgb(var(--glow-active) / 0.15);
+    }
+  }
+
+  @keyframes forest-moon-pulse {
+    0%, 100% {
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 28px rgba(251, 191, 36, 0.45), 0 0 55px rgba(251, 191, 36, 0.15);
     }
   }
 

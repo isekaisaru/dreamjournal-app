@@ -5,6 +5,17 @@ const css = fs.readFileSync(
   path.join(__dirname, "../../app/globals.css"),
   "utf8"
 );
+const forestProfilePage = fs.readFileSync(
+  path.join(__dirname, "../../app/forest/[profileId]/page.tsx"),
+  "utf8"
+);
+
+function keyframesBlock(name: string): string {
+  const start = css.indexOf(`@keyframes ${name}`);
+  if (start < 0) return "";
+  const next = css.indexOf("@keyframes", start + 1);
+  return css.slice(start, next < 0 ? undefined : next);
+}
 
 describe("design tokens (#0 foundation)", () => {
   it.each([
@@ -45,10 +56,7 @@ describe("design tokens (#0 foundation)", () => {
 });
 
 describe("moon-pulse 後光のテーマ連動", () => {
-  const block = css.slice(
-    css.indexOf("@keyframes moon-pulse"),
-    css.indexOf("@keyframes moon-pulse") + 300
-  );
+  const block = keyframesBlock("moon-pulse");
 
   it("moon-pulseは--glow-activeを参照する", () => {
     expect(block).toContain("var(--glow-active)");
@@ -56,5 +64,20 @@ describe("moon-pulse 後光のテーマ連動", () => {
 
   it("moon-pulseに固定琥珀rgba(251, 191, 36)を残さない", () => {
     expect(block).not.toMatch(/rgba\(251,\s*191,\s*36/);
+  });
+});
+
+describe("forest moon pulse", () => {
+  const block = keyframesBlock("forest-moon-pulse");
+
+  it("森の月は専用アニメーションを使い、Morpheus用moon-pulseに依存しない", () => {
+    expect(forestProfilePage).toContain("animate-forest-moon-pulse");
+    expect(forestProfilePage).not.toContain("animate-moon-pulse");
+  });
+
+  it("森の月のpulseは既存の琥珀色の後光を維持する", () => {
+    expect(block).toMatch(/rgba\(251,\s*191,\s*36,\s*0\.2\)/);
+    expect(block).toMatch(/rgba\(251,\s*191,\s*36,\s*0\.45\)/);
+    expect(block).toMatch(/rgba\(251,\s*191,\s*36,\s*0\.15\)/);
   });
 });

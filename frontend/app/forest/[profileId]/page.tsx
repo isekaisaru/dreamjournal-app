@@ -212,7 +212,7 @@ export default function ForestProfilePage() {
 
       {/* 月 */}
       <div
-        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full animate-moon-pulse"
+        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full animate-forest-moon-pulse"
         style={{
           left: `${cel.moonXPct}%`,
           top: `${cel.moonYPct}%`,
