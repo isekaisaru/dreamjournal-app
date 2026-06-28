@@ -4,7 +4,7 @@ import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 import { getJSTYearMonthKey } from "@/lib/date";
 import { formatTopEmotionLabels, pickTopEmotionLabels } from "@/lib/emotionTie";
-import MorpheusImage from "./MorpheusImage";
+import MorpheusAvatar from "./MorpheusAvatar";
 
 interface DreamStatsWidgetProps {
   dreams: Dream[];
@@ -97,9 +97,7 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
       {/* モルペウスの今週サマリー */}
       {weekTopLabels.length > 0 && (
         <div className="flex items-center gap-3 rounded-2xl border border-sky-200/60 bg-sky-50/80 p-3 dark:border-sky-500/20 dark:bg-slate-800/70">
-          <div className="shrink-0 rounded-xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
-            <MorpheusImage variant="analysis" size={54} />
-          </div>
+          <MorpheusAvatar variant="analysis" size={54} className="shadow-sm" />
           <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200">
             今週いちばん多い きもちは{" "}
             <span className="font-bold text-sky-600 dark:text-sky-300">

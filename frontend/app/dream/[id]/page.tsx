@@ -15,6 +15,7 @@ import apiClient from "../../../lib/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
 import { MorpheusGuideDetail } from "@/app/components/MorpheusGuide";
+import MorpheusAvatar from "@/app/components/MorpheusAvatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -322,9 +323,7 @@ export default function DreamDetailPage({
                   {copy.analysis}
                 </p>
                 <div className="mt-4 flex items-center gap-4">
-                  <div className="rounded-3xl bg-primary/10 px-4 py-3 text-3xl">
-                    🔮
-                  </div>
+                  <MorpheusAvatar variant="analysis" size={56} />
                   <div>
                     <p className="text-lg font-bold text-foreground">
                       モルペウスが 夢を読みほどいたよ
