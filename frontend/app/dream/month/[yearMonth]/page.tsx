@@ -7,7 +7,7 @@ import { EmotionTag } from "@/app/components/EmotionTag";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
-import MorpheusImage from "@/app/components/MorpheusImage";
+import MorpheusAvatar from "@/app/components/MorpheusAvatar";
 import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
@@ -241,13 +241,11 @@ export default function DreamByMonthPage() {
 
                 <div className="flex items-center justify-center border-t border-border bg-slate-100/70 p-5 dark:bg-slate-900/50 md:border-l md:border-t-0">
                   <div className="text-center">
-                    <div className="mx-auto flex h-36 w-36 items-center justify-center rounded-[2rem] bg-white/70 shadow-sm ring-1 ring-slate-200 dark:bg-slate-950/40 dark:ring-slate-700/60">
-                      <MorpheusImage
-                        variant="analysis"
-                        size={128}
-                        className="h-32 w-32 object-contain"
-                      />
-                    </div>
+                    <MorpheusAvatar
+                      variant="reward"
+                      size={128}
+                      className="shadow-md"
+                    />
                     <p className="mt-3 text-xs text-muted-foreground">
                       ゆめを ふりかえると、つぎの ゆめも おもしろくなるかも。
                     </p>
