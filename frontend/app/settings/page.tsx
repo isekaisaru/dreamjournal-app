@@ -8,7 +8,7 @@ import { ChevronLeft } from "lucide-react";
 import { updateProfile } from "@/lib/apiClient";
 import { toast } from "@/lib/toast";
 import type { AgeGroup, AnalysisTone } from "@/app/types";
-import MorpheusImage from "@/app/components/MorpheusImage";
+import MorpheusAvatar from "@/app/components/MorpheusAvatar";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 
 const AGE_GROUP_OPTIONS: { value: AgeGroup; label: string }[] = [
@@ -240,7 +240,11 @@ const SettingsPage = () => {
                 年れいや分析スタイルを合わせると、ゆめの説明がもっと読みやすくなるよ。
               </p>
             </div>
-            <MorpheusImage variant="settings" size={150} />
+            <MorpheusAvatar
+              variant="settings"
+              size={112}
+              className="shadow-lg ring-white/25"
+            />
           </div>
         </section>
 
