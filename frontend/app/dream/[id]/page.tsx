@@ -10,12 +10,11 @@ import {
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import { motion } from "framer-motion";
 import apiClient from "../../../lib/apiClient";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
 import { MorpheusGuideDetail } from "@/app/components/MorpheusGuide";
-import MorpheusAvatar from "@/app/components/MorpheusAvatar";
+import StreamingAnalysis from "@/app/components/StreamingAnalysis";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -103,7 +102,6 @@ export default function DreamDetailPage({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [isAnalysisFlipped, setIsAnalysisFlipped] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageQuota, setImageQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
@@ -125,10 +123,6 @@ export default function DreamDetailPage({
       setGeneratedImageUrl(dream.generated_image_url);
     }
   }, [dream?.generated_image_url]);
-
-  useEffect(() => {
-    setIsAnalysisFlipped(false);
-  }, [dream?.id]);
 
   const handleGenerateImage = async () => {
     if (!dreamId || isGeneratingImage) return;
@@ -259,9 +253,6 @@ export default function DreamDetailPage({
   const displayTags = aiEmotionTags.length > 0 ? aiEmotionTags : dbEmotionTags;
   const analysisText =
     dream.analysis_json?.analysis || dream.analysis_json?.text || "";
-  const analysisPreview = displayTags.length
-    ? "感じたことを みつけたよ"
-    : "タップすると モルペウスの読み取りがひらくよ";
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
@@ -298,71 +289,13 @@ export default function DreamDetailPage({
 
       {/* モルペウスのゆめうらない */}
       {analysisText && (
-        <div className="mb-6" style={{ perspective: 1400 }}>
-          <button
-            type="button"
-            onClick={() => setIsAnalysisFlipped((current) => !current)}
-            className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-pressed={isAnalysisFlipped}
-          >
-            <motion.div
-              animate={{ rotateY: isAnalysisFlipped ? 180 : 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              style={{ transformStyle: "preserve-3d" }}
-              className="relative min-h-[220px]"
-            >
-              <div
-                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-primary/20 p-5 shadow-lg"
-                style={{
-                  backfaceVisibility: "hidden",
-                  background:
-                    "linear-gradient(160deg, rgba(255,255,255,0.96), rgba(240,249,255,0.94))",
-                }}
-              >
-                <p className="text-sm font-semibold text-muted-foreground">
-                  {copy.analysis}
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <MorpheusAvatar variant="analysis" size={56} />
-                  <div>
-                    <p className="text-lg font-bold text-foreground">
-                      モルペウスが 夢を読みほどいたよ
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {analysisPreview}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-6 rounded-2xl bg-background/80 px-4 py-4">
-                  <p className="text-sm leading-relaxed text-foreground/85 line-clamp-4">
-                    {!isAnalysisFlipped ? analysisText : null}
-                  </p>
-                </div>
-                <p className="mt-4 text-xs font-medium text-primary">
-                  タップで くるっと裏返して全文をみる
-                </p>
-              </div>
-              <div
-                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-border bg-muted/50 p-5 shadow-lg"
-                style={{
-                  backfaceVisibility: "hidden",
-                  transform: "rotateY(180deg)",
-                }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    {copy.analysis}
-                  </p>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    flip back
-                  </span>
-                </div>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {isAnalysisFlipped ? analysisText : null}
-                </p>
-              </div>
-            </motion.div>
-          </button>
+        <div className="mb-6">
+          <StreamingAnalysis
+            title={copy.analysis}
+            text={analysisText}
+            emotions={displayTags}
+            storageKey={dream.id ? String(dream.id) : undefined}
+          />
         </div>
       )}
 

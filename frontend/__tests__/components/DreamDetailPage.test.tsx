@@ -43,6 +43,27 @@ jest.mock("@/app/components/DreamForm", () => ({
   default: () => <div>DreamForm</div>,
 }));
 
+jest.mock("@/app/components/StreamingAnalysis", () => ({
+  __esModule: true,
+  default: ({
+    title,
+    text,
+    emotions = [],
+  }: {
+    title: string;
+    text: string;
+    emotions?: string[];
+  }) => (
+    <section>
+      <p>{title}</p>
+      <p>{text}</p>
+      {emotions.map((emotion) => (
+        <span key={emotion}>{emotion}</span>
+      ))}
+    </section>
+  ),
+}));
+
 jest.mock("@/components/ui/alert-dialog", () => {
   const React = require("react");
   const passthrough =
