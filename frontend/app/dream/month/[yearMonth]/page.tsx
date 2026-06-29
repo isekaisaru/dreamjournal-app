@@ -8,6 +8,7 @@ import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 import MorpheusAvatar from "@/app/components/MorpheusAvatar";
+import MoodCalendar from "@/app/components/MoodCalendar";
 import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
@@ -274,6 +275,11 @@ export default function DreamByMonthPage() {
                 </p>
                 <p className="mt-2 text-3xl font-bold">{summary.analyzedCount}</p>
               </div>
+            </section>
+
+            {/* Mood calendar */}
+            <section className="mb-3">
+              <MoodCalendar dreams={dreams} month={yearMonth} />
             </section>
 
             {/* Dream list */}

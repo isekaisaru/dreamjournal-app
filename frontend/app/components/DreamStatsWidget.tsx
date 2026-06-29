@@ -3,6 +3,7 @@
 import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 import { getJSTYearMonthKey } from "@/lib/date";
+import { resolveDreamEmotionNames } from "@/lib/dreamEmotions";
 import { formatTopEmotionLabels, pickTopEmotionLabels } from "@/lib/emotionTie";
 import MorpheusAvatar from "./MorpheusAvatar";
 
@@ -34,10 +35,7 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
   // 今月の感情タグカウント
   const monthEmotionCounts: Record<string, number> = {};
   thisMonthDreams.forEach((dream) => {
-    const tags =
-      dream.analysis_json?.emotion_tags ??
-      dream.emotions?.map((e) => e.name) ??
-      [];
+    const tags = resolveDreamEmotionNames(dream);
     tags.forEach((tag) => {
       const label = getChildFriendlyEmotionLabel(tag);
       monthEmotionCounts[label] = (monthEmotionCounts[label] ?? 0) + 1;
@@ -51,10 +49,7 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
   // 今週のトップ感情
   const weekEmotionCounts: Record<string, number> = {};
   thisWeekDreams.forEach((dream) => {
-    const tags =
-      dream.analysis_json?.emotion_tags ??
-      dream.emotions?.map((e) => e.name) ??
-      [];
+    const tags = resolveDreamEmotionNames(dream);
     tags.forEach((tag) => {
       const label = getChildFriendlyEmotionLabel(tag);
       weekEmotionCounts[label] = (weekEmotionCounts[label] ?? 0) + 1;
