@@ -32,6 +32,21 @@ describe("MoodCalendar", () => {
     expect(cell?.className).not.toContain("bg-muted");
   });
 
+  it("AIタグが空でも手動の感情で色がつく（バグ回帰防止）", () => {
+    const manualDream = {
+      id: 2,
+      created_at: "2026-06-20T03:00:00Z",
+      analysis_json: { emotion_tags: [] },
+      emotions: [{ id: 1, name: "嬉しい" }],
+    } as unknown as Dream;
+    const { container } = render(
+      <MoodCalendar dreams={[manualDream]} month="2026-06" />
+    );
+    const cell = container.querySelector('[title*="うれしい"]');
+    expect(cell).not.toBeNull();
+    expect(cell?.className).toContain("bg-orange-400");
+  });
+
   it("凡例を描画する", () => {
     render(<MoodCalendar dreams={[]} month="2026-06" />);
     expect(screen.getByText("記録なし")).toBeInTheDocument();

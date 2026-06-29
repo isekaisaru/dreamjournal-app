@@ -18,6 +18,7 @@ import { useMemo } from "react";
 
 import { Dream } from "@/app/types";
 import { getJSTYearMonthKey } from "@/lib/date";
+import { resolveDreamEmotionNames } from "@/lib/dreamEmotions";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 
 // 感情カテゴリ → セル色（Tailwind）。EmotionTag のカテゴリと対応。
@@ -63,8 +64,7 @@ export default function MoodCalendar({ dreams, month }: MoodCalendarProps) {
       const day = new Date(d.created_at).toLocaleDateString("en-CA", {
         timeZone: "Asia/Tokyo",
       }); // YYYY-MM-DD
-      const tags =
-        d.analysis_json?.emotion_tags ?? d.emotions?.map((e) => e.name) ?? [];
+      const tags = resolveDreamEmotionNames(d);
       const counts = byDay.get(day) ?? new Map<string, number>();
       for (const t of tags) {
         const label = getChildFriendlyEmotionLabel(t);
