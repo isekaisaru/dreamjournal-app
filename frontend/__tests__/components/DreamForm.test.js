@@ -47,6 +47,17 @@ jest.mock("@/lib/toast", () => ({
   },
 }));
 
+jest.mock("@/app/components/MorpheusAvatar", () => ({
+  __esModule: true,
+  default: ({ variant, size }) => (
+    <div
+      data-testid="morpheus-avatar"
+      data-variant={variant}
+      data-size={size}
+    />
+  ),
+}));
+
 const { getEmotions, previewAnalysis } = require("@/lib/apiClient");
 const { ApiError } = require("@/lib/apiClient");
 const { toast } = require("@/lib/toast");
@@ -299,6 +310,22 @@ describe("DreamForm", () => {
     });
     expect(upgradeLink).toHaveAttribute("href", "/subscription");
     expect(screen.getByText("今月の無料分析回数を使い切ったよ")).toBeInTheDocument();
+  });
+
+  it("shows an analysis MorpheusAvatar while Morpheus is reading the dream", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    previewAnalysis.mockImplementationOnce(() => new Promise(() => {}));
+    const user = userEvent.setup();
+
+    render(<DreamForm onSubmit={jest.fn()} />);
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+    await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
+
+    expect(await screen.findByText("Morpheus Reading")).toBeInTheDocument();
+    const avatar = screen.getByTestId("morpheus-avatar");
+    expect(avatar).toHaveAttribute("data-variant", "analysis");
+    expect(avatar).toHaveAttribute("data-size", "74");
   });
 
   it("shows the backend analysis error message when analysis fails", async () => {
