@@ -10,6 +10,7 @@ import Loading from "./loading";
 import { Providers } from "./providers";
 import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
 import BottomTabBar from "./components/BottomTabBar";
+import { CommandPaletteProvider } from "./components/CommandPalette";
 import { SITE_URL, GOOGLE_SITE_VERIFICATION } from "@/lib/site";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
@@ -70,16 +71,18 @@ export default function RootLayout({
           {themeInitScript}
         </Script>
         <Providers>
-          <Header />
-          <div className="flex flex-col flex-grow">
-            <main className="flex-grow">
-              <Suspense fallback={<Loading />}>{children}</Suspense>
-            </main>
-            <Footer />
-            {/* 全体で1つのインスタンスとしてマウント */}
-          </div>
-          <PendingDreamsMonitor />
-          <BottomTabBar />
+          <CommandPaletteProvider>
+            <Header />
+            <div className="flex flex-col flex-grow">
+              <main className="flex-grow">
+                <Suspense fallback={<Loading />}>{children}</Suspense>
+              </main>
+              <Footer />
+              {/* 全体で1つのインスタンスとしてマウント */}
+            </div>
+            <PendingDreamsMonitor />
+            <BottomTabBar />
+          </CommandPaletteProvider>
         </Providers>
       </body>
     </html>
