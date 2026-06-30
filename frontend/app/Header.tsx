@@ -10,7 +10,7 @@ import CommandPaletteTrigger from "./components/CommandPaletteTrigger";
 
 export default function Header() {
   return (
-    <header className="py-3 px-4 sm:px-6 border-b border-border bg-background text-foreground flex flex-col md:flex-row items-center gap-4 md:gap-8">
+    <header data-app-header className="py-3 px-4 sm:px-6 border-b border-border bg-background text-foreground flex flex-col md:flex-row items-center gap-4 md:gap-8">
       <div className="flex-shrink-0">
         <HeaderLogo />
       </div>

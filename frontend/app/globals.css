@@ -477,6 +477,13 @@
   }
 }
 
+/* STEP4: PC(lg+)かつサイドバー表示時は、横長の既存ヘッダーを隠す（サイドバーが代替） */
+@media (min-width: 1024px) {
+  body.has-sidebar [data-app-header] {
+    display: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

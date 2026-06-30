@@ -10,6 +10,7 @@ import Loading from "./loading";
 import { Providers } from "./providers";
 import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
 import BottomTabBar from "./components/BottomTabBar";
+import Sidebar from "./components/Sidebar";
 import { CommandPaletteProvider } from "./components/CommandPalette";
 import { SITE_URL, GOOGLE_SITE_VERIFICATION } from "@/lib/site";
 
@@ -64,21 +65,24 @@ export default function RootLayout({
 }>): React.ReactElement {
   return (
     <html lang="ja" className="min-h-full" suppressHydrationWarning>
-      <body
-        className={`${notoSansJP.className} px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}
-      >
+      <body className={`${notoSansJP.className} min-h-screen`}>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
         <Providers>
           <CommandPaletteProvider>
-            <Header />
-            <div className="flex flex-col flex-grow">
-              <main className="flex-grow">
-                <Suspense fallback={<Loading />}>{children}</Suspense>
-              </main>
-              <Footer />
-              {/* 全体で1つのインスタンスとしてマウント */}
+            {/* PC(lg+)・ログイン時のみ左サイドバー。公開/モバイル/未ログインでは null */}
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <div className="flex min-w-0 flex-grow flex-col px-4 sm:px-6 lg:px-8">
+                <Header />
+                <div className="flex flex-grow flex-col">
+                  <main className="flex-grow">
+                    <Suspense fallback={<Loading />}>{children}</Suspense>
+                  </main>
+                  <Footer />
+                </div>
+              </div>
             </div>
             <PendingDreamsMonitor />
             <BottomTabBar />
