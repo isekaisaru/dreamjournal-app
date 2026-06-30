@@ -22,7 +22,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { House, Moon, Plus, Search, Settings, Sparkles, Trees } from "lucide-react";
+import { BarChart3, House, Moon, Plus, Search, Settings, Sparkles, Trees } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
@@ -105,6 +105,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
     const actions: Command[] = [
       { id: "new", label: "新しい夢を記録", icon: <Plus size={16} />, group: "action", run: () => router.push("/dream/new") },
       { id: "home", label: "ホームへ", icon: <House size={16} />, group: "action", run: () => router.push("/home") },
+      { id: "insights", label: "きもちインサイトを見る", icon: <BarChart3 size={16} />, group: "action", run: () => router.push("/insights") },
       { id: "forest", label: "もりへ", icon: <Trees size={16} />, group: "action", run: () => router.push("/forest") },
       { id: "my-dreams", label: "マイ夢へ", icon: <Moon size={16} />, group: "action", run: () => router.push("/my-dreams") },
       { id: "settings", label: "設定へ", icon: <Settings size={16} />, group: "action", run: () => router.push("/settings") },
