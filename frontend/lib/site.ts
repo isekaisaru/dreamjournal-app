@@ -18,6 +18,7 @@ export const NON_INDEXABLE_PATH_PREFIXES = [
   "/home", // ログイン後トップ
   "/dream", // 夢の詳細・新規・月別（ユーザーデータ）
   "/my-dreams", // 夢一覧（ユーザーデータ）
+  "/insights", // きもちインサイト（認証）
   "/forest", // 夢の森（認証）
   "/profiles", // プロフィール（認証）
   "/settings", // 設定（認証）

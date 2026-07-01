@@ -11,7 +11,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LogOut, Moon, Search, Settings, Trees } from "lucide-react";
+import { BarChart3, Home, LogOut, Moon, Search, Settings, Trees } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/lib/toast";
@@ -22,6 +22,7 @@ type NavItem = { href: string; label: string; icon: typeof Home };
 
 const NAV: NavItem[] = [
   { href: "/home", label: "ホーム", icon: Home },
+  { href: "/insights", label: "きもち", icon: BarChart3 },
   { href: "/forest", label: "夢の森", icon: Trees },
   { href: "/my-dreams", label: "マイ夢", icon: Moon },
   { href: "/settings", label: "設定", icon: Settings },
