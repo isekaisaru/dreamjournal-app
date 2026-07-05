@@ -183,6 +183,14 @@ RSpec.describe 'DreamProfiles API', type: :request do
         authenticated_patch("/dream_profiles/#{other_profile.id}", user, params: { name: '乗っ取り' })
         expect(response).to have_http_status(:not_found)
       end
+
+      it 'self プロフィールの relationship は other に変更できない（422）' do
+        self_profile = create(:dream_profile, :self_profile, user: user)
+        authenticated_patch("/dream_profiles/#{self_profile.id}", user, params: { relationship: 'other' })
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(self_profile.reload.relationship).to eq('self')
+      end
     end
 
     context '未認証の場合' do
