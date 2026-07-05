@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'tempfile'
 
 RSpec.describe 'AudioDreams API', type: :request do
-  let!(:user) { create(:user) }
+  let!(:user) { create(:user, :with_self_profile) }
   let(:audio_tempfile) do
     file = Tempfile.new(['audio', '.webm'])
     file.binmode

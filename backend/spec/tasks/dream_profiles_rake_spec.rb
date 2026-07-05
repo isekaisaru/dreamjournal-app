@@ -1,5 +1,9 @@
 require 'rails_helper'
 
+# NOTE: 'rake dream_profiles:backfill_dream_profile_id' のspecは、
+# dreams.dream_profile_id が NOT NULL化（#413）されたことで
+# 「NULLの夢」というフィクスチャ自体が作成不可能になったため削除した。
+# rakeタスク自体はコードとして残しているが、以後NULLは存在しえないため実質no-op。
 RSpec.describe 'rake dream_profiles:ensure_self_profiles' do
   # Rake タスクは一度だけロードすればよい
   before(:all) do
@@ -124,70 +128,6 @@ RSpec.describe 'rake dream_profiles:ensure_self_profiles' do
       expect(result).to include('対象 2 ユーザー')
       expect(result).to include('作成 1 件')
       expect(result).to include('スキップ 1 件')
-    end
-  end
-end
-
-RSpec.describe 'rake dream_profiles:backfill_dream_profile_id' do
-  before(:all) do
-    Rails.application.load_tasks
-  end
-
-  def invoke_task
-    Rake::Task['dream_profiles:backfill_dream_profile_id'].reenable
-    original = $stdout
-    $stdout = StringIO.new
-    Rake::Task['dream_profiles:backfill_dream_profile_id'].invoke
-  ensure
-    $stdout = original
-  end
-
-  context 'dream_profile_id が未設定の夢があるユーザー' do
-    let!(:user) { create(:user) }
-    let!(:self_profile) { create(:dream_profile, :self_profile, user: user) }
-    let!(:legacy_dream) { create(:dream, user: user, dream_profile_id: nil) }
-
-    it '未設定の夢を self プロフィールに割り当てる' do
-      invoke_task
-      expect(legacy_dream.reload.dream_profile_id).to eq(self_profile.id)
-    end
-
-    it '実行後は未設定の夢が残らない' do
-      invoke_task
-      expect(Dream.where(dream_profile_id: nil).count).to eq(0)
-    end
-  end
-
-  context 'すでに別プロフィールが割り当て済みの夢' do
-    let!(:user) { create(:user) }
-    let!(:self_profile) { create(:dream_profile, :self_profile, user: user) }
-    let!(:other_profile) { create(:dream_profile, user: user) }
-    let!(:assigned_dream) { create(:dream, user: user, dream_profile_id: other_profile.id) }
-
-    it '割り当て済みの夢は変更しない（冪等）' do
-      expect { invoke_task }.not_to change { assigned_dream.reload.dream_profile_id }
-      expect(assigned_dream.dream_profile_id).to eq(other_profile.id)
-    end
-  end
-
-  context 'self プロフィールが無いユーザー' do
-    let!(:user) { create(:user) }
-    let!(:orphan_dream) { create(:dream, user: user, dream_profile_id: nil) }
-
-    it 'スキップして落ちず、その夢は未設定のまま残る' do
-      expect { invoke_task }.not_to raise_error
-      expect(orphan_dream.reload.dream_profile_id).to be_nil
-    end
-  end
-
-  context '2回実行した場合' do
-    let!(:user) { create(:user) }
-    let!(:self_profile) { create(:dream_profile, :self_profile, user: user) }
-    let!(:legacy_dream) { create(:dream, user: user, dream_profile_id: nil) }
-
-    it '2回目で割り当て先が変わらない' do
-      invoke_task
-      expect { invoke_task }.not_to change { legacy_dream.reload.dream_profile_id }
     end
   end
 end

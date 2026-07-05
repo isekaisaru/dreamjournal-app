@@ -4,7 +4,7 @@ RSpec.describe 'Dreams API', type: :request do
   # ActiveJobのテストヘルパーをインクルード
   include ActiveJob::TestHelper
 
-  let!(:user) { create(:user) }
+  let!(:user) { create(:user, :with_self_profile) }
   let!(:other_user) { create(:user) }
   let!(:emotions) do
     [
