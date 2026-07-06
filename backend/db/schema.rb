@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_03_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_04_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -99,7 +99,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_03_000000) do
     t.datetime "analyzed_at"
     t.text "generated_image_url"
     t.datetime "image_generated_at"
-    t.bigint "dream_profile_id"
+    t.bigint "dream_profile_id", null: false
     t.index ["analysis_status"], name: "index_dreams_on_analysis_status"
     t.index ["dream_profile_id"], name: "index_dreams_on_dream_profile_id"
     t.index ["user_id", "created_at"], name: "index_dreams_on_user_id_and_created_at"

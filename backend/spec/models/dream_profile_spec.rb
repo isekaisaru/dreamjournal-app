@@ -146,4 +146,35 @@ RSpec.describe DreamProfile, type: :model do
       expect(self_profile).to be_valid
     end
   end
+
+  # ------------------------------------------------------------------ #
+  # 「自分」プロフィールの relationship 変更禁止                         #
+  # dream作成時のフォールバック（User#self_dream_profile_id）が          #
+  # self プロフィールの存在を前提にしているため、selfから他の関係性への  #
+  # 変更を許すと dream_profile_id の NOT NULL 制約違反につながる         #
+  # ------------------------------------------------------------------ #
+  describe "self プロフィールの relationship 変更禁止" do
+    let!(:self_profile) { create(:dream_profile, :self_profile, user: user) }
+
+    it "self から other への変更は invalid" do
+      self_profile.relationship = "other"
+      expect(self_profile).not_to be_valid
+      expect(self_profile.errors[:relationship]).to include("「自分」プロフィールの関係性は変更できません")
+    end
+
+    it "self から self への「変更」（実質変化なし）は valid" do
+      self_profile.relationship = "self"
+      expect(self_profile).to be_valid
+    end
+
+    it "self 以外のプロフィールは relationship を変更できる" do
+      other = create(:dream_profile, user: user, relationship: "other")
+      other.relationship = "friend"
+      expect(other).to be_valid
+    end
+
+    it "新規作成（relationship: self を指定）は禁止対象ではない" do
+      expect(build(:dream_profile, :self_profile, user: create(:user))).to be_valid
+    end
+  end
 end

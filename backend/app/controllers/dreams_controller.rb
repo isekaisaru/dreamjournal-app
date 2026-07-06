@@ -99,7 +99,7 @@ class DreamsController < ApplicationController
       @dream = current_user.dreams.build(dream_params)
     end
 
-    @dream.dream_profile_id ||= current_user.dream_profiles.find_by(relationship: 'self')&.id
+    @dream.dream_profile_id ||= current_user.self_dream_profile_id
 
     if @dream.save
       @dream.reload

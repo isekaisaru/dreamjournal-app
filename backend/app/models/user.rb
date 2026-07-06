@@ -63,6 +63,13 @@ class User < ApplicationRecord
     update!(reset_password_token: nil, reset_password_sent_at: nil)
   end
 
+  # dream作成時の dream_profile_id フォールバック先。
+  # DreamProfile#self_profile_relationship_immutable により self プロフィールの
+  # relationship は変更不可なため、既存ユーザーであれば常に見つかる想定。
+  def self_dream_profile_id
+    dream_profiles.find_by(relationship: "self")&.id
+  end
+
   def premium_active_subscription?
     subscriptions.where(status: Subscription::ACTIVE_STATUSES).exists?
   end
