@@ -8,7 +8,10 @@ class TrialUsersController < ApplicationController
 
     ApplicationRecord.transaction do
       begin
-        result = AuthService.create_trial_user(params[:trial_user])
+        result = AuthService.create_trial_user(
+          params[:trial_user],
+          user_agent: request.user_agent, ip_address: request.remote_ip
+        )
 
         unless result[:user] && result[:access_token] && result[:refresh_token]
           Rails.logger.error "トライアルユーザー作成処理で必要な情報が不足しています: #{result.inspect}"

@@ -4,7 +4,10 @@ class AuthController < ApplicationController
   # ユーザーのログイン
   def login
     begin
-      result = AuthService.login(params[:email], params[:password])
+      result = AuthService.login(
+        params[:email], params[:password],
+        user_agent: request.user_agent, ip_address: request.remote_ip
+      )
 
 
       Rails.logger.debug "生成されたトークン: #{result[:access_token]}" if Rails.env.development?
@@ -49,7 +52,10 @@ class AuthController < ApplicationController
       return render json: { error: "すでに 本登録 ずみだよ。" }, status: :unprocessable_entity
     end
 
-    result = AuthService.convert_trial(@current_user, convert_trial_params)
+    result = AuthService.convert_trial(
+      @current_user, convert_trial_params,
+      user_agent: request.user_agent, ip_address: request.remote_ip
+    )
     set_token_cookies(result[:access_token], result[:refresh_token])
     render json: { user: user_json(result[:user]) }, status: :ok
   rescue AuthService::RegistrationError => e
@@ -68,7 +74,10 @@ class AuthController < ApplicationController
     end
 
     begin
-      result = AuthService.refresh_token(refresh_token)
+      result = AuthService.refresh_token(
+        refresh_token,
+        user_agent: request.user_agent, ip_address: request.remote_ip
+      )
       Rails.logger.info "新しいアクセストークンを発行: #{result[:access_token]}" if Rails.env.development?
       set_token_cookies(result[:access_token], result[:refresh_token]) 
       render json: { message: "トークンを更新しました" }, status: :ok
@@ -93,10 +102,8 @@ class AuthController < ApplicationController
     end
 
     begin
-      # リフレッシュトークンを使ってユーザーを検索
-      user = AuthService.find_user_by_refresh_token(refresh_token)
-      # バリデーションとコールバックをスキップしてリフレッシュトークンのみを無効化
-      user.update_column(:refresh_token, nil)
+      # 該当セッションのみを失効させる（他端末のログインは維持される）
+      AuthService.revoke_session(refresh_token)
       cookies.delete(:access_token)
       cookies.delete(:refresh_token, path: '/')
       render json: { message: "ログアウトしました" }, status: :ok
