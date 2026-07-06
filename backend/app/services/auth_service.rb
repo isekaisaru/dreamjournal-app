@@ -91,6 +91,9 @@ class AuthService
     user.password = params[:password]
     user.password_confirmation = params[:password_confirmation]
     user.trial_user = false
+    # 昇格で設定される実メールアドレスは未確認として扱う
+    # （確認メールの送信はコントローラー側で行う）
+    user.email_verified_at = nil if user.email_changed?
 
     if user.save
       revoke_all_sessions(user)

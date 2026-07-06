@@ -40,6 +40,8 @@ class UsersController < ApplicationController
       render json: error_response[:body], status: error_response[:status]
     else
       set_token_cookies(result[:access_token], result[:refresh_token])
+      # 登録完了後に確認メールを送る（best-effort・登録自体は既に成功している）
+      send_verification_email(result[:user])
       render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium, :age_group, :analysis_tone]) }, status: :created
     end
   end
