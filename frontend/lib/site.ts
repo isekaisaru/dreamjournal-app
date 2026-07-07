@@ -23,6 +23,7 @@ export const NON_INDEXABLE_PATH_PREFIXES = [
   "/profiles", // プロフィール（認証）
   "/settings", // 設定（認証）
   "/subscription", // サブスク管理・決済リダイレクト（認証）
+  "/verify-email", // メールアドレス確認（トークン付きリンク・公開だが個別URL）
   "/debug", // 開発用デバッグページ
 ] as const;
 

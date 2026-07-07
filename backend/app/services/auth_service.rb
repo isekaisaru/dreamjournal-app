@@ -91,6 +91,13 @@ class AuthService
     user.password = params[:password]
     user.password_confirmation = params[:password_confirmation]
     user.trial_user = false
+    # 昇格時は常に未確認へ戻す（emailを変更しない場合も含む）。
+    # 既存トライアルユーザーはmigrationでgrandfatherされ email_verified_at が
+    # 埋まっているため、email_changed? 判定だと「昇格前と同じメールのまま
+    # 昇格」したケースで未確認化されずcheckoutの検証ゲートをすり抜けてしまう
+    # （Codexレビュー指摘・#415）。トライアルのメールは一度も実際に検証されて
+    # いないので、昇格＝実メールとして使い始めるタイミングで必ず再検証させる。
+    user.email_verified_at = nil
 
     if user.save
       revoke_all_sessions(user)

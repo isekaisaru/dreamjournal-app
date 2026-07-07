@@ -4,6 +4,13 @@ FactoryBot.define do
     sequence(:email) { |n| "testuser#{n}@example.com" }
     password { "password123" }
     password_confirmation { "password123" }
+    # 既存ユーザーはmigrationで検証済みにバックフィルされているため、
+    # factoryのデフォルトも検証済みとする（未検証は :unverified で明示）
+    email_verified_at { Time.current }
+
+    trait :unverified do
+      email_verified_at { nil }
+    end
 
     trait :with_dreams do
       after(:create) do |user|

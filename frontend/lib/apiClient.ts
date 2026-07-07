@@ -462,6 +462,26 @@ export async function verifyAuth(): Promise<{ user: User } | null> {
   }
 }
 
+// メールアドレス確認（確認メールのリンクから呼ばれる。未ログインでも実行可能）
+export async function verifyEmail(
+  token: string
+): Promise<{ message: string; email_verified: boolean }> {
+  return apiFetch<{ message: string; email_verified: boolean }>(
+    "/auth/verify_email",
+    {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }
+  );
+}
+
+// 確認メールの再送（要ログイン）
+export async function resendVerificationEmail(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>("/auth/resend_verification", {
+    method: "POST",
+  });
+}
+
 const apiClient = {
   get: <T>(url: string, options?: ApiFetchOptions) =>
     apiFetch<T>(url, { ...options, method: "GET", cache: "no-store" }),
