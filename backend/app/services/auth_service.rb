@@ -153,8 +153,7 @@ class AuthService
       # レガシー互換: 旧 users.refresh_token（平文カラム）と照合し、
       # 一致したらその場で user_sessions へ透過的に移行する。
       # デプロイ前からログイン中のユーザーを強制ログアウトさせないための一時パス。
-      user = find_user_by_legacy_refresh_token(refresh_token)
-      user.update_column(:refresh_token, nil)
+      user = consume_legacy_refresh_token(refresh_token)
       new_refresh_token = create_session(user, user_agent: user_agent, ip_address: ip_address)
       Rails.logger.info "ユーザーID: #{user.id} のレガシートークンをセッションへ移行しました。"
       { access_token: encode_token(user.id), refresh_token: new_refresh_token }
@@ -175,8 +174,7 @@ class AuthService
     end
 
     # レガシー互換: 旧カラムのトークンでのログアウト
-    user = find_user_by_legacy_refresh_token(refresh_token)
-    user.update_column(:refresh_token, nil)
+    consume_legacy_refresh_token(refresh_token)
     true
   end
 
@@ -205,14 +203,32 @@ class AuthService
     SecureRandom.urlsafe_base64(64)
   end
 
-  # 旧 users.refresh_token カラムからユーザーを検索（レガシー互換パス）
+  # 旧 users.refresh_token カラムのトークンをアトミックに検証・消費する
+  # （nullify に成功したリクエストだけがユーザーを取得できる）。
+  #
+  # ロールアウト直後、期限切れアクセストークンが引き金になって同一クライアントから
+  # 並列に /auth/refresh が飛ぶことがある。素朴に find→update だと、両リクエストが
+  # nullify 前に同じユーザーを読んでしまい、1本の使い捨てトークンから複数の
+  # user_sessions が作られてしまう（Codexレビュー指摘・#414）。
+  # 行ロック(with_lock)の中で再読込し、他リクエストが先に消費済みでないか
+  # 確認してからnullifyすることで、後続リクエストは確実に失敗させる。
+  #
   # burn-in 後にカラムごと削除予定（docs/auth-hardening-spec.md）
-  def self.find_user_by_legacy_refresh_token(refresh_token)
+  def self.consume_legacy_refresh_token(refresh_token)
     user = User.find_by(refresh_token: refresh_token)
     if user.nil?
       Rails.logger.warn "リフレッシュトークンが無効です (token_prefix=#{refresh_token.to_s[0..7]}...)"
       raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
     end
+
+    user.with_lock do
+      # ロック取得後の再読込で、他リクエストが先に消費済みなら不一致になる
+      if user.refresh_token != refresh_token
+        raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
+      end
+      user.update_column(:refresh_token, nil)
+    end
+
     user
   end
 
