@@ -119,6 +119,24 @@ RSpec.describe 'Email verification', type: :request do
       expect(json_response['user']['email_verified']).to be false
       expect(trial_user.reload.email_verified?).to be false
     end
+
+    it '昇格前にgrandfatherで検証済みだったユーザーが同じメールのまま昇格しても未検証に戻る（Codex #415 P2回帰）' do
+      # 既存トライアルユーザーがmigrationでgrandfatherされ、
+      # 一度も実際にはメールを検証していないのに verified 扱いだった状況を再現
+      trial_user.update_column(:email_verified_at, Time.current)
+
+      expect {
+        authenticated_patch('/auth/convert_trial', trial_user, params: {
+          # メールアドレスは変更しない（トライアル時と同じ）
+          user: { email: trial_user.email, username: 'samemail',
+                  password: 'newpass123', password_confirmation: 'newpass123' }
+        })
+      }.to have_enqueued_mail(UserMailer, :email_verification)
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['user']['email_verified']).to be false
+      expect(trial_user.reload.email_verified?).to be false
+    end
   end
 
   describe 'GET /auth/me' do
