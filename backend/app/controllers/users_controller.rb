@@ -11,7 +11,10 @@ class UsersController < ApplicationController
 
     ApplicationRecord.transaction do
       begin
-        result = AuthService.register(user_params)
+        result = AuthService.register(
+          user_params,
+          user_agent: request.user_agent, ip_address: request.remote_ip
+        )
 
         unless result[:user] && result[:access_token] && result[:refresh_token]
           Rails.logger.error "ユーザー登録処理で AuthService から必要な情報が返されませんでした: #{result.inspect}"

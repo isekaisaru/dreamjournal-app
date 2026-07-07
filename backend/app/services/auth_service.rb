@@ -16,13 +16,12 @@ class AuthService
   end
 
   # ログイン処理
-  def self.login(email, password)
+  # 多端末対応: 既存セッションは失効させず、新しいセッションを追加する
+  def self.login(email, password, user_agent: nil, ip_address: nil)
     user = User.find_by(email: email.downcase)
     if user&.authenticate(password)
       access_token = encode_token(user.id)
-      refresh_token = generate_refresh_token
-      # バリデーションとコールバックをスキップして refresh_token のみを更新
-      user.update_column(:refresh_token, refresh_token)
+      refresh_token = create_session(user, user_agent: user_agent, ip_address: ip_address)
       # 🛡️ セキュア化：トークン本文は出力せず、成功の事実のみをログに残す
       Rails.logger.info "認証成功: ユーザーID=#{user.id} トークン生成完了"
       { access_token: access_token, refresh_token: refresh_token, user: user }
@@ -30,14 +29,13 @@ class AuthService
       Rails.logger.warn "認証失敗: email=#{email}"
       raise InvalidCredentialsError, 'メールアドレスまたはパスワードが正しくありません'
     end
-  rescue ActiveRecord::RecordInvalid => e # update_column は RecordInvalid を発生させないが、念のため残す
-    Rails.logger.error "ログイン成功後、リフレッシュトークン更新に失敗: #{e.message}"
-
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "ログイン成功後、セッション作成に失敗: #{e.message}"
     raise InvalidCredentialsError, "ログイン処理中にエラーが発生しました。"
   end
 
   # ユーザーを登録する
-  def self.register(params)
+  def self.register(params, user_agent: nil, ip_address: nil)
     user = User.new(
       email: params[:email]&.downcase,
       username: params[:username],
@@ -46,21 +44,19 @@ class AuthService
     )
     if user.save
       access_token = encode_token(user.id)
-      refresh_token = generate_refresh_token
-      # バリデーションとコールバックをスキップして refresh_token のみを更新
-      user.update_column(:refresh_token, refresh_token)
-      Rails.logger.info "新規登録ユーザーID: #{user.id} のリフレッシュトークンを保存しました。" if Rails.env.development?
+      refresh_token = create_session(user, user_agent: user_agent, ip_address: ip_address)
+      Rails.logger.info "新規登録ユーザーID: #{user.id} のセッションを作成しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
       raise RegistrationError, user.errors.full_messages.join(", ")
     end
-  rescue ActiveRecord::RecordInvalid => e # update_column は RecordInvalid を発生させないが、念のため残す
-     Rails.logger.error "ユーザー作成成功後、リフレッシュトークン更新に失敗: #{e.message}"
-     raise RegistrationError, "ユーザー登録中にエラーが発生しました。"
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "ユーザー作成成功後、セッション作成に失敗: #{e.message}"
+    raise RegistrationError, "ユーザー登録中にエラーが発生しました。"
   end
 
   # トライアルユーザーを作成する
-  def self.create_trial_user(params)
+  def self.create_trial_user(params, user_agent: nil, ip_address: nil)
     user = User.new(
       email: params[:email]&.downcase,
       username: params[:username],
@@ -70,26 +66,24 @@ class AuthService
     )
     if user.save
       access_token = encode_token(user.id)
-      refresh_token = generate_refresh_token
-      # バリデーションとコールバックをスキップして refresh_token のみを更新
-      user.update_column(:refresh_token, refresh_token)
-      Rails.logger.info "トライアルユーザーID: #{user.id} のリフレッシュトークンを保存しました。" if Rails.env.development?
+      refresh_token = create_session(user, user_agent: user_agent, ip_address: ip_address)
+      Rails.logger.info "トライアルユーザーID: #{user.id} のセッションを作成しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
       raise RegistrationError, user.errors.full_messages.join(", ")
     end
-  rescue ActiveRecord::RecordInvalid => e # update_column は RecordInvalid を発生させないが、念のため残す
-     Rails.logger.error "トライアルユーザー作成成功後、リフレッシュトークン更新に失敗: #{e.message}"
-     raise RegistrationError, "トライアルユーザー登録中にエラーが発生しました。"
+  rescue ActiveRecord::RecordInvalid => e
+    Rails.logger.error "トライアルユーザー作成成功後、セッション作成に失敗: #{e.message}"
+    raise RegistrationError, "トライアルユーザー登録中にエラーが発生しました。"
   end
 
   # トライアルユーザーを本登録ユーザーへ昇格する
   # 同じ User レコードの認証情報を更新し trial_user を外すだけなので、
   # 夢・プロフィール（user_id 紐づき）はそのまま引き継がれる。
-  # セキュリティ: 昇格時に refresh_token をローテーションし、
-  # 旧トライアル時に漏れていた可能性のあるトークンを無効化する
-  # （アクセストークンも新規発行し、Cookie を入れ替える）。
-  def self.convert_trial(user, params)
+  # セキュリティ: 昇格（権限変化）時は全セッションを失効させてから
+  # 新しいセッションを発行し、旧トライアル時に漏れていた可能性のある
+  # トークンをすべて無効化する。
+  def self.convert_trial(user, params, user_agent: nil, ip_address: nil)
     raise RegistrationError, "すでに本登録済みのアカウントです。" unless user.trial_user?
 
     user.email = params[:email]&.downcase
@@ -99,10 +93,9 @@ class AuthService
     user.trial_user = false
 
     if user.save
+      revoke_all_sessions(user)
       access_token = encode_token(user.id)
-      refresh_token = generate_refresh_token
-      # バリデーションとコールバックをスキップして refresh_token のみを更新（旧トークンは即無効化）
-      user.update_column(:refresh_token, refresh_token)
+      refresh_token = create_session(user, user_agent: user_agent, ip_address: ip_address)
       Rails.logger.info "ユーザーID: #{user.id} をトライアルから本登録へ昇格しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
@@ -145,37 +138,64 @@ class AuthService
     end
   end
 
-  # リフレッシュトークンを生成
-  def self.refresh_token(refresh_token)
+  # refresh token を検証し、access/refresh 両トークンをローテーションする
+  def self.refresh_token(refresh_token, user_agent: nil, ip_address: nil)
     Rails.logger.info "リフレッシュトークンを検証します。" if Rails.env.development?
-    user = find_user_by_refresh_token(refresh_token)
-    new_access_token = encode_token(user.id)
-    new_refresh_token = generate_refresh_token
-    # バリデーションとコールバックをスキップして refresh_token のみを更新
-    user.update_column(:refresh_token, new_refresh_token)
-    Rails.logger.info "ユーザーID: #{user.id} のリフレッシュトークンを更新・保存しました。" if Rails.env.development?
-    { access_token: new_access_token, refresh_token: new_refresh_token }
-  rescue ActiveRecord::RecordInvalid => e # update_column は RecordInvalid を発生させないが、念のため残す
+    raise InvalidRefreshTokenError, 'リフレッシュトークンがありません' if refresh_token.blank?
+
+    session = UserSession.find_active_by_token(refresh_token)
+
+    if session
+      new_refresh_token = generate_refresh_token
+      session.rotate!(new_refresh_token, lifetime: refresh_token_lifetime)
+      { access_token: encode_token(session.user_id), refresh_token: new_refresh_token }
+    else
+      # レガシー互換: 旧 users.refresh_token（平文カラム）と照合し、
+      # 一致したらその場で user_sessions へ透過的に移行する。
+      # デプロイ前からログイン中のユーザーを強制ログアウトさせないための一時パス。
+      user = consume_legacy_refresh_token(refresh_token)
+      new_refresh_token = create_session(user, user_agent: user_agent, ip_address: ip_address)
+      Rails.logger.info "ユーザーID: #{user.id} のレガシートークンをセッションへ移行しました。"
+      { access_token: encode_token(user.id), refresh_token: new_refresh_token }
+    end
+  rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "リフレッシュトークン検証成功後、DB更新に失敗: #{e.message}"
     raise InvalidRefreshTokenError, "トークンリフレッシュ処理中にエラーが発生しました。"
   end
 
-  # リフレッシュトークンからユーザーを検索
-  def self.find_user_by_refresh_token(refresh_token)
-    Rails.logger.info "リフレッシュトークンからユーザーを検索します。" if Rails.env.development?
+  # ログアウト: 該当セッションのみ失効させる（他端末のセッションは維持）
+  def self.revoke_session(refresh_token)
     raise InvalidRefreshTokenError, 'リフレッシュトークンがありません' if refresh_token.blank?
 
-    user = User.find_by(refresh_token: refresh_token)
-
-    Rails.logger.info "User.find_by(refresh_token: ...)の結果: #{user&.id || 'nil'}" if Rails.env.development?
-
-    if user.nil?
-      Rails.logger.warn "リフレッシュトークンがデータベースに存在しません (token_prefix=#{refresh_token.to_s[0..7]}...)"
-      raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
+    session = UserSession.find_active_by_token(refresh_token)
+    if session
+      session.revoke!
+      return true
     end
 
-    Rails.logger.info "ユーザーが見つかりました: ユーザー ID: #{user.id}" if Rails.env.development?
-    user
+    # レガシー互換: 旧カラムのトークンでのログアウト
+    consume_legacy_refresh_token(refresh_token)
+    true
+  end
+
+  # 全セッション失効（trial昇格・パスワード変更などの権限変化時に使う）
+  def self.revoke_all_sessions(user)
+    user.user_sessions.active.update_all(revoked_at: Time.current)
+    user.update_column(:refresh_token, nil) if user.refresh_token.present?
+  end
+
+  # 新しいセッションを作成し、生の refresh token を返す（DBには digest のみ保存）
+  def self.create_session(user, user_agent: nil, ip_address: nil)
+    token = generate_refresh_token
+    user.user_sessions.create!(
+      refresh_token_digest: UserSession.digest(token),
+      expires_at: refresh_token_lifetime.from_now,
+      user_agent: user_agent&.slice(0, 255),
+      ip_address: ip_address,
+      last_used_at: Time.current
+    )
+    UserSession.prune_for(user)
+    token
   end
 
   # リフレッシュトークンを生成
@@ -183,7 +203,39 @@ class AuthService
     SecureRandom.urlsafe_base64(64)
   end
 
-  private
+  # 旧 users.refresh_token カラムのトークンをアトミックに検証・消費する
+  # （nullify に成功したリクエストだけがユーザーを取得できる）。
+  #
+  # ロールアウト直後、期限切れアクセストークンが引き金になって同一クライアントから
+  # 並列に /auth/refresh が飛ぶことがある。素朴に find→update だと、両リクエストが
+  # nullify 前に同じユーザーを読んでしまい、1本の使い捨てトークンから複数の
+  # user_sessions が作られてしまう（Codexレビュー指摘・#414）。
+  # 行ロック(with_lock)の中で再読込し、他リクエストが先に消費済みでないか
+  # 確認してからnullifyすることで、後続リクエストは確実に失敗させる。
+  #
+  # burn-in 後にカラムごと削除予定（docs/auth-hardening-spec.md）
+  def self.consume_legacy_refresh_token(refresh_token)
+    user = User.find_by(refresh_token: refresh_token)
+    if user.nil?
+      Rails.logger.warn "リフレッシュトークンが無効です (token_prefix=#{refresh_token.to_s[0..7]}...)"
+      raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
+    end
+
+    user.with_lock do
+      # ロック取得後の再読込で、他リクエストが先に消費済みなら不一致になる
+      if user.refresh_token != refresh_token
+        raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
+      end
+      user.update_column(:refresh_token, nil)
+    end
+
+    user
+  end
+
+  # refresh token の有効期間（ローテーション時にスライド延長）
+  def self.refresh_token_lifetime
+    ENV.fetch('REFRESH_TOKEN_EXPIRATION_DAYS', '30').to_i.days
+  end
 
   # JWTの有効期限を環境変数で設定する
   def self.jwt_expiration_time
