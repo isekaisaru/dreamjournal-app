@@ -16,6 +16,7 @@ import SearchBar from "@/app/components/SearchBar";
 import ProfileFilterChips from "@/app/components/ProfileFilterChips";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import TrialBanner from "@/app/components/TrialBanner";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import ForestPreviewWidget from "@/app/components/forest/ForestPreviewWidget";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
@@ -319,6 +320,10 @@ export default function HomePage() {
             analysisCount={user.trial_analysis_count}
             audioCount={user.trial_audio_count}
           />
+        )}
+        {/* メール未確認の本登録ユーザー向けバナー（トライアルはメール検証対象外） */}
+        {user && !user.trial_user && user.email_verified === false && (
+          <EmailVerificationBanner />
         )}
         <MorpheusHero
           expression="cheerful"

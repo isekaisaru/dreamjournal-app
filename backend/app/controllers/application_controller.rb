@@ -47,8 +47,19 @@ class ApplicationController < ActionController::API
       ]
     ).merge(
       # カラムが nil の既存ユーザーでも frontend が確実に真偽値で判定できるようにする
-      "trial_user" => user.trial_user?
+      "trial_user" => user.trial_user?,
+      "email_verified" => user.email_verified?
     )
+  end
+
+  # メール確認メールを送信する（登録・トライアル昇格・再送で共通利用）。
+  # メール配信基盤の不調で登録自体を失敗させないよう best-effort とし、
+  # 失敗はログに残すだけにする。
+  def send_verification_email(user)
+    token = user.generate_email_verification_token!
+    UserMailer.email_verification(user, token).deliver_later
+  rescue StandardError => e
+    Rails.logger.error "確認メール送信に失敗: user_id=#{user.id} #{e.class} - #{e.message}"
   end
 
   def set_token_cookies(access_token, refresh_token)

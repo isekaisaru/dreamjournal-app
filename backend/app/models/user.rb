@@ -5,6 +5,7 @@ class User < ApplicationRecord
   has_secure_password
   has_many :dreams, dependent: :destroy
   has_many :dream_profiles, dependent: :destroy
+  has_many :user_sessions, dependent: :destroy
   has_many :dream_image_generations, dependent: :destroy
   has_many :payments, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
@@ -61,6 +62,56 @@ class User < ApplicationRecord
   def use_password_reset_token!
     # 合言葉と時間を消して、もう使えないようにする
     update!(reset_password_token: nil, reset_password_sent_at: nil)
+  end
+
+  # ---- メールアドレス有効化（account activation）----------------------
+  # 設計: docs/auth-hardening-spec.md（PR2）
+  # トークンは user_sessions と同じ理由（等値検索が必要・entropyで担保）で
+  # SHA256 digest のみをDBに保存する。
+
+  EMAIL_VERIFICATION_TOKEN_TTL      = 24.hours
+  EMAIL_VERIFICATION_RESEND_INTERVAL = 5.minutes
+
+  def email_verified?
+    email_verified_at.present?
+  end
+
+  # 検証トークンを発行して digest を保存し、生トークンを返す（メール本文に載せる用）
+  def generate_email_verification_token!
+    token = SecureRandom.urlsafe_base64(32)
+    update!(
+      email_verification_token_digest: Digest::SHA256.hexdigest(token),
+      email_verification_sent_at: Time.current
+    )
+    token
+  end
+
+  def self.find_by_email_verification_token(token)
+    return nil if token.blank?
+
+    find_by(email_verification_token_digest: Digest::SHA256.hexdigest(token))
+  end
+
+  def email_verification_token_valid?
+    email_verification_sent_at.present? &&
+      email_verification_sent_at >= EMAIL_VERIFICATION_TOKEN_TTL.ago
+  end
+
+  def verify_email!
+    update!(email_verified_at: Time.current, email_verification_token_digest: nil)
+  end
+
+  # 再送のスパム防止（前回送信から一定時間あける）
+  def can_resend_verification_email?
+    email_verification_sent_at.nil? ||
+      email_verification_sent_at < EMAIL_VERIFICATION_RESEND_INTERVAL.ago
+  end
+
+  # dream作成時の dream_profile_id フォールバック先。
+  # DreamProfile#self_profile_relationship_immutable により self プロフィールの
+  # relationship は変更不可なため、既存ユーザーであれば常に見つかる想定。
+  def self_dream_profile_id
+    dream_profiles.find_by(relationship: "self")&.id
   end
 
   def premium_active_subscription?

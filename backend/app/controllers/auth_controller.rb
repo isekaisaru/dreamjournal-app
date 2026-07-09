@@ -1,10 +1,13 @@
 class AuthController < ApplicationController
-  skip_before_action :authorize_request, only: [:login, :refresh, :logout]
+  skip_before_action :authorize_request, only: [:login, :refresh, :logout, :verify_email]
 
   # ユーザーのログイン
   def login
     begin
-      result = AuthService.login(params[:email], params[:password])
+      result = AuthService.login(
+        params[:email], params[:password],
+        user_agent: request.user_agent, ip_address: request.remote_ip
+      )
 
 
       Rails.logger.debug "生成されたトークン: #{result[:access_token]}" if Rails.env.development?
@@ -49,11 +52,45 @@ class AuthController < ApplicationController
       return render json: { error: "すでに 本登録 ずみだよ。" }, status: :unprocessable_entity
     end
 
-    result = AuthService.convert_trial(@current_user, convert_trial_params)
+    result = AuthService.convert_trial(
+      @current_user, convert_trial_params,
+      user_agent: request.user_agent, ip_address: request.remote_ip
+    )
     set_token_cookies(result[:access_token], result[:refresh_token])
+    # 昇格で設定された実メールアドレスは未確認状態のため、確認メールを送る
+    send_verification_email(result[:user])
     render json: { user: user_json(result[:user]) }, status: :ok
   rescue AuthService::RegistrationError => e
     render json: { error: e.message }, status: :unprocessable_entity
+  end
+
+  # メールアドレス確認 POST /auth/verify_email（未ログインでも実行可能）
+  # メール内リンクのトークンを照合して email_verified_at を打つ
+  def verify_email
+    user = User.find_by_email_verification_token(params[:token])
+
+    if user.nil? || !user.email_verification_token_valid?
+      return render json: { error: "リンクが無効か、期限切れです。もう一度確認メールを送ってください。" },
+                    status: :unprocessable_content
+    end
+
+    user.verify_email!
+    render json: { message: "メールアドレスを確認しました", email_verified: true }, status: :ok
+  end
+
+  # 確認メール再送 POST /auth/resend_verification（要ログイン）
+  def resend_verification
+    if @current_user.email_verified?
+      return render json: { message: "すでに確認済みです", email_verified: true }, status: :ok
+    end
+
+    unless @current_user.can_resend_verification_email?
+      return render json: { error: "確認メールを送信済みです。少し待ってからもう一度お試しください。" },
+                    status: :too_many_requests
+    end
+
+    send_verification_email(@current_user)
+    render json: { message: "確認メールを送りました" }, status: :ok
   end
 
   # トークンをリフレッシュする
@@ -68,7 +105,10 @@ class AuthController < ApplicationController
     end
 
     begin
-      result = AuthService.refresh_token(refresh_token)
+      result = AuthService.refresh_token(
+        refresh_token,
+        user_agent: request.user_agent, ip_address: request.remote_ip
+      )
       Rails.logger.info "新しいアクセストークンを発行: #{result[:access_token]}" if Rails.env.development?
       set_token_cookies(result[:access_token], result[:refresh_token]) 
       render json: { message: "トークンを更新しました" }, status: :ok
@@ -93,10 +133,8 @@ class AuthController < ApplicationController
     end
 
     begin
-      # リフレッシュトークンを使ってユーザーを検索
-      user = AuthService.find_user_by_refresh_token(refresh_token)
-      # バリデーションとコールバックをスキップしてリフレッシュトークンのみを無効化
-      user.update_column(:refresh_token, nil)
+      # 該当セッションのみを失効させる（他端末のログインは維持される）
+      AuthService.revoke_session(refresh_token)
       cookies.delete(:access_token)
       cookies.delete(:refresh_token, path: '/')
       render json: { message: "ログアウトしました" }, status: :ok

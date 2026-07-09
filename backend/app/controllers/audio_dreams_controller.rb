@@ -18,6 +18,7 @@ class AudioDreamsController < ApplicationController
       content: "音声解析中...",
       analysis_status: :pending
     )
+    dream.dream_profile_id ||= user.self_dream_profile_id
 
     # 2. 音声ファイルを添付
     if params[:file].present?

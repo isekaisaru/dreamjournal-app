@@ -1,6 +1,11 @@
 class CheckoutController < ApplicationController
   class MissingPremiumPriceIdError < StandardError; end
 
+  # 決済前にメールアドレス確認を必須にする（領収書・重要通知の到達性を担保）。
+  # 既存ユーザーはmigrationで検証済みにバックフィル済みのため影響なし。
+  # トライアルユーザーは実メール検証フローの対象外（本登録昇格時に検証する）。
+  before_action :require_verified_email, only: [:create]
+
   DONATION_UNIT_AMOUNT = 500
 
   def create
@@ -95,6 +100,16 @@ class CheckoutController < ApplicationController
   end
 
   private
+
+  def require_verified_email
+    return if current_user.trial_user?
+    return if current_user.email_verified?
+
+    render json: {
+      error: "メールアドレスの確認が必要です。確認メールのリンクを開いてください。",
+      email_verification_required: true
+    }, status: :forbidden
+  end
 
   def requested_plan
     params[:plan].to_s == 'premium' ? 'premium' : 'donation'
