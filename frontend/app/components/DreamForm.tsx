@@ -4,7 +4,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 import { Dream, DreamProfile, Emotion, DreamDraftData } from "../types";
-import { getDreamProfiles, getEmotions, previewAnalysis, ApiError } from "@/lib/apiClient";
+import {
+  getDreamProfiles,
+  getEmotions,
+  previewAnalysis,
+  ApiError,
+  isEmailVerificationRequiredError,
+} from "@/lib/apiClient";
+import EmailVerificationBanner from "./EmailVerificationBanner";
 import { toast } from "@/lib/toast";
 import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
 import MorpheusAvatar from "./MorpheusAvatar";
@@ -60,6 +67,7 @@ export default function DreamForm({
   const [isDraftApplied, setIsDraftApplied] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
+  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
   const [analysisRevealKey, setAnalysisRevealKey] = useState(0);
   const [profiles, setProfiles] = useState<DreamProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<number | undefined>(
@@ -190,6 +198,7 @@ export default function DreamForm({
     }
 
     setAnalysisLimitReached(false);
+    setEmailVerificationRequired(false);
     setIsAnalyzing(true);
     try {
       const result = await previewAnalysis(content);
@@ -201,7 +210,9 @@ export default function DreamForm({
       localStorage.removeItem(morpheusRatingKey);
       toast.success("モルペウスが おへんじ したよ！");
     } catch (error) {
-      if (error instanceof ApiError && error.status === 403 && error.data?.limit_reached) {
+      if (isEmailVerificationRequiredError(error)) {
+        setEmailVerificationRequired(true);
+      } else if (error instanceof ApiError && error.status === 403 && error.data?.limit_reached) {
         setAnalysisLimitReached(true);
       } else if (error instanceof ApiError && error.message) {
         console.error("Analysis failed:", error);
@@ -316,6 +327,14 @@ export default function DreamForm({
           placeholder="どんな ゆめ だった？ おもいだせる だけ かいてみてね..."
         ></textarea>
         {/* Analysis Button */}
+        {emailVerificationRequired && (
+          <div className="mt-3">
+            <EmailVerificationBanner
+              title="AIぶんせきには メールの かくにんが ひつようだよ"
+              description="とどいた メールの リンクを ひらいてから、もういちど きいてみてね。"
+            />
+          </div>
+        )}
         <div className="mt-3 flex justify-end">
           {analysisLimitReached ? (
             <div className="flex flex-col items-end gap-2">
