@@ -1,5 +1,9 @@
 class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
+  # OpenAI課金が発生するアクションはメール確認済みユーザーのみ（trialは対象外）。
+  # 宣言順が重要: set_dream の後（他人の夢は404のまま）、
+  # check_analysis_limit の前（枠を消費してから403にしない）。
+  before_action :require_verified_email, only: [:analyze, :preview_analysis, :generate_image]
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
   before_action :check_monthly_image_limit, only: [:generate_image]
   before_action :check_trial_dream_limit, only: [:create]
