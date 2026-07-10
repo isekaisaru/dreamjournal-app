@@ -175,6 +175,8 @@ RSpec.describe 'Email verification', type: :request do
       mail = UserMailer.email_verification(user, token)
 
       expect(mail.to).to eq(['mailbody@example.com'])
+      # From は MAIL_FROM 環境変数で上書き可能（未設定時のデフォルトを固定）
+      expect(mail.from).to eq(['support@yumelog.com'])
       expect(mail.subject).to include('メールアドレスの確認')
       # マルチパート（text/html）それぞれに確認URLが含まれる
       expect(mail.text_part.decoded).to include("/verify-email?token=#{token}")
