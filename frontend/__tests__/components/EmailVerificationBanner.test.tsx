@@ -32,6 +32,22 @@ describe("EmailVerificationBanner", () => {
     ).toBeInTheDocument();
   });
 
+  it("title / description を文脈に合わせて差し替えられる", () => {
+    render(
+      <EmailVerificationBanner
+        title="AIぶんせきには メールの かくにんが ひつようだよ"
+        description="とどいた メールの リンクを ひらいてから、もういちど きいてみてね。"
+      />
+    );
+
+    expect(
+      screen.getByText("AIぶんせきには メールの かくにんが ひつようだよ")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("とどいた メールの リンクを ひらいてから、もういちど きいてみてね。")
+    ).toBeInTheDocument();
+  });
+
   it("再送ボタンを押すと送信中表示になり、成功したら完了メッセージに切り替わる", async () => {
     const user = userEvent.setup();
     mockResend.mockResolvedValue({ message: "確認メールを送りました" });

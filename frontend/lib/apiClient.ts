@@ -482,6 +482,16 @@ export async function resendVerificationEmail(): Promise<{ message: string }> {
   });
 }
 
+// AI課金機能（分析・画像生成・音声）や決済が「メールアドレス確認が必要」で
+// 拒否されたエラーかどうか（backendの require_verified_email が返す403）
+export function isEmailVerificationRequiredError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 403 &&
+    error.data?.email_verification_required === true
+  );
+}
+
 const apiClient = {
   get: <T>(url: string, options?: ApiFetchOptions) =>
     apiFetch<T>(url, { ...options, method: "GET", cache: "no-store" }),
