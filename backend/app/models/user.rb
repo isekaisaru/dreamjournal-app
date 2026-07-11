@@ -36,24 +36,29 @@ class User < ApplicationRecord
     AuthService.encode_token(self.id)
   end
 
-  # パスワードリセット用の「秘密の合言葉」を作る能力
+  # パスワードリセット用の「秘密の合言葉」を作る能力。
+  # DBにはSHA256 digestのみ保存し、生トークンはメール本文用に返す
+  # （user_sessions・email_verification_tokenと同じ方針）。
   def generate_password_reset_token
-    # 他の人と絶対に被らない、ユニークな合言葉ができるまで作り続ける
-    loop do
-      token = SecureRandom.urlsafe_base64(32)
-      break self.reset_password_token = token unless User.exists?(reset_password_token: token)
-    end
-    # 合言葉を作った時間を記録
-    self.reset_password_sent_at = Time.current
-    # データベースに保存！
-    save!
+    token = SecureRandom.urlsafe_base64(32)
+    update!(
+      reset_password_token_digest: Digest::SHA256.hexdigest(token),
+      reset_password_sent_at: Time.current
+    )
+    token
+  end
+
+  def self.find_by_password_reset_token(token)
+    return nil if token.blank?
+
+    find_by(reset_password_token_digest: Digest::SHA256.hexdigest(token))
   end
 
   # 合言葉が「まだ使えるか」をチェックする能力
   def password_reset_valid?
     # 合言葉があって、作られた時間も記録されていて、
     # さらに作られてから60分以内なら「有効」と判断する
-    reset_password_token.present? &&
+    reset_password_token_digest.present? &&
     reset_password_sent_at.present? &&
     reset_password_sent_at >= 60.minutes.ago
   end
@@ -61,7 +66,7 @@ class User < ApplicationRecord
   # 一度使った合言葉を「無効にする」能力
   def use_password_reset_token!
     # 合言葉と時間を消して、もう使えないようにする
-    update!(reset_password_token: nil, reset_password_sent_at: nil)
+    update!(reset_password_token_digest: nil, reset_password_sent_at: nil)
   end
 
   # ---- メールアドレス有効化（account activation）----------------------
