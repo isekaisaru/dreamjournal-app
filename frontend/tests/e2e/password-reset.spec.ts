@@ -48,6 +48,12 @@ test.describe("Password Reset E2E", () => {
     expect(resetReq.ok()).toBeTruthy();
 
     // 3. リセットリンクのシミュレーション（開発専用エンドポイントでトークン取得）
+    // 注意: dev_tokenはDBに保存されたトークンを「読み出す」のではなく、
+    // 呼ぶたびに新しいトークンをその場で発行して返す（DBにはSHA256
+    // digestしか保存されないため、既存トークンの読み出しはできない）。
+    // そのため直前の手順2（POST /password_resets）で送信されたメール内の
+    // トークンとは別物になり、そちらは無効化される。dev/E2E専用の挙動として
+    // 許容している（本番では使われないエンドポイント）。
     const tokenRes = await request.get(
       `${backendBase}/dev/password_resets/token?email=${encodeURIComponent(email)}`
     );
