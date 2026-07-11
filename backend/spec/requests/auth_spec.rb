@@ -321,18 +321,13 @@ RSpec.describe 'Authentication API', type: :request do
       expect(trial_user.authenticate('newpass123')).to be_truthy
     end
 
-    it '昇格時にセッションをローテーションして旧トークンを無効化する' do
-      # レガシーカラムのトークンも昇格時にまとめて無効化される
-      trial_user.update_column(:refresh_token, 'old-trial-refresh-token')
-
+    it '昇格時にセッションをローテーションする（旧セッションは失効・新セッションのみ有効）' do
       authenticated_patch('/auth/convert_trial', trial_user, params: convert_params)
       expect(response).to have_http_status(:ok)
 
-      trial_user.reload
-      expect(trial_user.refresh_token).to be_nil
       # 新しいセッションが1件だけ有効になっている
       # （authenticated_patch のログインで作られたセッションは昇格時に失効済み）
-      expect(trial_user.user_sessions.active.count).to eq(1)
+      expect(trial_user.reload.user_sessions.active.count).to eq(1)
     end
 
     it '昇格しても同じ user.id のまま夢・プロフィールが引き継がれる' do

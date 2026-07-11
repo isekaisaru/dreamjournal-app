@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 # user_sessions テーブル導入後のセッション管理の振る舞い
-# （多端末ログイン・トークンローテーション・端末別ログアウト・レガシー移行）
+# （多端末ログイン・トークンローテーション・端末別ログアウト）
 RSpec.describe 'Auth sessions (refresh token digest)', type: :request do
   let!(:user) { create(:user, email: 'session@example.com') }
   let(:host) { { 'HOST' => 'backend' } }
@@ -76,17 +76,9 @@ RSpec.describe 'Auth sessions (refresh token digest)', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it 'レガシー（users.refresh_token）のトークンはセッションへ透過的に移行される' do
-      legacy_token = SecureRandom.urlsafe_base64(64)
-      user.update_column(:refresh_token, legacy_token)
-
-      expect { refresh_with(legacy_token) }.to change(UserSession, :count).by(1)
-      expect(response).to have_http_status(:ok)
-      expect(user.reload.refresh_token).to be_nil
-
-      # 発行された新トークンで継続利用できる
-      refresh_with(response.cookies['refresh_token'])
-      expect(response).to have_http_status(:ok)
+    it '存在しない（未登録の）トークンは 401' do
+      refresh_with(SecureRandom.urlsafe_base64(64))
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 
