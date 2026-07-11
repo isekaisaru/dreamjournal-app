@@ -19,17 +19,21 @@ RSpec.describe 'PasswordResets API', type: :request do
           end
         }.to change { ActionMailer::Base.deliveries.count }.by(1)
 
-        # 2. レスポンスとDBの状態を確認
+        # 2. レスポンスとDBの状態を確認（DBにはdigestのみ保存される）
         expect(response).to have_http_status(:ok)
         expect(json_response['message']).to include('メールを送信しました')
-        expect(user.reload.reset_password_token).not_to be_nil
+        expect(user.reload.reset_password_token_digest).not_to be_nil
 
         # 3. 実際に送信されたメールの内容を検証
+        # メール本文からURL経由でトークンを取り出し、実際にそのトークンで
+        # このユーザーが引けることを確認する（平文カラムを直接読めないため）
         sent_email = ActionMailer::Base.deliveries.last
         expect(sent_email.to).to include(user.email)
         expect(sent_email.subject).to eq('[ユメログ] パスワードリセット')
         text_body = sent_email.text_part.body.to_s
-        expect(text_body).to include(user.reload.reset_password_token)
+        token = text_body[%r{/password-reset/(\S+)}, 1]
+        expect(token).to be_present
+        expect(User.find_by_password_reset_token(token)).to eq(user)
       end
     end
 
@@ -46,7 +50,7 @@ RSpec.describe 'PasswordResets API', type: :request do
   end
 
   describe 'PATCH /password_resets/:id' do
-    let!(:token) { user.generate_password_reset_token; user.reset_password_token }
+    let!(:token) { user.generate_password_reset_token }
 
     context '有効なトークンと有効なパスワードの場合' do
       let(:valid_password_params) { { password: 'new_password_456', password_confirmation: 'new_password_456' } }
@@ -56,7 +60,7 @@ RSpec.describe 'PasswordResets API', type: :request do
 
         expect(response).to have_http_status(:ok)
         expect(json_response['message']).to eq('パスワードが正常に更新されました。')
-        expect(user.reload.reset_password_token).to be_nil
+        expect(user.reload.reset_password_token_digest).to be_nil
         expect(user.reload.authenticate('new_password_456')).to be_truthy
       end
     end
@@ -88,4 +92,12 @@ RSpec.describe 'PasswordResets API', type: :request do
       end
     end
   end
+
+  # NOTE: GET /dev/password_resets/token はRailsのルーティング自体が
+  # `if Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'` で
+  # 起動時に条件分岐しているため、リクエストspec内でのENV切り替えでは
+  # ルートを有効化できない（元々テストカバレッジもなかった箇所）。
+  # dev_token が内部で使う generate_password_reset_token /
+  # find_by_password_reset_token のロジックは上記の POST・PATCH specで
+  # 実質的に検証済み。
 end
