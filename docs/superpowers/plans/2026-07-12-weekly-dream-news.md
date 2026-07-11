@@ -280,8 +280,7 @@ export default function WeeklyDreamNewsWidget({
   const activeProfiles = profiles.filter((p) => !p.archived);
   if (activeProfiles.length === 0) return null;
 
-  // 直近7日の判定はDreamStatsWidget.tsxと完全に同じ比較演算子を使う
-  // （統計とニュースで判定がずれる事故を防ぐため、新しく計算し直さない）
+  // DreamStatsWidget.tsxの7日ウィンドウ判定と同期が必要
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const weekDreams = dreams.filter((d) => new Date(d.created_at) >= weekAgo);
