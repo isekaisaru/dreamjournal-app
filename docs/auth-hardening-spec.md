@@ -61,8 +61,13 @@ digest は bcrypt ではなく **SHA256**。refresh token は128bit以上のラ�
 
 ### 後続クリーンアップ（別PR・burn-in後）
 
-- `users.refresh_token` カラムの削除（レガシー互換パスの削除と同時）
-- 期限切れ・失効セッションの定期削除（rake or migration）
+- ~~`users.refresh_token` カラムの削除（レガシー互換パスの削除と同時）~~
+  **2026-07-12対応済み**。#414デプロイから4日後、本番で
+  `SELECT COUNT(*) FROM users WHERE refresh_token IS NOT NULL;` = 11件を確認した上で
+  カラム削除とレガシーフォールバックコード（`AuthService#consume_legacy_refresh_token`等）を
+  同一PRで削除。未移行だった11ユーザーは次回アクセス時に通常の401（要再ログイン）となる
+  設計（クラッシュしない）。
+- 期限切れ・失効セッションの定期削除（rake or migration）※未着手
 
 ## PR2: メールアドレス有効化（account activation）
 
