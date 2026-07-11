@@ -19,6 +19,7 @@ import TrialBanner from "@/app/components/TrialBanner";
 import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import ForestPreviewWidget from "@/app/components/forest/ForestPreviewWidget";
+import WeeklyDreamNewsWidget from "@/app/components/WeeklyDreamNewsWidget";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import MorpheusHero from "@/app/components/MorpheusHero";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
@@ -399,6 +400,11 @@ export default function HomePage() {
 
         {/* もりプレビュー */}
         {!loading && profiles.length > 0 && <ForestPreviewWidget profiles={profiles} />}
+
+        {/* 今週のゆめニュース */}
+        {!loading && profiles.length > 0 && (
+          <WeeklyDreamNewsWidget dreams={dreams} profiles={profiles} />
+        )}
 
         {/* 連続記録バッジ */}
         <DreamStreakBadge dreams={dreams} />
