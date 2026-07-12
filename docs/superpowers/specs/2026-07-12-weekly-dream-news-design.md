@@ -20,8 +20,10 @@
 
 - コンポーネント名: `WeeklyDreamNewsWidget`（家族・ペット・キャラクタープロフィールなど、
   「家族」に限らないプロフィール構成でも自然に使える汎用名にする）
-- props: `{ dreams: Dream[]; profiles: DreamProfile[] }`（新規API呼び出しなし。`home/page.tsx` が
-  既に保持している state をそのまま渡す）
+- props: `{ dreams: Dream[]; profiles: DreamProfile[] }`（新規バックエンドエンドポイントなし。既存APIへの
+  ニュース専用取得を1回追加。`home/page.tsx` は検索・プロフィール絞り込みの影響を受けない専用の
+  `weeklyNewsDreams` state を別途保持し、それを渡す。通常の夢一覧用 `dreams` state とは独立させ、
+  フィルター中でもニュース集計が変わらないようにする — Codexレビュー指摘 [#423](https://github.com/isekaisaru/dreamjournal-app/pull/423) への対応）
 - ユーザー向けタイトル: **「今週のゆめニュース」で固定**（プロフィール数に関わらず変えない）
 - 補助文（プロフィール数で出し分け）:
   - アクティブプロフィールが1件: 「今週はこんな夢を見たよ」
