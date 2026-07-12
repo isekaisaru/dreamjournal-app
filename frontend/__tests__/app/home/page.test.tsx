@@ -1,12 +1,16 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import HomePage from "@/app/home/page";
 import type { Dream, DreamProfile } from "@/app/types";
 
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
-  useSearchParams: () => new URLSearchParams("dream_profile_id=5"),
-}));
+jest.mock("next/navigation", () => {
+  // useCallback依存配列の同一性を保つため、URLSearchParamsは1回だけ生成して使い回す
+  const searchParams = new URLSearchParams("dream_profile_id=5");
+  return {
+    useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+    useSearchParams: () => searchParams,
+  };
+});
 
 const mockUseAuth = jest.fn();
 jest.mock("@/context/AuthContext", () => ({
@@ -121,6 +125,7 @@ function dream(id: number): Dream {
 
 describe("HomePage: WeeklyDreamNewsWidgetへのデータ受け渡し", () => {
   beforeEach(() => {
+    mockGet.mockReset();
     mockUseAuth.mockReturnValue({
       authStatus: "authenticated",
       user: { id: "1", username: "テストユーザー", premium: true },
@@ -152,5 +157,35 @@ describe("HomePage: WeeklyDreamNewsWidgetへのデータ受け渡し", () => {
     );
     expect(weeklyNewsCall).toBeDefined();
     expect(String(weeklyNewsCall![0])).not.toContain("dream_profile_id");
+  });
+
+  it("ニュース専用取得が失敗しても、ウィジェットを誤表示せずホーム全体は壊れない", async () => {
+    // 意図的にニュース専用取得を失敗させるテストのため、console.errorを一時的に抑制する
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    mockGet.mockImplementation((url: string) => {
+      if (url.includes("start_date=")) {
+        // ニュース専用取得は失敗する
+        return Promise.reject(new Error("network error"));
+      }
+      // 通常の夢一覧取得は成功する（今週の夢を含む）
+      return Promise.resolve([dream(300)]);
+    });
+
+    render(<HomePage />);
+
+    // 通常のリストは問題なく描画される（ホーム全体は壊れない）
+    expect(await screen.findByText("DreamList")).toBeInTheDocument();
+
+    // 通常の夢一覧取得とニュース専用取得の両方が発火し、
+    // ニュース専用取得の失敗（reject）が状態に反映されるまで待つ
+    await waitFor(() => {
+      expect(mockGet).toHaveBeenCalledTimes(2);
+    });
+
+    // 「今週は夢がない」という誤表示を避けるため、取得失敗時はウィジェット自体を描画しない
+    expect(screen.queryByTestId("weekly-widget-dream-ids")).not.toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
   });
 });

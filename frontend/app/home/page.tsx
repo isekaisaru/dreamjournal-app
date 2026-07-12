@@ -131,6 +131,8 @@ export default function HomePage() {
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [analysisQuota, setAnalysisQuota] = useState<AnalysisQuota | null>(null);
   const [weeklyNewsDreams, setWeeklyNewsDreams] = useState<Dream[]>([]);
+  const [weeklyNewsLoading, setWeeklyNewsLoading] = useState(true);
+  const [weeklyNewsError, setWeeklyNewsError] = useState(false);
 
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
@@ -188,6 +190,9 @@ export default function HomePage() {
       return;
     }
 
+    setWeeklyNewsLoading(true);
+    setWeeklyNewsError(false);
+
     try {
       const bufferedStart = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
       const queryParams = new URLSearchParams();
@@ -198,8 +203,12 @@ export default function HomePage() {
       );
       setWeeklyNewsDreams(weeklyData);
     } catch (error) {
-      // 非致命的: ニュースウィジェットが更新されないだけで、ホーム全体は壊さない
+      // 非致命的: ニュースウィジェットを非表示にするだけで、ホーム全体は壊さない。
+      // 取得中/失敗中は「今週は夢がない」と誤表示しないよう、weeklyNewsErrorで区別する。
       console.error("Error fetching weekly news dreams:", error);
+      setWeeklyNewsError(true);
+    } finally {
+      setWeeklyNewsLoading(false);
     }
   }, [authStatus]);
 
@@ -434,7 +443,8 @@ export default function HomePage() {
         {!loading && profiles.length > 0 && <ForestPreviewWidget profiles={profiles} />}
 
         {/* 今週のゆめニュース */}
-        {!loading && profiles.length > 0 && (
+        {/* 取得中/失敗中は「今週は夢がない」と誤表示しないよう、成功確定までは描画しない */}
+        {!loading && !weeklyNewsLoading && !weeklyNewsError && profiles.length > 0 && (
           <WeeklyDreamNewsWidget dreams={weeklyNewsDreams} profiles={profiles} />
         )}
 
