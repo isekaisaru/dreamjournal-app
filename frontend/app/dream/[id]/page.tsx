@@ -314,19 +314,22 @@ export default function DreamDetailPage({
             description="とどいた メールの リンクを ひらいてから、もういちど かいてみてね。"
           />
         )}
+        <DreamShareCard
+          imageUrl={generatedImageUrl}
+          title={dream.title}
+          recordedAt={dream.created_at}
+          emotionLabels={displayTags}
+          imageAlt={copy.imageAlt}
+          onImageError={handleImageLoadError}
+          profileName={dream.dream_profile?.name}
+          profileEmoji={dream.dream_profile?.avatar_emoji}
+          profileColor={dream.dream_profile?.color}
+        />
         {generatedImageUrl ? (
-          <div className="space-y-2">
+          <div className="space-y-2 mt-2">
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
-            <DreamShareCard
-              imageUrl={generatedImageUrl}
-              title={dream.title}
-              recordedAt={dream.created_at}
-              emotionLabels={displayTags}
-              imageAlt={copy.imageAlt}
-              onImageError={handleImageLoadError}
-            />
             <div className="flex justify-end">
               <button
                 type="button"
@@ -339,7 +342,7 @@ export default function DreamDetailPage({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 py-6 rounded-xl border border-dashed border-border bg-muted/20">
+          <div className="flex flex-col items-center gap-3 py-6">
             <button
               type="button"
               onClick={handleGenerateImage}

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import DreamDetailPage from "@/app/dream/[id]/page";
 
 jest.mock("react", () => {
@@ -177,6 +177,106 @@ describe("DreamDetailPage", () => {
 
     const shareCard = screen.getByTestId("dream-share-card");
     expect(shareCard.contains(dreamImgs[0])).toBe(true);
+  });
+
+  it("画像がない夢でもシェアカードとフォールバックが表示される", () => {
+    useDream.mockReturnValue({
+      dream: {
+        id: 3,
+        title: "画像なしの夢",
+        content: "本文テスト",
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
+        userId: 1,
+        emotions: [],
+        analysis_json: { emotion_tags: [] },
+      },
+      error: null,
+      isLoading: false,
+      isUpdating: false,
+      updateDream: jest.fn(),
+      deleteDream: jest.fn(),
+    });
+
+    render(<DreamDetailPage params={{ id: "3" } as never} />);
+
+    expect(screen.getByTestId("dream-share-card")).toBeTruthy();
+    expect(screen.getByTestId("dream-share-card-fallback")).toBeTruthy();
+  });
+
+  it("dream.dream_profile の名前・絵文字がシェアカードに表示される", () => {
+    useDream.mockReturnValue({
+      dream: {
+        id: 4,
+        title: "プロフィール付きの夢",
+        content: "本文テスト",
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
+        userId: 1,
+        emotions: [],
+        analysis_json: { emotion_tags: [] },
+        dream_profile: {
+          id: 10,
+          name: "ねこさん",
+          avatar_emoji: "🐱",
+          color: "#f97316",
+          active: true,
+        },
+      },
+      error: null,
+      isLoading: false,
+      isUpdating: false,
+      updateDream: jest.fn(),
+      deleteDream: jest.fn(),
+    });
+
+    render(<DreamDetailPage params={{ id: "4" } as never} />);
+
+    const shareCard = screen.getByTestId("dream-share-card");
+    const chip = within(shareCard).getByTestId("profile-chip");
+    expect(chip.textContent).toContain("ねこさん");
+    expect(chip.textContent).toContain("🐱");
+  });
+
+  it("画像の onError で既存エラー文が表示され、フォールバックへ切り替わる", () => {
+    const AI_IMAGE_URL =
+      "https://oaidalleapiprodscus.blob.core.windows.net/private/img-error-test.png";
+
+    useDream.mockReturnValue({
+      dream: {
+        id: 5,
+        title: "期限切れ画像の夢",
+        content: "本文テスト",
+        created_at: "2025-01-01T00:00:00.000Z",
+        updated_at: "2025-01-01T00:00:00.000Z",
+        userId: 1,
+        emotions: [],
+        analysis_json: { emotion_tags: [] },
+        generated_image_url: AI_IMAGE_URL,
+      },
+      error: null,
+      isLoading: false,
+      isUpdating: false,
+      updateDream: jest.fn(),
+      deleteDream: jest.fn(),
+    });
+
+    render(<DreamDetailPage params={{ id: "5" } as never} />);
+
+    const shareCardBefore = screen.getByTestId("dream-share-card");
+    const img = within(shareCardBefore).getByRole("img");
+    fireEvent.error(img);
+
+    expect(
+      screen.getByText(
+        "ほぞんずみ の ゆめのえ の きげん が きれました。もういちど かいてみてください。"
+      )
+    ).toBeTruthy();
+
+    const shareCardAfter = screen.getByTestId("dream-share-card");
+    expect(
+      within(shareCardAfter).getByTestId("dream-share-card-fallback")
+    ).toBeTruthy();
   });
 
   it("does not render dream content inside the share card", () => {
