@@ -83,7 +83,10 @@ class DreamsController < ApplicationController
   def show
     render json: @dream.as_json(
       only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id],
-      include: :emotions
+      include: {
+        emotions: {},
+        dream_profile: dream_profile_json_options
+      }
     )
   end
 
