@@ -57,7 +57,7 @@ end
 ```
 
 - `dream_profile_json_options` は既存の private メソッド（`{ only: [:id, :name, :avatar_emoji, :color, :active] }`）をそのまま再利用（新しいシリアライズ定義を作らない）。
-- `dream_profile_id` が NULL の夢（理論上は NOT NULL 化済みだが防御的に）や、アーカイブ済みプロフィールに属する夢でも安全に動く（`dream_profile` が nil のときは include が nil を返すだけ）。
+- `dream_profile_id` はDBで NOT NULL 化済みのため、通常のアプリ経路では `dream_profile` が nil の夢は作れない。アーカイブ済みプロフィールに属する夢は関連を保持したまま同じ軽量情報を返す。
 - N+1 回避: `set_dream_and_authorize_user` は単一レコード取得なので `includes` 不要（1レコードの関連ロードは1クエリ追加のみ）。
 - 認可: `show` は既に `set_dream_and_authorize_user` で current_user の夢に限定済み。`dream_profile` も同一ユーザーの所有物なので情報漏洩なし。
 
@@ -101,14 +101,16 @@ type DreamShareCardProps = {
 
 - `DreamShareCard` を `generatedImageUrl` の有無に関わらず**常に描画**し、`imageUrl={generatedImageUrl}`（null可）と `profile*` props を渡す。
 - profile props は `dream.dream_profile`（§2で include されるようになる）から渡す: `profileName={dream.dream_profile?.name}` / `profileEmoji={dream.dream_profile?.avatar_emoji}` / `profileColor={dream.dream_profile?.color}`。
+- 既存の `handleImageLoadError` は表示できない画像を検出すると `generatedImageUrl` を `null` に戻すため、期限切れ・読込失敗時も同じフォールバックカードへ切り替わる。エラー文はカード付近に残して再生成可能であることを示す。
 - 「🎨 画像を生成する / 描き直す」ボタン（既存の `handleGenerateImage`・枚数表示・エラー表示）は**残す**。カードの下（または画像がないときはカード内フォールバックの近く）に配置し、ユーザーが引き続きAI画像を生成できるようにする。
 - 既存の imageError / imageQuota 表示は維持する。
+- 既存の「リンクをコピー」は挙動を変更しない。コピー先は認証付き夢詳細URLのままであり、公開共有URLではないことをMVP境界として扱う。
 
 ## 5. テスト方針
 
 ### バックエンド（RSpec request spec）
 - `show` のレスポンスに `dream_profile`（id/name/avatar_emoji/color/active）が含まれることを検証する1ケースを追加（既存の dreams request spec があればそこへ）。
-- `dream_profile` が nil の夢でも 200 で壊れないことを1ケース。
+- `dream_profile_id` はDBの NOT NULL 制約で保証されるため、成立しない nil 関連のテストは追加しない。既存の他ユーザー夢への認可テストを回帰確認する。
 - Docker内で実行（`docker compose` の backend-test サービス。ホストRubyはgem未導入）。
 
 ### フロントエンド（既存 `DreamShareCard.test.tsx` を拡張）
