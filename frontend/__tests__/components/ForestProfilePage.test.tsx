@@ -4,7 +4,7 @@ import {
   isValidForestProfileId,
   normalizeDreamProfilesResponse,
   normalizeProfileDreamsResponse,
-} from "@/app/forest/[profileId]/page";
+} from "@/app/forest/[profileId]/forestProfileUtils";
 
 function profile(overrides: Partial<DreamProfile> = {}): DreamProfile {
   return {

@@ -30,31 +30,12 @@ import ForestGuide from "@/app/components/forest/ForestGuide";
 import SeasonalParticles from "@/app/components/forest/SeasonalParticles";
 import FruitLegend from "@/app/components/forest/FruitLegend";
 import ParticleField from "@/app/components/forest/ParticleField";
-
-export function isValidForestProfileId(profileId: number): boolean {
-  return Number.isInteger(profileId) && profileId > 0;
-}
-
-export function normalizeDreamProfilesResponse(value: unknown): DreamProfile[] | null {
-  if (Array.isArray(value)) return value as DreamProfile[];
-
-  console.error("Unexpected dream profiles response for forest detail", value);
-  return null;
-}
-
-export function normalizeProfileDreamsResponse(value: unknown): Dream[] {
-  if (Array.isArray(value)) return value as Dream[];
-
-  console.error("Unexpected dreams response for forest detail", value);
-  return [];
-}
-
-export function findActiveForestProfile(
-  profiles: DreamProfile[],
-  profileId: number
-): DreamProfile | null {
-  return profiles.find((p) => p.id === profileId && !p.archived) ?? null;
-}
+import {
+  isValidForestProfileId,
+  normalizeDreamProfilesResponse,
+  normalizeProfileDreamsResponse,
+  findActiveForestProfile,
+} from "./forestProfileUtils";
 
 // ---- 実タップで開く夢プレビューモーダル -----------------------------------
 function DreamPreviewModal({
