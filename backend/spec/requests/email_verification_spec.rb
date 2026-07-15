@@ -175,6 +175,12 @@ RSpec.describe 'Email verification', type: :request do
       mail = UserMailer.email_verification(user, token)
 
       expect(mail.to).to eq(['mailbody@example.com'])
+      # ApplicationMailerの `default from:` はクラス読み込み時（起動時）に
+      # 一度だけ評価されるため、実行中にENVを変えても反映されない。
+      # このテストは「MAIL_FROM未設定」を決め打ちせず、実際に設定されている
+      # 値（未設定ならデフォルト値）と比較することでテスト環境に依存しない
+      # ようにする（Codexレビュー指摘・#420）
+      expect(mail.from).to eq([ENV.fetch('MAIL_FROM', 'support@yumelog.com')])
       expect(mail.subject).to include('メールアドレスの確認')
       # マルチパート（text/html）それぞれに確認URLが含まれる
       expect(mail.text_part.decoded).to include("/verify-email?token=#{token}")
