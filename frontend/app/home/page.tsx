@@ -7,7 +7,7 @@ import { Dream, Emotion, AgeGroup, DreamProfile } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
 import { getEmotions, getAnalysisQuota, AnalysisQuota, getDreamProfiles } from "@/lib/apiClient";
-import { getJSTYearMonthKey } from "@/lib/date";
+import { getJSTYearMonthKey, getJSTDateStr } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import DreamStatsWidget from "@/app/components/DreamStatsWidget";
@@ -16,8 +16,10 @@ import SearchBar from "@/app/components/SearchBar";
 import ProfileFilterChips from "@/app/components/ProfileFilterChips";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
 import TrialBanner from "@/app/components/TrialBanner";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import DreamAdventurePanel from "@/app/components/DreamAdventurePanel";
 import ForestPreviewWidget from "@/app/components/forest/ForestPreviewWidget";
+import WeeklyDreamNewsWidget from "@/app/components/WeeklyDreamNewsWidget";
 import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import MorpheusHero from "@/app/components/MorpheusHero";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
@@ -128,6 +130,9 @@ export default function HomePage() {
   const [profiles, setProfiles] = useState<DreamProfile[]>([]);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false);
   const [analysisQuota, setAnalysisQuota] = useState<AnalysisQuota | null>(null);
+  const [weeklyNewsDreams, setWeeklyNewsDreams] = useState<Dream[]>([]);
+  const [weeklyNewsLoading, setWeeklyNewsLoading] = useState(true);
+  const [weeklyNewsError, setWeeklyNewsError] = useState(false);
 
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
@@ -177,6 +182,42 @@ export default function HomePage() {
     }
   }, [authStatus, fetchDreams]);
 
+  // 「今週のゆめニュース」用の夢を検索・プロフィール絞り込みの影響を受けない
+  // 独立取得にする（検索/プロフィールフィルターを変えてもニュース集計が変わらないように）。
+  // 直近7日より広めに取得し、正確な7日判定はWeeklyDreamNewsWidget側の既存ロジックに任せる。
+  const fetchWeeklyNewsDreams = useCallback(async () => {
+    if (authStatus !== "authenticated") {
+      return;
+    }
+
+    setWeeklyNewsLoading(true);
+    setWeeklyNewsError(false);
+
+    try {
+      const bufferedStart = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+      const queryParams = new URLSearchParams();
+      queryParams.set("start_date", getJSTDateStr(bufferedStart));
+
+      const weeklyData = await apiClient.get<Dream[]>(
+        `/dreams?${queryParams.toString()}`
+      );
+      setWeeklyNewsDreams(weeklyData);
+    } catch (error) {
+      // 非致命的: ニュースウィジェットを非表示にするだけで、ホーム全体は壊さない。
+      // 取得中/失敗中は「今週は夢がない」と誤表示しないよう、weeklyNewsErrorで区別する。
+      console.error("Error fetching weekly news dreams:", error);
+      setWeeklyNewsError(true);
+    } finally {
+      setWeeklyNewsLoading(false);
+    }
+  }, [authStatus]);
+
+  useEffect(() => {
+    if (authStatus === "authenticated") {
+      fetchWeeklyNewsDreams();
+    }
+  }, [authStatus, fetchWeeklyNewsDreams]);
+
   // 感情タグ一覧を初回マウント時に取得
   useEffect(() => {
     getEmotions()
@@ -210,6 +251,7 @@ export default function HomePage() {
   useEffect(() => {
     const handleDreamCreated = () => {
       fetchDreams();
+      fetchWeeklyNewsDreams();
       getDreamProfiles()
         .then(setProfiles)
         .catch(() => {});
@@ -219,12 +261,13 @@ export default function HomePage() {
     return () => {
       window.removeEventListener("dream-created", handleDreamCreated);
     };
-  }, [fetchDreams]);
+  }, [fetchDreams, fetchWeeklyNewsDreams]);
 
   // dream-analysis-completedイベントをリッスン（夢分析完了時にリストを更新）
   useEffect(() => {
     const handleDreamAnalysisCompleted = () => {
       fetchDreams();
+      fetchWeeklyNewsDreams();
     };
 
     window.addEventListener(
@@ -237,7 +280,7 @@ export default function HomePage() {
         handleDreamAnalysisCompleted
       );
     };
-  }, [fetchDreams]);
+  }, [fetchDreams, fetchWeeklyNewsDreams]);
 
   // 文字・日付・感情での検索が有効か（プロフィール切り替えは含めない）
   const isTextSearchActive = !!(
@@ -320,6 +363,10 @@ export default function HomePage() {
             audioCount={user.trial_audio_count}
           />
         )}
+        {/* メール未確認の本登録ユーザー向けバナー（トライアルはメール検証対象外） */}
+        {user && !user.trial_user && user.email_verified === false && (
+          <EmailVerificationBanner />
+        )}
         <MorpheusHero
           expression="cheerful"
           variant="home"
@@ -394,6 +441,12 @@ export default function HomePage() {
 
         {/* もりプレビュー */}
         {!loading && profiles.length > 0 && <ForestPreviewWidget profiles={profiles} />}
+
+        {/* 今週のゆめニュース */}
+        {/* 取得中/失敗中は「今週は夢がない」と誤表示しないよう、成功確定までは描画しない */}
+        {!loading && !weeklyNewsLoading && !weeklyNewsError && profiles.length > 0 && (
+          <WeeklyDreamNewsWidget dreams={weeklyNewsDreams} profiles={profiles} />
+        )}
 
         {/* 連続記録バッジ */}
         <DreamStreakBadge dreams={dreams} />

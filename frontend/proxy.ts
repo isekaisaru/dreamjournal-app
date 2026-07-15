@@ -49,12 +49,15 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/home") ||
     pathname.startsWith("/dream") ||
     pathname.startsWith("/forest") ||
+    pathname.startsWith("/insights") ||
     pathname.startsWith("/settings");
 
   // Only these pages render MorpheusLoginRequired for unauthenticated users.
   // Every other protected page still redirects to /login.
   const hasInAppLoginGuidance =
-    pathname === "/home" || pathname.startsWith("/dream/month");
+    pathname === "/home" ||
+    pathname === "/insights" ||
+    pathname.startsWith("/dream/month");
 
   if (!token && isProtectedPage) {
     // Let the page render its in-app login guidance instead of forcing an
@@ -100,6 +103,7 @@ export const config = {
     "/home/:path*",
     "/dream/:path*",
     "/forest/:path*",
+    "/insights/:path*",
     "/settings/:path*",
     "/login",
     "/register",

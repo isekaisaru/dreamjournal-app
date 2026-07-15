@@ -10,7 +10,8 @@ import {
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import apiClient from "../../../lib/apiClient";
+import apiClient, { isEmailVerificationRequiredError } from "../../../lib/apiClient";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
 import { MorpheusGuideDetail } from "@/app/components/MorpheusGuide";
@@ -104,6 +105,7 @@ export default function DreamDetailPage({
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageVerificationRequired, setImageVerificationRequired] = useState(false);
   const [imageQuota, setImageQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
 
   useEffect(() => {
@@ -128,6 +130,7 @@ export default function DreamDetailPage({
     if (!dreamId || isGeneratingImage) return;
     setIsGeneratingImage(true);
     setImageError(null);
+    setImageVerificationRequired(false);
     try {
       const result = await apiClient.post<{ image_url: string }>(
         `/dreams/${dreamId}/generate_image`,
@@ -136,9 +139,13 @@ export default function DreamDetailPage({
       );
       setGeneratedImageUrl(result.image_url);
     } catch (err) {
-      setImageError(
-        err instanceof Error ? err.message : "えの せいせい に しっぱい しました"
-      );
+      if (isEmailVerificationRequiredError(err)) {
+        setImageVerificationRequired(true);
+      } else {
+        setImageError(
+          err instanceof Error ? err.message : "えの せいせい に しっぱい しました"
+        );
+      }
     } finally {
       setIsGeneratingImage(false);
     }
@@ -301,19 +308,28 @@ export default function DreamDetailPage({
 
       {/* ゆめのえ */}
       <div className="mb-6">
+        {imageVerificationRequired && (
+          <EmailVerificationBanner
+            title="ゆめのえを かくには メールの かくにんが ひつようだよ"
+            description="とどいた メールの リンクを ひらいてから、もういちど かいてみてね。"
+          />
+        )}
+        <DreamShareCard
+          imageUrl={generatedImageUrl}
+          title={dream.title}
+          recordedAt={dream.created_at}
+          emotionLabels={displayTags}
+          imageAlt={copy.imageAlt}
+          onImageError={handleImageLoadError}
+          profileName={dream.dream_profile?.name}
+          profileEmoji={dream.dream_profile?.avatar_emoji}
+          profileColor={dream.dream_profile?.color}
+        />
         {generatedImageUrl ? (
-          <div className="space-y-2">
+          <div className="space-y-2 mt-2">
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
-            <DreamShareCard
-              imageUrl={generatedImageUrl}
-              title={dream.title}
-              recordedAt={dream.created_at}
-              emotionLabels={displayTags}
-              imageAlt={copy.imageAlt}
-              onImageError={handleImageLoadError}
-            />
             <div className="flex justify-end">
               <button
                 type="button"
@@ -326,7 +342,7 @@ export default function DreamDetailPage({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 py-6 rounded-xl border border-dashed border-border bg-muted/20">
+          <div className="flex flex-col items-center gap-3 py-6">
             <button
               type="button"
               onClick={handleGenerateImage}

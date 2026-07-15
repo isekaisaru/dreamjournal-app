@@ -31,6 +31,10 @@ jest.mock("framer-motion", () => {
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),
   previewAnalysis: jest.fn(),
+  resendVerificationEmail: jest.fn(),
+  // 実装（lib/apiClient.ts）と同じ判定ロジックをモックにも持たせる
+  isEmailVerificationRequiredError: (error) =>
+    error?.status === 403 && error?.data?.email_verification_required === true,
   ApiError: class ApiError extends Error {
     constructor(message, status, data) {
       super(message);
@@ -310,6 +314,29 @@ describe("DreamForm", () => {
     });
     expect(upgradeLink).toHaveAttribute("href", "/subscription");
     expect(screen.getByText("今月の無料分析回数を使い切ったよ")).toBeInTheDocument();
+  });
+
+  it("shows the email verification banner when analysis is blocked for unverified users", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    previewAnalysis.mockRejectedValueOnce(
+      new ApiError("メールアドレスの確認が必要です。", 403, {
+        email_verification_required: true,
+      })
+    );
+    const user = userEvent.setup();
+
+    render(<DreamForm onSubmit={jest.fn()} />);
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+    await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
+
+    expect(
+      await screen.findByText("AIぶんせきには メールの かくにんが ひつようだよ")
+    ).toBeInTheDocument();
+    // 再送ボタン付きのバナーが出る（トーストではなく恒常表示）
+    expect(
+      screen.getByRole("button", { name: "かくにんメールを もういちど おくる" })
+    ).toBeInTheDocument();
   });
 
   it("shows an analysis MorpheusAvatar while Morpheus is reading the dream", async () => {

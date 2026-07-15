@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class AudioDreamsController < ApplicationController
+  # 音声分析はWhisper+GPTの二重課金のため、メール確認済みユーザーのみ（trialは対象外）
+  before_action :require_verified_email, only: [:create]
   before_action :check_trial_audio_limit, only: [:create]
 
   TRIAL_AUDIO_LIMIT = 1 # トライアルユーザーの音声分析上限（Whisper+GPTで高コスト）
@@ -18,6 +20,7 @@ class AudioDreamsController < ApplicationController
       content: "音声解析中...",
       analysis_status: :pending
     )
+    dream.dream_profile_id ||= user.self_dream_profile_id
 
     # 2. 音声ファイルを添付
     if params[:file].present?

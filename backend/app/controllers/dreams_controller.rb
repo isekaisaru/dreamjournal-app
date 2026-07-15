@@ -1,5 +1,9 @@
 class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
+  # OpenAI課金が発生するアクションはメール確認済みユーザーのみ（trialは対象外）。
+  # 宣言順が重要: set_dream の後（他人の夢は404のまま）、
+  # check_analysis_limit の前（枠を消費してから403にしない）。
+  before_action :require_verified_email, only: [:analyze, :preview_analysis, :generate_image]
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
   before_action :check_monthly_image_limit, only: [:generate_image]
   before_action :check_trial_dream_limit, only: [:create]
@@ -79,7 +83,10 @@ class DreamsController < ApplicationController
   def show
     render json: @dream.as_json(
       only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id],
-      include: :emotions
+      include: {
+        emotions: {},
+        dream_profile: dream_profile_json_options
+      }
     )
   end
 
@@ -99,7 +106,7 @@ class DreamsController < ApplicationController
       @dream = current_user.dreams.build(dream_params)
     end
 
-    @dream.dream_profile_id ||= current_user.dream_profiles.find_by(relationship: 'self')&.id
+    @dream.dream_profile_id ||= current_user.self_dream_profile_id
 
     if @dream.save
       @dream.reload

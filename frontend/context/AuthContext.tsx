@@ -32,6 +32,7 @@ const AUTH_VERIFY_PATH_PREFIXES = [
   "/home",
   "/dream",
   "/forest",
+  "/insights",
   "/settings",
   "/subscription",
   "/register",

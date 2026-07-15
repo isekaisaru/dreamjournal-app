@@ -47,8 +47,35 @@ class ApplicationController < ActionController::API
       ]
     ).merge(
       # カラムが nil の既存ユーザーでも frontend が確実に真偽値で判定できるようにする
-      "trial_user" => user.trial_user?
+      "trial_user" => user.trial_user?,
+      "email_verified" => user.email_verified?
     )
+  end
+
+  # メールアドレス確認を必須にする before_action（checkout / AI課金系で共通利用）。
+  # - トライアルユーザーは対象外（実メール検証フローの外。本登録昇格時に検証する）
+  # - 既存ユーザーはmigrationで検証済みにバックフィル済みのため影響なし
+  # 各コントローラで `before_action :require_verified_email, only: [...]` として使う。
+  # AI課金系では check_analysis_limit 等の枠消費チェックより**前**に置くこと
+  # （403で拒否したのに月次カウントだけ減る事故を防ぐ）。
+  def require_verified_email
+    return if current_user.trial_user?
+    return if current_user.email_verified?
+
+    render json: {
+      error: "メールアドレスの確認が必要です。確認メールのリンクを開いてください。",
+      email_verification_required: true
+    }, status: :forbidden
+  end
+
+  # メール確認メールを送信する（登録・トライアル昇格・再送で共通利用）。
+  # メール配信基盤の不調で登録自体を失敗させないよう best-effort とし、
+  # 失敗はログに残すだけにする。
+  def send_verification_email(user)
+    token = user.generate_email_verification_token!
+    UserMailer.email_verification(user, token).deliver_later
+  rescue StandardError => e
+    Rails.logger.error "確認メール送信に失敗: user_id=#{user.id} #{e.class} - #{e.message}"
   end
 
   def set_token_cookies(access_token, refresh_token)

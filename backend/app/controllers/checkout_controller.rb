@@ -1,6 +1,10 @@
 class CheckoutController < ApplicationController
   class MissingPremiumPriceIdError < StandardError; end
 
+  # 決済前にメールアドレス確認を必須にする（領収書・重要通知の到達性を担保）。
+  # 実装は ApplicationController#require_verified_email（AI課金系と共通）。
+  before_action :require_verified_email, only: [:create]
+
   DONATION_UNIT_AMOUNT = 500
 
   def create

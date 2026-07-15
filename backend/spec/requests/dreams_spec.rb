@@ -4,7 +4,7 @@ RSpec.describe 'Dreams API', type: :request do
   # ActiveJobのテストヘルパーをインクルード
   include ActiveJob::TestHelper
 
-  let!(:user) { create(:user) }
+  let!(:user) { create(:user, :with_self_profile) }
   let!(:other_user) { create(:user) }
   let!(:emotions) do
     [
@@ -163,9 +163,35 @@ RSpec.describe 'Dreams API', type: :request do
         authenticated_get('/dreams/99999', user)
 
         expect(response).to have_http_status(:not_found)
-        
+
         json_response = JSON.parse(response.body)
         expect(json_response).to have_key('error')
+      end
+
+      it '夢プロフィールの軽量情報を含める' do
+        profile = create(
+          :dream_profile,
+          user: user,
+          name: '長男',
+          avatar_emoji: '👦',
+          color: '#10b981',
+          active: true
+        )
+        dream = create(:dream, user: user, dream_profile: profile)
+
+        authenticated_get("/dreams/#{dream.id}", user)
+
+        expect(response).to have_http_status(:ok)
+
+        json_response = JSON.parse(response.body)
+        expect(json_response['dream_profile_id']).to eq(profile.id)
+        expect(json_response['dream_profile']).to eq(
+          'id' => profile.id,
+          'name' => '長男',
+          'avatar_emoji' => '👦',
+          'color' => '#10b981',
+          'active' => true
+        )
       end
     end
 
@@ -1047,6 +1073,95 @@ RSpec.describe 'Dreams API', type: :request do
 
     context '認証されていない場合' do
       it_behaves_like 'unauthorized request', :get, '/dreams/analysis_quota'
+    end
+  end
+
+  # ------------------------------------------------------------------ #
+  # メール未確認ユーザーのAI課金機能ゲート                               #
+  # OpenAI料金が発生するアクションは、本登録済みかつメール確認済みの      #
+  # ユーザーのみ実行可能（trialは体験導線を守るため対象外）               #
+  # ------------------------------------------------------------------ #
+  describe 'メール未確認ユーザーのAI課金機能ゲート' do
+    let!(:unverified_user) { create(:user, :unverified, :with_self_profile) }
+    let!(:unverified_dream) do
+      create(:dream, user: unverified_user, content: '未確認ユーザーの夢です。空を飛んでいました。')
+    end
+
+    around do |example|
+      original_adapter = ActiveJob::Base.queue_adapter
+      ActiveJob::Base.queue_adapter = :test
+      example.run
+    ensure
+      ActiveJob::Base.queue_adapter = original_adapter
+    end
+
+    describe 'POST /dreams/:id/analyze' do
+      it '未確認の本登録ユーザーは403で、ジョブもAiUsageLogも作られない' do
+        expect {
+          authenticated_post "/dreams/#{unverified_dream.id}/analyze", unverified_user
+        }.not_to change(AiUsageLog, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['email_verification_required']).to be true
+        analyze_jobs = ActiveJob::Base.queue_adapter.enqueued_jobs.select { |j| j['job_class'] == 'AnalyzeDreamJob' }
+        expect(analyze_jobs).to be_empty
+      end
+    end
+
+    describe 'POST /dreams/preview_analysis' do
+      it '未確認の本登録ユーザーは403で、OpenAIは呼ばれず月次カウントも消費されない' do
+        expect(DreamAnalysisService).not_to receive(:analyze)
+
+        expect {
+          authenticated_post '/dreams/preview_analysis', unverified_user, params: { content: '空を飛ぶ夢' }
+        }.not_to change { unverified_user.reload.monthly_analysis_count }
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['email_verification_required']).to be true
+      end
+
+      it 'メール確認済みの本登録ユーザーは従来通り実行できる' do
+        allow(DreamAnalysisService).to receive(:analyze).and_return({ analysis: 'result', emotion_tags: ['happy'] })
+
+        authenticated_post '/dreams/preview_analysis', user, params: { content: '空を飛ぶ夢' }
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it '未確認のトライアルユーザーは上限内なら従来通り実行できる（体験導線を壊さない）' do
+        trial = create(:user, :unverified, trial_user: true, trial_analysis_count: 0)
+        allow(DreamAnalysisService).to receive(:analyze).and_return({ analysis: 'result', emotion_tags: ['happy'] })
+
+        authenticated_post '/dreams/preview_analysis', trial, params: { content: '空を飛ぶ夢' }
+
+        expect(response).to have_http_status(:ok)
+        expect(trial.reload.trial_analysis_count).to eq(1)
+      end
+    end
+
+    describe 'POST /dreams/:id/generate_image' do
+      let(:images_client) { double('OpenAI::Images') }
+
+      before do
+        @original_openai_client = $openai_client
+        # images.generate が呼ばれたらテストが失敗する（allow していないため）
+        $openai_client = double('OpenAI::Client', images: images_client)
+      end
+
+      after do
+        $openai_client = @original_openai_client
+      end
+
+      it '未確認の本登録ユーザーは403で、OpenAIは呼ばれず生成レコードも作られない' do
+        expect(images_client).not_to receive(:generate)
+
+        expect {
+          authenticated_post "/dreams/#{unverified_dream.id}/generate_image", unverified_user
+        }.not_to change(DreamImageGeneration, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['email_verification_required']).to be true
+      end
     end
   end
 end
