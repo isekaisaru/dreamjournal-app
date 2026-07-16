@@ -20,6 +20,7 @@ export const NON_INDEXABLE_PATH_PREFIXES = [
   "/my-dreams", // 夢一覧（ユーザーデータ）
   "/insights", // きもちインサイト（認証）
   "/forest", // 夢の森（認証）
+  "/room", // 夢の部屋（認証）
   "/profiles", // プロフィール（認証）
   "/settings", // 設定（認証）
   "/subscription", // サブスク管理・決済リダイレクト（認証）

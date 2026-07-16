@@ -28,7 +28,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_HINT_KEY = "dreamjournal_auth_hint";
-const AUTH_VERIFY_PATH_PREFIXES = [
+export const AUTH_VERIFY_PATH_PREFIXES = [
   "/home",
   "/dream",
   "/forest",
@@ -36,6 +36,7 @@ const AUTH_VERIFY_PATH_PREFIXES = [
   "/settings",
   "/subscription",
   "/register",
+  "/room",
 ];
 
 function hasAuthHint(): boolean {
