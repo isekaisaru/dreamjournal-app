@@ -105,12 +105,12 @@ const withImages = dreams
 新規ルート追加時は以下3箇所への登録が必須（過去の`/insights`追加時の教訓）。今回はテストで登録漏れを構造的に検出できるようにする。
 
 - `frontend/context/AuthContext.tsx`: `AUTH_VERIFY_PATH_PREFIXES`に`/room`を追加。**この定数を`export`する**（現状非export）
-- `frontend/proxy.ts`: `isProtectedPage`判定に`/room`を追加。現状は関数内のインライン`pathname.startsWith(...)`チェーンで外部からテストできないため、**`AUTH_VERIFY_PATH_PREFIXES`と同じ形の`export const PROTECTED_PAGE_PREFIXES`を切り出し**、`isProtectedPage`はそれを参照するよう書き換える（ロジック変更なし、ミニマルなテスト容易性向上のリファクタ）。`config.matcher`にも`"/room/:path*"`を追加
+- `frontend/proxy.ts`: `isProtectedPage`判定に`/room`を追加。ただし`proxy.ts`はNext.jsの特殊ファイル（`proxy`関数と`config`のみをexportする規約）のため、**判定用の定数・関数はここに独自exportせず、新規の通常モジュール`frontend/lib/protectedRoutes.ts`へ切り出す**（`export const PROTECTED_PAGE_PREFIXES = [...]`＋`export function isProtectedPage(pathname: string): boolean`）。`proxy.ts`はこのモジュールから`isProtectedPage`をimportして使うだけにする（ロジック変更なし）。`config.matcher`は静的解析が必要なため、`protectedRoutes.ts`から動的導出せず**既存のリテラル配列定義を維持**した上で`"/room/:path*"`を追加する
 - `frontend/lib/site.ts`: `NON_INDEXABLE_PATH_PREFIXES`に`/room`を追加（既にexport済み）
 
 ### 登録漏れ検出テスト
 
-新規`frontend/__tests__/lib/route-registration.test.ts`で、`AUTH_VERIFY_PATH_PREFIXES`・`PROTECTED_PAGE_PREFIXES`・`NON_INDEXABLE_PATH_PREFIXES`・`proxy.ts`の`config.matcher`をまとめてimportし、`"/room"`（および`config.matcher`は`"/room/:path*"`）が全てに含まれることを1つのテストファイルで検証する。既存`__tests__/app/seo.test.ts`の`it.each`パターンを踏襲。
+新規`frontend/__tests__/lib/route-registration.test.ts`で、`AUTH_VERIFY_PATH_PREFIXES`（`AuthContext.tsx`）・`PROTECTED_PAGE_PREFIXES`（`lib/protectedRoutes.ts`）・`NON_INDEXABLE_PATH_PREFIXES`（`lib/site.ts`）・`proxy.ts`の`config.matcher`をまとめてimportし、`"/room"`（および`config.matcher`は`"/room/:path*"`）が全てに含まれることを1つのテストファイルで検証する。`config.matcher`はリテラル維持のため、このテストが唯一の「4箇所目との整合」を人手に頼らず検出する仕組みになる。既存`__tests__/app/seo.test.ts`の`it.each`パターンを踏襲。
 
 ## 6. テスト方針
 
@@ -141,6 +141,6 @@ const withImages = dreams
 
 ## 8. 境界
 
-**触る**: `backend/app/controllers/dreams_controller.rb`（`index_columns`に1列追加）/ `frontend/app/room/[profileId]/page.tsx`（新規）/ `frontend/app/types.ts`（`Dream.image_generated_at`追加）/ `frontend/app/forest/[profileId]/page.tsx`（入り口リンク追加）/ `frontend/app/components/forest/TreePreviewSheet.tsx`・`ForestScene.tsx`（入り口リンク追加）/ `frontend/context/AuthContext.tsx`・`frontend/proxy.ts`・`frontend/lib/site.ts`（認証ゲート登録＋テスト容易性のためのexport化）/ テスト（新規＋`dreams_spec.rb`拡張）。
+**触る**: `backend/app/controllers/dreams_controller.rb`（`index_columns`に1列追加）/ `frontend/app/room/[profileId]/page.tsx`（新規）/ `frontend/app/types.ts`（`Dream.image_generated_at`追加）/ `frontend/app/forest/[profileId]/page.tsx`（入り口リンク追加）/ `frontend/app/components/forest/TreePreviewSheet.tsx`・`ForestScene.tsx`（入り口リンク追加）/ `frontend/context/AuthContext.tsx`・`frontend/proxy.ts`・`frontend/lib/site.ts`（認証ゲート登録）/ `frontend/lib/protectedRoutes.ts`（新規・`isProtectedPage`判定の切り出し）/ テスト（新規＋`dreams_spec.rb`拡張）。
 
 **触らない**: migration・DBスキーマ・新規APIエンドポイント・Stripe・OpenAI・`DreamShareCard`本体・「もりの一覧」`/forest`・BottomTabBar（新規タブは追加しない）・7枚目以降のページング（将来PR）。
