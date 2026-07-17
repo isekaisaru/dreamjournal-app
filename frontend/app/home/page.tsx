@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { LayoutGrid, List } from "lucide-react";
 import { Dream, Emotion, AgeGroup, DreamProfile } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
@@ -24,6 +25,8 @@ import { MorpheusGuideHome } from "@/app/components/MorpheusGuide";
 import MorpheusHero from "@/app/components/MorpheusHero";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 import Loading from "../loading";
+
+type DreamViewMode = "grid" | "list";
 
 /**
  * 年齢帯別ウェルカムコピー
@@ -133,6 +136,7 @@ export default function HomePage() {
   const [weeklyNewsDreams, setWeeklyNewsDreams] = useState<Dream[]>([]);
   const [weeklyNewsLoading, setWeeklyNewsLoading] = useState(true);
   const [weeklyNewsError, setWeeklyNewsError] = useState(false);
+  const [dreamViewMode, setDreamViewMode] = useState<DreamViewMode>("grid");
 
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
@@ -416,6 +420,43 @@ export default function HomePage() {
           />
         )}
 
+        {!loading && !errorMessage && dreams.length > 0 && (
+          <div className="hidden w-full items-center justify-end px-4 pt-2 md:flex">
+            <div
+              role="group"
+              aria-label="夢の表示形式"
+              className="flex overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+            >
+              <button
+                type="button"
+                aria-label="グリッド表示"
+                aria-pressed={dreamViewMode === "grid"}
+                onClick={() => setDreamViewMode("grid")}
+                className={`grid min-h-11 min-w-11 place-items-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+                  dreamViewMode === "grid"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                aria-label="リスト表示"
+                aria-pressed={dreamViewMode === "list"}
+                onClick={() => setDreamViewMode("list")}
+                className={`grid min-h-11 min-w-11 place-items-center border-l border-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+                  dreamViewMode === "list"
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <List className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ローディング中: スケルトンカードを表示 */}
         {loading && <DreamListSkeleton count={6} />}
         {/* エラーメッセージがある場合は表示 */}
@@ -426,6 +467,7 @@ export default function HomePage() {
         {!loading && !errorMessage && (
           <DreamList
             dreams={dreams}
+            viewMode={dreamViewMode}
             isSearchActive={isTextSearchActive}
             isProfileFilterActive={isProfileFilterActive}
             ageGroup={user?.age_group}
