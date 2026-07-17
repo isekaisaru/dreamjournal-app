@@ -76,6 +76,7 @@ function makeAuthValue(overrides: Partial<AuthValue> = {}): AuthValue {
 
 /** 削除モーダルを開き、ジュニアロックを解いて最終確認まで進める */
 function proceedToFinalConfirm() {
+  fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
   fireEvent.click(screen.getByRole("button", { name: "さくじょ" }));
   const question = screen.getByText(/\d+ \+ \d+ = \?/).textContent ?? "";
   const [a, b] = (question.match(/\d+/g) ?? []).map(Number);
@@ -127,6 +128,32 @@ describe("設定ガイド", () => {
     expect(avatar).toHaveAttribute("data-variant", "settings");
     expect(avatar).toHaveAttribute("data-size", "112");
     expect(screen.queryByTestId("morpheus-image")).not.toBeInTheDocument();
+  });
+});
+
+describe("設定タブ", () => {
+  it("既存設定を4つのタブに分け、通知では未保存のスイッチを表示しない", () => {
+    mockedUseAuth.mockReturnValue(makeAuthValue());
+
+    render(<SettingsPage />);
+
+    const profileTab = screen.getByRole("tab", { name: "プロフィール" });
+    expect(profileTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("ニックネーム")).toBeInTheDocument();
+    expect(screen.queryByText("プレミアムプラン")).not.toBeInTheDocument();
+
+    fireEvent.keyDown(profileTab, { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: "通知" })).toHaveFocus();
+    expect(screen.getByText("通知設定は準備中です")).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "プラン" }));
+    expect(screen.getByText("プレミアムプラン")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
+    expect(
+      screen.getByText("アカウントをさくじょする")
+    ).toBeInTheDocument();
   });
 });
 

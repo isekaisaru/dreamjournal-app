@@ -27,6 +27,15 @@ const ANALYSIS_TONE_OPTIONS: { value: AnalysisTone; label: string; desc: string 
   { value: "deep",        label: "くわしく",             desc: "少し詳しい分析" },
 ];
 
+const SETTINGS_TABS = [
+  { id: "profile", label: "プロフィール" },
+  { id: "notifications", label: "通知" },
+  { id: "plan", label: "プラン" },
+  { id: "account", label: "アカウント" },
+] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
+
 // ジュニアロックのための簡単な計算問題を生成する関数
 const generateMathProblem = () => {
   const a = Math.floor(Math.random() * 9) + 1; // 1-9
@@ -39,6 +48,7 @@ const generateMathProblem = () => {
 
 const SettingsPage = () => {
   const { authStatus, userId, user, deleteUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
   // プロフィール編集フォーム用 state
   const [profileUsername, setProfileUsername] = useState(user?.username ?? "");
@@ -199,7 +209,7 @@ const SettingsPage = () => {
     <div className="min-h-screen bg-background text-foreground pb-20">
       {/* ヘッダーエリア */}
       <header className="sticky top-0 z-10 backdrop-blur-md bg-background/80 border-b border-border/50">
-        <div className="container max-w-2xl mx-auto px-4 h-16 flex items-center">
+        <div className="container mx-auto flex h-16 max-w-5xl items-center px-4">
           <Link
             href="/home"
             className="flex items-center text-muted-foreground hover:text-primary transition-colors pr-4"
@@ -207,13 +217,13 @@ const SettingsPage = () => {
             <ChevronLeft className="w-5 h-5 mr-1" />
             もどる
           </Link>
-          <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
-            保護者メニュー
+          <h1 className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-xl font-bold text-transparent">
+            設定
           </h1>
         </div>
       </header>
 
-      <main className="container max-w-2xl mx-auto px-4 py-8 space-y-8">
+      <main className="container mx-auto max-w-5xl space-y-8 px-4 py-8">
         {user?.trial_user && (
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-sm">
             <p className="font-medium text-foreground mb-1">お試し中</p>
@@ -248,7 +258,62 @@ const SettingsPage = () => {
           </div>
         </section>
 
+        <div
+          role="tablist"
+          aria-label="設定メニュー"
+          className="flex gap-1 overflow-x-auto border-b border-border px-1"
+        >
+          {SETTINGS_TABS.map((tab, index) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`settings-tab-${tab.id}`}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`settings-panel-${tab.id}`}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(event) => {
+                  let nextIndex: number | null = null;
+                  if (event.key === "ArrowRight") {
+                    nextIndex = (index + 1) % SETTINGS_TABS.length;
+                  } else if (event.key === "ArrowLeft") {
+                    nextIndex =
+                      (index - 1 + SETTINGS_TABS.length) % SETTINGS_TABS.length;
+                  } else if (event.key === "Home") {
+                    nextIndex = 0;
+                  } else if (event.key === "End") {
+                    nextIndex = SETTINGS_TABS.length - 1;
+                  }
+
+                  if (nextIndex === null) return;
+                  event.preventDefault();
+                  const nextTab = SETTINGS_TABS[nextIndex];
+                  setActiveTab(nextTab.id);
+                  document.getElementById(`settings-tab-${nextTab.id}`)?.focus();
+                }}
+                className={`-mb-px min-h-11 shrink-0 border-b-2 px-4 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  isActive
+                    ? "border-primary font-bold text-primary"
+                    : "border-transparent font-medium text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
         {/* プロフィール設定 */}
+        {activeTab === "profile" && (
+        <div
+          id="settings-panel-profile"
+          role="tabpanel"
+          aria-labelledby="settings-tab-profile"
+          className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-start"
+        >
         <section className="space-y-4">
           <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-bold mb-4 text-primary flex items-center">
@@ -364,29 +429,50 @@ const SettingsPage = () => {
             </Link>
           </div>
         </section>
+        </div>
+        )}
 
-        {/* 安心感を与えるメッセージセクション */}
-        <section className="space-y-4">
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold mb-3 text-primary flex items-center">
-              <span className="text-2xl mr-2">🛡️</span>
-              あんしんして つかうために
-            </h2>
-            <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-              このアプリは、あなたの ゆめを 大切にしまっておく場所です。
-              かいた ゆめは あなただけのものなので、ほかのひとに 見られません。
-              かぞくみんなで、あんしんして つかってね。
-            </p>
-          </div>
+        {activeTab === "notifications" && (
+          <section
+            id="settings-panel-notifications"
+            role="tabpanel"
+            aria-labelledby="settings-tab-notifications"
+            className="rounded-2xl border border-border/50 bg-card/50 p-6 shadow-sm backdrop-blur-sm"
+          >
+            <div className="flex items-start gap-4">
+              <span
+                aria-hidden="true"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary/10 text-xl"
+              >
+                🔔
+              </span>
+              <div>
+                <h2 className="text-lg font-bold text-card-foreground">
+                  通知設定は準備中です
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  起床リマインダーや月次サマリー通知は、保存用APIを整備してから提供します。
+                  現在は変更できるように見えるスイッチを置かず、確実に保存できる状態になってから公開します。
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
-          <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold mb-3 text-foreground flex items-center">
-              <span className="text-2xl mr-2">✨</span>
+        {activeTab === "plan" && (
+          <section
+            id="settings-panel-plan"
+            role="tabpanel"
+            aria-labelledby="settings-tab-plan"
+            className="max-w-2xl rounded-2xl border border-border/50 bg-card/50 p-6 shadow-sm backdrop-blur-sm"
+          >
+            <h2 className="mb-3 flex items-center text-lg font-bold text-foreground">
+              <span className="mr-2 text-2xl">✨</span>
               プレミアムプラン
             </h2>
             {user?.premium ? (
               <div>
-                <p className="text-muted-foreground text-sm mb-4">
+                <p className="mb-4 text-sm text-muted-foreground">
                   プレミアム会員として、すべての機能をご利用いただけます。
                   <br />
                   解約・カード変更・請求履歴の確認はこちらから。
@@ -395,7 +481,7 @@ const SettingsPage = () => {
                   type="button"
                   onClick={handleManageSubscription}
                   disabled={isPortalLoading}
-                  className="w-full py-3 px-4 rounded-xl border border-border bg-background text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isPortalLoading ? "準備中..." : "サブスクリプションを管理する"}
                 </button>
@@ -405,53 +491,73 @@ const SettingsPage = () => {
               </div>
             ) : (
               <div>
-                <ul className="text-muted-foreground text-sm mb-4 space-y-1">
+                <ul className="mb-4 space-y-1 text-sm text-muted-foreground">
                   <li>✓ ゆめのAI分析（たっぷり使える）</li>
                   <li>✓ ゆめのえ生成（月31枚）</li>
                   <li>✓ 月次サマリー</li>
                 </ul>
-                <p className="text-muted-foreground text-xs mb-4">月額590円・いつでもキャンセルできます。</p>
+                <p className="mb-4 text-xs text-muted-foreground">
+                  月額590円・いつでもキャンセルできます。
+                </p>
                 <Link
                   href="/subscription"
-                  className="block w-full py-3 px-4 rounded-xl bg-primary text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+                  className="block w-full rounded-xl bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   月額590円でプレミアムになる
                 </Link>
               </div>
             )}
-          </div>
+          </section>
+        )}
 
-        </section>
+        {activeTab === "account" && (
+          <div
+            id="settings-panel-account"
+            role="tabpanel"
+            aria-labelledby="settings-tab-account"
+            className="max-w-2xl space-y-6"
+          >
+            <section className="rounded-2xl border border-border/50 bg-card/50 p-6 shadow-sm backdrop-blur-sm">
+              <h2 className="mb-3 flex items-center text-lg font-bold text-primary">
+                <span className="mr-2 text-2xl">🛡️</span>
+                あんしんして つかうために
+              </h2>
+              <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
+                このアプリは、あなたの ゆめを 大切にしまっておく場所です。
+                かいた ゆめは あなただけのものなので、ほかのひとに 見られません。
+                かぞくみんなで、あんしんして つかってね。
+              </p>
+            </section>
 
-        {/* 設定・操作セクション */}
-        <section className="space-y-4 pt-4 border-t border-border/30">
-          <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider px-2">
-            アカウントの せってい
-          </h3>
-
-          <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h4 className="font-bold text-base mb-1">
-                    アカウントをさくじょする
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    これまでの ゆめが すべて きえてしまいます。
-                    <br />
-                    もとには もどせません。
-                  </p>
+            <section className="space-y-4 border-t border-border/30 pt-6">
+              <h3 className="px-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                アカウントの せってい
+              </h3>
+              <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
+                <div className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="mb-1 text-base font-bold">
+                        アカウントをさくじょする
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        これまでの ゆめが すべて きえてしまいます。
+                        <br />
+                        もとには もどせません。
+                      </p>
+                    </div>
+                    <button
+                      onClick={openDeleteModal}
+                      className="ml-4 shrink-0 rounded-lg bg-destructive px-4 py-2 text-sm font-bold text-destructive-foreground shadow-sm transition-all duration-300 hover:bg-destructive/90"
+                    >
+                      さくじょ
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={openDeleteModal}
-                  className="shrink-0 ml-4 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-all duration-300 font-bold px-4 py-2 rounded-lg text-sm shadow-sm"
-                >
-                  さくじょ
-                </button>
               </div>
-            </div>
+            </section>
           </div>
-        </section>
+        )}
 
         {/* フッター的なメッセージ */}
         <div className="text-center pt-8 pb-4">
