@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
 
 import type { AnalysisResult } from "@/app/types";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 import { Button, type ButtonProps } from "./ui/button";
 import { TRIAL_AUDIO_LIMIT } from "./TrialBanner";
+import MorpheusAvatar from "./MorpheusAvatar";
 
 type DreamEntryLauncherProps = {
   buttonLabel: string;
@@ -22,6 +23,8 @@ type DreamEntryLauncherProps = {
   buttonClassName?: string;
   helperText?: string;
   showSparkles?: boolean;
+  /** 中央FABなど、1タップで録音を開始する導線 */
+  voiceFirst?: boolean;
 };
 
 export default function DreamEntryLauncher({
@@ -31,6 +34,7 @@ export default function DreamEntryLauncher({
   buttonClassName,
   helperText,
   showSparkles = false,
+  voiceFirst = false,
 }: DreamEntryLauncherProps) {
   const router = useRouter();
   const { user, login } = useAuth();
@@ -39,6 +43,7 @@ export default function DreamEntryLauncher({
   const [status, setStatus] = useState<
     "idle" | "confirming" | "preparing" | "recording"
   >("idle");
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
 
   // お試しユーザー（課金前）だけ音声の残り回数を表示・制限する
   const isTrial = user?.trial_user === true && !user?.premium;
@@ -88,21 +93,27 @@ export default function DreamEntryLauncher({
     [handleAnalysisResult, login, user]
   );
 
-  const { isRecording, error, startRecording, stopRecording } =
+  const {
+    isRecording,
+    error,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+  } =
     useVoiceRecorder({
       onBlobReady: handleBlobReady,
     });
 
   const closeSheet = useCallback(() => {
     if (isProcessing) return;
-    // 録音中にシートを閉じるとマイクがバックグラウンドで動き続けるため、先に停止する
+    // 閉じる操作では録音を破棄し、解析完了後の画面遷移と競合させない
     if (isRecording) {
-      stopRecording();
+      cancelRecording();
     }
     // 次に開いたときに「かくにん中」が残らないよう待機状態へ戻す
     setStatus("idle");
     setIsOpen(false);
-  }, [isProcessing, isRecording, stopRecording]);
+  }, [cancelRecording, isProcessing, isRecording]);
 
   useEffect(() => {
     if (isRecording) {
@@ -117,6 +128,20 @@ export default function DreamEntryLauncher({
       setStatus("idle");
     }
   }, [error]);
+
+  useEffect(() => {
+    if (!isRecording) {
+      setRecordingSeconds(0);
+      return undefined;
+    }
+
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setRecordingSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 250);
+
+    return () => window.clearInterval(timer);
+  }, [isRecording]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -168,6 +193,27 @@ export default function DreamEntryLauncher({
     }
   };
 
+  const openLauncher = async () => {
+    setIsOpen(true);
+    if (!voiceFirst || audioLimitReached || isProcessing) return;
+
+    setStatus("preparing");
+    try {
+      await startRecording();
+    } catch {
+      setStatus("idle");
+    }
+  };
+
+  const formattedDuration = useMemo(() => {
+    const minutes = Math.floor(recordingSeconds / 60);
+    const seconds = recordingSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }, [recordingSeconds]);
+
+  const showVoiceStage =
+    isOpen && (status === "preparing" || status === "recording" || isProcessing);
+
   return (
     <>
       <div className="w-full">
@@ -175,7 +221,7 @@ export default function DreamEntryLauncher({
           type="button"
           variant={buttonVariant}
           size={buttonSize}
-          onClick={() => setIsOpen(true)}
+          onClick={openLauncher}
           className={cn("gap-2 rounded-full", buttonClassName)}
         >
           {showSparkles ? <Sparkles className="h-5 w-5" /> : null}
@@ -186,7 +232,106 @@ export default function DreamEntryLauncher({
         ) : null}
       </div>
 
-      {isOpen ? (
+      {showVoiceStage ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="voice-stage-title"
+          className="fixed inset-0 z-[110] overflow-y-auto bg-[linear-gradient(180deg,#312e81_0%,#1e3a8a_55%,#075985_100%)] text-white"
+        >
+          <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-xl flex-col items-center px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] text-center">
+            <button
+              type="button"
+              onClick={closeSheet}
+              disabled={isProcessing}
+              aria-label="音声記録を閉じる"
+              className="absolute left-5 top-[max(1.25rem,env(safe-area-inset-top))] grid min-h-11 min-w-11 place-items-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 id="voice-stage-title" className="mt-3 text-lg font-bold">
+              音声で記録
+            </h2>
+
+            <div className="mt-12">
+              <div className="relative">
+                <span className="absolute -inset-6 rounded-full bg-sky-300/20 blur-2xl" />
+                <MorpheusAvatar
+                  variant="voice"
+                  size={112}
+                  priority
+                  className="relative border-2 border-white/30 shadow-2xl ring-4 ring-white/10"
+                />
+              </div>
+              <p className="mt-5 text-sm font-medium text-sky-100">
+                {isProcessing
+                  ? "モルペウスが 夢をまとめているよ…"
+                  : status === "preparing"
+                    ? "マイクをじゅんびしているよ…"
+                    : "モルペウスが きいているよ…"}
+              </p>
+            </div>
+
+            <div className="mt-8 w-full rounded-3xl border border-white/20 bg-white/10 px-5 py-5 text-left shadow-xl backdrop-blur-sm">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-sky-200">
+                {isProcessing ? "文字起こし・分析中" : "録音中"}
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-white/90">
+                {isProcessing
+                  ? "録音した声を文字にして、夢の内容と気持ちを整理しています。"
+                  : "思い出せるところから、そのまま話してね。文字起こしは録音を止めたあとに始まります。"}
+              </p>
+            </div>
+
+            <div
+              aria-label={isProcessing ? "音声を解析中" : "音声を録音中"}
+              className="mt-8 flex h-20 items-center justify-center gap-1.5"
+            >
+              {Array.from({ length: 18 }, (_, index) => (
+                <span
+                  key={index}
+                  className={`w-1.5 rounded-full bg-sky-300 ${
+                    isProcessing ? "animate-pulse" : "motion-safe:animate-[pulse_1s_ease-in-out_infinite]"
+                  }`}
+                  style={{
+                    height: `${20 + ((index * 17) % 46)}px`,
+                    animationDelay: `${index * 55}ms`,
+                  }}
+                />
+              ))}
+            </div>
+
+            <p className="mt-1 font-mono text-lg font-bold tabular-nums">
+              {isProcessing ? "解析中" : formattedDuration}
+            </p>
+
+            <button
+              type="button"
+              onClick={handleVoiceToggle}
+              disabled={isProcessing || status === "preparing"}
+              aria-label="録音を停止する"
+              className="mt-7 grid h-20 w-20 place-items-center rounded-full border-[7px] border-white bg-white shadow-[0_0_0_7px_rgba(255,255,255,0.18),0_16px_35px_rgba(0,0,0,0.28)] transition-transform active:scale-95 disabled:opacity-70"
+            >
+              {isProcessing || status === "preparing" ? (
+                <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+              ) : (
+                <Square className="h-8 w-8 fill-red-500 text-red-500" />
+              )}
+            </button>
+
+            {!isProcessing ? (
+              <Link
+                href="/dream/new"
+                onClick={closeSheet}
+                className="mt-auto min-h-11 pt-8 text-sm font-semibold text-sky-100 underline decoration-sky-200/50 underline-offset-4"
+              >
+                テキストで入力する
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      ) : isOpen ? (
         <div
           className="fixed inset-0 z-[100] bg-slate-950/45 backdrop-blur-sm"
           onClick={closeSheet}

@@ -9,7 +9,10 @@ interface DreamStreakBadgeProps {
 }
 
 /** 連続記録日数を計算 */
-function calcStreak(dreams: Dream[]): { current: number; longest: number } {
+export function calculateDreamStreak(dreams: Dream[]): {
+  current: number;
+  longest: number;
+} {
   if (dreams.length === 0) return { current: 0, longest: 0 };
 
   // ユニークな日付を降順に並べる
@@ -75,7 +78,7 @@ function getMorpheusVariant(current: number): MorpheusImageVariant {
 export default function DreamStreakBadge({ dreams }: DreamStreakBadgeProps) {
   if (dreams.length === 0) return null;
 
-  const { current, longest } = calcStreak(dreams);
+  const { current, longest } = calculateDreamStreak(dreams);
   const moonProgress = Math.min(current, 30) / 30;
   const morpheusVariant = getMorpheusVariant(current);
 

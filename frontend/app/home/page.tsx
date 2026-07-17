@@ -12,7 +12,9 @@ import { getJSTYearMonthKey, getJSTDateStr } from "@/lib/date";
 import DreamList from "@/app/components/DreamList";
 import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import DreamStatsWidget from "@/app/components/DreamStatsWidget";
-import DreamStreakBadge from "@/app/components/DreamStreakBadge";
+import DreamStreakBadge, {
+  calculateDreamStreak,
+} from "@/app/components/DreamStreakBadge";
 import SearchBar from "@/app/components/SearchBar";
 import ProfileFilterChips from "@/app/components/ProfileFilterChips";
 import DreamEntryLauncher from "@/app/components/DreamEntryLauncher";
@@ -352,6 +354,14 @@ export default function HomePage() {
     dreams.length > 0 &&
     dreams.length < 5;
   const homeToneStyle = getToneClassByHour(new Date().getHours());
+  const currentStreak = calculateDreamStreak(dreams).current;
+  const todayLabel = new Date().toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    timeZone: "Asia/Tokyo",
+  });
 
   return (
     <div
@@ -360,6 +370,28 @@ export default function HomePage() {
     >
       {/* メインセクション: ユーザー名の下に夢リストを表示 */}
       <section className="w-full lg:w-2/3 flex flex-col items-center px-3 md:px-6">
+        <div className="mb-4 flex w-full items-center justify-between gap-3 md:hidden">
+          <div className="min-w-0">
+            <p
+              className="text-xs font-medium text-muted-foreground"
+              suppressHydrationWarning
+            >
+              {todayLabel}
+            </p>
+            <h1 className="mt-1 truncate text-xl font-bold text-foreground">
+              おはよう、{user?.username ?? "あなた"}さん
+            </h1>
+          </div>
+          {currentStreak > 0 ? (
+            <div
+              aria-label={`${currentStreak}日連続記録中`}
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-orange-200 bg-card px-3 text-sm font-bold text-orange-600 shadow-sm"
+            >
+              <span aria-hidden="true">🔥</span>
+              <span>{currentStreak}</span>
+            </div>
+          ) : null}
+        </div>
         {/* お試しユーザー向けバナー（残回数・本登録CTA） */}
         {user?.trial_user && (
           <TrialBanner
@@ -374,8 +406,8 @@ export default function HomePage() {
         <MorpheusHero
           expression="cheerful"
           variant="home"
-          title={user ? `${user.username}さん、おはよう！` : "おはよう！"}
-          message={`${copy.heading} ${copy.sub}`}
+          title={copy.heading}
+          message={copy.sub}
           className="w-full mb-4"
           action={
             <div className="max-w-md">
@@ -385,6 +417,7 @@ export default function HomePage() {
                 buttonClassName="min-h-14 w-full text-base font-bold shadow-lg shadow-primary/15"
                 helperText={copy.helper}
                 showSparkles
+                voiceFirst
               />
             </div>
           }
@@ -457,6 +490,21 @@ export default function HomePage() {
           </div>
         )}
 
+        {!loading && !errorMessage && dreams.length > 0 ? (
+          <div className="mt-5 flex w-full items-center justify-between px-4 md:hidden">
+            <h2 className="text-base font-bold text-foreground">
+              さいきんの ゆめ
+            </h2>
+            <button
+              type="button"
+              onClick={() => setIsSearchPanelOpen(true)}
+              className="min-h-11 rounded-xl px-2 text-sm font-semibold text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              夢をさがす
+            </button>
+          </div>
+        ) : null}
+
         {/* ローディング中: スケルトンカードを表示 */}
         {loading && <DreamListSkeleton count={6} />}
         {/* エラーメッセージがある場合は表示 */}
@@ -477,7 +525,7 @@ export default function HomePage() {
       </section>
 
       {/* サイドバー: 統計・ストリーク・月ごとリンク */}
-      <aside className="w-full lg:w-1/3 flex flex-col items-center px-3 md:px-6 mt-4 lg:mt-0">
+      <aside className="hidden w-full lg:flex lg:w-1/3 flex-col items-center px-3 md:px-6 mt-4 lg:mt-0">
         {/* 今日の夢クエスト */}
         {!loading && !errorMessage && <DreamAdventurePanel dreams={dreams} />}
 

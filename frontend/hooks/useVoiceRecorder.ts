@@ -51,6 +51,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
   const chunksRef = useRef<BlobPart[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const mimeTypeRef = useRef<string>("");
+  const discardRecordingRef = useRef(false);
 
   // ストリームと MediaRecorder の後片付け
   const cleanupStream = useCallback(() => {
@@ -61,6 +62,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
     mediaRecorderRef.current = null;
     chunksRef.current = [];
     startedAtRef.current = null;
+    discardRecordingRef.current = false;
   }, []);
 
   // 先に権限を取得し、許可後に可能なら「モニター系の無音マイク」を避けて選択する
@@ -148,6 +150,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
       const recorder = createAudioRecorder(stream, mimeTypeRef.current);
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
+      discardRecordingRef.current = false;
 
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) {
@@ -156,6 +159,12 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
       };
 
       recorder.onstop = () => {
+        if (discardRecordingRef.current) {
+          cleanupStream();
+          setIsRecording(false);
+          return;
+        }
+
         const duration =
           startedAtRef.current != null
             ? performance.now() - startedAtRef.current
@@ -215,13 +224,31 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
     }
   }, []);
 
+  const cancelRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === "recording") {
+      discardRecordingRef.current = true;
+      recorder.stop();
+      return;
+    }
+
+    cleanupStream();
+    setIsRecording(false);
+  }, [cleanupStream]);
+
   useEffect(() => {
     return () => {
       cleanupStream();
     };
   }, [cleanupStream]);
 
-  return { isRecording, error, startRecording, stopRecording };
+  return {
+    isRecording,
+    error,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+  };
 };
 
 export default useVoiceRecorder;

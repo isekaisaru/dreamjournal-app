@@ -58,6 +58,7 @@ const makeAuthValue = (): AuthValue =>
 
 const startRecording = jest.fn(() => Promise.resolve());
 const stopRecording = jest.fn();
+const cancelRecording = jest.fn();
 let capturedOnBlobReady: ((blob: Blob) => Promise<void> | void) | null = null;
 
 const openSheet = () => {
@@ -76,6 +77,7 @@ beforeEach(() => {
       error: null,
       startRecording,
       stopRecording,
+      cancelRecording,
     } as ReturnType<typeof useVoiceRecorder>;
   });
 });
@@ -124,6 +126,18 @@ describe("DreamEntryLauncher", () => {
     // 2回目: 録音を始める
     fireEvent.click(screen.getByRole("button", { name: /はなしはじめる/ }));
     expect(startRecording).toHaveBeenCalledTimes(1);
+  });
+
+  it("voiceFirstでは起動ボタンの1回目で録音を始める", () => {
+    currentUser = { trial_user: false, premium: false };
+    render(
+      <DreamEntryLauncher buttonLabel="ゆめを のこす" voiceFirst />
+    );
+
+    openSheet();
+
+    expect(startRecording).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("dialog", { name: "音声で記録" })).toBeInTheDocument();
   });
 
   it("トライアルユーザーは録音完了後に残り0回のCTAへ切り替わる", async () => {

@@ -16,6 +16,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
 import { MorpheusGuideDetail } from "@/app/components/MorpheusGuide";
 import StreamingAnalysis from "@/app/components/StreamingAnalysis";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -262,7 +263,42 @@ export default function DreamDetailPage({
     dream.analysis_json?.analysis || dream.analysis_json?.text || "";
 
   return (
-    <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
+    <div className="min-h-screen px-4 pb-8 pt-0 text-foreground md:mx-auto md:max-w-3xl md:px-12 md:py-8">
+      <section
+        aria-label="夢のイメージ"
+        className="relative -mx-4 mb-6 h-60 overflow-hidden bg-gradient-to-br from-blue-900 via-violet-700 to-fuchsia-600 md:hidden"
+        style={
+          generatedImageUrl
+            ? {
+                backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.08), rgba(15,23,42,0.38)), url(${generatedImageUrl})`,
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+              }
+            : undefined
+        }
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-80"
+          style={{
+            backgroundImage:
+              "radial-gradient(2px 2px at 18% 28%, white, transparent), radial-gradient(2px 2px at 74% 20%, #fde68a, transparent), radial-gradient(1.5px 1.5px at 48% 58%, white, transparent)",
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="前の画面に戻る"
+          className="absolute left-4 top-4 z-10 grid min-h-11 min-w-11 place-items-center rounded-full bg-slate-950/30 text-white backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-slate-950/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>{generatedImageUrl ? "AIが描いた夢" : "夢のイメージ"}</span>
+        </div>
+      </section>
+
       {/* ヘッダー：日付 */}
       <p className="text-sm text-muted-foreground mb-2" suppressHydrationWarning>
         {formatDate(dream.created_at)}
