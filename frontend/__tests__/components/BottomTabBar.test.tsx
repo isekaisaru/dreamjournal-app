@@ -43,9 +43,9 @@ describe("BottomTabBar", () => {
 
   it("ログイン時に4タブと記録FABを描画する", () => {
     render(<BottomTabBar />);
-    expect(screen.getByRole("link", { name: "おうち" })).toHaveAttribute("href", "/home");
+    expect(screen.getByRole("link", { name: "ホーム" })).toHaveAttribute("href", "/home");
+    expect(screen.getByRole("link", { name: "きもち" })).toHaveAttribute("href", "/insights");
     expect(screen.getByRole("link", { name: "もり" })).toHaveAttribute("href", "/forest");
-    expect(screen.getByRole("link", { name: "マイ夢" })).toHaveAttribute("href", "/my-dreams");
     expect(screen.getByRole("link", { name: "設定" })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("button", { name: "夢をきろくする" })).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe("BottomTabBar", () => {
     mockUsePathname.mockReturnValue("/forest");
     render(<BottomTabBar />);
     expect(screen.getByRole("link", { name: "もり" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "おうち" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "ホーム" })).not.toHaveAttribute("aria-current");
   });
 
   it("ログイン時に body へ has-bottom-nav を付与する", () => {

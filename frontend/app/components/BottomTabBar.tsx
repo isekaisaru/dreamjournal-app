@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { House, Trees, Moon, Settings, type LucideIcon } from "lucide-react";
+import {
+  ChartNoAxesColumnIncreasing,
+  House,
+  Settings,
+  Trees,
+  type LucideIcon,
+} from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import DreamEntryLauncher from "./DreamEntryLauncher";
@@ -11,11 +17,11 @@ import DreamEntryLauncher from "./DreamEntryLauncher";
 type Tab = { href: string; label: string; icon: LucideIcon };
 
 const LEFT_TABS: Tab[] = [
-  { href: "/home", label: "おうち", icon: House },
-  { href: "/forest", label: "もり", icon: Trees },
+  { href: "/home", label: "ホーム", icon: House },
+  { href: "/insights", label: "きもち", icon: ChartNoAxesColumnIncreasing },
 ];
 const RIGHT_TABS: Tab[] = [
-  { href: "/my-dreams", label: "マイ夢", icon: Moon },
+  { href: "/forest", label: "もり", icon: Trees },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 
@@ -74,8 +80,8 @@ export default function BottomTabBar(): React.JSX.Element | null {
         <div className="flex flex-1 items-start justify-center">
           <DreamEntryLauncher
             buttonLabel="夢をきろくする"
-            buttonClassName="-mt-6 h-14 w-14 justify-center rounded-full bg-primary text-primary-foreground shadow-lg [&>span]:sr-only"
-            showSparkles
+            buttonClassName="-mt-6 h-14 w-14 justify-center rounded-full bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-[0_10px_24px_rgba(14,165,233,0.42)] [&>span]:sr-only"
+            voiceFirst
           />
         </div>
 

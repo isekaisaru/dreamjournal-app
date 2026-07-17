@@ -104,6 +104,7 @@ jest.mock("@/app/components/DreamStatsWidget", () => ({
 jest.mock("@/app/components/DreamStreakBadge", () => ({
   __esModule: true,
   default: () => <div>DreamStreakBadge</div>,
+  calculateDreamStreak: () => ({ current: 0, longest: 0 }),
 }));
 jest.mock("@/app/components/MorpheusGuide", () => ({
   __esModule: true,

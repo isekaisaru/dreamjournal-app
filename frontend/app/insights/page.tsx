@@ -96,16 +96,24 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-1 py-6 md:py-8">
-      <header className="mb-6">
-        <p className="text-[12.5px] font-medium text-muted-foreground">
-          {ym.replace("-", "年")}月のふりかえり
-        </p>
-        <h1 className="text-2xl font-bold text-foreground">きもちインサイト</h1>
+    <div className="mx-auto max-w-6xl px-1 py-4 md:py-8">
+      <header className="mb-5 flex items-end justify-between gap-4 md:mb-6">
+        <div>
+          <p className="hidden text-[12.5px] font-medium text-muted-foreground md:block">
+            {ym.replace("-", "年")}月のふりかえり
+          </p>
+          <h1 className="text-2xl font-bold text-foreground">きもちインサイト</h1>
+        </div>
+        <span
+          aria-label={`${Number(ym.split("-")[1])}月の記録`}
+          className="inline-flex min-h-11 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold text-muted-foreground shadow-sm md:hidden"
+        >
+          ‹ {Number(ym.split("-")[1])}月 ›
+        </span>
       </header>
 
       {/* KPI */}
-      <div className="mb-4 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+      <div className="mb-4 hidden grid-cols-2 gap-3.5 md:grid lg:grid-cols-4">
         <KpiCard label="今月の記録" value={String(total)} unit="こ" tone="text-foreground" />
         <KpiCard label="連続記録" value={String(streak)} unit="日" tone="text-orange-600 dark:text-orange-400" />
         <KpiCard label="前向きな夢" value={String(positiveRate)} unit="%" tone="text-emerald-600 dark:text-emerald-400" />
@@ -116,45 +124,28 @@ export default function InsightsPage() {
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <MoodCalendar dreams={dreams} month={ym} />
 
-        <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950 to-slate-900 p-5">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-75"
-            style={{
-              backgroundImage:
-                "radial-gradient(2px 2px at 20% 24%, #fde68a, transparent), radial-gradient(1.6px 1.6px at 78% 30%, #fff, transparent), radial-gradient(1.6px 1.6px at 50% 60%, #c7d2fe, transparent)",
-            }}
-          />
-          <div className="relative mb-3 flex items-center gap-3">
-            <div className="motion-safe:animate-morpheus-float">
-              <MorpheusAvatar variant="reward" size={46} className="ring-2 ring-white/20" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white">モルペウスの 月まとめ</h3>
-              <span className="mt-0.5 inline-block rounded-full bg-violet-400/20 px-2 py-0.5 text-[10px] font-semibold text-violet-200">
-                {user?.premium ? "プレミアム" : "プレビュー"}
-              </span>
-            </div>
-          </div>
-          <p className="relative text-[13px] leading-loose text-slate-200">
-            {total > 0 ? (
-              <>
-                今月は <b className="text-sky-300">前向きな夢が{positiveRate}%</b>。 とくに「{topEmotion}」の気持ちが多く、心のうごきが見えてきたよ。
-              </>
-            ) : (
-              <>今月はまだ記録がないみたい。ひとつ書くと、ここに今月のまとめが出るよ。</>
-            )}
-          </p>
-        </section>
+        <InsightSummary
+          total={total}
+          positiveRate={positiveRate}
+          topEmotion={topEmotion}
+          premium={user?.premium === true}
+          className="hidden lg:block"
+        />
       </div>
 
       {/* TOP5 + トレンド */}
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <h3 className="mb-3.5 font-bold text-card-foreground">きもち TOP5</h3>
+          <h3 className="mb-3.5 font-bold text-card-foreground">
+            <span className="md:hidden">今月のきもち TOP3</span>
+            <span className="hidden md:inline">きもち TOP5</span>
+          </h3>
           <div className="flex flex-col gap-3">
-            {emotionCounts.slice(0, 5).map(([label, n]) => (
-              <div key={label} className="flex items-center gap-2.5">
+            {emotionCounts.slice(0, 5).map(([label, n], index) => (
+              <div
+                key={label}
+                className={`items-center gap-2.5 ${index >= 3 ? "hidden md:flex" : "flex"}`}
+              >
                 <span className="w-24 shrink-0 truncate text-xs font-semibold text-muted-foreground">
                   {label}
                 </span>
@@ -177,9 +168,85 @@ export default function InsightsPage() {
           </div>
         </section>
 
+        <InsightSummary
+          total={total}
+          positiveRate={positiveRate}
+          topEmotion={topEmotion}
+          premium={user?.premium === true}
+          className="lg:hidden"
+          mobile
+        />
+
         <MonthlyTrend dreams={dreams} />
       </div>
     </div>
+  );
+}
+
+function InsightSummary({
+  total,
+  positiveRate,
+  topEmotion,
+  premium,
+  className,
+  mobile = false,
+}: {
+  total: number;
+  positiveRate: number;
+  topEmotion: string;
+  premium: boolean;
+  className?: string;
+  mobile?: boolean;
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden rounded-2xl border p-5 ${
+        mobile
+          ? "border-sky-100 bg-gradient-to-br from-sky-50 to-white text-slate-700 shadow-sm dark:border-sky-900/50 dark:from-slate-900 dark:to-slate-950 dark:text-slate-200"
+          : "border-white/10 bg-gradient-to-br from-indigo-950 to-slate-900 text-slate-200"
+      } ${className ?? ""}`}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-75"
+        style={{
+          backgroundImage:
+            "radial-gradient(2px 2px at 20% 24%, #fde68a, transparent), radial-gradient(1.6px 1.6px at 78% 30%, #fff, transparent), radial-gradient(1.6px 1.6px at 50% 60%, #c7d2fe, transparent)",
+        }}
+      />
+      <div className="relative mb-3 flex items-center gap-3">
+        <div className="motion-safe:animate-morpheus-float">
+          <MorpheusAvatar
+            variant="reward"
+            size={mobile ? 58 : 46}
+            className="ring-2 ring-white/30"
+          />
+        </div>
+        <div>
+          <h3 className={`font-bold ${mobile ? "text-slate-800 dark:text-white" : "text-white"}`}>
+            モルペウスの 月まとめ
+          </h3>
+          <span
+            className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              mobile
+                ? "bg-sky-100 text-sky-700 dark:bg-sky-400/20 dark:text-sky-200"
+                : "bg-violet-400/20 text-violet-200"
+            }`}
+          >
+            {premium ? "プレミアム" : "プレビュー"}
+          </span>
+        </div>
+      </div>
+      <p className="relative text-[13px] leading-loose">
+        {total > 0 ? (
+          <>
+            今月は <b className="text-sky-500">前向きな夢が{positiveRate}%</b>。とくに「{topEmotion}」の気持ちが多く、心のうごきが見えてきたよ。
+          </>
+        ) : (
+          <>今月はまだ記録がないみたい。ひとつ書くと、ここに今月のまとめが出るよ。</>
+        )}
+      </p>
+    </section>
   );
 }
 
@@ -225,7 +292,7 @@ function MonthlyTrend({ dreams }: { dreams: Dream[] }) {
   const rising = bars.length >= 2 && bars[bars.length - 1].n >= bars[0].n;
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+    <section className="hidden rounded-2xl border border-border bg-card p-5 shadow-sm md:block">
       <div className="mb-3.5 flex items-center justify-between">
         <h3 className="font-bold text-card-foreground">記録の流れ（半年）</h3>
         {rising && <span className="text-[11px] font-semibold text-emerald-600">▲ 増加中</span>}

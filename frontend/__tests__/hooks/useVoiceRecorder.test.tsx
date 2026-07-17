@@ -115,4 +115,20 @@ describe("useVoiceRecorder", () => {
     expect(constructorOptions).toHaveLength(1);
     expect(result.current.isRecording).toBe(true);
   });
+
+  it("録音をキャンセルした場合は解析用Blobを渡さない", async () => {
+    const onBlobReady = jest.fn();
+    const { result } = renderHook(() => useVoiceRecorder({ onBlobReady }));
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    act(() => {
+      result.current.cancelRecording();
+    });
+
+    expect(result.current.isRecording).toBe(false);
+    expect(onBlobReady).not.toHaveBeenCalled();
+  });
 });
