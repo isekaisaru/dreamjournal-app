@@ -35,6 +35,7 @@ interface DreamFormProps {
   defaultProfileId?: number;
   onSubmit: (data: DreamFormData) => void;
   isLoading?: boolean;
+  layout?: "stacked" | "desktop-split";
 }
 
 export default function DreamForm({
@@ -42,7 +43,9 @@ export default function DreamForm({
   defaultProfileId,
   onSubmit,
   isLoading = false,
+  layout = "stacked",
 }: DreamFormProps) {
+  const isDesktopSplit = layout === "desktop-split";
   const mapEmotionNamesToIds = (
     availableEmotions: Emotion[],
     emotionNames: string[]
@@ -259,10 +262,21 @@ export default function DreamForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-6 border border-border rounded-lg bg-card text-card-foreground shadow"
+      className={
+        isDesktopSplit
+          ? "grid gap-5 text-card-foreground lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-start"
+          : "rounded-lg border border-border bg-card p-6 text-card-foreground shadow"
+      }
     >
-      {profiles.length > 1 && (
-        <div className="mb-5">
+      <div
+        className={
+          isDesktopSplit
+            ? "rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6"
+            : ""
+        }
+      >
+        {profiles.length > 1 && (
+          <div className="mb-5">
           <label className="block mb-2 font-semibold text-card-foreground text-sm">
             誰の夢？
           </label>
@@ -287,15 +301,15 @@ export default function DreamForm({
               );
             })}
           </div>
-        </div>
-      )}
+          </div>
+        )}
 
-      {isDraftApplied && (
-        <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
-          モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
-        </div>
-      )}
-      <div className="mb-4">
+        {isDraftApplied && (
+          <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
+            モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
+          </div>
+        )}
+        <div className="mb-4">
         <label
           htmlFor="dream-title"
           className="block mb-2 font-semibold text-card-foreground"
@@ -310,9 +324,9 @@ export default function DreamForm({
           className="w-full p-2 border border-input bg-background text-foreground rounded focus:ring-2 focus:ring-ring focus:border-ring"
           required
         />
-      </div>
+        </div>
 
-      <div className="mb-6">
+        <div className={isDesktopSplit ? "mb-0" : "mb-6"}>
         <label
           htmlFor="dream-content"
           className="block mb-2 font-semibold text-card-foreground"
@@ -384,7 +398,52 @@ export default function DreamForm({
             </motion.button>
           )}
         </div>
-        {isAnalyzing ? (
+        </div>
+      </div>
+
+      {(isDesktopSplit || isAnalyzing || analysisText) && (
+        <aside
+          aria-label={isDesktopSplit ? "モルペウスのライブガイド" : undefined}
+          className={
+            isDesktopSplit
+              ? "space-y-5 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-3"
+              : ""
+          }
+        >
+          {isDesktopSplit && (
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 p-5 text-center text-white shadow-xl">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-sky-300/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-10 left-4 h-28 w-28 rounded-full bg-violet-300/20 blur-3xl" />
+              <div className="relative flex flex-col items-center">
+                <p className="mb-3 text-[11px] font-bold tracking-[0.18em] text-sky-200">
+                  MORPHEUS LIVE
+                </p>
+                <div className="motion-safe:animate-morpheus-float">
+                  <MorpheusAvatar
+                    variant={isAnalyzing || analysisText ? "analysis" : "compose"}
+                    size={96}
+                    className="ring-2 ring-white/30 shadow-lg"
+                  />
+                </div>
+                <h2 className="mt-4 text-lg font-bold" aria-live="polite">
+                  {isAnalyzing
+                    ? "夢をそっと読み解いているよ"
+                    : analysisText
+                      ? "夢のことばが見えてきたよ"
+                      : content.trim()
+                        ? "聞かせてくれてありがとう"
+                        : "今朝はどんな夢を見た？"}
+                </h2>
+                <p className="mt-3 max-w-sm rounded-2xl bg-white/90 px-4 py-3 text-sm font-semibold leading-relaxed text-slate-800 shadow-sm">
+                  {content.trim()
+                    ? "思い出せるところまでで大丈夫。準備ができたら、モルペウスに聞いてみよう。"
+                    : "ひとことからでも大丈夫。忘れる前に、ゆっくり書いてみよう。"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isAnalyzing ? (
           <div className="mt-4 overflow-hidden rounded-[28px] border border-sky-200/50 bg-slate-950 px-4 py-4 text-slate-50 shadow-lg">
             <div className="flex items-center gap-4">
               <MorpheusAvatar
@@ -423,11 +482,10 @@ export default function DreamForm({
               ))}
             </div>
           </div>
-        ) : null}
-      </div>
+          ) : null}
 
-      {analysisText && (
-        <motion.div
+          {analysisText && (
+            <motion.div
           key={`${analysisRevealKey}-${analysisText}`}
           initial={{ opacity: 0, rotateX: -14, y: 20 }}
           animate={{ opacity: 1, rotateX: 0, y: 0 }}
@@ -493,10 +551,18 @@ export default function DreamForm({
           <p className="mt-2 text-xs text-muted-foreground">
             ないよう や タグ は、じぶんで なおせるよ。
           </p>
-        </motion.div>
+            </motion.div>
+          )}
+        </aside>
       )}
 
-      <div className="mb-6">
+      <div
+        className={
+          isDesktopSplit
+            ? "rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-start-1"
+            : "mb-6"
+        }
+      >
         <label className="block mb-2 font-semibold text-card-foreground">
           この ゆめ の きもち は どれ？
         </label>
@@ -581,7 +647,7 @@ export default function DreamForm({
 
       <button
         type="submit"
-        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${
+        className={`w-full rounded px-4 py-2.5 font-medium transition-colors ${isDesktopSplit ? "lg:col-start-1" : ""} ${
           isLoading
             ? "bg-muted text-muted-foreground cursor-not-allowed"
             : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"

@@ -355,6 +355,30 @@ describe("DreamForm", () => {
     expect(avatar).toHaveAttribute("data-size", "74");
   });
 
+  it("shows the desktop live guide and reacts when the user starts writing", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    const user = userEvent.setup();
+
+    render(<DreamForm layout="desktop-split" onSubmit={jest.fn()} />);
+
+    const guide = screen.getByRole("complementary", {
+      name: "モルペウスのライブガイド",
+    });
+    expect(guide).toHaveTextContent("今朝はどんな夢を見た？");
+    expect(screen.getByTestId("morpheus-avatar")).toHaveAttribute(
+      "data-variant",
+      "compose"
+    );
+    expect(screen.getByTestId("morpheus-avatar")).toHaveAttribute(
+      "data-size",
+      "96"
+    );
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+
+    expect(guide).toHaveTextContent("聞かせてくれてありがとう");
+  });
+
   it("shows the backend analysis error message when analysis fails", async () => {
     const analysisError =
       "AI分析サービスの設定が不足しています。時間をおいてもう一度お試しください。";
