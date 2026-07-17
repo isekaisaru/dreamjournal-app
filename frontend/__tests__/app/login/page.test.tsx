@@ -49,6 +49,21 @@ describe("Login page cold-start retry UX", () => {
     jest.clearAllMocks();
   });
 
+  it("デスクトップ用のAuthVisualPanel(login)をあわせて描画する", () => {
+    render(<Login />);
+    // MorpheusGuideLogin（lg未満用）と冒頭の文言が似ているため、
+    // AuthVisualPanel側にしか出現しない一節で存在確認する
+    expect(
+      screen.getByText(/今日はどんな夢を見たのか、聞かせてくれるかな/)
+    ).toBeInTheDocument();
+  });
+
+  it("MorpheusGuideLoginは375px相当の狭い画面で隠すクラスを持つ（hidden sm:block lg:hidden）", () => {
+    render(<Login />);
+    const guide = screen.getByTestId("morpheus-guide");
+    expect(guide.parentElement).toHaveClass("hidden", "sm:block", "lg:hidden");
+  });
+
   it("shows the warming-up notice and button label while clientLogin retries", async () => {
     // clientLogin がコールドスタートのリトライに入った状態を再現する。
     // onColdStartRetry を呼んだあと未解決のままにして、表示を観測できるようにする。
