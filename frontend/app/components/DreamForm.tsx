@@ -264,14 +264,14 @@ export default function DreamForm({
       onSubmit={handleSubmit}
       className={
         isDesktopSplit
-          ? "grid gap-5 text-card-foreground lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-start"
+          ? "rounded-lg border border-border bg-card p-6 text-card-foreground shadow lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-start lg:gap-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
           : "rounded-lg border border-border bg-card p-6 text-card-foreground shadow"
       }
     >
       <div
         className={
           isDesktopSplit
-            ? "rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6"
+            ? "lg:rounded-2xl lg:border lg:border-border lg:bg-card lg:p-6 lg:shadow-sm"
             : ""
         }
       >
@@ -411,7 +411,7 @@ export default function DreamForm({
           }
         >
           {isDesktopSplit && (
-            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 p-5 text-center text-white shadow-xl">
+            <div className="relative hidden overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 p-5 text-center text-white shadow-xl lg:block">
               <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-sky-300/20 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-10 left-4 h-28 w-28 rounded-full bg-violet-300/20 blur-3xl" />
               <div className="relative flex flex-col items-center">
@@ -559,7 +559,7 @@ export default function DreamForm({
       <div
         className={
           isDesktopSplit
-            ? "rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6 lg:col-start-1"
+            ? "mb-6 lg:col-start-1 lg:mb-0 lg:rounded-2xl lg:border lg:border-border lg:bg-card lg:p-6 lg:shadow-sm"
             : "mb-6"
         }
       >

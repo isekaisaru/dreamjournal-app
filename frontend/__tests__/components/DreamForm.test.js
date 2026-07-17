@@ -364,6 +364,7 @@ describe("DreamForm", () => {
     const guide = screen.getByRole("complementary", {
       name: "モルペウスのライブガイド",
     });
+    expect(guide.firstElementChild).toHaveClass("hidden", "lg:block");
     expect(guide).toHaveTextContent("今朝はどんな夢を見た？");
     expect(screen.getByTestId("morpheus-avatar")).toHaveAttribute(
       "data-variant",
