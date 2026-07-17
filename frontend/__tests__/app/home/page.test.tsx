@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import HomePage from "@/app/home/page";
 import type { Dream, DreamProfile } from "@/app/types";
 
@@ -86,7 +86,12 @@ jest.mock("@/app/components/ProfileFilterChips", () => ({
 }));
 jest.mock("@/app/components/DreamList", () => ({
   __esModule: true,
-  default: () => <div>DreamList</div>,
+  default: ({ viewMode }: { viewMode: string }) => (
+    <div>
+      DreamList
+      <span data-testid="dream-list-view-mode">{viewMode}</span>
+    </div>
+  ),
 }));
 jest.mock("@/app/components/DreamCardSkeleton", () => ({
   __esModule: true,
@@ -187,5 +192,26 @@ describe("HomePage: WeeklyDreamNewsWidgetへのデータ受け渡し", () => {
     expect(screen.queryByTestId("weekly-widget-dream-ids")).not.toBeInTheDocument();
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it("グリッド表示を既定値にし、リスト表示へ切り替えられる", async () => {
+    mockGet.mockImplementation((url: string) => {
+      if (url.includes("start_date=")) return Promise.resolve([dream(201)]);
+      return Promise.resolve([dream(100)]);
+    });
+
+    render(<HomePage />);
+
+    expect(await screen.findByTestId("dream-list-view-mode")).toHaveTextContent("grid");
+    const gridButton = screen.getByRole("button", { name: "グリッド表示" });
+    const listButton = screen.getByRole("button", { name: "リスト表示" });
+    expect(gridButton).toHaveAttribute("aria-pressed", "true");
+    expect(listButton).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(listButton);
+
+    expect(screen.getByTestId("dream-list-view-mode")).toHaveTextContent("list");
+    expect(gridButton).toHaveAttribute("aria-pressed", "false");
+    expect(listButton).toHaveAttribute("aria-pressed", "true");
   });
 });
