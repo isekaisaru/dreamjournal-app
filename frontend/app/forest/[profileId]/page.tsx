@@ -225,6 +225,14 @@ export default function ForestProfilePage() {
             {lvl.name}（{lvl.reading}）
           </span>
         </div>
+        <div className="container mx-auto flex max-w-3xl justify-end px-4 pb-2">
+          <Link
+            href={`/room/${profile.id}`}
+            className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-bold text-white/80 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            🖼️ へやを のぞく
+          </Link>
+        </div>
       </header>
 
       {/* 実の色の凡例トグル */}

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import TreePreviewSheet from "@/app/components/forest/TreePreviewSheet";
 import type { Dream, DreamProfile } from "@/app/types";
 import { getDreamsForProfile } from "@/lib/apiClient";
@@ -62,6 +62,7 @@ describe("TreePreviewSheet", () => {
       <TreePreviewSheet
         profile={profile({ id: 1, name: "自分" })}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -72,6 +73,7 @@ describe("TreePreviewSheet", () => {
       <TreePreviewSheet
         profile={profile({ id: 2, name: "家族", dreams_count: 2 })}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -93,6 +95,7 @@ describe("TreePreviewSheet", () => {
       <TreePreviewSheet
         profile={profile({ id: 1, name: "自分" })}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -119,6 +122,7 @@ describe("TreePreviewSheet", () => {
       <TreePreviewSheet
         profile={profile({ id: 1, name: "自分" })}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -136,6 +140,7 @@ describe("TreePreviewSheet", () => {
       <TreePreviewSheet
         profile={profile({ id: 1, name: "自分" })}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -146,6 +151,31 @@ describe("TreePreviewSheet", () => {
 
     await waitFor(() => {
       expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
+    });
+  });
+
+  it("「へやを のぞく」を押すと選択プロフィールを渡す", async () => {
+    mockedGetDreamsForProfile.mockResolvedValueOnce([]);
+    const onPeekRoom = jest.fn();
+
+    render(
+      <TreePreviewSheet
+        profile={profile({ id: 3, name: "ふたり" })}
+        onOpen={jest.fn()}
+        onPeekRoom={onPeekRoom}
+        onClose={jest.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText("よみこんでいるよ…")).not.toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole("button", { name: /へやを のぞく/ }));
+
+    await waitFor(() => {
+      expect(onPeekRoom).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 3, name: "ふたり" })
+      );
     });
   });
 });

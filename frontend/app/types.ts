@@ -74,6 +74,7 @@ export interface Dream {
   analysis_status?: string;
   analyzed_at?: string;
   generated_image_url?: string;
+  image_generated_at?: string;
 }
 export type LoginCredentials = {
   email: string;

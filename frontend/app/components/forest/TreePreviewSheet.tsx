@@ -11,6 +11,7 @@ import { getDreamsForProfile } from "@/lib/apiClient";
 interface TreePreviewSheetProps {
   profile: DreamProfile | null;
   onOpen: (profile: DreamProfile) => void;
+  onPeekRoom: (profile: DreamProfile) => void;
   onClose: () => void;
 }
 
@@ -38,7 +39,7 @@ function dreamEmotions(dream: Dream): NonNullable<Dream["emotions"]> {
  *  - 直近の夢（title, emotions）は getDreamsForProfile() で lazy-fetch する。
  *    ネットワーク負荷が気になるなら、ForestScene 側でプリフェッチして渡してもよい。
  */
-export default function TreePreviewSheet({ profile, onOpen, onClose }: TreePreviewSheetProps) {
+export default function TreePreviewSheet({ profile, onOpen, onPeekRoom, onClose }: TreePreviewSheetProps) {
   const [recentDream, setRecentDream] = useState<Dream | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -126,6 +127,13 @@ export default function TreePreviewSheet({ profile, onOpen, onClose }: TreePrevi
             className="w-full rounded-[13px] py-2.5 text-[14.5px] font-black text-white"
           >
             この きを 見る ›
+          </button>
+          <button
+            type="button"
+            onClick={() => onPeekRoom(profile)}
+            className="mt-2 w-full rounded-[13px] border border-white/15 bg-white/5 py-2 text-[13px] font-bold text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            🖼️ へやを のぞく
           </button>
         </motion.div>
       )}

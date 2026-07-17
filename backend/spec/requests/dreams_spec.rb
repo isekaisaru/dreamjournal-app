@@ -366,6 +366,36 @@ RSpec.describe 'Dreams API', type: :request do
         )
       end
 
+      it 'image_generated_at を含める（部屋のギャラリー用）' do
+        dream = create(
+          :dream,
+          user: user,
+          image_generated_at: Time.current,
+          generated_image_url: 'data:image/png;base64,ZmFrZQ=='
+        )
+
+        authenticated_get('/dreams', user)
+
+        json_response = JSON.parse(response.body)
+        returned_dream = json_response.find { |item| item['id'] == dream.id }
+        expect(returned_dream).to have_key('image_generated_at')
+        expect(returned_dream['image_generated_at']).to be_present
+      end
+
+      it 'generated_image_url は一覧に含めない（軽量化を維持）' do
+        create(
+          :dream,
+          user: user,
+          image_generated_at: Time.current,
+          generated_image_url: 'data:image/png;base64,ZmFrZQ=='
+        )
+
+        authenticated_get('/dreams', user)
+
+        json_response = JSON.parse(response.body)
+        expect(json_response.first).not_to have_key('generated_image_url')
+      end
+
       context 'フィルタリング' do
         it 'emotion_idsパラメーターでフィルタリングできる' do
           dream_with_emotion = create(:dream, user: user)

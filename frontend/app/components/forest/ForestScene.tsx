@@ -408,6 +408,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
       <TreePreviewSheet
         profile={selected}
         onOpen={(p) => router.push(`/forest/${p.id}`)}
+        onPeekRoom={(p) => router.push(`/room/${p.id}`)}
         onClose={() => setSelectedId(null)}
       />
     </div>
