@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { clientRegister, convertTrial } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
+import AuthVisualPanel from "@/app/components/AuthVisualPanel";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
@@ -126,7 +127,8 @@ export default function Register() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen bg-background text-foreground">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <MorpheusSmall
           message="はじめまして！いっしょにゆめを記録しよう"
@@ -371,6 +373,8 @@ export default function Register() {
         </div>
       </form>
       </div>
+      </div>
+      <AuthVisualPanel variant="register" />
     </div>
   );
 }

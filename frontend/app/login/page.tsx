@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import MorpheusHero from "@/app/components/MorpheusHero";
 import { MorpheusGuideLogin } from "@/app/components/MorpheusGuide";
+import AuthVisualPanel from "@/app/components/AuthVisualPanel";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
@@ -84,7 +85,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8 py-8">
+    <div className="flex min-h-screen bg-background text-foreground">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <MorpheusHero
           title="おかえり！"
@@ -206,7 +208,11 @@ export default function Login() {
         )}
       </form>
       </div>
-      <MorpheusGuideLogin />
+      <div className="hidden sm:block lg:hidden">
+        <MorpheusGuideLogin />
+      </div>
+      </div>
+      <AuthVisualPanel variant="login" />
     </div>
   );
 }

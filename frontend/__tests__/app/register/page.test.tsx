@@ -75,6 +75,14 @@ beforeEach(() => {
 });
 
 describe("RegisterPage トライアル昇格の分岐", () => {
+  it("デスクトップ用のAuthVisualPanel(register)をあわせて描画する", () => {
+    mockedUseAuth.mockReturnValue(makeAuth({}));
+    render(<RegisterPage />);
+    // MorpheusSmallの既存メッセージと冒頭が似ているため、
+    // AuthVisualPanel側にしか出現しない一節で存在確認する
+    expect(screen.getByText(/ぼくはモルペウス/)).toBeInTheDocument();
+  });
+
   it("認証確認中は submit ボタンが disabled になる", () => {
     mockedUseAuth.mockReturnValue(
       makeAuth({
