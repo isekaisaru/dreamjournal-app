@@ -1,18 +1,9 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import TreePreviewSheet from "@/app/components/forest/TreePreviewSheet";
-import type { Dream, DreamProfile } from "@/app/types";
-import { getDreamsForProfile } from "@/lib/apiClient";
+import type { DreamProfile } from "@/app/types";
 
-jest.mock("@/lib/apiClient", () => ({
-  getDreamsForProfile: jest.fn(),
-}));
-
-const mockedGetDreamsForProfile = getDreamsForProfile as jest.MockedFunction<
-  typeof getDreamsForProfile
->;
-
-function profile(overrides: Partial<DreamProfile>): DreamProfile {
+function profile(overrides: Partial<DreamProfile> = {}): DreamProfile {
   return {
     id: 1,
     name: "自分",
@@ -29,153 +20,91 @@ function profile(overrides: Partial<DreamProfile>): DreamProfile {
   };
 }
 
-function dream(overrides: Partial<Dream>): Dream {
-  return {
-    id: 1,
-    title: "古い木のゆめ",
-    userId: 1,
-    created_at: "2026-06-14T00:00:00Z",
-    updated_at: "2026-06-14T00:00:00Z",
-    emotions: [{ id: 1, name: "喜び" }],
-    ...overrides,
-  };
-}
-
 describe("TreePreviewSheet", () => {
-  let consoleErrorSpy: jest.SpyInstance;
-
-  beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-    consoleErrorSpy.mockRestore();
-  });
-
-  it("clears the previous recent dream when loading another profile fails", async () => {
-    mockedGetDreamsForProfile
-      .mockResolvedValueOnce([dream({ title: "前の木のゆめ" })])
-      .mockRejectedValueOnce(new Error("temporary failure"));
-
-    const { rerender } = render(
-      <TreePreviewSheet
-        profile={profile({ id: 1, name: "自分" })}
-        onOpen={jest.fn()}
-        onPeekRoom={jest.fn()}
-        onClose={jest.fn()}
-      />
-    );
-
-    expect(await screen.findByText(/前の木のゆめ/)).toBeInTheDocument();
-
-    rerender(
-      <TreePreviewSheet
-        profile={profile({ id: 2, name: "家族", dreams_count: 2 })}
-        onOpen={jest.fn()}
-        onPeekRoom={jest.fn()}
-        onClose={jest.fn()}
-      />
-    );
-
-    await waitFor(() => {
-      expect(mockedGetDreamsForProfile).toHaveBeenCalledWith(2);
-    });
-
-    await waitFor(() => {
-      expect(screen.queryByText(/前の木のゆめ/)).not.toBeInTheDocument();
-      expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
-    });
-  });
-
-  it("ignores a non-array dreams response without crashing", async () => {
-    mockedGetDreamsForProfile.mockResolvedValueOnce({ error: "bad response" } as any);
-
+  it("profileがnullのときは何も描画しない", () => {
     render(
       <TreePreviewSheet
-        profile={profile({ id: 1, name: "自分" })}
+        profile={null}
+        recentDream={null}
+        loading={false}
         onOpen={jest.fn()}
         onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
 
-    await waitFor(() => {
-      expect(mockedGetDreamsForProfile).toHaveBeenCalledWith(1);
-    });
-
-    await waitFor(() => {
-      expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Unexpected dreams response for tree preview sheet",
-        { error: "bad response" }
-      );
-    });
+    expect(screen.queryByRole("button", { name: /この きを 見る/ })).not.toBeInTheDocument();
   });
 
-  it("treats malformed recent dream emotions as empty", async () => {
-    mockedGetDreamsForProfile.mockResolvedValueOnce([
-      dream({ title: "ふしぎな森", emotions: "bad" as any }),
-    ]);
-
+  it("profileがあるときはlg:hiddenクラス付きで描画し、中身をTreePreviewContentへ委譲する", () => {
     render(
       <TreePreviewSheet
-        profile={profile({ id: 1, name: "自分" })}
+        profile={profile({ name: "モカ" })}
+        recentDream={null}
+        loading={false}
         onOpen={jest.fn()}
         onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
 
-    expect(await screen.findByText(/ふしぎな森/)).toBeInTheDocument();
-    expect(screen.queryByText("喜び")).not.toBeInTheDocument();
+    expect(screen.getByText("モカの き")).toBeInTheDocument();
+    expect(screen.getByTestId("tree-preview-sheet")).toHaveClass("lg:hidden");
   });
 
-  it("does not render malformed recent dream titles", async () => {
-    mockedGetDreamsForProfile.mockResolvedValueOnce([
-      dream({ title: null as any }),
-    ]);
-
+  it("閉じるボタンでonCloseが呼ばれる", () => {
+    const onClose = jest.fn();
     render(
       <TreePreviewSheet
-        profile={profile({ id: 1, name: "自分" })}
+        profile={profile()}
+        recentDream={null}
+        loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
+        onClose={onClose}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "とじる" }));
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("CTAクリックでonOpenにprofileを渡す", () => {
+    const onOpen = jest.fn();
+    const p = profile({ id: 5 });
+    render(
+      <TreePreviewSheet
+        profile={p}
+        recentDream={null}
+        loading={false}
+        onOpen={onOpen}
         onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
 
-    await waitFor(() => {
-      expect(mockedGetDreamsForProfile).toHaveBeenCalledWith(1);
-    });
+    fireEvent.click(screen.getByRole("button", { name: /この きを 見る/ }));
 
-    await waitFor(() => {
-      expect(screen.queryByText("さいきんの ゆめ：")).not.toBeInTheDocument();
-    });
+    expect(onOpen).toHaveBeenCalledWith(p);
   });
 
-  it("「へやを のぞく」を押すと選択プロフィールを渡す", async () => {
-    mockedGetDreamsForProfile.mockResolvedValueOnce([]);
+  it("「へやを のぞく」クリックでonPeekRoomにprofileを渡す", () => {
     const onPeekRoom = jest.fn();
-
+    const p = profile({ id: 5 });
     render(
       <TreePreviewSheet
-        profile={profile({ id: 3, name: "ふたり" })}
+        profile={p}
+        recentDream={null}
+        loading={false}
         onOpen={jest.fn()}
         onPeekRoom={onPeekRoom}
         onClose={jest.fn()}
       />
     );
 
-    await waitFor(() => {
-      expect(screen.queryByText("よみこんでいるよ…")).not.toBeInTheDocument();
-    });
     fireEvent.click(screen.getByRole("button", { name: /へやを のぞく/ }));
 
-    await waitFor(() => {
-      expect(onPeekRoom).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 3, name: "ふたり" })
-      );
-    });
+    expect(onPeekRoom).toHaveBeenCalledWith(p);
   });
 });
