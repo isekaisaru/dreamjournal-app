@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { DreamProfile } from "@/app/types";
+import type { DreamProfile, Dream } from "@/app/types";
 import {
   getTimePhase,
   getSeason,
@@ -53,7 +53,23 @@ export function getSafePinchZoom(startZoom: number, currentDistance: number, sta
   return Number.isFinite(nextZoom) ? nextZoom : null;
 }
 
-export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
+interface ForestSceneProps {
+  profiles: DreamProfile[];
+  selectedProfileId: number | null;
+  onSelectTree: (profile: DreamProfile) => void;
+  onCloseSheet: () => void;
+  recentDream: Dream | null;
+  loading: boolean;
+}
+
+export default function ForestScene({
+  profiles,
+  selectedProfileId,
+  onSelectTree,
+  onCloseSheet,
+  recentDream,
+  loading,
+}: ForestSceneProps) {
   const reduceMotion = useReducedMotion();
   const router = useRouter();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -177,10 +193,9 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   };
 
   // 木タップ → プレビューシート（ドラッグ中は選択しない）
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const selected = profiles.find((p) => p.id === selectedId) ?? null;
+  const selected = profiles.find((p) => p.id === selectedProfileId) ?? null;
   const selectTree = (p: DreamProfile) => {
-    if (!movedRef.current) setSelectedId(p.id);
+    if (!movedRef.current) onSelectTree(p);
   };
 
   // 木の配置（横に広げ、奇数列は少し奥に）
@@ -237,9 +252,9 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         aria-hidden="true"
       />
 
-      {/* きょうの もり カード（右上・固定） */}
+      {/* きょうの もり カード（右上・固定、lg+ では TreeSidePanel が同役割を担うため隠す） */}
       {!isEmpty && (
-        <div className="absolute right-3 top-3 z-20">
+        <div className="absolute right-3 top-3 z-20 lg:hidden">
           <ForestTodayCard totalDreams={totalDreams} topProfile={topProfile} />
         </div>
       )}
@@ -314,7 +329,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
               >
                 <MiniTree
                   profile={p}
-                  isSelected={selectedId === p.id}
+                  isSelected={selectedProfileId === p.id}
                   onSelect={() => selectTree(p)}
                   height={Math.round((120 + lvl * 22) * getCanopyScale(lvl) * 0.9 + 80)}
                 />
@@ -404,12 +419,14 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         </div>
       )}
 
-      {/* 木タップ時のプレビューシート */}
+      {/* 木タップ時のプレビューシート（lg未満のみ表示。中身は TreeSidePanel と共通） */}
       <TreePreviewSheet
         profile={selected}
+        recentDream={recentDream}
+        loading={loading}
         onOpen={(p) => router.push(`/forest/${p.id}`)}
         onPeekRoom={(p) => router.push(`/room/${p.id}`)}
-        onClose={() => setSelectedId(null)}
+        onClose={onCloseSheet}
       />
     </div>
   );
