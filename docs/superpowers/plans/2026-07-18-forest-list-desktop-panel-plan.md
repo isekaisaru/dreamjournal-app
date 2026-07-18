@@ -20,6 +20,13 @@
 - ホバーツールチップ・矢印キーによる木の選択は今回のスコープ外（実装しない）
 - `/forest/[profileId]`詳細ページ、月スクラバー、ズーム画像シェア、ヘッダー統計チップは今回のスコープ外
 
+**【実行中の追記】** この計画は`origin/main`からブレインストーミング時点で分岐して書かれたが、Task 1・Task 2実装後にレビューで発見した通り、計画作成後に`origin/main`側で「夢の部屋（額縁の壁）」機能がマージされ、`TreePreviewSheet.tsx`に`onPeekRoom: (profile: DreamProfile) => void`プロップと「🖼️ へやを のぞく」ボタン（`/room/[profileId]`へ遷移）が追加されていた。以下のタスクはこれを踏まえて更新済み：
+- `TreePreviewContent`は`onPeekRoom`プロップと「へやを のぞく」ボタンも持つ（Task 2はこれを反映するfix commitが入る）
+- `TreePreviewSheet`は既存どおり`onPeekRoom`を受け取り`TreePreviewContent`へ橋渡しする
+- `TreeSidePanel`も`onPeekRoom`プロップを持ち、選択時に`TreePreviewContent`へ渡す
+- `ForestScene`内部の`onPeekRoom={(p) => router.push(\`/room/${p.id}\`)}`は無変更のまま維持する（ForestSceneの公開propsに`onPeekRoom`を追加する必要はない。モバイルの下シート用はForestScene内部で完結しているため）
+- `/forest/page.tsx`は新たに`openRoom`コールバックを持ち、`TreeSidePanel`の`onPeekRoom`に渡す
+
 ---
 
 ## ファイル構成
@@ -231,7 +238,19 @@ git commit -m "feat: 直近の夢取得をuseRecentDreamフックに抽出"
 
 **Interfaces:**
 - Consumes: `DreamProfile`, `Dream`型（`@/app/types`）、`getGrowthLevel`・`EMOTION_COLORS`（`@/lib/forest`）
-- Produces: `TreePreviewContent({ profile, recentDream, loading, onOpen }: { profile: DreamProfile; recentDream: Dream | null; loading: boolean; onOpen: (profile: DreamProfile) => void }): JSX.Element` — Task 3, 4 で使用
+- Produces: `TreePreviewContent({ profile, recentDream, loading, onOpen, onPeekRoom }: { profile: DreamProfile; recentDream: Dream | null; loading: boolean; onOpen: (profile: DreamProfile) => void; onPeekRoom: (profile: DreamProfile) => void }): JSX.Element` — Task 3, 4 で使用
+
+**【実行中の追記・fix commitで対応済み】** 当初のTask 2実装後、`origin/main`側に存在する「夢の部屋」機能（`onPeekRoom`プロップ＋「🖼️ へやを のぞく」ボタン、`TreePreviewSheet.tsx`に既存）がこのコンポーネントに含まれていないことが判明した。fix commitで`onPeekRoom`プロップと以下のボタンを、CTAボタンの直後に追加する（`frontend/app/components/forest/TreePreviewSheet.tsx`の131〜137行目から一字一句移植）:
+
+```tsx
+<button
+  type="button"
+  onClick={() => onPeekRoom(profile)}
+  className="mt-2 w-full rounded-[13px] border border-white/15 bg-white/5 py-2 text-[13px] font-bold text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+>
+  🖼️ へやを のぞく
+</button>
+```
 
 - [ ] **Step 1: 失敗するテストを書く**
 
@@ -480,10 +499,12 @@ git commit -m "feat: 木プレビューの中身をTreePreviewContentとして�
 - Modify: `frontend/__tests__/components/TreePreviewSheet.test.tsx`（全面書き換え）
 
 **Interfaces:**
-- Consumes: `TreePreviewContent`（Task 2で作成）
-- Produces: `TreePreviewSheet({ profile, recentDream, loading, onOpen, onClose }: { profile: DreamProfile | null; recentDream: Dream | null; loading: boolean; onOpen: (profile: DreamProfile) => void; onClose: () => void }): JSX.Element` — Task 5（ForestScene）で使用
+- Consumes: `TreePreviewContent`（Task 2で作成。`onPeekRoom`プロップを含む）
+- Produces: `TreePreviewSheet({ profile, recentDream, loading, onOpen, onPeekRoom, onClose }: { profile: DreamProfile | null; recentDream: Dream | null; loading: boolean; onOpen: (profile: DreamProfile) => void; onPeekRoom: (profile: DreamProfile) => void; onClose: () => void }): JSX.Element` — Task 5（ForestScene）で使用
 
 現在の`TreePreviewSheet`は自前で`getDreamsForProfile`を呼んでいるが、これをやめて`recentDream`・`loading`をpropsで受け取るようにする。取得ロジックのテスト（非配列応答・不正な感情・不正なタイトル・プロフィール切替時の破棄）はTask 1・Task 2に移設済みなので、このコンポーネントのテストは「propsを正しくTreePreviewContentへ渡し、lg:hiddenが付いていること」に絞る。
+
+**注意（既存機能の保持）:** 現在の`frontend/app/components/forest/TreePreviewSheet.tsx`には既に`onPeekRoom: (profile: DreamProfile) => void`プロップと「🖼️ へやを のぞく」ボタン（`/room/[profileId]`への導線、「夢の部屋」機能）が存在する。この機能は本タスクの対象外の既存機能だが、書き換え時に消してはいけない。`onPeekRoom`は新しい`TreePreviewSheet`でも引き続き受け取り、`TreePreviewContent`へそのまま橋渡しする（Task 2のfix commit後、`TreePreviewContent`は`onPeekRoom`プロップを持つ）。
 
 - [ ] **Step 1: 失敗するテストを書く（既存テストを置き換える）**
 
@@ -520,6 +541,7 @@ describe("TreePreviewSheet", () => {
         recentDream={null}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -534,6 +556,7 @@ describe("TreePreviewSheet", () => {
         recentDream={null}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -550,6 +573,7 @@ describe("TreePreviewSheet", () => {
         recentDream={null}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={onClose}
       />
     );
@@ -568,6 +592,7 @@ describe("TreePreviewSheet", () => {
         recentDream={null}
         loading={false}
         onOpen={onOpen}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -575,6 +600,25 @@ describe("TreePreviewSheet", () => {
     fireEvent.click(screen.getByRole("button", { name: /この きを 見る/ }));
 
     expect(onOpen).toHaveBeenCalledWith(p);
+  });
+
+  it("「へやを のぞく」クリックでonPeekRoomにprofileを渡す", () => {
+    const onPeekRoom = jest.fn();
+    const p = profile({ id: 5 });
+    render(
+      <TreePreviewSheet
+        profile={p}
+        recentDream={null}
+        loading={false}
+        onOpen={jest.fn()}
+        onPeekRoom={onPeekRoom}
+        onClose={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /へやを のぞく/ }));
+
+    expect(onPeekRoom).toHaveBeenCalledWith(p);
   });
 });
 ```
@@ -601,6 +645,7 @@ interface TreePreviewSheetProps {
   recentDream: Dream | null;
   loading: boolean;
   onOpen: (profile: DreamProfile) => void;
+  onPeekRoom: (profile: DreamProfile) => void;
   onClose: () => void;
 }
 
@@ -608,13 +653,14 @@ interface TreePreviewSheetProps {
  * 木をタップしたときに下からスライドアップするプレビューシート（lg未満のみ表示）。
  * lg+ では TreeSidePanel が同じ役割を常駐パネルとして担うため、ここは lg:hidden で隠す
  * （DOM 自体は常にマウントし、hidden クラスで出し分ける）。
- * 中身（プロフィール見出し・直近の夢・CTA）は TreePreviewContent と共通。
+ * 中身（プロフィール見出し・直近の夢・CTA・へやを のぞく）は TreePreviewContent と共通。
  */
 export default function TreePreviewSheet({
   profile,
   recentDream,
   loading,
   onOpen,
+  onPeekRoom,
   onClose,
 }: TreePreviewSheetProps) {
   return (
@@ -639,7 +685,13 @@ export default function TreePreviewSheet({
             <X className="h-3.5 w-3.5" />
           </button>
 
-          <TreePreviewContent profile={profile} recentDream={recentDream} loading={loading} onOpen={onOpen} />
+          <TreePreviewContent
+            profile={profile}
+            recentDream={recentDream}
+            loading={loading}
+            onOpen={onOpen}
+            onPeekRoom={onPeekRoom}
+          />
         </motion.div>
       )}
     </AnimatePresence>
@@ -650,7 +702,7 @@ export default function TreePreviewSheet({
 - [ ] **Step 4: テストが通ることを確認する**
 
 Run: `cd frontend && yarn jest __tests__/components/TreePreviewSheet.test.tsx`
-Expected: PASS（4 tests）
+Expected: PASS（5 tests）
 
 - [ ] **Step 5: コミット**
 
@@ -669,8 +721,10 @@ git commit -m "refactor: TreePreviewSheetをprops駆動にしlg:hiddenを追加"
 - Test: `frontend/__tests__/components/TreeSidePanel.test.tsx`
 
 **Interfaces:**
-- Consumes: `TreePreviewContent`（Task 2）、`ForestTodayCard`（既存・無変更、`frontend/app/components/forest/ForestTodayCard.tsx`）
-- Produces: `TreeSidePanel({ profiles, selectedProfile, recentDream, loading, totalDreams, topProfile, onOpen, onClose }: { profiles: DreamProfile[]; selectedProfile: DreamProfile | null; recentDream: Dream | null; loading: boolean; totalDreams: number; topProfile: DreamProfile | null; onOpen: (profile: DreamProfile) => void; onClose: () => void }): JSX.Element | null` — Task 6（`/forest/page.tsx`）で使用
+- Consumes: `TreePreviewContent`（Task 2。`onPeekRoom`プロップを含む）、`ForestTodayCard`（既存・無変更、`frontend/app/components/forest/ForestTodayCard.tsx`）
+- Produces: `TreeSidePanel({ profiles, selectedProfile, recentDream, loading, totalDreams, topProfile, onOpen, onPeekRoom, onClose }: { profiles: DreamProfile[]; selectedProfile: DreamProfile | null; recentDream: Dream | null; loading: boolean; totalDreams: number; topProfile: DreamProfile | null; onOpen: (profile: DreamProfile) => void; onPeekRoom: (profile: DreamProfile) => void; onClose: () => void }): JSX.Element | null` — Task 6（`/forest/page.tsx`）で使用
+
+**注意（既存機能の保持）:** モバイルの`TreePreviewSheet`が「へやを のぞく」（夢の部屋、`/room/[profileId]`）を持つのと同じく、デスクトップの常駐パネルでも選択時に同じ導線を表示する。`onPeekRoom`をそのまま`TreePreviewContent`へ橋渡しする。
 
 - [ ] **Step 1: 失敗するテストを書く**
 
@@ -678,7 +732,7 @@ git commit -m "refactor: TreePreviewSheetをprops駆動にしlg:hiddenを追加"
 
 ```tsx
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import TreeSidePanel from "@/app/components/forest/TreeSidePanel";
 import type { DreamProfile } from "@/app/types";
 
@@ -710,6 +764,7 @@ describe("TreeSidePanel", () => {
         totalDreams={0}
         topProfile={null}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -727,6 +782,7 @@ describe("TreeSidePanel", () => {
         totalDreams={5}
         topProfile={profile({ name: "モカ" })}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -746,12 +802,35 @@ describe("TreeSidePanel", () => {
         totalDreams={5}
         topProfile={null}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
 
     expect(screen.getByText("モカの き")).toBeInTheDocument();
     expect(screen.queryByText("きょうの もり")).not.toBeInTheDocument();
+  });
+
+  it("選択時のonPeekRoomクリックでprofileを渡す", () => {
+    const onPeekRoom = jest.fn();
+    const p = profile({ name: "モカ" });
+    render(
+      <TreeSidePanel
+        profiles={[profile()]}
+        selectedProfile={p}
+        recentDream={null}
+        loading={false}
+        totalDreams={5}
+        topProfile={null}
+        onOpen={jest.fn()}
+        onPeekRoom={onPeekRoom}
+        onClose={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /へやを のぞく/ }));
+
+    expect(onPeekRoom).toHaveBeenCalledWith(p);
   });
 
   it("常駐パネルにhidden lg:flexクラスを持つ", () => {
@@ -764,6 +843,7 @@ describe("TreeSidePanel", () => {
         totalDreams={0}
         topProfile={null}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
         onClose={jest.fn()}
       />
     );
@@ -798,6 +878,7 @@ interface TreeSidePanelProps {
   totalDreams: number;
   topProfile: DreamProfile | null;
   onOpen: (profile: DreamProfile) => void;
+  onPeekRoom: (profile: DreamProfile) => void;
   onClose: () => void;
 }
 
@@ -817,6 +898,7 @@ export default function TreeSidePanel({
   totalDreams,
   topProfile,
   onOpen,
+  onPeekRoom,
   onClose,
 }: TreeSidePanelProps) {
   if (profiles.length === 0) return null;
@@ -839,6 +921,7 @@ export default function TreeSidePanel({
             recentDream={recentDream}
             loading={loading}
             onOpen={onOpen}
+            onPeekRoom={onPeekRoom}
           />
         </>
       ) : (
@@ -855,7 +938,7 @@ export default function TreeSidePanel({
 - [ ] **Step 4: テストが通ることを確認する**
 
 Run: `cd frontend && yarn jest __tests__/components/TreeSidePanel.test.tsx`
-Expected: PASS（4 tests）
+Expected: PASS（5 tests）
 
 - [ ] **Step 5: コミット**
 
@@ -999,14 +1082,15 @@ export default function ForestScene({
 
 - [ ] **Step 6: `TreePreviewSheet`呼び出しに新propsを渡す**
 
-407〜412行目付近を変更:
+**注意（既存機能の保持）:** 現在の`frontend/app/components/forest/ForestScene.tsx`の407〜413行目には、本計画の作成後に`origin/main`側でマージされた「夢の部屋」機能の`onPeekRoom={(p) => router.push(\`/room/${p.id}\`)}`が既に存在する。これは`ForestScene`の公開propsに追加する必要はない（`onOpen`と同じくルーティングをコンポーネント内部で完結させる、モバイル下シート専用の配線）。以下の変更前後で`onPeekRoom`の行はそのまま維持し、`recentDream`/`loading`/`onClose`の3点だけを変更する。
 
-変更前:
+変更前（現状のファイルそのまま）:
 ```tsx
       {/* 木タップ時のプレビューシート */}
       <TreePreviewSheet
         profile={selected}
         onOpen={(p) => router.push(`/forest/${p.id}`)}
+        onPeekRoom={(p) => router.push(`/room/${p.id}`)}
         onClose={() => setSelectedId(null)}
       />
 ```
@@ -1019,6 +1103,7 @@ export default function ForestScene({
         recentDream={recentDream}
         loading={loading}
         onOpen={(p) => router.push(`/forest/${p.id}`)}
+        onPeekRoom={(p) => router.push(`/room/${p.id}`)}
         onClose={onCloseSheet}
       />
 ```
@@ -1029,7 +1114,7 @@ Run: `cd frontend && yarn tsc --noEmit 2>&1 | grep -i forestscene`
 Expected: 出力なし（`ForestScene.tsx`関連のエラーなし。他ファイルの既存の型エラーは無関係なので無視してよい — 別セッションで確認済みのbaselineノイズ）
 
 Run: `cd frontend && yarn jest __tests__/components/ForestScene.test.tsx`
-Expected: PASS（既存の9 tests、無変更のまま通る）
+Expected: PASS（既存の8 tests、無変更のまま通る）
 
 - [ ] **Step 8: コミット**
 
@@ -1048,10 +1133,12 @@ git commit -m "refactor: ForestSceneの選択状態を制御コンポーネン�
 - Test: `frontend/__tests__/app/forest/page.test.tsx`（新規）
 
 **Interfaces:**
-- Consumes: `useRecentDream`（Task 1）、`ForestScene`の新props（Task 5）、`TreeSidePanel`（Task 4）
+- Consumes: `useRecentDream`（Task 1）、`ForestScene`の新props（Task 5）、`TreeSidePanel`（Task 4。`onPeekRoom`プロップを含む）
 - Produces: なし（末端のページコンポーネント）
 
 `ForestScene`と`TreeSidePanel`はテストではモックし、「ページが選択状態を正しく保持し両コンポーネントに配線しているか」だけを検証する（`ForestScene`実体のレンダーはTask 5の理由と同じくCanvas/ResizeObserver依存が重いため避ける）。
+
+**注意（既存機能の保持）:** `TreeSidePanel`は`onPeekRoom: (profile: DreamProfile) => void`を必須propsとして要求する（Task 4）。ページ側で`openProfile`と同様のパターンで`openRoom`コールバック（`/room/[profileId]`へ遷移）を用意し、渡すこと。
 
 - [ ] **Step 1: 失敗するテストを書く**
 
@@ -1244,6 +1331,7 @@ export default function ForestPage() {
   }, null);
 
   const openProfile = useCallback((p: DreamProfile) => router.push(`/forest/${p.id}`), [router]);
+  const openRoom = useCallback((p: DreamProfile) => router.push(`/room/${p.id}`), [router]);
 
   if (authStatus === "checking") return <Loading />;
 
@@ -1276,6 +1364,7 @@ export default function ForestPage() {
               totalDreams={totalDreams}
               topProfile={topProfile}
               onOpen={openProfile}
+              onPeekRoom={openRoom}
               onClose={() => setSelectedProfileId(null)}
             />
           </div>
