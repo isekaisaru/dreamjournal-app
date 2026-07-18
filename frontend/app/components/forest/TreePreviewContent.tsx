@@ -8,6 +8,7 @@ interface TreePreviewContentProps {
   recentDream: Dream | null;
   loading: boolean;
   onOpen: (profile: DreamProfile) => void;
+  onPeekRoom: (profile: DreamProfile) => void;
 }
 
 function dreamTitle(dream: Dream): string | null {
@@ -28,6 +29,7 @@ export default function TreePreviewContent({
   recentDream,
   loading,
   onOpen,
+  onPeekRoom,
 }: TreePreviewContentProps) {
   const lvl = getGrowthLevel(profile.dreams_count ?? 0);
   const recentDreamTitle = recentDream ? dreamTitle(recentDream) : null;
@@ -86,6 +88,13 @@ export default function TreePreviewContent({
         className="w-full rounded-[13px] py-2.5 text-[14.5px] font-black text-white"
       >
         この きを 見る ›
+      </button>
+      <button
+        type="button"
+        onClick={() => onPeekRoom(profile)}
+        className="mt-2 w-full rounded-[13px] border border-white/15 bg-white/5 py-2 text-[13px] font-bold text-white/70 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        🖼️ へやを のぞく
       </button>
     </div>
   );

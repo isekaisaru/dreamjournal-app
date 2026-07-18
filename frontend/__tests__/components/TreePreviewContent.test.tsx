@@ -40,6 +40,7 @@ describe("TreePreviewContent", () => {
         recentDream={null}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
       />
     );
 
@@ -54,6 +55,7 @@ describe("TreePreviewContent", () => {
         recentDream={dream({ title: "空飛ぶ夢" })}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
       />
     );
 
@@ -68,6 +70,7 @@ describe("TreePreviewContent", () => {
         recentDream={null}
         loading={true}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
       />
     );
 
@@ -82,6 +85,7 @@ describe("TreePreviewContent", () => {
         recentDream={dream({ title: "ふしぎな森", emotions: "bad" as any })}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
       />
     );
 
@@ -96,6 +100,7 @@ describe("TreePreviewContent", () => {
         recentDream={dream({ title: null as any })}
         loading={false}
         onOpen={jest.fn()}
+        onPeekRoom={jest.fn()}
       />
     );
 
@@ -105,10 +110,36 @@ describe("TreePreviewContent", () => {
   it("CTAクリックでonOpenにprofileを渡して呼び出す", () => {
     const onOpen = jest.fn();
     const p = profile({ id: 7 });
-    render(<TreePreviewContent profile={p} recentDream={null} loading={false} onOpen={onOpen} />);
+    render(
+      <TreePreviewContent
+        profile={p}
+        recentDream={null}
+        loading={false}
+        onOpen={onOpen}
+        onPeekRoom={jest.fn()}
+      />
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /この きを 見る/ }));
 
     expect(onOpen).toHaveBeenCalledWith(p);
+  });
+
+  it("「へやを のぞく」クリックでonPeekRoomにprofileを渡して呼び出す", () => {
+    const onPeekRoom = jest.fn();
+    const p = profile({ id: 7 });
+    render(
+      <TreePreviewContent
+        profile={p}
+        recentDream={null}
+        loading={false}
+        onOpen={jest.fn()}
+        onPeekRoom={onPeekRoom}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /へやを のぞく/ }));
+
+    expect(onPeekRoom).toHaveBeenCalledWith(p);
   });
 });
