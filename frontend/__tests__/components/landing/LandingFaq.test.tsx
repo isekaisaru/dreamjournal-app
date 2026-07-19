@@ -17,15 +17,15 @@ describe("LandingFaq", () => {
 
   it("質問クリックでaria-expandedが切り替わり回答が表示される", () => {
     render(<LandingFaq />);
-    const question = screen.getByText("AI分析は医療診断ですか？");
-    const button = question.closest("button") as HTMLButtonElement;
+    const button = screen.getByText("AI分析は医療診断ですか？").closest("button") as HTMLButtonElement;
 
     expect(button).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText(/医療診断や心理診断ではありません/)).not.toBeInTheDocument();
 
     fireEvent.click(button);
 
-    expect(button).toHaveAttribute("aria-expanded", "true");
+    const updatedButton = screen.getByText("AI分析は医療診断ですか？").closest("button") as HTMLButtonElement;
+    expect(updatedButton).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText(/医療診断や心理診断ではありません/)).toBeInTheDocument();
   });
 });
