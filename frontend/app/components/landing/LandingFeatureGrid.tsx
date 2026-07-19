@@ -80,7 +80,7 @@ export default function LandingFeatureGrid() {
           whileInView="visible"
           viewport={{ once: true }}
           variants={reduceMotion ? undefined : fadeIn}
-          className="flex flex-col justify-center rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50 to-transparent p-6 text-center dark:border-violet-500/20 sm:text-left"
+          className="flex flex-col justify-center rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50 to-transparent p-6 text-center dark:border-violet-500/20 dark:from-violet-500/10 dark:to-transparent sm:text-left"
         >
           <div className="mb-1.5 flex items-center justify-center gap-1.5 text-xs font-bold text-primary sm:justify-start">
             <Lock size={13} /> 完全プライベート
