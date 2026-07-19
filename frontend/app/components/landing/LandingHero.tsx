@@ -26,7 +26,13 @@ export default function LandingHero() {
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative order-1 mb-2 h-44 w-44 shrink-0 rounded-[2rem] bg-white/10 p-3 ring-1 ring-white/10 backdrop-blur-sm lg:order-2 lg:h-64 lg:w-64"
         >
-          <MorpheusImage variant="landing" size={256} priority className="animate-morpheus-float" />
+          <MorpheusImage
+            variant="landing"
+            size={256}
+            cssSize="100%"
+            priority
+            className="animate-morpheus-float"
+          />
           <Sparkles className="absolute -right-3 -top-3 animate-pulse text-yellow-300/80" size={20} />
         </motion.div>
 
