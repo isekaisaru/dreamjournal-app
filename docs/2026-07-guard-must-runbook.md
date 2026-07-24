@@ -2,7 +2,7 @@
 
 > 対象: あなた（本番操作を行う人）。Claudeが伴走で作成。
 > 環境: バックエンド=Render / フロント=Vercel / DB=Render Postgres / 決済=Stripe。
-> 現在: **①と②は完了済み。次は③**。②の実施時は **NULL確認→ensure→backfill→0件確認→NOT NULL** の順を厳守した。完了済みの②は再実行しない。
+> 現在: **②は完了済み。次は①の再QA→③**。②の実施時は **NULL確認→ensure→backfill→0件確認→NOT NULL** の順を厳守した。完了済みの②は再実行しない。
 > 記号: ✅=チェック / 🟢=GO条件 / 🛑=STOP（満たさなければ次へ進まない）
 
 ---
@@ -12,13 +12,13 @@
 
 | 項目 | 状態 | 確認根拠 |
 |---|---|---|
-| ① Trial P3 | ✅ 完了済み | PR #392 マージ後に本番QA成功。スマホ幅Playwrightでも、trialユーザーのDB保存済み夢が本登録後も残ることを確認済み |
+| ① Trial P3 | ⬜ 未確認（手順を訂正済み・**要再QA**） | 修正PR #392 はマージ済み。ただし修正後に「`/home`でDB保存した夢が本登録後も残る」ことを実機で確認した記録がない。2026年7月22日のスマホ幅検証は`/trial`の「記録だけする」（DB保存されない導線）を使っており、P3の検証としては無効だった |
 | ② dream_profile_id安全化 | ✅ 完了済み | `backend/db/schema.rb` は `dream_profile_id, null: false`。2026年7月4日のNOT NULL migrationも反映済み |
 | ③ Stripe通しテスト | ⬜ 未確認 | Stripeダッシュボードと購入画面での操作が必要 |
 | README更新 | ✅ 完了済み | PR #444 マージ済み |
 | Search Console登録 | ⬜ 未確認 | ユーザー操作が必要 |
 
-> 現在の次の運用タスクは **③ Stripeのテストモード通し確認**。②は完了済みのため、migrationやバックフィルを再実行しない。
+> 現在の次の運用タスクは **① の再QA（下の訂正済み手順で実施）**、その後に **③ Stripeのテストモード通し確認**。②は完了済みのため、migrationやバックフィルを再実行しない。
 
 ---
 
@@ -30,7 +30,7 @@
 
 ---
 
-## ① 本番 Trial P3 実機確認（スマホ実機）— ✅ 完了済み・再確認手順
+## ① 本番 Trial P3 実機確認（スマホ実機）— ⬜ 要再QA（手順を訂正済み）
 
 > 目的: trialユーザーとして`/home`からDB保存した夢が、`convert_trial`による本登録後も消えないことを確認する（PR #392の着地確認）。
 >
@@ -103,7 +103,7 @@ bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: ni
 ## 完了後（KPI更新）
 
 7月OBLのKPI:
-- [x] Trial P3 本番QA完了（PR #392）
+- [ ] Trial P3 本番QA完了（修正PR #392 の着地確認。①の訂正済み手順で再QAする）
 - [x] `dream_profile_id` NULL 0件
 - [x] NOT NULL migration 完了
 - [ ] Stripeテストモード通し確認成功
@@ -111,4 +111,4 @@ bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: ni
 - [x] README更新（PR #444）
 - [ ] Search Console 登録（SEO土台は #393 で反映済み）
 
-> 次は③を上から1項目ずつ進める。詰まった場合は、Stripeのイベント名・HTTPステータス・発生時刻をそのまま共有する。
+> 次は①の再QAを訂正済み手順で行い、通ったら③を上から1項目ずつ進める。詰まった場合は、①なら再現手順・発生時刻・夢のタイトルを、③ならStripeのイベント名・HTTPステータス・発生時刻をそのまま共有する。
