@@ -2,112 +2,81 @@
 
 > 対象: あなた（本番操作を行う人）。Claudeが伴走で作成。
 > 環境: バックエンド=Render / フロント=Vercel / DB=Render Postgres / 決済=Stripe。
-> 原則: **①→②→③の順**。特に②は **NULL確認→ensure→backfill→0件確認→NOT NULL の順を絶対に崩さない**（0件になる前にNOT NULL化すると本番が壊れる）。
+> 現在: **②は完了済み。次は①の再QA→③**。②の実施時は **NULL確認→ensure→backfill→0件確認→NOT NULL** の順を厳守した。完了済みの②は再実行しない。
 > 記号: ✅=チェック / 🟢=GO条件 / 🛑=STOP（満たさなければ次へ進まない）
+
+---
+
+
+## 進捗（2026年7月25日）
+
+| 項目 | 状態 | 確認根拠 |
+|---|---|---|
+| ① Trial P3 | ⬜ 未確認（手順を訂正済み・**要再QA**） | 修正PR #392 はマージ済み。ただし修正後に「`/home`でDB保存した夢が本登録後も残る」ことを実機で確認した記録がない。2026年7月22日のスマホ幅検証は`/trial`の「記録だけする」（DB保存されない導線）を使っており、P3の検証としては無効だった |
+| ② dream_profile_id安全化 | ✅ 完了済み | `backend/db/schema.rb` は `dream_profile_id, null: false`。2026年7月4日のNOT NULL migrationも反映済み |
+| ③ Stripe通しテスト | ⬜ 未確認 | Stripeダッシュボードと購入画面での操作が必要 |
+| README更新 | ✅ 完了済み | PR #444 マージ済み |
+| Search Console登録 | ⬜ 未確認 | ユーザー操作が必要 |
+
+> 現在の次の運用タスクは **① の再QA（下の訂正済み手順で実施）**、その後に **③ Stripeのテストモード通し確認**。②は完了済みのため、migrationやバックフィルを再実行しない。
 
 ---
 
 ## 鉄則
 
-1. **②のNOT NULL migration は「残NULL 0件」を自分の目で確認してから**しか実行しない。
-2. **「不安なら再実行してよい」のは ②の `ensure_self_profiles` / `backfill_dream_profile_id` の2タスクだけ**（この2つは冪等・何度実行しても安全）。それ以外は再実行前提にしない:
-   - ⚠️ **NOT NULL migration（2-5）は再実行しない**。既に `null: false` 済みなら不要。雛形の安全弁で二重適用時も安全に止まる。
-   - ⚠️ **③ Stripe の購入(checkout)は再実行＝実際の課金が二重発生しうる**。通し確認は**テストモード**で行い（後述）、本番課金は最小限に。「不安だからもう一回」は絶対にしない。
+1. **②は完了済み。2-2〜2-5の操作系コマンドは再実行しない。** 状態を確かめる場合は、2-1の読み取り専用コマンドだけを使う。
+2. 履歴上、再実行可能だったのは `ensure_self_profiles` / `backfill_dream_profile_id` の2タスクだけ。NOT NULL migrationは再実行しない。
+3. **③ Stripe の購入(checkout)は、再実行すると実際の課金が二重発生しうる。** 通し確認はまず**テストモード**で行い、本番課金は必要な場合のみ1回に限定する。「不安だからもう一回」は絶対にしない。
 
 ---
 
-## ① 本番 Trial P3 実機確認（スマホ実機）
+## ① 本番 Trial P3 実機確認（スマホ実機）— ⬜ 要再QA（手順を訂正済み）
 
-> 目的: お試し→夢作成→本登録で**夢が消えないこと**を本番で自分の目で確認（PR #392の着地確認）。
+> 目的: trialユーザーとして`/home`からDB保存した夢が、`convert_trial`による本登録後も消えないことを確認する（PR #392の着地確認）。
+>
+> ⚠️ `/trial`画面の「記録だけする」とAIプレビューの夢はReactの画面内stateだけで、DBには保存されない。**引き継ぎ確認用の夢は必ず`/home`から記録する。**
 
 手順（本番URL: https://dreamjournal-app.vercel.app をスマホのブラウザで）:
 
 - [ ] **ログアウト状態**で開く（別ユーザーが残っていれば一度ログアウト）
-- [ ] トップの「**まず試す**」→ お試し(trial)ユーザーで開始
-- [ ] お試しのまま**夢を1つ記録**（テキストでOK）。タイトルをメモ（例「テストP3-<日付>」）
-- [ ] 画面に **TrialBanner（残回数バナー）** が出ていることを確認
-- [ ] そのまま「**本登録/つづきから**」で**本登録**（メール＋パスワード）
-- [ ] 本登録後、ホームで **さっき記録した夢が残っている**ことを確認 🟢
+- [ ] トップの「**今朝の夢を入れてみる**」から `/trial` を開く
+- [ ] 夢の内容を入力し「**AIにきいてみる**」を1回押す
+  - この操作で未認証の場合に`POST /auth/trial_login`が実行され、trialユーザーとしてログインする
+  - ここで表示される夢はプレビュー用であり、引き継ぎ確認の対象にはしない
+- [ ] AI分析が表示されたら、ブラウザで `https://dreamjournal-app.vercel.app/home` を開く
+- [ ] `/home`に **TrialBanner（「お試し中」・残回数・本登録CTA）** が出ていることを確認
+- [ ] `/home`の「**夢を記録する**」から`/dream/new`へ進み、引き継ぎ確認用の夢を1つ保存する
+  - タイトルをメモ（例「テストP3-<日付>」）
+- [ ] `/home`に戻り、保存した夢が一覧にあることを**本登録前に確認**
+- [ ] TrialBannerの「**とうろくして ぜんぶ つかう**」から`/register`へ進み、メール＋パスワードで本登録
+- [ ] 本登録後の`/home`で、さきほどDB保存した夢が残っていることを確認 🟢
 - [ ] **TrialBannerが消えている**ことを確認 🟢
 - [ ] （軽い回帰）ホーム→もり→マイ夢→設定 が開けること
 
-🛑 もし夢が消える／TrialBannerが残るなら、**②③に進まず**その場をメモ（再現手順・時刻）してClaudeに共有。
+🛑 夢が消える／TrialBannerが残る場合は、**③に進まず**再現手順・発生時刻・夢のタイトルを記録して共有する。
 
 ---
 
-## ② データ安全化（dream_profile_id）— 順序厳守
+## ② データ安全化（dream_profile_id）— ✅ 完了済み・再実行禁止
 
-> 背景: `dreams.dream_profile_id` は現在 **nullable**（`schema.rb` で `null: false` 無し）。全夢をselfプロフィールへ割り当ててから NOT NULL 化して Phase 5 を名実ともに完成させる。
-> 実行場所: **Render → 該当バックエンドサービス → Shell**（`bundle exec` が使える環境）。
+> 2026年7月25日の`main`確認では、`backend/db/schema.rb`の`dreams.dream_profile_id`に`null: false`が付いている。2026年7月4日のNOT NULL migrationは`RUN_MIGRATIONS=true`の本番デプロイで適用済み。
+>
+> migrationには「残NULLがあれば例外で停止する」安全弁があるため、適用済みであることはNOT NULL化の前提を通過したことも示す。**新しいmigrationの作成、backfill、`db:migrate`の手動再実行は行わない。**
 
-### 2-1. 実行前のNULL件数を確認（現状把握）
+### 2-1. 必要な場合だけ読み取り確認
 
-Rails console:
+Render Shellで、DBを変更しない次のコマンドだけを使う:
+
 ```bash
 bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: nil).count} / total = #{Dream.count}"'
 ```
-または SQL（Render DBのPSQL）:
-```sql
-SELECT COUNT(*) AS null_dreams FROM dreams WHERE dream_profile_id IS NULL;
-```
-- [ ] NULL件数を記録: __________ 件
 
-### 2-2. 全ユーザーに self プロフィールを用意（冪等）
+- [x] `schema.rb`: `t.bigint "dream_profile_id", null: false`
+- [x] NOT NULL migration反映済み
+- [x] Phase 5 完成
+- [ ] 任意の再確認をする場合、出力が`NULL dreams = 0`であること
 
-```bash
-bundle exec rake dream_profiles:ensure_self_profiles
-```
-- 期待出力: `完了: 対象 N ユーザー | 作成 X 件 | スキップ Y 件`
-- [ ] エラーなく完了
-
-### 2-3. NULLの夢を self プロフィールへ割り当て（冪等・バッチ）
-
-```bash
-bundle exec rake dream_profiles:backfill_dream_profile_id
-```
-- 期待出力: `完了: 割当 X 件 | selfなしスキップ Y ユーザー | 残NULL Z 件`
-- [ ] 出力の **`残NULL Z 件`** を記録: __________
-- 🛑 `selfなしスキップ` が 0 でない場合 → 2-2(ensure) を再実行してから 2-3 をやり直す
-
-### 2-4. 残NULL 0件を確認（NOT NULL化のゲート）
-
-```bash
-bundle exec rails runner 'puts Dream.where(dream_profile_id: nil).count'
-```
-- [ ] 出力が **`0`** 🟢
-- 🛑 **0でなければ絶対に 2-5 に進まない**。2-2→2-3 を繰り返す。原因不明ならClaudeへ。
-
-### 2-5. NOT NULL migration（**残NULL 0件確認後のみ**）
-
-新規migrationを作成（ローカル/リポジトリで）:
-```bash
-cd backend
-bundle exec rails g migration MakeDreamProfileIdNotNullOnDreams
-```
-生成ファイルの中身を以下に:
-```ruby
-class MakeDreamProfileIdNotNullOnDreams < ActiveRecord::Migration[7.2]
-  def up
-    # 念のため安全弁: 残NULLがあれば止める（0件のはず）
-    remaining = execute("SELECT COUNT(*) FROM dreams WHERE dream_profile_id IS NULL").first["count"].to_i
-    raise "dream_profile_id に NULL が #{remaining} 件残っています。backfillを先に完了してください。" if remaining.positive?
-
-    change_column_null :dreams, :dream_profile_id, false
-  end
-
-  def down
-    change_column_null :dreams, :dream_profile_id, true
-  end
-end
-```
-> ⚠️ Rails版は `ActiveRecord::Migration[X.Y]` を既存migrationに合わせる（`backend/db/migrate/` の他ファイルの版数を踏襲）。
-
-- [ ] migrationをコミット→PR→マージ→**本番デプロイ**
-- [ ] 本番で `bundle exec rails db:migrate`（Renderのデプロイで自動 or Shellで手動）
-- [ ] `schema.rb` の `dreams.dream_profile_id` に `null: false` が付いたこと 🟢
-- [ ] アプリが正常（夢作成・一覧・森が動く）
-
-🟢 ここまでで **Phase 5 が名実ともに完成**。
+🛑 読み取り確認で0以外が出た場合は異常。操作系コマンドで直そうとせず、出力と時刻を記録して原因を切り分ける。
 
 ---
 
@@ -133,12 +102,13 @@ end
 
 ## 完了後（KPI更新）
 
-7月OBLのKPIにチェック:
-- [ ] Trial P3 本番QA完了
-- [ ] `dream_profile_id` NULL 0件
-- [ ] NOT NULL migration 完了
-- [ ] Stripe本番フロー 1回成功
-- [ ] README更新（運用・改善・課金・ユーザーテストを明記）
+7月OBLのKPI:
+- [ ] Trial P3 本番QA完了（修正PR #392 の着地確認。①の訂正済み手順で再QAする）
+- [x] `dream_profile_id` NULL 0件
+- [x] NOT NULL migration 完了
+- [ ] Stripeテストモード通し確認成功
+- [ ] 必要な場合のみ、Stripe本番フローを1回成功
+- [x] README更新（PR #444）
 - [ ] Search Console 登録（SEO土台は #393 で反映済み）
 
-> 進めながら詰まったら、出力・エラー文をそのまま貼ってください。順序判断とデバッグを伴走します。
+> 次は①の再QAを訂正済み手順で行い、通ったら③を上から1項目ずつ進める。詰まった場合は、①なら再現手順・発生時刻・夢のタイトルを、③ならStripeのイベント名・HTTPステータス・発生時刻をそのまま共有する。
