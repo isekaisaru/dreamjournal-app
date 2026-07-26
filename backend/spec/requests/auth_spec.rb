@@ -368,6 +368,74 @@ RSpec.describe 'Authentication API', type: :request do
       expect(trial_user.reload.trial_user?).to be true
     end
 
+    # 422のときに機械可読な field/code を返す契約。
+    # 通常登録（POST /auth/register）と同じ形にそろえてあるので、
+    # フロントは同じ変換処理で文言を出し分けられる。
+    context '失敗理由（error_codes）' do
+      it 'メールアドレス重複で email/taken を返す' do
+        create(:user, email: 'taken@example.com', username: 'someoneelse')
+        params = convert_params.deep_merge(user: { email: 'taken@example.com' })
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'email', 'code' => 'taken' }
+        )
+      end
+
+      it 'ユーザー名重複で username/taken を返す' do
+        create(:user, email: 'other@example.com', username: 'takenname')
+        params = convert_params.deep_merge(user: { username: 'takenname' })
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'username', 'code' => 'taken' }
+        )
+      end
+
+      it 'メールとユーザー名が両方重複していれば両方返す' do
+        create(:user, email: 'taken@example.com', username: 'takenname')
+        params = convert_params.deep_merge(
+          user: { email: 'taken@example.com', username: 'takenname' }
+        )
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'email', 'code' => 'taken' },
+          { 'field' => 'username', 'code' => 'taken' }
+        )
+      end
+
+      it 'パスワードに英数字が足りなければ password/invalid を返す' do
+        params = convert_params.deep_merge(
+          user: { password: 'abcdefgh', password_confirmation: 'abcdefgh' }
+        )
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'password', 'code' => 'invalid' }
+        )
+      end
+
+      it '失敗しても trial のままで、error_codes に入力値やパスワードを含めない' do
+        create(:user, email: 'taken@example.com', username: 'someoneelse')
+        params = convert_params.deep_merge(user: { email: 'taken@example.com' })
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(trial_user.reload.trial_user?).to be true
+        expect(response.body).not_to include('newpass123')
+        expect(response.body).not_to include('taken@example.com')
+        json_response['error_codes'].each do |entry|
+          expect(entry.keys).to match_array(%w[field code])
+        end
+      end
+    end
+
     it 'パスワードが弱い（英字のみ）場合は422' do
       params = convert_params.deep_merge(
         user: { password: 'abcdefgh', password_confirmation: 'abcdefgh' }

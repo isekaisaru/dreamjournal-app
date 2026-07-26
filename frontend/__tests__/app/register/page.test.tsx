@@ -171,3 +171,121 @@ describe("RegisterPage トライアル昇格の分岐", () => {
     expect(mockedConvertTrial).not.toHaveBeenCalled();
   });
 });
+
+// 422の理由をユーザーに伝える。
+// バックエンドは error_codes: [{ field, code }] を返し、フロントはそれだけを見て
+// 文言を決める（英語メッセージを解析しない）。変換の網羅的なケースは
+// __tests__/lib/registrationErrors.test.ts が担当し、ここでは
+// 「画面に実際に出るか」「通常登録とTrial昇格で同じ契約か」を確認する。
+describe("RegisterPage 失敗理由の表示", () => {
+  const trialAuth = () =>
+    makeAuth({
+      authStatus: "authenticated",
+      isLoggedIn: true,
+      user: { id: "9", trial_user: true } as AuthValue["user"],
+    });
+
+  const guestAuth = () => makeAuth({});
+
+  /** apiClient が投げる ApiError 相当（status と data を持つ） */
+  const apiError = (status: number, data?: unknown) =>
+    Object.assign(new Error("api failed"), { status, data });
+
+  const takenCodes = (...fields: string[]) => ({
+    error_codes: fields.map((field) => ({ field, code: "taken" })),
+  });
+
+  it("Trial昇格でメールアドレス重複(422)なら専用メッセージを表示する", async () => {
+    mockedUseAuth.mockReturnValue(trialAuth());
+    mockedConvertTrial.mockRejectedValue(apiError(422, takenCodes("email")));
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    expect(await screen.findByText(/メールアドレスは もう つかわれている/)).toBeInTheDocument();
+  });
+
+  it("Trial昇格でニックネーム重複(422)なら専用メッセージを表示する", async () => {
+    mockedUseAuth.mockReturnValue(trialAuth());
+    mockedConvertTrial.mockRejectedValue(apiError(422, takenCodes("username")));
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    expect(await screen.findByText(/ニックネームは もう つかわれている/)).toBeInTheDocument();
+  });
+
+  it("メールとニックネームが両方重複していれば両方の理由を表示する", async () => {
+    mockedUseAuth.mockReturnValue(trialAuth());
+    mockedConvertTrial.mockRejectedValue(
+      apiError(422, takenCodes("email", "username"))
+    );
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    const message = await screen.findByText(/メールアドレスは もう つかわれている/);
+    expect(message).toHaveTextContent(/ニックネームは もう つかわれている/);
+  });
+
+  it("通常登録でも同じエラー契約で専用メッセージを表示する", async () => {
+    mockedUseAuth.mockReturnValue(guestAuth());
+    mockedClientRegister.mockRejectedValue(apiError(422, takenCodes("email")));
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    expect(await screen.findByText(/メールアドレスは もう つかわれている/)).toBeInTheDocument();
+  });
+
+  it("500では内部情報を出さず汎用メッセージにする", async () => {
+    mockedUseAuth.mockReturnValue(guestAuth());
+    mockedClientRegister.mockRejectedValue(
+      apiError(500, { error: "Internal Server Error" })
+    );
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    const message = await screen.findByText(/うまく はじめられなかったよ/);
+    expect(message).not.toHaveTextContent("Internal Server Error");
+  });
+
+  it("通信失敗（statusなし）でも汎用メッセージにする", async () => {
+    mockedUseAuth.mockReturnValue(guestAuth());
+    mockedClientRegister.mockRejectedValue(new Error("Network request failed"));
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    expect(await screen.findByText(/うまく はじめられなかったよ/)).toBeInTheDocument();
+  });
+
+  it("422のあともローディングが解除され、直して再送信できる", async () => {
+    mockedUseAuth.mockReturnValue(guestAuth());
+    mockedClientRegister.mockRejectedValueOnce(apiError(422, takenCodes("email")));
+
+    render(<RegisterPage />);
+    fillAndSubmit();
+
+    await screen.findByText(/メールアドレスは もう つかわれている/);
+
+    // 二重送信防止のためのローディングが解除され、ボタンが再び押せる状態に戻る
+    const submitButton = screen.getByRole("button", { name: /はじめる/ });
+    expect(submitButton).not.toBeDisabled();
+
+    // メールアドレスを直して再送信すると、今度は成功して login が呼ばれる
+    mockedClientRegister.mockResolvedValueOnce({ user: { id: "1" } } as Awaited<
+      ReturnType<typeof clientRegister>
+    >);
+    fireEvent.change(document.getElementById("register-email") as HTMLInputElement, {
+      target: { value: "another@example.com" },
+    });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => expect(mockedClientRegister).toHaveBeenCalledTimes(2));
+    expect(mockedClientRegister).toHaveBeenLastCalledWith(
+      expect.objectContaining({ email: "another@example.com" })
+    );
+  });
+});
