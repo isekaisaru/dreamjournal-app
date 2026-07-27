@@ -20,6 +20,14 @@ RSpec.describe 'Webhooks API', type: :request do
   let(:sig_header) { 't=12345,v1=fakesignature' }
   let(:customer_email) { 'webhook-user@example.com' }
 
+  around do |example|
+    original_mode = Rails.configuration.stripe[:mode]
+    Rails.configuration.stripe[:mode] = nil
+    example.run
+  ensure
+    Rails.configuration.stripe[:mode] = original_mode
+  end
+
   # 有効なStripeイベントのdouble（成功系テスト用）
   # Stripe::StripeObjectはmethod_missingでattributeにアクセスするため
   # instance_doubleではなくdoubleを使用
@@ -107,6 +115,60 @@ RSpec.describe 'Webhooks API', type: :request do
             }
 
           expect(response).to have_http_status(:bad_request)
+        end
+      end
+
+      context 'Stripe mode検証' do
+        let(:mode_event_data) do
+          double('StripeEventData', object: session_double)
+        end
+
+        before do
+          Rails.configuration.stripe[:mode] = 'test'
+        end
+
+        it 'test modeのEventを受理する' do
+          event = double(
+            'StripeEvent',
+            id: 'evt_mode_test',
+            type: 'payment_intent.created',
+            livemode: false,
+            data: mode_event_data
+          )
+          allow(Stripe::Webhook).to receive(:construct_event).and_return(event)
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:ok)
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_mode_test').count).to eq(1)
+        end
+
+        it 'live modeのEventを処理前に拒否する' do
+          event = double(
+            'StripeEvent',
+            id: 'evt_mode_live',
+            type: 'payment_intent.created',
+            livemode: true,
+            data: mode_event_data
+          )
+          allow(Stripe::Webhook).to receive(:construct_event).and_return(event)
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:internal_server_error)
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_mode_live')).to be_empty
         end
       end
 
@@ -947,10 +1009,15 @@ RSpec.describe 'Webhooks API', type: :request do
       end
 
       context '実際に署名したraw bodyの場合' do
+        before do
+          Rails.configuration.stripe[:mode] = 'test'
+        end
+
         let(:signed_payload) do
           {
             id: 'evt_real_signature',
             object: 'event',
+            livemode: false,
             type: 'payment_intent.created',
             data: {
               object: {

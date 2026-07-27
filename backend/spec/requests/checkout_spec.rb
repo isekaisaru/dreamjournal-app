@@ -5,6 +5,14 @@ RSpec.describe 'Checkout API', type: :request do
   let(:premium_price_id) { 'price_premium_test' }
   let(:checkout_url) { 'https://checkout.stripe.com/c/pay/cs_test_123' }
 
+  around do |example|
+    original_mode = Rails.configuration.stripe[:mode]
+    Rails.configuration.stripe[:mode] = 'test'
+    example.run
+  ensure
+    Rails.configuration.stripe[:mode] = original_mode
+  end
+
   before do
     stub_const(
       'ENV',
@@ -13,6 +21,8 @@ RSpec.describe 'Checkout API', type: :request do
         'STRIPE_PREMIUM_PRICE_ID' => premium_price_id
       )
     )
+    allow(Stripe::Price).to receive(:retrieve)
+      .and_return(double('StripePrice', livemode: false))
   end
 
   describe 'POST /checkout' do
@@ -137,13 +147,29 @@ RSpec.describe 'Checkout API', type: :request do
         )
         user = create(:user, stripe_customer_id: 'cus_existing_123')
 
-        expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        expect(Stripe::Customer).not_to receive(:retrieve)
         expect(Stripe::Checkout::Session).not_to receive(:create)
 
         authenticated_post('/checkout', user, params: { plan: 'premium' })
 
         expect(response).to have_http_status(:internal_server_error)
         expect(JSON.parse(response.body)['error']).to include('プレミアム決済')
+      end
+
+      it 'Priceがlive modeならCustomerやCheckout Sessionを作成しない' do
+        user = create(:user, stripe_customer_id: nil)
+        allow(Stripe::Price).to receive(:retrieve)
+          .with(premium_price_id)
+          .and_return(double('StripePrice', livemode: true))
+
+        expect(Stripe::Customer).not_to receive(:create)
+        expect(Stripe::Checkout::Session).not_to receive(:create)
+
+        authenticated_post('/checkout', user, params: { plan: 'premium' })
+
+        expect(response).to have_http_status(:internal_server_error)
+        expect(JSON.parse(response.body)['error']).to include('設定が一致していません')
+        expect(user.reload.stripe_customer_id).to be_nil
       end
     end
 
@@ -191,7 +217,7 @@ RSpec.describe 'Checkout API', type: :request do
         ))
         user = create(:user, stripe_customer_id: 'cus_existing_123')
 
-        expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        expect(Stripe::Customer).not_to receive(:retrieve)
         expect(Stripe::Checkout::Session).not_to receive(:create)
 
         authenticated_post('/checkout', user, params: { plan: 'premium' })
