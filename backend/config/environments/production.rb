@@ -85,8 +85,18 @@ Rails.application.configure do
     authentication: :plain,
     tls: true
   }
-  # 送信失敗でリクエストを落とさない（配信基盤未設定の間も安全に動かすため）
-  config.action_mailer.raise_delivery_errors = false
+  # 送信失敗を検知できるようにする。
+  #
+  # false のままだと、Rails は送信に失敗しても例外を出さず、ログには
+  # 「Delivered mail ...」とだけ残る。そのため「送ったつもりで1通も届いていない」
+  # 状態に誰も気づけない（2026-07-27 のパスワードリセット調査でこれが起きた）。
+  #
+  # true にしてもユーザーのリクエストは落ちない。メール送信は
+  #   - password_resets_controller#create
+  #   - application_controller#send_verification_email
+  # の2箇所だけで、どちらも deliver_later（非同期ジョブ）だから。
+  # 失敗はジョブのエラーとしてログと Sentry に残り、HTTPレスポンスには影響しない。
+  config.action_mailer.raise_delivery_errors = true
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).
