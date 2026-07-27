@@ -216,3 +216,44 @@ describe("HomePage: WeeklyDreamNewsWidgetへのデータ受け渡し", () => {
     expect(listButton).toHaveAttribute("aria-pressed", "true");
   });
 });
+
+// 7月「守りのMust」ランブック ① Trial P3 の回帰テスト（画面側）。
+// 参照: docs/2026-07-guard-must-runbook.md
+//
+// ホームは user.trial_user だけを見て TrialBanner の出し分けをしている。
+// 昇格API（convert_trial）が trial_user: false を返すと、その値が
+// AuthContext 経由でここに流れ、バナーが消える。
+// バックエンド側の「昇格後に trial_user: false を返す」保証は
+// backend/spec/requests/trial_conversion_flow_spec.rb が担当する。
+describe("HomePage: TrialBannerの出し分け（Trial P3）", () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+    mockGet.mockResolvedValue([]);
+  });
+
+  it("trialユーザーにはTrialBannerを表示する", async () => {
+    mockUseAuth.mockReturnValue({
+      authStatus: "authenticated",
+      user: { id: "1", username: "おためしユーザー", trial_user: true },
+    });
+
+    render(<HomePage />);
+
+    expect(await screen.findByText("TrialBanner")).toBeInTheDocument();
+  });
+
+  it("本登録へ昇格して trial_user が false になるとTrialBannerが消える", async () => {
+    mockUseAuth.mockReturnValue({
+      authStatus: "authenticated",
+      user: { id: "1", username: "ほんとうろくユーザー", trial_user: false },
+    });
+
+    render(<HomePage />);
+
+    // 画面が描画され切ってからバナーの不在を確認する
+    // （まだ読み込み中の状態を「消えている」と誤判定しないため）
+    // MorpheusHero はバナーと同じ領域にあり、ここが出ていれば描画は済んでいる
+    expect(await screen.findByText("MorpheusHero")).toBeInTheDocument();
+    expect(screen.queryByText("TrialBanner")).not.toBeInTheDocument();
+  });
+});
