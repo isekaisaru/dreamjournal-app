@@ -71,6 +71,11 @@ Rails.application.configure do
   # config.active_job.queue_adapter = :resque
   # config.active_job.queue_name_prefix = "app_production"
 
+  # deliver_later はメール本文だけでなく、パスワード再設定・メール認証用の
+  # トークンもジョブ引数として直列化する。引数を INFO ログへ出すと、
+  # ActionMailer の本文ログを抑止してもトークンが漏れるため、本番では出力しない。
+  config.active_job.log_arguments = false
+
   config.action_mailer.perform_caching = false
 
   # メール配信（SMTP・Resend等を想定）。
