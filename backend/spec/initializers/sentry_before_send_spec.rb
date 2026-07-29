@@ -12,17 +12,6 @@ RSpec.describe 'Sentry before_send によるジョブ引数のマスク' do
   # 本物のトークンは使わない。混入検知用の合成マーカー。
   SYNTHETIC_MARKER = 'SYNTHETIC_PASSWORD_RESET_TOKEN_DO_NOT_LEAK'.freeze
 
-  # test は enabled_environments に含まれないため、そのままだと
-  # event_from_exception が nil を返す。イベントを作れるよう一時的に許可し、
-  # 必ず元へ戻す（他のテストへ影響させない）。
-  around do |example|
-    original_environments = Sentry.configuration.enabled_environments
-    Sentry.configuration.enabled_environments = original_environments + ['test']
-    example.run
-  ensure
-    Sentry.configuration.enabled_environments = original_environments
-  end
-
   # 実際に登録されている before_send（初期化子で設定されたもの）
   let(:before_send) { Sentry.configuration.before_send }
 
@@ -52,8 +41,14 @@ RSpec.describe 'Sentry before_send によるジョブ引数のマスク' do
     }
   end
 
+  # イベントは Sentry::ErrorEvent を直接組み立てる。
+  # client.event_from_exception は SENTRY_DSN が無い環境（CIなど）だと
+  # sending_allowed? が false になり nil を返すため、ここでは使わない。
+  # 実際のイベントクラスと add_exception_interface を使うので、
+  # 例外情報もシリアライズ結果も本番と同じ形になる。
   def build_event(extra:)
-    event = Sentry.get_current_client.event_from_exception(delivery_error)
+    event = Sentry::ErrorEvent.new(configuration: Sentry.configuration)
+    event.add_exception_interface(delivery_error, mechanism: Sentry::Mechanism.new)
     event.extra = extra
     event.tags = { job_id: 'job-id-for-spec' }
     event
@@ -94,7 +89,9 @@ RSpec.describe 'Sentry before_send によるジョブ引数のマスク' do
       expect(filtered.extra).to include(:scheduled_at, :provider_job_id, :locale)
     end
 
-    it 'イベント自体は必ず返る（nilを返すと送信が消える）' do
+    it '正常時は ErrorEvent を返す（通知は届く）' do
+      # sentry-ruby は before_send が ErrorEvent 以外を返すとイベントを捨てる
+      # （sentry-ruby 6.6.2 client.rb:243-251）。正常時は捨てさせない。
       expect(filtered).to be_a(Sentry::ErrorEvent)
     end
   end
@@ -143,6 +140,27 @@ RSpec.describe 'Sentry before_send によるジョブ引数のマスク' do
     it 'extra が Hash でなくても例外を出さない' do
       event = build_event(extra: nil)
       allow(event).to receive(:extra).and_return('unexpected string')
+
+      expect { before_send.call(event, {}) }.not_to raise_error
+    end
+
+    # 安全側の設計（fail-closed）の確認。
+    # マスク処理が想定外の例外で失敗したときに、マスク前のイベントを返すと
+    # 生トークンをそのまま送ってしまう。そこで nil を返して送信ごと捨てる。
+    # sentry-ruby は ErrorEvent 以外が返るとイベントを破棄する
+    # （sentry-ruby 6.6.2 client.rb:243-251）。
+    it 'マスクに失敗したときはイベントを送らせない（nilを返す）' do
+      event = build_event(extra: active_job_extra)
+      allow(event).to receive(:extra=).and_raise(RuntimeError, 'マスク中の想定外エラー')
+
+      result = before_send.call(event, {})
+
+      expect(result).to be_nil
+    end
+
+    it 'マスクに失敗しても例外を外へ出さない（Sentry送信処理を壊さない）' do
+      event = build_event(extra: active_job_extra)
+      allow(event).to receive(:extra=).and_raise(RuntimeError, 'マスク中の想定外エラー')
 
       expect { before_send.call(event, {}) }.not_to raise_error
     end
