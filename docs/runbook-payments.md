@@ -55,6 +55,7 @@
 1. `STRIPE_WEBHOOK_SECRET` が一致しているか確認。
 2. ログで `webhook.payment.unmatched_user` を確認。
 3. `processed_webhook_events` に該当 `stripe_event_id` が存在するか確認。
+4. user または Subscription を解決できない間は 5xx を返し、処理済み行を作らない。対応データを復旧した後、Stripe の再送が 200 になることを確認。
 
 ## KPI / ログの見方
 
@@ -71,6 +72,14 @@
 6. `webhook.payment.saved`
 7. `webhook.payment.unmatched_user`
 8. `webhook.event.duplicate`
+9. `webhook.error.processing`
+
+## Webhook 再送と処理確定
+
+1. 業務更新と `processed_webhook_events` の作成は同一DBトランザクションで確定する。
+2. `processed_webhook_events` に行がなければ、受信済みでも処理完了とは限らない。
+3. 5xx のイベントはStripeからの再送対象。UserやSubscriptionの照合状態を直した後、再送成功とDB状態を確認する。
+4. 同じ `stripe_event_id` の200再送は正常な重複排除であり、業務更新は再実行されない。
 
 ## 手動検証コマンド（開発環境）
 

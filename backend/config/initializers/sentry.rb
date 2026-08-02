@@ -21,8 +21,17 @@ Sentry.init do |config|
   config.enabled_environments = %w[production development]
 
   # 送信前にイベントを加工・フィルタリングする場合
-  config.before_send = lambda do |event, hint|
-    # パスワードなどセンシティブな情報をフィルタリング
-    event
+  # 送信前にイベントからセンシティブな情報を落とす。
+  #
+  # sentry-rails の ActiveJob 連携は、ジョブ例外時に extra へ
+  # ジョブ引数（arguments）を丸ごと入れて送る。
+  # ActionMailer::MailDeliveryJob の引数にはパスワード再設定・
+  # メールアドレス確認の生トークンが含まれるため、ここでマスクする。
+  # production.rb の active_job.log_arguments = false は Rails のログにしか
+  # 効かず、この経路は塞げない。詳細は lib/sentry_job_arguments_filter.rb 参照。
+  #
+  # 定数は呼び出し時に解決されるので、初期化順序の影響を受けない。
+  config.before_send = lambda do |event, _hint|
+    SentryJobArgumentsFilter.call(event)
   end
 end

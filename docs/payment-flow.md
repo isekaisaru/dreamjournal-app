@@ -20,9 +20,9 @@
 ## 2. User Resolution Rule (user不明時の扱い)
 
 - 仕様: `checkout.session.completed` 受信時に user を特定できない場合、`payments` は保存しない。
-- Webhook 応答: 200 OK を返す（Stripe 再送ループを避ける）。
+- Webhook 応答: 500 Internal Server Error を返し、処理済み行を作らずStripeの再送で復旧可能にする。
 - 記録: warning ログを残す。
-- 備考: 将来の調査性向上が必要な場合は別テーブル（例: `unmatched_payments`）を追加する。
+- 備考: user解決後の同一イベント再送で、業務更新と処理済み行を同一トランザクションに確定する。
 
 ## 3. Payment Status Definition
 
@@ -51,6 +51,8 @@
 
 - `processed_webhook_events.stripe_event_id` の一意制約で同一イベント再処理を防ぐ。
 - `payments.stripe_session_id` の一意制約で二重作成を防ぐ。
+- 同じ `stripe_event_id` はDBトランザクション単位のアドバイザリロックで直列化する。
+- 業務更新が成功した最後にだけ `processed_webhook_events` を作成し、例外時は同じトランザクションで全更新をロールバックする。
 
 ## 6. Error Handling
 

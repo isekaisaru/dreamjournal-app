@@ -1,4 +1,5 @@
 require 'rails_helper'
+require 'openssl'
 
 RSpec.describe 'Webhooks API', type: :request do
   let(:webhook_secret) { 'whsec_test_secret' }
@@ -59,6 +60,12 @@ RSpec.describe 'Webhooks API', type: :request do
     double('StripeEvent', id: 'evt_test_other', type: 'payment_intent.created', data: event_data_double)
   end
 
+  def stripe_signature(payload, secret)
+    timestamp = Time.current.to_i
+    signature = OpenSSL::HMAC.hexdigest('SHA256', secret, "#{timestamp}.#{payload}")
+    "t=#{timestamp},v1=#{signature}"
+  end
+
   describe 'POST /webhooks/stripe' do
     context 'STRIPE_WEBHOOK_SECRET が未設定の場合' do
       it '500 Internal Server Error を返す' do
@@ -75,6 +82,15 @@ RSpec.describe 'Webhooks API', type: :request do
     context 'STRIPE_WEBHOOK_SECRET が設定されている場合' do
       before do
         stub_const('ENV', ENV.to_hash.merge('STRIPE_WEBHOOK_SECRET' => webhook_secret))
+        allow(Stripe::Subscription).to receive(:retrieve) do |subscription_id|
+          double(
+            'LatestStripeSubscription',
+            id: subscription_id,
+            customer: 'cus_test_123',
+            status: 'active',
+            current_period_end: nil
+          )
+        end
       end
 
       context '署名が不正な場合' do
@@ -113,6 +129,7 @@ RSpec.describe 'Webhooks API', type: :request do
 
       context '有効な署名 + checkout.session.completed の場合' do
         it '200 OK を返す' do
+          create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
           allow(Stripe::Webhook).to receive(:construct_event)
             .and_return(stripe_event_completed)
 
@@ -203,6 +220,7 @@ RSpec.describe 'Webhooks API', type: :request do
 
       context '同じ event.id を2回受信した場合' do
         it '2回目は処理をスキップしつつ 200 OK を返し、記録は1件のまま' do
+          create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
           allow(Stripe::Webhook).to receive(:construct_event)
             .and_return(stripe_event_completed)
 
@@ -225,8 +243,10 @@ RSpec.describe 'Webhooks API', type: :request do
               }
             expect(response).to have_http_status(:ok)
           end.to change(ProcessedWebhookEvent, :count).by(1)
+            .and change(Payment, :count).by(1)
 
           expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_test_duplicate').count).to eq(1)
+          expect(Payment.where(stripe_checkout_session_id: 'cs_test_xxx').count).to eq(1)
         end
       end
 
@@ -459,9 +479,23 @@ RSpec.describe 'Webhooks API', type: :request do
       end
 
       context 'ユーザーが見つからない場合' do
-        it 'Paymentを作成せず 200 OK を返す' do
+        it '処理完了にせず、同じイベントの再送時に復旧する' do
           allow(Stripe::Webhook).to receive(:construct_event)
             .and_return(stripe_event_completed)
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:internal_server_error)
+          expect(Payment.where(stripe_checkout_session_id: 'cs_test_xxx')).to be_empty
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_test_duplicate')).to be_empty
+
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
 
           expect do
             post '/webhooks/stripe',
@@ -471,9 +505,53 @@ RSpec.describe 'Webhooks API', type: :request do
                 'Stripe-Signature' => sig_header,
                 'HOST' => 'backend'
               }
-          end.not_to change(Payment, :count)
+          end.to change(Payment, :count).by(1)
 
           expect(response).to have_http_status(:ok)
+          expect(Payment.find_by!(stripe_checkout_session_id: 'cs_test_xxx').user_id).to eq(user.id)
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_test_duplicate').count).to eq(1)
+        end
+      end
+
+      context '業務更新中に例外が発生した場合' do
+        let(:subscription_session) do
+          double(
+            'StripeSubscriptionSession',
+            id: 'cs_rollback_test',
+            mode: 'subscription',
+            subscription: 'sub_rollback_test',
+            customer: 'cus_test_123',
+            client_reference_id: nil,
+            customer_details: customer_details_double,
+            customer_email: customer_email
+          )
+        end
+        let(:rollback_event) do
+          double(
+            'StripeEvent',
+            id: 'evt_rollback_test',
+            type: 'checkout.session.completed',
+            data: double('StripeEventData', object: subscription_session)
+          )
+        end
+
+        it '業務更新と処理完了マーカーを両方ロールバックする' do
+          create(:user, email: customer_email, stripe_customer_id: 'cus_test_123', premium: false)
+          allow(Stripe::Webhook).to receive(:construct_event).and_return(rollback_event)
+          allow_any_instance_of(User).to receive(:update!)
+            .and_raise(ActiveRecord::StatementInvalid, 'simulated update failure')
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:internal_server_error)
+          expect(Subscription.where(stripe_subscription_id: 'sub_rollback_test')).to be_empty
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_rollback_test')).to be_empty
         end
       end
 
@@ -611,6 +689,7 @@ RSpec.describe 'Webhooks API', type: :request do
         end
 
         it '200 OK を返す' do
+          create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
           allow(Stripe::Webhook).to receive(:construct_event)
             .and_return(stripe_event_invoice_paid)
 
@@ -646,7 +725,13 @@ RSpec.describe 'Webhooks API', type: :request do
 
       context 'customer.subscription.deleted の場合' do
         let(:stripe_sub_double) do
-          double('StripeSubscription', id: 'sub_test_123')
+          double(
+            'StripeSubscription',
+            id: 'sub_test_123',
+            customer: 'cus_test_123',
+            status: 'canceled',
+            current_period_end: nil
+          )
         end
 
         let(:deletion_event_data) { double('StripeEventData', object: stripe_sub_double) }
@@ -661,6 +746,14 @@ RSpec.describe 'Webhooks API', type: :request do
         end
 
         it '200 OK を返す' do
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123', premium: true)
+          create(
+            :subscription,
+            user: user,
+            stripe_subscription_id: 'sub_test_123',
+            stripe_customer_id: 'cus_test_123',
+            status: 'active'
+          )
           allow(Stripe::Webhook).to receive(:construct_event)
             .and_return(stripe_event_sub_deleted)
 
@@ -723,6 +816,176 @@ RSpec.describe 'Webhooks API', type: :request do
           expect(response).to have_http_status(:ok)
           expect(canceled_subscription.reload.status).to eq('canceled')
           expect(user.reload.premium).to be true
+        end
+      end
+
+      context 'customer.subscription.deleted が checkout.session.completed より先に届く場合' do
+        let(:out_of_order_subscription) do
+          double(
+            'StripeSubscription',
+            id: 'sub_out_of_order',
+            customer: 'cus_out_of_order',
+            status: 'canceled',
+            current_period_end: nil
+          )
+        end
+        let(:deleted_first_event) do
+          double(
+            'StripeEvent',
+            id: 'evt_deleted_first',
+            type: 'customer.subscription.deleted',
+            data: double('StripeEventData', object: out_of_order_subscription)
+          )
+        end
+        let(:late_checkout_session) do
+          double(
+            'StripeSubscriptionSession',
+            id: 'cs_out_of_order',
+            mode: 'subscription',
+            subscription: 'sub_out_of_order',
+            customer: 'cus_out_of_order',
+            client_reference_id: nil,
+            customer_details: customer_details_double,
+            customer_email: customer_email
+          )
+        end
+        let(:late_checkout_event) do
+          double(
+            'StripeEvent',
+            id: 'evt_checkout_late',
+            type: 'checkout.session.completed',
+            data: double('StripeEventData', object: late_checkout_session)
+          )
+        end
+
+        it 'Stripeの最新状態を同期し、最終的にpremium=falseを維持する' do
+          user = create(
+            :user,
+            email: customer_email,
+            stripe_customer_id: 'cus_out_of_order',
+            premium: true
+          )
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(deleted_first_event, late_checkout_event)
+          allow(Stripe::Subscription).to receive(:retrieve)
+            .with('sub_out_of_order')
+            .and_return(out_of_order_subscription)
+
+          2.times do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+            expect(response).to have_http_status(:ok)
+          end
+
+          subscription = Subscription.find_by!(stripe_subscription_id: 'sub_out_of_order')
+          expect(subscription.status).to eq('canceled')
+          expect(user.reload.premium).to be false
+          expect(ProcessedWebhookEvent.where(stripe_event_id: %w[evt_deleted_first evt_checkout_late]).count).to eq(2)
+        end
+      end
+
+      context '削除イベントのUserとSubscriptionが未解決の場合' do
+        let(:unresolved_deleted_subscription) do
+          double(
+            'StripeSubscription',
+            id: 'sub_unresolved_deleted',
+            customer: 'cus_unresolved_deleted',
+            status: 'canceled',
+            current_period_end: nil
+          )
+        end
+        let(:unresolved_deleted_event) do
+          double(
+            'StripeEvent',
+            id: 'evt_unresolved_deleted',
+            type: 'customer.subscription.deleted',
+            data: double('StripeEventData', object: unresolved_deleted_subscription)
+          )
+        end
+
+        it '処理完了にせず、User作成後の再送でcanceled状態を復旧する' do
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(unresolved_deleted_event)
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:internal_server_error)
+          expect(Subscription.where(stripe_subscription_id: 'sub_unresolved_deleted')).to be_empty
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_unresolved_deleted')).to be_empty
+
+          user = create(
+            :user,
+            stripe_customer_id: 'cus_unresolved_deleted',
+            premium: true
+          )
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          subscription = Subscription.find_by!(stripe_subscription_id: 'sub_unresolved_deleted')
+          expect(response).to have_http_status(:ok)
+          expect(subscription.status).to eq('canceled')
+          expect(user.reload.premium).to be false
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_unresolved_deleted').count).to eq(1)
+        end
+      end
+
+      context '実際に署名したraw bodyの場合' do
+        let(:signed_payload) do
+          {
+            id: 'evt_real_signature',
+            object: 'event',
+            type: 'payment_intent.created',
+            data: {
+              object: {
+                id: 'pi_signature_test',
+                object: 'payment_intent'
+              }
+            }
+          }.to_json
+        end
+
+        it '未改変本文を受理し、署名後に改変した本文を拒否する' do
+          signature = stripe_signature(signed_payload, webhook_secret)
+
+          post '/webhooks/stripe',
+            params: signed_payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => signature,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:ok)
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_real_signature').count).to eq(1)
+
+          tampered_payload = signed_payload.sub('payment_intent.created', 'payment_intent.updated')
+          post '/webhooks/stripe',
+            params: tampered_payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => signature,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:bad_request)
+          expect(ProcessedWebhookEvent.where(stripe_event_id: 'evt_real_signature').count).to eq(1)
         end
       end
     end
