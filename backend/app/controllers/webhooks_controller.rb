@@ -6,6 +6,9 @@ class WebhooksController < ApplicationController
   # verify_authenticity_token のスキップは不要。
   # JWT認証のみスキップする（WebhookはStripeサーバーが叩くため）
   skip_before_action :authorize_request, only: [:stripe]
+  # StripeはOriginヘッダーを送らないサーバー間通信のため、Origin検証も対象外にする。
+  # 正当性は署名検証（Stripe-Signatureヘッダー、下記）で担保している。
+  skip_before_action :verify_request_origin!, only: [:stripe]
 
   # POST /webhooks/stripe
   def stripe

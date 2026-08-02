@@ -1,8 +1,11 @@
 module AuthHelpers
+  # Origin検証（ApplicationController#verify_request_origin!）は
+  # spec/support/default_origin_header.rb が既定Originを補ってくれるため、ここでは何もしない。
+
   # ユーザーをログインさせてCookieトークンを取得する
   def login_user(user)
     post '/auth/login', params: { email: user.email, password: 'password123' }, as: :json, headers: { 'HOST' => 'backend' }
-    
+
     expect(response).to have_http_status(:ok)
     response.cookies['access_token']
   end
