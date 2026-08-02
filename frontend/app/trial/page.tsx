@@ -6,7 +6,7 @@ import MorpheusSmall from "@/app/components/MorpheusSmall";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import { User } from "@/app/types";
-import { previewAnalysis, verifyAuth } from "@/lib/apiClient";
+import { createDream, previewAnalysis, verifyAuth } from "@/lib/apiClient";
 import { Sparkles, Loader2 } from "lucide-react";
 
 type AnalysisResult = {
@@ -35,11 +35,66 @@ export default function TrialPage() {
   const [analysisError, setAnalysisError] = useState("");
   const [analysisCount, setAnalysisCount] = useState(0);
   const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
+  // 「記録だけする」でDBへ保存している最中かどうか（二重送信防止）
+  const [isSaving, setIsSaving] = useState(false);
 
   // checking中はボタンを無効化するためのフラグ
   const isAuthChecking = authStatus === "checking";
 
-  // トライアルログイン → AI分析の一連フロー
+  // トライアルセッションを確保する（未認証ならトライアルアカウントを自動作成）。
+  // 成功したら true、失敗したらエラー文言を立てて false を返す。
+  const ensureTrialSession = async (): Promise<boolean> => {
+    if (authStatus !== "unauthenticated") return true;
+
+    let verified: Awaited<ReturnType<typeof verifyAuth>>;
+    try {
+      verified = await verifyAuth();
+    } catch {
+      // verify が失敗したときは既存セッション保護を優先して中断する
+      setAnalysisError(
+        "ログインじょうたいの かくにんに しっぱい したよ。もういちど ためしてね。"
+      );
+      return false;
+    }
+
+    if (verified?.user) {
+      login(verified.user);
+      return true;
+    }
+
+    setIsLoggingIn(true);
+    try {
+      const timestamp = Date.now();
+      const res = await apiClient.post<{ user: User }>("/auth/trial_login", {
+        trial_user: {
+          email: `trial_${timestamp}@example.com`,
+          username: `trial_${timestamp}`,
+          password: "trial_password_123",
+          password_confirmation: "trial_password_123",
+        },
+      });
+      if (res?.user) {
+        login({ ...res.user, id: String(res.user.id) });
+      }
+      // Cookieが設定されるのを待つ
+      await new Promise((r) => setTimeout(r, 500));
+      return true;
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // 体験版で書いた夢もDBへ保存する。
+  // 以前は React の state に積むだけだったため、画面には「記録した夢」と出るのに
+  // 再読み込みで消え、本登録しても引き継がれなかった（実データの損失）。
+  const persistDream = (analysis?: AnalysisResult) =>
+    createDream({
+      title: title.trim() || `ゆめ ${dreams.length + 1}`,
+      content: description.trim(),
+      ...(analysis ? { analysis_json: analysis, analysis_status: "done" } : {}),
+    });
+
+  // トライアルログイン → AI分析 → 保存の一連フロー
   const handleAnalyze = async () => {
     if (!description.trim()) {
       setAnalysisError("ゆめの おはなしを かいてね。");
@@ -61,49 +116,36 @@ export default function TrialPage() {
     setAnalysisError("");
 
     try {
-      // 未認証ならトライアルログインを行う
-      if (authStatus === "unauthenticated") {
-        let verified: Awaited<ReturnType<typeof verifyAuth>>;
-        try {
-          verified = await verifyAuth();
-        } catch {
-          // verify が失敗したときは既存セッション保護を優先して中断する
-          setAnalysisError(
-            "ログインじょうたいの かくにんに しっぱい したよ。もういちど ためしてね。"
-          );
-          return;
-        }
-
-        if (verified?.user) {
-          login(verified.user);
-        } else {
-          setIsLoggingIn(true);
-          const timestamp = Date.now();
-          const res = await apiClient.post<{ user: User }>("/auth/trial_login", {
-            trial_user: {
-              email: `trial_${timestamp}@example.com`,
-              username: `trial_${timestamp}`,
-              password: "trial_password_123",
-              password_confirmation: "trial_password_123",
-            },
-          });
-          if (res?.user) {
-            login({ ...res.user, id: String(res.user.id) });
-          }
-          setIsLoggingIn(false);
-          // Cookieが設定されるのを待つ
-          await new Promise((r) => setTimeout(r, 500));
-        }
-      }
+      if (!(await ensureTrialSession())) return;
 
       // AI分析を実行
-      const result = await previewAnalysis(description);
+      let result: AnalysisResult;
+      try {
+        result = await previewAnalysis(description);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "";
+        if (message.includes("分析上限")) {
+          setAnalysisLimitReached(true);
+          setAnalysisError("");
+        } else {
+          setAnalysisError("ぶんせきに しっぱい しちゃった。もういちど ためしてね。");
+        }
+        return;
+      }
 
-      // 夢リストに分析結果付きで追加
+      // 分析結果ごとDBへ保存する。
+      // 保存に失敗したら夢は残らないので、リストにも積まない（画面が嘘をつかないようにする）。
+      try {
+        await persistDream(result);
+      } catch {
+        setAnalysisError("ゆめを のこせなかったよ。もういちど ためしてね。");
+        return;
+      }
+
       setDreams((prev) => [
         ...prev,
         {
-          title: title || `ゆめ ${prev.length + 1}`,
+          title: title.trim() || `ゆめ ${prev.length + 1}`,
           description,
           analysis: result,
         },
@@ -111,36 +153,46 @@ export default function TrialPage() {
       setAnalysisCount((prev) => prev + 1);
       setTitle("");
       setDescription("");
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "分析に失敗しました";
-      if (message.includes("分析上限")) {
-        setAnalysisLimitReached(true);
-        setAnalysisError("");
-      } else {
-        setAnalysisError("ぶんせきに しっぱい しちゃった。もういちど ためしてね。");
-      }
     } finally {
       setIsAnalyzing(false);
       setIsLoggingIn(false);
     }
   };
 
-  // 分析なしで記録だけ
-  const addDreamWithoutAnalysis = () => {
-    if (!title && !description) {
+  // 分析なしで記録する（DBへ保存する）
+  const addDreamWithoutAnalysis = async () => {
+    if (!description.trim()) {
+      setAnalysisError("ゆめの おはなしを かいてね。");
       return;
     }
     if (dreams.length >= MAX_TRIAL_DREAMS) {
       setAnalysisError("ここに かける ゆめは 7こ まで だよ。");
       return;
     }
-    setDreams((prev) => [
-      ...prev,
-      { title: title || `ゆめ ${prev.length + 1}`, description },
-    ]);
-    setTitle("");
-    setDescription("");
+    if (isAuthChecking) {
+      setAnalysisError("じゅんびちゅう... すこしまってね。");
+      return;
+    }
+
+    setIsSaving(true);
+    setAnalysisError("");
+
+    try {
+      if (!(await ensureTrialSession())) return;
+
+      await persistDream();
+
+      setDreams((prev) => [
+        ...prev,
+        { title: title.trim() || `ゆめ ${prev.length + 1}`, description },
+      ]);
+      setTitle("");
+      setDescription("");
+    } catch {
+      setAnalysisError("ゆめを のこせなかったよ。もういちど ためしてね。");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -201,6 +253,7 @@ export default function TrialPage() {
             onClick={handleAnalyze}
             disabled={
               isAnalyzing ||
+              isSaving ||
               isAuthChecking ||
               analysisLimitReached ||
               dreams.length >= MAX_TRIAL_DREAMS ||
@@ -234,7 +287,11 @@ export default function TrialPage() {
             type="button"
             onClick={addDreamWithoutAnalysis}
             disabled={
-              dreams.length >= MAX_TRIAL_DREAMS || !description.trim()
+              isAnalyzing ||
+              isSaving ||
+              isAuthChecking ||
+              dreams.length >= MAX_TRIAL_DREAMS ||
+              !description.trim()
             }
             className="
               inline-flex items-center justify-center px-5 py-2.5
@@ -244,7 +301,7 @@ export default function TrialPage() {
               transition-all duration-200
             "
           >
-            記録だけする（分析なし）
+            {isSaving ? "のこしているよ…" : "記録だけする（分析なし）"}
           </button>
 
           {/* 残り回数バッジ */}
