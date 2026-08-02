@@ -63,4 +63,92 @@ RSpec.describe 'Users API', type: :request do
       end
     end
   end
+
+  # 422のときに機械可読な field/code を返す契約。
+  # フロント（frontend/lib/registrationErrors.ts）はこれだけを見て文言を出し分け、
+  # 英語のエラーメッセージを文字列解析しない。
+  describe 'POST /auth/register の失敗理由（error_codes）' do
+    let(:host) { { 'HOST' => 'backend' } }
+
+    def register(params)
+      post '/auth/register', params: { user: params }, as: :json, headers: host
+    end
+
+    let(:valid_params) do
+      {
+        email: 'new@example.com',
+        username: 'newuser',
+        password: 'password123',
+        password_confirmation: 'password123'
+      }
+    end
+
+    it 'メールアドレス重複で email/taken を返す' do
+      create(:user, email: 'taken@example.com', username: 'someone')
+
+      register(valid_params.merge(email: 'taken@example.com'))
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error_codes']).to include(
+        { 'field' => 'email', 'code' => 'taken' }
+      )
+    end
+
+    it 'ユーザー名重複で username/taken を返す' do
+      create(:user, email: 'other@example.com', username: 'takenname')
+
+      register(valid_params.merge(username: 'takenname'))
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error_codes']).to include(
+        { 'field' => 'username', 'code' => 'taken' }
+      )
+    end
+
+    it 'メールとユーザー名が両方重複していれば両方返す' do
+      create(:user, email: 'taken@example.com', username: 'takenname')
+
+      register(valid_params.merge(email: 'taken@example.com', username: 'takenname'))
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error_codes']).to include(
+        { 'field' => 'email', 'code' => 'taken' },
+        { 'field' => 'username', 'code' => 'taken' }
+      )
+    end
+
+    it 'パスワードが短ければ password/too_short を返す' do
+      register(valid_params.merge(password: 'ab1', password_confirmation: 'ab1'))
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error_codes']).to include(
+        { 'field' => 'password', 'code' => 'too_short' }
+      )
+    end
+
+    it 'パスワードに英数字が足りなければ password/invalid を返す' do
+      register(
+        valid_params.merge(password: 'abcdefghi', password_confirmation: 'abcdefghi')
+      )
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json_response['error_codes']).to include(
+        { 'field' => 'password', 'code' => 'invalid' }
+      )
+    end
+
+    it 'error_codes に入力値やパスワードを含めない' do
+      create(:user, email: 'taken@example.com', username: 'someone')
+
+      register(valid_params.merge(email: 'taken@example.com'))
+
+      body = response.body
+      expect(body).not_to include('password123')
+      expect(body).not_to include('taken@example.com')
+      # field / code 以外のキーを持たせない
+      json_response['error_codes'].each do |entry|
+        expect(entry.keys).to match_array(%w[field code])
+      end
+    end
+  end
 end

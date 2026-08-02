@@ -27,7 +27,12 @@ class UsersController < ApplicationController
           relationship: "self", active: true, position: 0
         )
       rescue AuthService::RegistrationError => e
-        error_response = { body: { error: e.message }, status: :unprocessable_entity }
+        # error は既存互換の人間向け文字列（英語混じり）。
+        # error_codes が機械可読な field/code で、フロントはこちらだけを見て文言を決める。
+        error_response = {
+          body: { error: e.message, error_codes: e.details },
+          status: :unprocessable_entity
+        }
         raise ActiveRecord::Rollback
       rescue ActiveRecord::RecordInvalid => e
         Rails.logger.error "自分プロフィールの自動作成に失敗しました: #{e.message}"

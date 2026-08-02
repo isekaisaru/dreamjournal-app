@@ -3,7 +3,37 @@ require 'jwt'
 class AuthService
   class InvalidCredentialsError < StandardError; end
   class InvalidRefreshTokenError < StandardError; end
-  class RegistrationError < StandardError; end
+
+  # 登録・昇格の失敗。
+  # message は既存互換の人間向け文字列、details は機械可読な field/code の配列。
+  # フロントは details だけを見て文言を出し分ける（英語メッセージを解析させない）。
+  class RegistrationError < StandardError
+    attr_reader :details
+
+    def initialize(message, details = [])
+      super(message)
+      @details = details
+    end
+  end
+
+  # field / code に許可する形（英小文字始まり・英数字とアンダースコアのみ）。
+  # バリデーションのtypeに任意の文字列が入っても、そのまま外へ出さないための安全弁。
+  SAFE_ERROR_TOKEN = /\A[a-z][a-z0-9_]*\z/
+
+  # user.errors から { "field" => ..., "code" => ... } の配列を作る。
+  # ActiveModel の error.attribute / error.type をそのまま使うので、
+  # 「Email has already been taken」のような英語メッセージを文字列解析しなくてよい。
+  # 通常登録（register）とトライアル昇格（convert_trial）で共通に使う。
+  # 入力値・パスワードは一切含めない。
+  def self.validation_details(user)
+    user.errors.filter_map do |error|
+      field = error.attribute.to_s
+      code  = error.type.to_s
+      next unless field.match?(SAFE_ERROR_TOKEN) && code.match?(SAFE_ERROR_TOKEN)
+
+      { 'field' => field, 'code' => code }
+    end
+  end
 
   # JWTシークレットキー
   # - 本番: 必須（未設定なら起動時に例外）
@@ -48,7 +78,7 @@ class AuthService
       Rails.logger.info "新規登録ユーザーID: #{user.id} のセッションを作成しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise RegistrationError, user.errors.full_messages.join(", ")
+      raise RegistrationError.new(user.errors.full_messages.join(", "), validation_details(user))
     end
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "ユーザー作成成功後、セッション作成に失敗: #{e.message}"
@@ -70,7 +100,7 @@ class AuthService
       Rails.logger.info "トライアルユーザーID: #{user.id} のセッションを作成しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise RegistrationError, user.errors.full_messages.join(", ")
+      raise RegistrationError.new(user.errors.full_messages.join(", "), validation_details(user))
     end
   rescue ActiveRecord::RecordInvalid => e
     Rails.logger.error "トライアルユーザー作成成功後、セッション作成に失敗: #{e.message}"
@@ -106,7 +136,7 @@ class AuthService
       Rails.logger.info "ユーザーID: #{user.id} をトライアルから本登録へ昇格しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise RegistrationError, user.errors.full_messages.join(", ")
+      raise RegistrationError.new(user.errors.full_messages.join(", "), validation_details(user))
     end
   end
 
