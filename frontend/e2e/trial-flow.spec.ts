@@ -26,6 +26,19 @@ test.describe("トライアルページ：お試し体験フロー", () => {
       });
     });
 
+    // 「記録だけする」も保存前にトライアルセッションを確保するようになったため、
+    // AI分析を使わないテストでも trial_login が必要になった。
+    // 個別テストで上書きしたい場合は、テスト内で後から route を登録すればよい。
+    await page.route("**/auth/trial_login", async (route) => {
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: 99, email: "trial_test@example.com", username: "trial_99" },
+        }),
+      });
+    });
+
     // 体験版の夢もDBへ保存するようになったため、保存APIをモックする。
     // ここを外すと保存が失敗し、夢が一覧に追加されない（＝仕様どおりの挙動）ので、
     // 分析結果の表示を確認するテストが落ちる。
