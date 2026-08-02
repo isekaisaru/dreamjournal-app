@@ -25,6 +25,21 @@ test.describe("トライアルページ：お試し体験フロー", () => {
         body: JSON.stringify({ error: "Unauthorized" }),
       });
     });
+
+    // 体験版の夢もDBへ保存するようになったため、保存APIをモックする。
+    // ここを外すと保存が失敗し、夢が一覧に追加されない（＝仕様どおりの挙動）ので、
+    // 分析結果の表示を確認するテストが落ちる。
+    await page.route("**/dreams", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ id: 1 }),
+      });
+    });
   });
 
   test("ページが表示され残りAI分析回数バッジが初期3回を示す", async ({
