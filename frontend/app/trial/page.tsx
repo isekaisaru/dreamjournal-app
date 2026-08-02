@@ -6,7 +6,13 @@ import MorpheusSmall from "@/app/components/MorpheusSmall";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import { User } from "@/app/types";
-import { createDream, previewAnalysis, verifyAuth } from "@/lib/apiClient";
+import {
+  ApiError,
+  createDream,
+  previewAnalysis,
+  updateDream,
+  verifyAuth,
+} from "@/lib/apiClient";
 import { Sparkles, Loader2 } from "lucide-react";
 
 type AnalysisResult = {
@@ -87,12 +93,18 @@ export default function TrialPage() {
   // 体験版で書いた夢もDBへ保存する。
   // 以前は React の state に積むだけだったため、画面には「記録した夢」と出るのに
   // 再読み込みで消え、本登録しても引き継がれなかった（実データの損失）。
-  const persistDream = (analysis?: AnalysisResult) =>
+  const persistDream = () =>
     createDream({
       title: title.trim() || `ゆめ ${dreams.length + 1}`,
       content: description.trim(),
-      ...(analysis ? { analysis_json: analysis, analysis_status: "done" } : {}),
     });
+
+  // 保存の失敗理由は、件数上限などバックエンドが日本語で返してくれるものがあるため、
+  // 取得できるならそれをそのまま見せる。
+  const saveErrorMessage = (err: unknown) =>
+    err instanceof ApiError && err.message
+      ? err.message
+      : "ゆめを のこせなかったよ。もういちど ためしてね。";
 
   // トライアルログイン → AI分析 → 保存の一連フロー
   const handleAnalyze = async () => {
@@ -118,8 +130,19 @@ export default function TrialPage() {
     try {
       if (!(await ensureTrialSession())) return;
 
-      // AI分析を実行
-      let result: AnalysisResult;
+      // 先に保存してから分析する。
+      // 逆順にすると、保存が失敗したときに「3回しかないAI分析だけ消費して、
+      // 夢も分析結果も残らない」という一番損な結果になる。
+      let saved: Awaited<ReturnType<typeof persistDream>>;
+      try {
+        saved = await persistDream();
+      } catch (err: unknown) {
+        setAnalysisError(saveErrorMessage(err));
+        return;
+      }
+
+      // ここから先が失敗しても、夢はすでに保存されているので失われない。
+      let result: AnalysisResult | undefined;
       try {
         result = await previewAnalysis(description);
       } catch (err: unknown) {
@@ -128,18 +151,22 @@ export default function TrialPage() {
           setAnalysisLimitReached(true);
           setAnalysisError("");
         } else {
-          setAnalysisError("ぶんせきに しっぱい しちゃった。もういちど ためしてね。");
+          setAnalysisError("ぶんせきは できなかったけど、ゆめは のこして あるよ。");
         }
-        return;
       }
 
-      // 分析結果ごとDBへ保存する。
-      // 保存に失敗したら夢は残らないので、リストにも積まない（画面が嘘をつかないようにする）。
-      try {
-        await persistDream(result);
-      } catch {
-        setAnalysisError("ゆめを のこせなかったよ。もういちど ためしてね。");
-        return;
+      if (result) {
+        // 分析結果を保存済みの夢へ紐づける。
+        // 失敗しても夢そのものは残っているので、画面の表示は続ける。
+        try {
+          await updateDream(saved.id, {
+            analysis_json: result,
+            analysis_status: "done",
+          });
+        } catch {
+          // 紐づけだけの失敗。夢は保存済みなので黙って表示を続ける
+        }
+        setAnalysisCount((prev) => prev + 1);
       }
 
       setDreams((prev) => [
@@ -150,9 +177,12 @@ export default function TrialPage() {
           analysis: result,
         },
       ]);
-      setAnalysisCount((prev) => prev + 1);
       setTitle("");
       setDescription("");
+    } catch {
+      // ensureTrialSession（trial_login）の失敗など、上で拾えなかった例外。
+      // ここが無いと未処理のPromise拒否になり、画面に何も出ないまま終わる。
+      setAnalysisError("いま うまく つながらなかったよ。もういちど ためしてね。");
     } finally {
       setIsAnalyzing(false);
       setIsLoggingIn(false);
@@ -188,8 +218,8 @@ export default function TrialPage() {
       ]);
       setTitle("");
       setDescription("");
-    } catch {
-      setAnalysisError("ゆめを のこせなかったよ。もういちど ためしてね。");
+    } catch (err: unknown) {
+      setAnalysisError(saveErrorMessage(err));
     } finally {
       setIsSaving(false);
     }
