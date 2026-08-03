@@ -28,6 +28,10 @@ class WebhooksController < ApplicationController
       event = Stripe::Webhook.construct_event(
         payload, sig_header, ENV['STRIPE_WEBHOOK_SECRET']
       )
+      StripeEnvironmentGuard.validate_event!(
+        event: event,
+        mode: Rails.configuration.stripe[:mode]
+      )
     rescue JSON::ParserError => e
       # リクエストボディが不正なJSON
       PaymentsObservability.increment('webhook.error.invalid_json')
@@ -40,6 +44,11 @@ class WebhooksController < ApplicationController
       PaymentsObservability.log(event: 'webhook.error.invalid_signature', level: :warn, message: e.message)
       Rails.logger.warn("[Webhook] Signature verification failed: #{e.message}")
       return head :bad_request
+    rescue StripeEnvironmentGuard::ConfigurationError => e
+      PaymentsObservability.increment('webhook.error.stripe_mode_mismatch')
+      PaymentsObservability.log(event: 'webhook.error.stripe_mode_mismatch', level: :error, stripe_event_id: event&.id)
+      Rails.logger.error("[Webhook] Stripe mode mismatch event_id=#{event&.id}: #{e.message}")
+      return head :internal_server_error
     end
 
     PaymentsObservability.increment('webhook.event.received', event_type: event.type)

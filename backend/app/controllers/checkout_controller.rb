@@ -27,13 +27,15 @@ class CheckoutController < ApplicationController
         return render json: { error: 'すでにプレミアム会員です。' }, status: :unprocessable_content
       end
 
+      premium_price_id = verified_premium_price_id! if plan == 'premium'
       customer_id = ensure_stripe_customer_id!
 
       session = Stripe::Checkout::Session.create(
         build_checkout_session_params(
           plan: plan,
           frontend_url: frontend_url,
-          customer_id: customer_id
+          customer_id: customer_id,
+          premium_price_id: premium_price_id
         )
       )
 
@@ -52,6 +54,11 @@ class CheckoutController < ApplicationController
       PaymentsObservability.log(event: 'checkout.error.premium_price_missing', level: :error, user_id: current_user.id)
       Rails.logger.error "Checkout configuration error: #{e.message}"
       render json: { error: 'プレミアム決済の設定が未完了です。' }, status: :internal_server_error
+    rescue StripeEnvironmentGuard::ConfigurationError => e
+      PaymentsObservability.increment('checkout.error.stripe_mode_mismatch', user_id: current_user.id)
+      PaymentsObservability.log(event: 'checkout.error.stripe_mode_mismatch', level: :error, user_id: current_user.id)
+      Rails.logger.error "Checkout configuration error: #{e.message}"
+      render json: { error: 'プレミアム決済の設定が一致していません。' }, status: :internal_server_error
     rescue Stripe::StripeError => e
       PaymentsObservability.increment('checkout.error.stripe', user_id: current_user.id)
       PaymentsObservability.log(event: 'checkout.error.stripe', level: :error, user_id: current_user.id, message: e.message)
@@ -104,7 +111,7 @@ class CheckoutController < ApplicationController
     params[:plan].to_s == 'premium' ? 'premium' : 'donation'
   end
 
-  def build_checkout_session_params(plan:, frontend_url:, customer_id:)
+  def build_checkout_session_params(plan:, frontend_url:, customer_id:, premium_price_id: nil)
     base_params = {
       customer: customer_id,
       client_reference_id: current_user.id.to_s,
@@ -115,7 +122,11 @@ class CheckoutController < ApplicationController
       payment_method_types: ['card']
     }
 
-    plan == 'premium' ? base_params.merge(premium_session_params(frontend_url)) : base_params.merge(donation_session_params(frontend_url))
+    if plan == 'premium'
+      base_params.merge(premium_session_params(frontend_url, premium_price_id))
+    else
+      base_params.merge(donation_session_params(frontend_url))
+    end
   end
 
   def donation_session_params(frontend_url)
@@ -137,10 +148,19 @@ class CheckoutController < ApplicationController
     }
   end
 
-  def premium_session_params(frontend_url)
+  def verified_premium_price_id!
     price_id = ENV['STRIPE_PREMIUM_PRICE_ID']
     raise MissingPremiumPriceIdError, 'STRIPE_PREMIUM_PRICE_ID is not set' if price_id.blank?
 
+    price = Stripe::Price.retrieve(price_id)
+    StripeEnvironmentGuard.validate_price!(
+      price: price,
+      mode: Rails.configuration.stripe[:mode]
+    )
+    price_id
+  end
+
+  def premium_session_params(frontend_url, price_id)
     {
       line_items: [{
         price: price_id,

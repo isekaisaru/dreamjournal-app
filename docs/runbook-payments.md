@@ -39,7 +39,8 @@
 - 原因候補:
 1. `FRONTEND_URL` 未設定。
 2. `STRIPE_SECRET_KEY` 無効。
-3. Stripe API 側障害。
+3. `STRIPE_MODE` とSecret KeyまたはPriceの`livemode`が不一致。
+4. Stripe API 側障害。
 - 対応:
 1. 環境変数を確認。
 2. `checkout.error.*` KPI を確認。
@@ -73,6 +74,7 @@
 7. `webhook.payment.unmatched_user`
 8. `webhook.event.duplicate`
 9. `webhook.error.processing`
+10. `webhook.error.stripe_mode_mismatch`
 
 ## Webhook 再送と処理確定
 
