@@ -262,11 +262,25 @@ export default function DreamForm({
   // 保存ボタンに「誰の夢として残すか」を出す。
   // 複数プロフィールがあるときの取り違えは、押す直前に名前が見えていれば防げる。
   // プロフィールが1つだけのときは、わざわざ名乗らない。
-  const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
-  const submitLabel =
-    profiles.length > 1 && selectedProfile
-      ? `${selectedProfile.name}の ゆめを のこす`
-      : "ゆめを のこす";
+  //
+  // アーカイブ済みプロフィールの夢を編集する場合、そのプロフィールは
+  // fetchProfiles で除外されるため profiles から引けない。
+  // 保存時は selectedProfileId をそのまま送るので、名前だけ出ないと
+  // 「持ち主が選択肢に無いとき」に限って確認できなくなる。
+  // 夢詳細APIが dream_profile を返しているので、そちらを控えに使う。
+  const activeSelectedProfile = profiles.find((p) => p.id === selectedProfileId);
+  const archivedSelectedName =
+    !activeSelectedProfile &&
+    initialData?.dream_profile?.id === selectedProfileId
+      ? initialData?.dream_profile?.name
+      : undefined;
+  // 名前を出すのは「選ぶ余地があるとき」か「持ち主が選択肢に無いとき」。
+  const selectedProfileName =
+    archivedSelectedName ??
+    (profiles.length > 1 ? activeSelectedProfile?.name : undefined);
+  const submitLabel = selectedProfileName
+    ? `${selectedProfileName}の ゆめを のこす`
+    : "ゆめを のこす";
 
   return (
     <form

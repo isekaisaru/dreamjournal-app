@@ -127,6 +127,40 @@ describe("DreamForm: 誰の夢として保存するか", () => {
     expect(screen.queryByRole("group", { name: "誰の夢？" })).not.toBeInTheDocument();
   });
 
+  // アーカイブ済みプロフィールは選択肢から外れるため、編集時に持ち主が
+  // 引けなくなる。保存時は selectedProfileId をそのまま送るので、
+  // 「持ち主が選択肢に無いとき」こそ名前を出す必要がある（Codexレビュー指摘）。
+  it("アーカイブ済みプロフィールの夢を編集するときも、持ち主の名前を出す", async () => {
+    mockedGetProfiles.mockResolvedValue([profile(1, "自分")]);
+
+    render(
+      <DreamForm
+        onSubmit={jest.fn()}
+        initialData={
+          {
+            id: 10,
+            title: "むかしの ゆめ",
+            content: "ないよう",
+            dream_profile_id: 99,
+            dream_profile: {
+              id: 99,
+              name: "そつぎょうした テル",
+              avatar_emoji: "😴",
+              color: "#6366f1",
+              active: false,
+            },
+          } as never
+        }
+      />
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "そつぎょうした テルの ゆめを のこす",
+      })
+    ).toBeInTheDocument();
+  });
+
   it("選択グループに名前がついている", async () => {
     mockedGetProfiles.mockResolvedValue([profile(1, "自分"), profile(2, "テル")]);
 
