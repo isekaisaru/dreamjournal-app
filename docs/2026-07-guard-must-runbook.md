@@ -102,7 +102,7 @@ bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: ni
 
 ## 公開前必須チェック：メール配信ドメイン（2026年8月4日追加）
 
-> 背景: Renderの`MAIL_FROM`が`YumeTree <onboarding@resend.dev>`のまま。Resendの`resend.dev`はテスト用ドメインで、**Resendアカウントに紐づくメールアドレスとは別のアドレス**へは、独自ドメインの追加・認証なしには送信できない（Resend公式ドキュメントに明記）。この状態では、新規に本登録した一般ユーザーはメール確認が完了せず、AI夢分析・分析プレビュー・画像生成・音声夢記録・Stripe Checkoutも利用できない（`require_verified_email`ガード。Trialユーザーと既存ユーザーは対象外）。詳細は`docs/sprint-plan-august-2026.md`の該当項目を参照。
+> 背景: Renderの`MAIL_FROM`が`YumeTree <onboarding@resend.dev>`のまま。Resendの`resend.dev`はテスト用ドメインで、**Resendアカウントに紐づくメールアドレスとは別のアドレス**へは、独自ドメインの追加・認証なしには送信できない（Resend公式ドキュメントに明記）。この状態では、新規に本登録した一般ユーザーはメール確認が完了せず、AI夢分析・分析プレビュー・画像生成・音声夢記録・Stripe Checkoutも利用できない（`require_verified_email`ガード。Trialユーザーと既存ユーザーは対象外）。公開判断は、下記の必須チェックをすべて満たした後に行う。
 
 - [ ] YumeTree用の独自ドメインを取得した（**未取得。取得先・ドメイン名は未定**）
 - [ ] Resendにそのドメイン（またはメール専用サブドメイン）を追加した
