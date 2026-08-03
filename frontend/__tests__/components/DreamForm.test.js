@@ -27,6 +27,13 @@ jest.mock("framer-motion", () => {
   return { motion, AnimatePresence: ({ children }) => children };
 });
 
+// EmailVerificationBanner が送信先アドレスを伏せ字で出すために useAuth を使う。
+// DreamForm 自体は認証状態を見ないが、埋め込んでいるバナーが必要とする。
+jest.mock("@/context/AuthContext", () => ({
+  __esModule: true,
+  useAuth: () => ({ user: { id: "1", email: "teruo@example.com" } }),
+}));
+
 // Mocks
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),
