@@ -259,6 +259,15 @@ export default function DreamForm({
     });
   };
 
+  // 保存ボタンに「誰の夢として残すか」を出す。
+  // 複数プロフィールがあるときの取り違えは、押す直前に名前が見えていれば防げる。
+  // プロフィールが1つだけのときは、わざわざ名乗らない。
+  const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
+  const submitLabel =
+    profiles.length > 1 && selectedProfile
+      ? `${selectedProfile.name}の ゆめを のこす`
+      : "ゆめを のこす";
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -276,10 +285,17 @@ export default function DreamForm({
         }
       >
         {profiles.length > 1 && (
-          <div className="mb-5">
-          <label className="block mb-2 font-semibold text-card-foreground text-sm">
+          <div
+            className="mb-5"
+            role="group"
+            aria-labelledby="dream-profile-group-label"
+          >
+          <span
+            id="dream-profile-group-label"
+            className="block mb-2 font-semibold text-card-foreground text-sm"
+          >
             誰の夢？
-          </label>
+          </span>
           <div className="flex flex-wrap gap-2">
             {profiles.map((p) => {
               const isSelected = selectedProfileId === p.id;
@@ -287,6 +303,10 @@ export default function DreamForm({
                 <button
                   key={p.id}
                   type="button"
+                  // 選択状態を読み上げにも伝える。
+                  // これが無いと、枠線と背景の色でしか選択が分からず、
+                  // スクリーンリーダーではどれを選んでいるか判別できない。
+                  aria-pressed={isSelected}
                   onClick={() => setSelectedProfileId(p.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
                     isSelected
@@ -295,6 +315,12 @@ export default function DreamForm({
                   }`}
                   style={isSelected ? { borderColor: p.color } : {}}
                 >
+                  {/* 色だけで選択を示さない（色の見分けがつきにくい人にも分かるように） */}
+                  {isSelected && (
+                    <span aria-hidden="true" className="font-bold">
+                      ✓
+                    </span>
+                  )}
                   <span>{p.avatar_emoji}</span>
                   <span>{p.name}</span>
                 </button>
@@ -654,7 +680,7 @@ export default function DreamForm({
         }`}
         disabled={isLoading}
       >
-        {isLoading ? "モルペウスが かんがえています..." : "ゆめを のこす"}
+        {isLoading ? "モルペウスが かんがえています..." : submitLabel}
       </button>
     </form>
   );
