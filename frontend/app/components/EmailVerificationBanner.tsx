@@ -14,6 +14,16 @@ type SendState = "idle" | "sending" | "sent";
 export const RESEND_COOLDOWN_SECONDS = 5 * 60;
 
 /**
+ * 再送できるようになる時刻の保存先。
+ * バナーは /home・/dream/new・/dream/[id] の3か所にあり、画面を移動するたびに
+ * 作り直される。コンポーネント内の state だけで持つと、移動した瞬間に
+ * 「もう送れます」の顔に戻ってしまい、押すと429で弾かれる。
+ * サーバー側のクールダウンはユーザー単位なので、キーもユーザー単位にする。
+ */
+export const resendDeadlineStorageKey = (userId?: string) =>
+  `yumetree:verification-resend-until:${userId ?? "anonymous"}`;
+
+/**
  * メールアドレスを伏せ字にする（例: teruo@gmail.com → te***@gmail.com）。
  * どのアドレス宛に送ったかは確認できるが、肩越しに全部は読まれないようにする。
  */
@@ -58,18 +68,37 @@ export default function EmailVerificationBanner({
   const { user } = useAuth();
   const [state, setState] = useState<SendState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState(0);
+  // 再送できるようになる時刻（epoch ms）。残り秒数ではなく時刻で持つ。
+  const [deadline, setDeadline] = useState<number | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
 
-  // 再送できるまでの残り時間を1秒ずつ減らす。
-  // setTimeoutの連鎖にして、アンマウント時に確実に止める。
+  const storageKey = resendDeadlineStorageKey(user?.id);
+
+  // 画面を移動して作り直されても、前に送った時刻を引き継ぐ。
   useEffect(() => {
-    if (remaining <= 0) return;
-    const timer = setTimeout(
-      () => setRemaining((prev) => Math.max(prev - 1, 0)),
-      1000
-    );
-    return () => clearTimeout(timer);
-  }, [remaining]);
+    const stored = Number(window.localStorage.getItem(storageKey));
+    if (Number.isFinite(stored) && stored > Date.now()) {
+      setDeadline(stored);
+      setNow(Date.now());
+    }
+  }, [storageKey]);
+
+  // 残り時間は必ず実時間（Date.now）から計算する。
+  // 1秒ずつ引き算すると、タブが止まっている間はカウントが進まず、
+  // サーバーが再送を許可した後もボタンが無効のままになる。
+  useEffect(() => {
+    if (deadline === null) return;
+
+    const timer = setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= deadline) {
+        setDeadline(null);
+        window.localStorage.removeItem(storageKey);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [deadline, storageKey]);
 
   const handleResend = async () => {
     setState("sending");
@@ -77,7 +106,10 @@ export default function EmailVerificationBanner({
     try {
       await resendVerificationEmail();
       setState("sent");
-      setRemaining(RESEND_COOLDOWN_SECONDS);
+      const until = Date.now() + RESEND_COOLDOWN_SECONDS * 1000;
+      window.localStorage.setItem(storageKey, String(until));
+      setDeadline(until);
+      setNow(Date.now());
     } catch (err) {
       setState("idle");
       setErrorMessage(
@@ -89,6 +121,8 @@ export default function EmailVerificationBanner({
   };
 
   const isSending = state === "sending";
+  const remaining =
+    deadline === null ? 0 : Math.max(Math.ceil((deadline - now) / 1000), 0);
   const isCoolingDown = remaining > 0;
   const maskedEmail = user?.email ? maskEmail(user.email) : null;
 

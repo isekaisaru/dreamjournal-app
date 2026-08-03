@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import EmailVerificationBanner, {
   formatRemaining,
   maskEmail,
+  resendDeadlineStorageKey,
   RESEND_COOLDOWN_SECONDS,
 } from "@/app/components/EmailVerificationBanner";
 import { resendVerificationEmail, ApiError } from "@/lib/apiClient";
@@ -30,6 +31,7 @@ const mockedUseAuth = useAuth as jest.Mock;
 describe("EmailVerificationBanner", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.localStorage.clear();
     mockedUseAuth.mockReturnValue({ user: { id: "1", email: "teruo@gmail.com" } });
   });
 
@@ -131,6 +133,46 @@ describe("EmailVerificationBanner", () => {
     // 失敗時はクールダウンに入れず、すぐ再試行できる
     expect(
       screen.getByRole("button", { name: "かくにんメールを もういちど おくる" })
+    ).toBeEnabled();
+  });
+
+  // バナーは /home・/dream/new・/dream/[id] にあり、移動のたびに作り直される。
+  // component-local な state だけで持つと「もう送れます」の顔に戻ってしまい、
+  // 押すと429で弾かれる（Codexレビュー指摘）。
+  it("画面を移動して作り直されても、クールダウンを引き継ぐ", async () => {
+    const until = Date.now() + 120_000; // あと2分
+    window.localStorage.setItem(resendDeadlineStorageKey("1"), String(until));
+
+    render(<EmailVerificationBanner />);
+
+    const button = await screen.findByRole("button", { name: /で おくれるよ$/ });
+    expect(button).toBeDisabled();
+  });
+
+  it("保存された時刻がすでに過ぎていれば、ふつうに送れる", async () => {
+    const past = Date.now() - 1000;
+    window.localStorage.setItem(resendDeadlineStorageKey("1"), String(past));
+
+    render(<EmailVerificationBanner />);
+
+    expect(
+      await screen.findByRole("button", {
+        name: "かくにんメールを もういちど おくる",
+      })
+    ).toBeEnabled();
+  });
+
+  it("クールダウンはユーザーごとに分ける（別アカウントに持ち越さない）", async () => {
+    const until = Date.now() + 120_000;
+    window.localStorage.setItem(resendDeadlineStorageKey("1"), String(until));
+    mockedUseAuth.mockReturnValue({ user: { id: "2", email: "other@gmail.com" } });
+
+    render(<EmailVerificationBanner />);
+
+    expect(
+      await screen.findByRole("button", {
+        name: "かくにんメールを もういちど おくる",
+      })
     ).toBeEnabled();
   });
 
