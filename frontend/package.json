@@ -24,7 +24,7 @@
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-slot": "^1.2.4",
-    "@sentry/nextjs": "^10.54.0",
+    "@sentry/nextjs": "^10.69.0",
     "@stripe/stripe-js": "^9.7.0",
     "@tootallnate/once": "^3.0.1",
     "@types/canvas-confetti": "^1.9.0",
