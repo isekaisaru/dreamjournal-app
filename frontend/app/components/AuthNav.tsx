@@ -68,12 +68,14 @@ export default function AuthNav() {
     return (
       <Link href={href}>
         <div
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full transition-all duration-200 ${
+          className={`flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-full transition-all duration-200 ${
             isActive ? activeStyle : inactiveStyle
           }`}
         >
-          <Icon size={variant === "default" ? 20 : 18} />
-          <span className={variant === "default" ? "text-sm" : "text-xs"}>
+          <Icon size={variant === "default" ? 20 : 18} className="shrink-0" />
+          <span
+            className={`whitespace-nowrap ${variant === "default" ? "text-sm" : "text-xs"}`}
+          >
             {label}
           </span>
         </div>
