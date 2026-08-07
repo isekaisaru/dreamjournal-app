@@ -50,10 +50,18 @@ describe("Sidebar", () => {
     render(<Sidebar />);
     expect(screen.getByRole("link", { name: "ホーム" })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("link", { name: "夢の森" })).toHaveAttribute("href", "/forest");
-    expect(screen.getByRole("link", { name: "マイ夢" })).toHaveAttribute("href", "/my-dreams");
+    expect(screen.getByRole("link", { name: "きもち" })).toHaveAttribute("href", "/insights");
     expect(screen.getByRole("link", { name: "設定" })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("button", { name: /さがす/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ログアウト/ })).toBeInTheDocument();
+  });
+
+  // /my-dreams は /home へ統合済み（ルートはブックマーク対策のリダイレクトのみ）。
+  // ナビに残すと「押しても /home のまま」で機能が無いように見えるため出さない。
+  it("統合済みの「マイ夢」(/my-dreams) をナビに出さない", () => {
+    const { container } = render(<Sidebar />);
+    expect(screen.queryByRole("link", { name: "マイ夢" })).not.toBeInTheDocument();
+    expect(container.querySelector('a[href="/my-dreams"]')).toBeNull();
   });
 
   it("現在地のナビをアクティブ表示する", () => {

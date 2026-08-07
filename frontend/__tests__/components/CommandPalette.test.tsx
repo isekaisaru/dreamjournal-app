@@ -70,6 +70,22 @@ describe("CommandPalette", () => {
     await flushFetch();
   });
 
+  // /my-dreams は /home へ統合済み（ルートはブックマーク対策のリダイレクトのみ）。
+  // コマンドに残すと「実行しても /home のまま」で機能が無いように見えるため出さない。
+  it("統合済みの「マイ夢へ」(/my-dreams) をコマンドに出さない", async () => {
+    setup();
+    fireEvent.keyDown(window, { key: "k", metaKey: true });
+
+    expect(screen.queryByText("マイ夢へ")).toBeNull();
+
+    // 検索しても出てこない
+    const input = screen.getByPlaceholderText("夢を検索 / コマンド…");
+    fireEvent.change(input, { target: { value: "マイ夢" } });
+    expect(screen.queryByText("マイ夢へ")).toBeNull();
+
+    await flushFetch();
+  });
+
   it("Enter で選択中コマンドを実行する（先頭=新しい夢を記録→/dream/new）", async () => {
     setup();
     fireEvent.keyDown(window, { key: "k", metaKey: true });
