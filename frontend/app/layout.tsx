@@ -9,6 +9,10 @@ import { Suspense } from "react";
 import Loading from "./loading";
 import { Providers } from "./providers";
 import PendingDreamsMonitor from "./components/PendingDreamsMonitor";
+import BottomTabBar from "./components/BottomTabBar";
+import Sidebar from "./components/Sidebar";
+import { CommandPaletteProvider } from "./components/CommandPalette";
+import { SITE_URL, GOOGLE_SITE_VERIFICATION } from "@/lib/site";
 
 const notoSansJP = Noto_Sans_JP({ subsets: ["latin"] });
 // Hydration前にテーマを合わせて、ライト→ダークのちらつきを防ぐ。
@@ -21,7 +25,7 @@ const themeInitScript = `
   }
 `;
 
-const siteUrl = "https://dreamjournal-app.vercel.app";
+const siteUrl = SITE_URL;
 
 export const metadata: Metadata = {
   title: "YumeTree | モルペウスと育てるAI夢ノート",
@@ -48,6 +52,10 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // Search Console の HTMLタグ検証。環境変数が無ければ verification 自体を省略する。
+  ...(GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export default function RootLayout({
@@ -57,22 +65,28 @@ export default function RootLayout({
 }>): React.ReactElement {
   return (
     <html lang="ja" className="min-h-full" suppressHydrationWarning>
-      <body
-        className={`${notoSansJP.className} px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen`}
-      >
+      <body className={`${notoSansJP.className} min-h-screen`}>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
         <Providers>
-          <Header />
-          <div className="flex flex-col flex-grow">
-            <main className="flex-grow">
-              <Suspense fallback={<Loading />}>{children}</Suspense>
-            </main>
-            <Footer />
-            {/* 全体で1つのインスタンスとしてマウント */}
-          </div>
-          <PendingDreamsMonitor />
+          <CommandPaletteProvider>
+            {/* PC(lg+)・ログイン時のみ左サイドバー。公開/モバイル/未ログインでは null */}
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <div className="flex min-w-0 flex-grow flex-col px-4 sm:px-6 lg:px-8">
+                <Header />
+                <div className="flex flex-grow flex-col">
+                  <main className="flex-grow">
+                    <Suspense fallback={<Loading />}>{children}</Suspense>
+                  </main>
+                  <Footer />
+                </div>
+              </div>
+            </div>
+            <PendingDreamsMonitor />
+            <BottomTabBar />
+          </CommandPaletteProvider>
         </Providers>
       </body>
     </html>

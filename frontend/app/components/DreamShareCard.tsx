@@ -8,13 +8,19 @@ import { Download, Link } from "lucide-react";
 import { EmotionTag } from "./EmotionTag";
 
 type DreamShareCardProps = {
-  imageUrl: string;
+  imageUrl?: string | null;
   title: string;
   recordedAt: string;
   emotionLabels: string[];
   imageAlt: string;
   onImageError?: () => void;
+  profileName?: string;
+  profileEmoji?: string;
+  profileColor?: string;
 };
+
+// AI画像・プロフィールアバターがどちらも無いときのフォールバック絵文字
+const DEFAULT_AVATAR_EMOJI = "🌙";
 
 function formatDate(dateInput: string): string {
   const date = new Date(dateInput);
@@ -61,12 +67,13 @@ export default function DreamShareCard({
   emotionLabels,
   imageAlt,
   onImageError,
+  profileName,
+  profileEmoji,
+  profileColor,
 }: DreamShareCardProps) {
   const formattedDate = formatDate(recordedAt);
   const cardRef = useRef<HTMLElement>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
 
   const handleCopyLink = async () => {
     try {
@@ -90,12 +97,13 @@ export default function DreamShareCard({
     let objectUrl: string | null = null;
 
     try {
-      if (img) {
+      if (img && imageUrl) {
         if (SAFE_DATA_PREFIXES.some((p) => imageUrl.startsWith(p))) {
           // png / jpeg / webp base64 data URL は同一オリジン扱い。tainted canvas が発生しないためそのまま使う
           await waitForImageReady(img);
         } else if (imageUrl.startsWith("https://")) {
           // https: URL は same-origin proxy 経由で差し替え（CORS / tainted canvas 回避）
+          const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
           const res = await fetch(proxyUrl);
           if (!res.ok) throw new Error("proxy fetch failed");
           const blob = await res.blob();
@@ -151,15 +159,34 @@ export default function DreamShareCard({
         className="mt-6 overflow-hidden rounded-lg border border-sky-200/70 bg-gradient-to-br from-sky-50 via-white to-amber-50 text-slate-900 shadow-lg"
       >
         <div className="relative aspect-square overflow-hidden bg-slate-100">
-          <Image
-            src={imageUrl}
-            alt={`${imageAlt} シェアカード`}
-            fill
-            sizes="(max-width: 768px) 100vw, 768px"
-            className="object-cover"
-            unoptimized
-            onError={onImageError}
-          />
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={`${imageAlt} シェアカード`}
+              fill
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="object-cover"
+              unoptimized
+              onError={onImageError}
+            />
+          ) : (
+            <div
+              data-testid="dream-share-card-fallback"
+              className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center"
+              style={{
+                background: profileColor
+                  ? `linear-gradient(135deg, ${profileColor}33, ${profileColor}0d)`
+                  : "linear-gradient(135deg, #bae6fd, #fef3c7)",
+              }}
+            >
+              <span className="text-7xl leading-none" aria-hidden="true">
+                {profileEmoji || DEFAULT_AVATAR_EMOJI}
+              </span>
+              <p className="max-w-full truncate text-sm font-medium text-slate-600">
+                {title}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 p-5">
@@ -169,6 +196,22 @@ export default function DreamShareCard({
             </p>
             <p className="text-xs font-semibold text-slate-500">ユメツリー</p>
           </div>
+
+          {profileName && profileEmoji && (
+            <div
+              data-testid="profile-chip"
+              className="inline-flex min-w-0 max-w-full items-center gap-1.5 self-start rounded-full border px-3 py-1 text-sm font-semibold text-slate-700"
+              style={{
+                backgroundColor: profileColor ? `${profileColor}22` : "#f1f5f9",
+                borderColor: profileColor ? `${profileColor}55` : "#e2e8f0",
+              }}
+            >
+              <span aria-hidden="true" className="shrink-0">
+                {profileEmoji}
+              </span>
+              <span className="min-w-0 truncate">{profileName}</span>
+            </div>
+          )}
 
           <div>
             {formattedDate && (

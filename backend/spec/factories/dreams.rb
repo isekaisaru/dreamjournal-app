@@ -1,6 +1,7 @@
 FactoryBot.define do
   factory :dream do
     association :user
+    dream_profile { user.dream_profiles.first || create(:dream_profile, :self_profile, user: user) }
     sequence(:title) { |n| "夢のタイトル#{n}" }
     sequence(:content) { |n| "これは夢の内容です。#{n}番目の夢について詳しく記録しています。この夢では様々な出来事が起こりました。" }
 

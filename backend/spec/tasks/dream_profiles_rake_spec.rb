@@ -1,5 +1,9 @@
 require 'rails_helper'
 
+# NOTE: 'rake dream_profiles:backfill_dream_profile_id' のspecは、
+# dreams.dream_profile_id が NOT NULL化（#413）されたことで
+# 「NULLの夢」というフィクスチャ自体が作成不可能になったため削除した。
+# rakeタスク自体はコードとして残しているが、以後NULLは存在しえないため実質no-op。
 RSpec.describe 'rake dream_profiles:ensure_self_profiles' do
   # Rake タスクは一度だけロードすればよい
   before(:all) do

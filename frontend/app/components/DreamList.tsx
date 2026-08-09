@@ -12,6 +12,8 @@ import MorpheusImage from "./MorpheusImage";
 interface DreamListProps {
   dreams: Dream[];
   onDelete?: (id: number) => void;
+  /** 夢カードの表示形式。省略時は現行どおりグリッド表示 */
+  viewMode?: "grid" | "list";
   /** 文字・日付・感情での検索が有効かどうか（空表示メッセージを切り替えるために使用） */
   isSearchActive?: boolean;
   /** プロフィール切り替え中かどうか（空表示メッセージを切り替えるために使用） */
@@ -84,6 +86,7 @@ const moonPhases = [
 
 const DreamList = ({
   dreams,
+  viewMode = "grid",
   isSearchActive = false,
   isProfileFilterActive = false,
   ageGroup,
@@ -93,10 +96,16 @@ const DreamList = ({
   return (
     <>
       <motion.div
+        data-testid="dream-list"
+        data-view-mode={viewMode}
         variants={container}
         initial="hidden"
         animate="show"
-        className="w-full grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
+        className={
+          viewMode === "grid"
+            ? "grid w-full grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
+            : "flex w-full flex-col gap-3 p-4"
+        }
       >
         {dreams.length === 0 ? (
           shouldShowProfileEmpty ? (

@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { shouldAllowAuthPageForUser } from "./lib/authPageRedirect";
+import { isProtectedPage } from "./lib/protectedRoutes";
 
 const API_PREFIX_PATTERN = /\/api\/v1\/?$/;
 
@@ -44,18 +46,16 @@ export async function proxy(request: NextRequest) {
 
   const isAuthPage =
     pathname.startsWith("/login") || pathname.startsWith("/register");
-  const isProtectedPage =
-    pathname.startsWith("/home") ||
-    pathname.startsWith("/dream") ||
-    pathname.startsWith("/forest") ||
-    pathname.startsWith("/settings");
+  const pageIsProtected = isProtectedPage(pathname);
 
   // Only these pages render MorpheusLoginRequired for unauthenticated users.
   // Every other protected page still redirects to /login.
   const hasInAppLoginGuidance =
-    pathname === "/home" || pathname.startsWith("/dream/month");
+    pathname === "/home" ||
+    pathname === "/insights" ||
+    pathname.startsWith("/dream/month");
 
-  if (!token && isProtectedPage) {
+  if (!token && pageIsProtected) {
     // Let the page render its in-app login guidance instead of forcing an
     // immediate redirect. Protected data is still guarded by backend APIs.
     return NextResponse.next();
@@ -70,9 +70,15 @@ export async function proxy(request: NextRequest) {
       });
 
       if (response.ok && isAuthPage) {
-        // Logged in, and on an auth page -> redirect to home
+        const data = await response.json().catch(() => null);
+        if (shouldAllowAuthPageForUser(pathname, data?.user)) {
+          return NextResponse.next();
+        }
+
+        // Logged in, and on an auth page -> redirect to home.
+        // Trial users are allowed through /register so they can convert in-place.
         return NextResponse.redirect(new URL("/home", request.url));
-      } else if (!response.ok && isProtectedPage) {
+      } else if (!response.ok && pageIsProtected) {
         // Invalid token on a protected page: clear the stale cookie, then let
         // the client show the Morpheus login-required guidance.
         const res = NextResponse.next();
@@ -93,7 +99,9 @@ export const config = {
     "/home/:path*",
     "/dream/:path*",
     "/forest/:path*",
+    "/insights/:path*",
     "/settings/:path*",
+    "/room/:path*",
     "/login",
     "/register",
   ],

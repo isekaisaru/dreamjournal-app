@@ -4,10 +4,17 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 import { Dream, DreamProfile, Emotion, DreamDraftData } from "../types";
-import { getDreamProfiles, getEmotions, previewAnalysis, ApiError } from "@/lib/apiClient";
+import {
+  getDreamProfiles,
+  getEmotions,
+  previewAnalysis,
+  ApiError,
+  isEmailVerificationRequiredError,
+} from "@/lib/apiClient";
+import EmailVerificationBanner from "./EmailVerificationBanner";
 import { toast } from "@/lib/toast";
 import { groupEmotionsByDisplayLabel } from "./emotionGrouping";
-import MorpheusImage from "./MorpheusImage";
+import MorpheusAvatar from "./MorpheusAvatar";
 
 interface DreamFormData {
   title: string;
@@ -28,6 +35,7 @@ interface DreamFormProps {
   defaultProfileId?: number;
   onSubmit: (data: DreamFormData) => void;
   isLoading?: boolean;
+  layout?: "stacked" | "desktop-split";
 }
 
 export default function DreamForm({
@@ -35,7 +43,9 @@ export default function DreamForm({
   defaultProfileId,
   onSubmit,
   isLoading = false,
+  layout = "stacked",
 }: DreamFormProps) {
+  const isDesktopSplit = layout === "desktop-split";
   const mapEmotionNamesToIds = (
     availableEmotions: Emotion[],
     emotionNames: string[]
@@ -60,6 +70,7 @@ export default function DreamForm({
   const [isDraftApplied, setIsDraftApplied] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
+  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
   const [analysisRevealKey, setAnalysisRevealKey] = useState(0);
   const [profiles, setProfiles] = useState<DreamProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState<number | undefined>(
@@ -190,6 +201,7 @@ export default function DreamForm({
     }
 
     setAnalysisLimitReached(false);
+    setEmailVerificationRequired(false);
     setIsAnalyzing(true);
     try {
       const result = await previewAnalysis(content);
@@ -201,7 +213,9 @@ export default function DreamForm({
       localStorage.removeItem(morpheusRatingKey);
       toast.success("モルペウスが おへんじ したよ！");
     } catch (error) {
-      if (error instanceof ApiError && error.status === 403 && error.data?.limit_reached) {
+      if (isEmailVerificationRequiredError(error)) {
+        setEmailVerificationRequired(true);
+      } else if (error instanceof ApiError && error.status === 403 && error.data?.limit_reached) {
         setAnalysisLimitReached(true);
       } else if (error instanceof ApiError && error.message) {
         console.error("Analysis failed:", error);
@@ -245,16 +259,57 @@ export default function DreamForm({
     });
   };
 
+  // 保存ボタンに「誰の夢として残すか」を出す。
+  // 複数プロフィールがあるときの取り違えは、押す直前に名前が見えていれば防げる。
+  // プロフィールが1つだけのときは、わざわざ名乗らない。
+  //
+  // アーカイブ済みプロフィールの夢を編集する場合、そのプロフィールは
+  // fetchProfiles で除外されるため profiles から引けない。
+  // 保存時は selectedProfileId をそのまま送るので、名前だけ出ないと
+  // 「持ち主が選択肢に無いとき」に限って確認できなくなる。
+  // 夢詳細APIが dream_profile を返しているので、そちらを控えに使う。
+  const activeSelectedProfile = profiles.find((p) => p.id === selectedProfileId);
+  const archivedSelectedName =
+    !activeSelectedProfile &&
+    initialData?.dream_profile?.id === selectedProfileId
+      ? initialData?.dream_profile?.name
+      : undefined;
+  // 名前を出すのは「選ぶ余地があるとき」か「持ち主が選択肢に無いとき」。
+  const selectedProfileName =
+    archivedSelectedName ??
+    (profiles.length > 1 ? activeSelectedProfile?.name : undefined);
+  const submitLabel = selectedProfileName
+    ? `${selectedProfileName}の ゆめを のこす`
+    : "ゆめを のこす";
+
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-6 border border-border rounded-lg bg-card text-card-foreground shadow"
+      className={
+        isDesktopSplit
+          ? "rounded-lg border border-border bg-card p-6 text-card-foreground shadow lg:grid lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)] lg:items-start lg:gap-5 lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none"
+          : "rounded-lg border border-border bg-card p-6 text-card-foreground shadow"
+      }
     >
-      {profiles.length > 1 && (
-        <div className="mb-5">
-          <label className="block mb-2 font-semibold text-card-foreground text-sm">
+      <div
+        className={
+          isDesktopSplit
+            ? "lg:rounded-2xl lg:border lg:border-border lg:bg-card lg:p-6 lg:shadow-sm"
+            : ""
+        }
+      >
+        {profiles.length > 1 && (
+          <div
+            className="mb-5"
+            role="group"
+            aria-labelledby="dream-profile-group-label"
+          >
+          <span
+            id="dream-profile-group-label"
+            className="block mb-2 font-semibold text-card-foreground text-sm"
+          >
             誰の夢？
-          </label>
+          </span>
           <div className="flex flex-wrap gap-2">
             {profiles.map((p) => {
               const isSelected = selectedProfileId === p.id;
@@ -262,6 +317,10 @@ export default function DreamForm({
                 <button
                   key={p.id}
                   type="button"
+                  // 選択状態を読み上げにも伝える。
+                  // これが無いと、枠線と背景の色でしか選択が分からず、
+                  // スクリーンリーダーではどれを選んでいるか判別できない。
+                  aria-pressed={isSelected}
                   onClick={() => setSelectedProfileId(p.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border-2 transition-all ${
                     isSelected
@@ -270,21 +329,27 @@ export default function DreamForm({
                   }`}
                   style={isSelected ? { borderColor: p.color } : {}}
                 >
+                  {/* 色だけで選択を示さない（色の見分けがつきにくい人にも分かるように） */}
+                  {isSelected && (
+                    <span aria-hidden="true" className="font-bold">
+                      ✓
+                    </span>
+                  )}
                   <span>{p.avatar_emoji}</span>
                   <span>{p.name}</span>
                 </button>
               );
             })}
           </div>
-        </div>
-      )}
+          </div>
+        )}
 
-      {isDraftApplied && (
-        <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
-          モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
-        </div>
-      )}
-      <div className="mb-4">
+        {isDraftApplied && (
+          <div className="mb-4 rounded-md border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary-foreground">
+            モルペウスが きいた おはなし だよ。まちがってたら なおしてね。
+          </div>
+        )}
+        <div className="mb-4">
         <label
           htmlFor="dream-title"
           className="block mb-2 font-semibold text-card-foreground"
@@ -299,9 +364,9 @@ export default function DreamForm({
           className="w-full p-2 border border-input bg-background text-foreground rounded focus:ring-2 focus:ring-ring focus:border-ring"
           required
         />
-      </div>
+        </div>
 
-      <div className="mb-6">
+        <div className={isDesktopSplit ? "mb-0" : "mb-6"}>
         <label
           htmlFor="dream-content"
           className="block mb-2 font-semibold text-card-foreground"
@@ -316,6 +381,14 @@ export default function DreamForm({
           placeholder="どんな ゆめ だった？ おもいだせる だけ かいてみてね..."
         ></textarea>
         {/* Analysis Button */}
+        {emailVerificationRequired && (
+          <div className="mt-3">
+            <EmailVerificationBanner
+              title="AIぶんせきには メールの かくにんが ひつようだよ"
+              description="とどいた メールの リンクを ひらいてから、もういちど きいてみてね。"
+            />
+          </div>
+        )}
         <div className="mt-3 flex justify-end">
           {analysisLimitReached ? (
             <div className="flex flex-col items-end gap-2">
@@ -365,12 +438,59 @@ export default function DreamForm({
             </motion.button>
           )}
         </div>
-        {isAnalyzing ? (
+        </div>
+      </div>
+
+      {(isDesktopSplit || isAnalyzing || analysisText) && (
+        <aside
+          aria-label={isDesktopSplit ? "モルペウスのライブガイド" : undefined}
+          className={
+            isDesktopSplit
+              ? "space-y-5 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-3"
+              : ""
+          }
+        >
+          {isDesktopSplit && (
+            <div className="relative hidden overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-950 via-slate-900 to-sky-950 p-5 text-center text-white shadow-xl lg:block">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-sky-300/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-10 left-4 h-28 w-28 rounded-full bg-violet-300/20 blur-3xl" />
+              <div className="relative flex flex-col items-center">
+                <p className="mb-3 text-[11px] font-bold tracking-[0.18em] text-sky-200">
+                  MORPHEUS LIVE
+                </p>
+                <div className="motion-safe:animate-morpheus-float">
+                  <MorpheusAvatar
+                    variant={isAnalyzing || analysisText ? "analysis" : "compose"}
+                    size={96}
+                    className="ring-2 ring-white/30 shadow-lg"
+                  />
+                </div>
+                <h2 className="mt-4 text-lg font-bold" aria-live="polite">
+                  {isAnalyzing
+                    ? "夢をそっと読み解いているよ"
+                    : analysisText
+                      ? "夢のことばが見えてきたよ"
+                      : content.trim()
+                        ? "聞かせてくれてありがとう"
+                        : "今朝はどんな夢を見た？"}
+                </h2>
+                <p className="mt-3 max-w-sm rounded-2xl bg-white/90 px-4 py-3 text-sm font-semibold leading-relaxed text-slate-800 shadow-sm">
+                  {content.trim()
+                    ? "思い出せるところまでで大丈夫。準備ができたら、モルペウスに聞いてみよう。"
+                    : "ひとことからでも大丈夫。忘れる前に、ゆっくり書いてみよう。"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isAnalyzing ? (
           <div className="mt-4 overflow-hidden rounded-[28px] border border-sky-200/50 bg-slate-950 px-4 py-4 text-slate-50 shadow-lg">
             <div className="flex items-center gap-4">
-              <div className="shrink-0 rounded-2xl bg-white/90 p-1 shadow-sm ring-1 ring-white/30">
-                <MorpheusImage variant="analysis" size={74} />
-              </div>
+              <MorpheusAvatar
+                variant="analysis"
+                size={74}
+                className="shadow-sm ring-white/30"
+              />
               <div className="flex-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-300">
                   Morpheus Reading
@@ -402,11 +522,10 @@ export default function DreamForm({
               ))}
             </div>
           </div>
-        ) : null}
-      </div>
+          ) : null}
 
-      {analysisText && (
-        <motion.div
+          {analysisText && (
+            <motion.div
           key={`${analysisRevealKey}-${analysisText}`}
           initial={{ opacity: 0, rotateX: -14, y: 20 }}
           animate={{ opacity: 1, rotateX: 0, y: 0 }}
@@ -472,10 +591,18 @@ export default function DreamForm({
           <p className="mt-2 text-xs text-muted-foreground">
             ないよう や タグ は、じぶんで なおせるよ。
           </p>
-        </motion.div>
+            </motion.div>
+          )}
+        </aside>
       )}
 
-      <div className="mb-6">
+      <div
+        className={
+          isDesktopSplit
+            ? "mb-6 lg:col-start-1 lg:mb-0 lg:rounded-2xl lg:border lg:border-border lg:bg-card lg:p-6 lg:shadow-sm"
+            : "mb-6"
+        }
+      >
         <label className="block mb-2 font-semibold text-card-foreground">
           この ゆめ の きもち は どれ？
         </label>
@@ -560,14 +687,14 @@ export default function DreamForm({
 
       <button
         type="submit"
-        className={`w-full py-2.5 px-4 rounded font-medium transition-colors ${
+        className={`w-full rounded px-4 py-2.5 font-medium transition-colors ${isDesktopSplit ? "lg:col-start-1" : ""} ${
           isLoading
             ? "bg-muted text-muted-foreground cursor-not-allowed"
             : "bg-primary hover:bg-primary/90 text-primary-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
         }`}
         disabled={isLoading}
       >
-        {isLoading ? "モルペウスが かんがえています..." : "ゆめを のこす"}
+        {isLoading ? "モルペウスが かんがえています..." : submitLabel}
       </button>
     </form>
   );

@@ -2,7 +2,7 @@ require 'rails_helper'
 require 'tempfile'
 
 RSpec.describe 'AudioDreams API', type: :request do
-  let!(:user) { create(:user) }
+  let!(:user) { create(:user, :with_self_profile) }
   let(:audio_tempfile) do
     file = Tempfile.new(['audio', '.webm'])
     file.binmode
@@ -59,6 +59,35 @@ RSpec.describe 'AudioDreams API', type: :request do
         authenticated_post '/analyze_audio_dream', user
 
         expect(response).not_to have_http_status(:forbidden)
+      end
+    end
+
+    context 'メール未確認ユーザーのAI課金機能ゲート' do
+      it '未確認の本登録ユーザーは403で、夢もジョブも作られない' do
+        unverified = create(:user, :unverified, :with_self_profile)
+
+        expect {
+          post '/analyze_audio_dream',
+               params: { file: audio_upload },
+               headers: auth_headers(unverified)
+        }.not_to change(Dream, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['email_verification_required']).to be true
+        analyze_jobs = ActiveJob::Base.queue_adapter.enqueued_jobs.select { |j| j['job_class'] == 'AnalyzeDreamJob' }
+        expect(analyze_jobs).to be_empty
+      end
+
+      it '未確認のトライアルユーザーは上限内なら従来通り実行できる（体験導線を壊さない）' do
+        trial = create(:user, :unverified, :with_self_profile, trial_user: true, trial_audio_count: 0)
+
+        expect {
+          post '/analyze_audio_dream',
+               params: { file: audio_upload },
+               headers: auth_headers(trial)
+        }.to change { trial.dreams.count }.by(1)
+
+        expect(response).to have_http_status(:ok)
       end
     end
 

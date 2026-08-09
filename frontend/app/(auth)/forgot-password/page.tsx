@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { createApiUrl } from "@/lib/api-config";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -31,8 +32,7 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const response = await fetch(`${apiUrl}/password_resets`, {
+      const response = await fetch(createApiUrl("/password_resets"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

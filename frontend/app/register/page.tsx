@@ -4,17 +4,16 @@ import Link from "next/link";
 import React from "react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { clientRegister } from "@/lib/apiClient";
+import { clientRegister, convertTrial } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
+import AuthVisualPanel from "@/app/components/AuthVisualPanel";
+import { resolveRegistrationErrorMessage } from "@/lib/registrationErrors";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
   textSecurity: "disc",
 } as React.CSSProperties;
-
-const defaultRegisterError =
-  "うまく はじめられなかったよ。もういちど ためしてね。";
 
 function getPasswordStrength(pw: string): { level: 1 | 2 | 3 | null; label: string; color: string } {
   if (pw.length < 8) return { level: null, label: "", color: "" };
@@ -43,6 +42,7 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const { login, authStatus, user } = useAuth();
   const router = useRouter();
+  const isAuthChecking = authStatus === "checking";
 
   // 認証済みでも trial_user は本登録フォームに進めるため除外する
   useEffect(() => {
@@ -54,6 +54,12 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (isAuthChecking) {
+      setError("ログインじょうたいを かくにんしているよ。すこし まってね。");
+      return;
+    }
+
     setIsLoading(true);
 
     // 2. 入力内容のチェックを強化
@@ -91,27 +97,37 @@ export default function Register() {
     }
 
     try {
-      // 以前: 汎用のapiClient.postを使っていました。
-      // 今回: ユーザー登録専用の `clientRegister` 関数を使います。
-      const { user } = await clientRegister({
+      const credentials = {
         email,
         username,
         password,
         password_confirmation: passwordConfirmation,
-      });
+      };
+      // トライアル判定が不明な状態では通常登録にフォールバックしない。
+      // 認証済み通常ユーザーは既存アカウントを保護するため /home へ戻す。
+      if (authStatus === "authenticated" && user?.trial_user !== true) {
+        router.push("/home");
+        return;
+      }
+
+      const { user: nextUser } = authStatus === "authenticated"
+        ? await convertTrial(credentials)
+        : await clientRegister(credentials);
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
-      login(user);
-    } catch (err: any) {
-      // 以前: エラーメッセージは err.response.data.errors など、複数の可能性がありました。
-      // 今回: apiClientから来るエラーメッセージを直接表示します。シンプル！
-      setError(defaultRegisterError);
+      login(nextUser);
+    } catch (err: unknown) {
+      // バックエンドが422で返す error_codes（field/code）だけを見て理由を出し分ける。
+      // 500・タイムアウト・通信失敗や、知らないコードのときは
+      // resolveRegistrationErrorMessage が汎用メッセージを返す（内部情報は出さない）。
+      setError(resolveRegistrationErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen bg-background text-foreground">
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
         <MorpheusSmall
           message="はじめまして！いっしょにゆめを記録しよう"
@@ -327,10 +343,10 @@ export default function Register() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isAuthChecking}
             className="w-full py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring active:bg-primary/80 transition-colors duration-200 ease-in-out disabled:opacity-50"
           >
-            {isLoading ? "じゅんび しているよ..." : "はじめる"}
+            {isLoading || isAuthChecking ? "じゅんび しているよ..." : "はじめる"}
           </button>
         </div>
         {error && (
@@ -356,6 +372,8 @@ export default function Register() {
         </div>
       </form>
       </div>
+      </div>
+      <AuthVisualPanel variant="register" />
     </div>
   );
 }

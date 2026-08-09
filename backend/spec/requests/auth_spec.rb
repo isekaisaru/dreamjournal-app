@@ -291,4 +291,173 @@ RSpec.describe 'Authentication API', type: :request do
       end
     end
   end
+
+  describe 'PATCH /auth/convert_trial トライアル→本登録 昇格' do
+    let!(:trial_user) do
+      create(:user, trial_user: true, email: 'trial@example.com', username: 'trialuser', password: 'password123')
+    end
+    let(:convert_params) do
+      {
+        user: {
+          email: 'real@example.com',
+          username: 'realuser',
+          password: 'newpass123',
+          password_confirmation: 'newpass123'
+        }
+      }
+    end
+
+    it 'トライアルユーザーを本登録に昇格でき、trial_user:false を返す' do
+      authenticated_patch('/auth/convert_trial', trial_user, params: convert_params)
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response['user']['trial_user']).to be false
+      expect(json_response['user']['email']).to eq('real@example.com')
+      expect(json_response['user']['username']).to eq('realuser')
+
+      trial_user.reload
+      expect(trial_user.trial_user?).to be false
+      expect(trial_user.email).to eq('real@example.com')
+      expect(trial_user.authenticate('newpass123')).to be_truthy
+    end
+
+    it '昇格時にセッションをローテーションして旧トークンを無効化する' do
+      # レガシーカラムのトークンも昇格時にまとめて無効化される
+      trial_user.update_column(:refresh_token, 'old-trial-refresh-token')
+
+      authenticated_patch('/auth/convert_trial', trial_user, params: convert_params)
+      expect(response).to have_http_status(:ok)
+
+      trial_user.reload
+      expect(trial_user.refresh_token).to be_nil
+      # 新しいセッションが1件だけ有効になっている
+      # （authenticated_patch のログインで作られたセッションは昇格時に失効済み）
+      expect(trial_user.user_sessions.active.count).to eq(1)
+    end
+
+    it '昇格しても同じ user.id のまま夢・プロフィールが引き継がれる' do
+      dream = create(:dream, user: trial_user)
+      profile = create(:dream_profile, user: trial_user)
+
+      authenticated_patch('/auth/convert_trial', trial_user, params: convert_params)
+      expect(response).to have_http_status(:ok)
+
+      expect(dream.reload.user_id).to eq(trial_user.id)
+      expect(profile.reload.user_id).to eq(trial_user.id)
+      expect(trial_user.reload.dreams).to include(dream)
+      expect(trial_user.dream_profiles).to include(profile)
+    end
+
+    it 'メールアドレスが他ユーザーと重複する場合は422' do
+      create(:user, email: 'taken@example.com', username: 'someoneelse')
+      params = convert_params.deep_merge(user: { email: 'taken@example.com' })
+
+      authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(trial_user.reload.trial_user?).to be true
+    end
+
+    it 'ユーザー名が他ユーザーと重複する場合は422' do
+      create(:user, email: 'other@example.com', username: 'takenname')
+      params = convert_params.deep_merge(user: { username: 'takenname' })
+
+      authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(trial_user.reload.trial_user?).to be true
+    end
+
+    # 422のときに機械可読な field/code を返す契約。
+    # 通常登録（POST /auth/register）と同じ形にそろえてあるので、
+    # フロントは同じ変換処理で文言を出し分けられる。
+    context '失敗理由（error_codes）' do
+      it 'メールアドレス重複で email/taken を返す' do
+        create(:user, email: 'taken@example.com', username: 'someoneelse')
+        params = convert_params.deep_merge(user: { email: 'taken@example.com' })
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'email', 'code' => 'taken' }
+        )
+      end
+
+      it 'ユーザー名重複で username/taken を返す' do
+        create(:user, email: 'other@example.com', username: 'takenname')
+        params = convert_params.deep_merge(user: { username: 'takenname' })
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'username', 'code' => 'taken' }
+        )
+      end
+
+      it 'メールとユーザー名が両方重複していれば両方返す' do
+        create(:user, email: 'taken@example.com', username: 'takenname')
+        params = convert_params.deep_merge(
+          user: { email: 'taken@example.com', username: 'takenname' }
+        )
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'email', 'code' => 'taken' },
+          { 'field' => 'username', 'code' => 'taken' }
+        )
+      end
+
+      it 'パスワードに英数字が足りなければ password/invalid を返す' do
+        params = convert_params.deep_merge(
+          user: { password: 'abcdefgh', password_confirmation: 'abcdefgh' }
+        )
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(json_response['error_codes']).to include(
+          { 'field' => 'password', 'code' => 'invalid' }
+        )
+      end
+
+      it '失敗しても trial のままで、error_codes に入力値やパスワードを含めない' do
+        create(:user, email: 'taken@example.com', username: 'someoneelse')
+        params = convert_params.deep_merge(user: { email: 'taken@example.com' })
+
+        authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+        expect(trial_user.reload.trial_user?).to be true
+        expect(response.body).not_to include('newpass123')
+        expect(response.body).not_to include('taken@example.com')
+        json_response['error_codes'].each do |entry|
+          expect(entry.keys).to match_array(%w[field code])
+        end
+      end
+    end
+
+    it 'パスワードが弱い（英字のみ）場合は422' do
+      params = convert_params.deep_merge(
+        user: { password: 'abcdefgh', password_confirmation: 'abcdefgh' }
+      )
+
+      authenticated_patch('/auth/convert_trial', trial_user, params: params)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(trial_user.reload.trial_user?).to be true
+    end
+
+    it '本登録済みユーザーが叩くと422（ガード）' do
+      registered = create(:user, trial_user: false, email: 'registered@example.com', username: 'registered')
+
+      authenticated_patch('/auth/convert_trial', registered, params: convert_params)
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it '未認証の場合は401' do
+      patch '/auth/convert_trial', params: convert_params, as: :json, headers: { 'HOST' => 'backend' }
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
 end

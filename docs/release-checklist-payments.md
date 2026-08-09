@@ -5,9 +5,10 @@
 ## Environment
 
 1. `STRIPE_SECRET_KEY` が本番キーになっている。
-2. `STRIPE_WEBHOOK_SECRET` が本番 endpoint と一致している。
-3. `FRONTEND_URL` が絶対 URL で設定されている。
-4. `INTERNAL_API_URL` / `NEXT_PUBLIC_API_URL` が正しい。
+2. `STRIPE_MODE=live` でSecret/Publishable Keyのmode検証が成功する。
+3. `STRIPE_WEBHOOK_SECRET` が本番 endpoint と一致し、受信Eventの`livemode`検証が成功する。
+4. `FRONTEND_URL` が絶対 URL で設定されている。
+5. `INTERNAL_API_URL` / `NEXT_PUBLIC_API_URL` が正しい。
 
 ## Application
 
@@ -15,7 +16,7 @@
 2. Checkout Session に `client_reference_id` と `metadata.user_id` が含まれる。
 3. `stripe_customer_id` の作成・保存・再利用が動作する。
 4. Webhook で `checkout.session.completed` 受信時に `payments` が保存される。
-5. user 未解決時に `payments` を作成せず `200` で返す。
+5. user 未解決時に `payments` と処理済み行を作成せず、再送可能な `5xx` で返す。
 6. 重複 `stripe_event_id` を二重処理しない。
 
 ## Test

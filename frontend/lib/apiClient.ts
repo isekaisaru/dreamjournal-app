@@ -344,10 +344,40 @@ export async function clientRegister(
   };
 }
 
+// トライアルユーザーを本登録へ昇格する（同じアカウントのまま夢を引き継ぐ）。
+// 認証済みCookieで呼ぶため、登録と違いトークン再発行は不要。
+export async function convertTrial(
+  credentials: RegisterCredentials
+): Promise<{ user: User }> {
+  const response = await apiFetch<{ user: BackendUser }>("/auth/convert_trial", {
+    method: "PATCH",
+    body: JSON.stringify({ user: credentials }),
+  });
+  return {
+    user: { ...response.user, id: String(response.user.id) },
+  };
+}
+
 export async function clientLogout(): Promise<null> {
   return apiFetch("/auth/logout", {
     method: "POST",
   });
+}
+
+// パスワードリセットメール内のリンク（/password-reset/:token）から呼ばれる。
+// トークンは使い切り・60分制限で、無効/期限切れ/使用済みのいずれも
+// バックエンドが同じ { error: '無効または期限切れのトークンです。' } を返す。
+export async function confirmPasswordReset(
+  token: string,
+  credentials: { password: string; password_confirmation: string }
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(
+    `/password_resets/${encodeURIComponent(token)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(credentials),
+    }
+  );
 }
 
 export async function getEmotions(): Promise<Emotion[]> {
@@ -357,6 +387,17 @@ export async function getEmotions(): Promise<Emotion[]> {
 export async function createDream(dream: DreamInput): Promise<Dream> {
   return apiFetch<Dream>("/dreams", {
     method: "POST",
+    body: JSON.stringify({ dream }),
+  });
+}
+
+// 保存済みの夢を部分更新する（体験版で分析結果を後から紐づける用途）。
+export async function updateDream(
+  id: number,
+  dream: Partial<DreamInput>
+): Promise<Dream> {
+  return apiFetch<Dream>(`/dreams/${id}`, {
+    method: "PATCH",
     body: JSON.stringify({ dream }),
   });
 }
@@ -446,6 +487,36 @@ export async function verifyAuth(): Promise<{ user: User } | null> {
     // その他のエラーは再スロー
     throw error;
   }
+}
+
+// メールアドレス確認（確認メールのリンクから呼ばれる。未ログインでも実行可能）
+export async function verifyEmail(
+  token: string
+): Promise<{ message: string; email_verified: boolean }> {
+  return apiFetch<{ message: string; email_verified: boolean }>(
+    "/auth/verify_email",
+    {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    }
+  );
+}
+
+// 確認メールの再送（要ログイン）
+export async function resendVerificationEmail(): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>("/auth/resend_verification", {
+    method: "POST",
+  });
+}
+
+// AI課金機能（分析・画像生成・音声）や決済が「メールアドレス確認が必要」で
+// 拒否されたエラーかどうか（backendの require_verified_email が返す403）
+export function isEmailVerificationRequiredError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 403 &&
+    error.data?.email_verification_required === true
+  );
 }
 
 const apiClient = {

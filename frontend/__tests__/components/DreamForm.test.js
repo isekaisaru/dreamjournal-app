@@ -27,10 +27,21 @@ jest.mock("framer-motion", () => {
   return { motion, AnimatePresence: ({ children }) => children };
 });
 
+// EmailVerificationBanner が送信先アドレスを伏せ字で出すために useAuth を使う。
+// DreamForm 自体は認証状態を見ないが、埋め込んでいるバナーが必要とする。
+jest.mock("@/context/AuthContext", () => ({
+  __esModule: true,
+  useAuth: () => ({ user: { id: "1", email: "teruo@example.com" } }),
+}));
+
 // Mocks
 jest.mock("@/lib/apiClient", () => ({
   getEmotions: jest.fn(),
   previewAnalysis: jest.fn(),
+  resendVerificationEmail: jest.fn(),
+  // 実装（lib/apiClient.ts）と同じ判定ロジックをモックにも持たせる
+  isEmailVerificationRequiredError: (error) =>
+    error?.status === 403 && error?.data?.email_verification_required === true,
   ApiError: class ApiError extends Error {
     constructor(message, status, data) {
       super(message);
@@ -45,6 +56,17 @@ jest.mock("@/lib/toast", () => ({
     error: jest.fn(),
     success: jest.fn(),
   },
+}));
+
+jest.mock("@/app/components/MorpheusAvatar", () => ({
+  __esModule: true,
+  default: ({ variant, size }) => (
+    <div
+      data-testid="morpheus-avatar"
+      data-variant={variant}
+      data-size={size}
+    />
+  ),
 }));
 
 const { getEmotions, previewAnalysis } = require("@/lib/apiClient");
@@ -299,6 +321,70 @@ describe("DreamForm", () => {
     });
     expect(upgradeLink).toHaveAttribute("href", "/subscription");
     expect(screen.getByText("今月の無料分析回数を使い切ったよ")).toBeInTheDocument();
+  });
+
+  it("shows the email verification banner when analysis is blocked for unverified users", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    previewAnalysis.mockRejectedValueOnce(
+      new ApiError("メールアドレスの確認が必要です。", 403, {
+        email_verification_required: true,
+      })
+    );
+    const user = userEvent.setup();
+
+    render(<DreamForm onSubmit={jest.fn()} />);
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+    await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
+
+    expect(
+      await screen.findByText("AIぶんせきには メールの かくにんが ひつようだよ")
+    ).toBeInTheDocument();
+    // 再送ボタン付きのバナーが出る（トーストではなく恒常表示）
+    expect(
+      screen.getByRole("button", { name: "かくにんメールを もういちど おくる" })
+    ).toBeInTheDocument();
+  });
+
+  it("shows an analysis MorpheusAvatar while Morpheus is reading the dream", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    previewAnalysis.mockImplementationOnce(() => new Promise(() => {}));
+    const user = userEvent.setup();
+
+    render(<DreamForm onSubmit={jest.fn()} />);
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+    await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
+
+    expect(await screen.findByText("Morpheus Reading")).toBeInTheDocument();
+    const avatar = screen.getByTestId("morpheus-avatar");
+    expect(avatar).toHaveAttribute("data-variant", "analysis");
+    expect(avatar).toHaveAttribute("data-size", "74");
+  });
+
+  it("shows the desktop live guide and reacts when the user starts writing", async () => {
+    getEmotions.mockResolvedValueOnce([]);
+    const user = userEvent.setup();
+
+    render(<DreamForm layout="desktop-split" onSubmit={jest.fn()} />);
+
+    const guide = screen.getByRole("complementary", {
+      name: "モルペウスのライブガイド",
+    });
+    expect(guide.firstElementChild).toHaveClass("hidden", "lg:block");
+    expect(guide).toHaveTextContent("今朝はどんな夢を見た？");
+    expect(screen.getByTestId("morpheus-avatar")).toHaveAttribute(
+      "data-variant",
+      "compose"
+    );
+    expect(screen.getByTestId("morpheus-avatar")).toHaveAttribute(
+      "data-size",
+      "96"
+    );
+
+    await user.type(screen.getByLabelText("どんな おはなし？"), "空を飛ぶ夢");
+
+    expect(guide).toHaveTextContent("聞かせてくれてありがとう");
   });
 
   it("shows the backend analysis error message when analysis fails", async () => {

@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl = "https://dreamjournal-app.vercel.app";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 /**
  * sitemap.xml を自動生成する

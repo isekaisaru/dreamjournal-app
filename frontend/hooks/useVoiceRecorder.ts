@@ -5,9 +5,41 @@ import { toast } from "@/lib/toast";
 
 const MIN_BLOB_SIZE = 2048; // 2KB 未満は「ほぼ無音」とみなす
 const MIN_DURATION_MS = 800; // 0.8 秒未満の録音は無効
+const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+};
+const AUDIO_MIME_TYPES = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/ogg;codecs=opus",
+  "audio/mp4",
+  "audio/aac",
+];
 
 type UseVoiceRecorderOptions = {
   onBlobReady: (blob: Blob) => void;
+};
+
+export const selectSupportedAudioMimeType = (): string => {
+  if (
+    typeof MediaRecorder === "undefined" ||
+    typeof MediaRecorder.isTypeSupported !== "function"
+  ) {
+    return "";
+  }
+
+  return AUDIO_MIME_TYPES.find((type) => MediaRecorder.isTypeSupported(type)) ?? "";
+};
+
+export const createAudioRecorder = (
+  stream: MediaStream,
+  mimeType: string
+): MediaRecorder => {
+  return mimeType
+    ? new MediaRecorder(stream, { mimeType })
+    : new MediaRecorder(stream);
 };
 
 const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
@@ -19,6 +51,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
   const chunksRef = useRef<BlobPart[]>([]);
   const startedAtRef = useRef<number | null>(null);
   const mimeTypeRef = useRef<string>("");
+  const discardRecordingRef = useRef(false);
 
   // ストリームと MediaRecorder の後片付け
   const cleanupStream = useCallback(() => {
@@ -29,15 +62,29 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
     mediaRecorderRef.current = null;
     chunksRef.current = [];
     startedAtRef.current = null;
+    discardRecordingRef.current = false;
   }, []);
 
-  // 「モニター系の無音マイク」を避けてマイクを選択
+  // 先に権限を取得し、許可後に可能なら「モニター系の無音マイク」を避けて選択する
   const getPreferredAudioStream = async (): Promise<MediaStream> => {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("このブラウザは音声録音に対応していません。");
     }
 
-    const devices = await navigator.mediaDevices.enumerateDevices();
+    const initialStream = await navigator.mediaDevices.getUserMedia({
+      audio: AUDIO_CONSTRAINTS,
+    });
+
+    if (!navigator.mediaDevices.enumerateDevices) {
+      return initialStream;
+    }
+
+    let devices: MediaDeviceInfo[] = [];
+    try {
+      devices = await navigator.mediaDevices.enumerateDevices();
+    } catch {
+      return initialStream;
+    }
     const inputs = devices.filter((d) => d.kind === "audioinput");
 
     const realMics = inputs.filter((d) => {
@@ -51,18 +98,22 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
 
     const target = realMics[0] ?? inputs[0];
 
-    if (!target) {
-      throw new Error("利用できるマイクが見つかりません。");
+    if (!target?.deviceId) {
+      return initialStream;
     }
 
-    return navigator.mediaDevices.getUserMedia({
-      audio: {
-        deviceId: target.deviceId ? { exact: target.deviceId } : undefined,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
+    try {
+      const preferredStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          ...AUDIO_CONSTRAINTS,
+          deviceId: { exact: target.deviceId },
+        },
+      });
+      initialStream.getTracks().forEach((track) => track.stop());
+      return preferredStream;
+    } catch {
+      return initialStream;
+    }
   };
 
   const startRecording = useCallback(async () => {
@@ -77,6 +128,9 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
       if (!track) {
         throw new Error("音声トラックの取得に失敗しました。");
       }
+      if (typeof MediaRecorder === "undefined") {
+        throw new Error("このブラウザは音声録音に対応していません。");
+      }
 
       // Chrome × モニターで「無音デバイス」を掴んでないかチェック
       setTimeout(() => {
@@ -90,28 +144,13 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
         }
       }, 500);
 
-      // MediaRecorder の MIME タイプ判定（record-test から移植）
-      let mime = "";
-      if (typeof MediaRecorder !== "undefined") {
-        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-          mime = "audio/webm;codecs=opus";
-        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
-          mime = "audio/webm";
-        } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
-          mime = "audio/ogg;codecs=opus";
-        } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
-          mime = "audio/mp4"; // Safari fallback
-        } else if (MediaRecorder.isTypeSupported("audio/aac")) {
-          mime = "audio/aac";
-        }
-      }
-      mimeTypeRef.current = mime || "audio/webm";
+      const mime = selectSupportedAudioMimeType();
+      mimeTypeRef.current = mime;
 
-      const recorder = new MediaRecorder(stream, {
-        mimeType: mimeTypeRef.current,
-      });
+      const recorder = createAudioRecorder(stream, mimeTypeRef.current);
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
+      discardRecordingRef.current = false;
 
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) {
@@ -120,12 +159,23 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
       };
 
       recorder.onstop = () => {
+        if (discardRecordingRef.current) {
+          cleanupStream();
+          setIsRecording(false);
+          return;
+        }
+
         const duration =
           startedAtRef.current != null
             ? performance.now() - startedAtRef.current
             : 0;
 
-        const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current });
+        const recordedChunk = chunksRef.current.find(
+          (chunk): chunk is Blob =>
+            chunk instanceof Blob && chunk.type.startsWith("audio/")
+        );
+        const blobType = mimeTypeRef.current || recordedChunk?.type || "";
+        const blob = new Blob(chunksRef.current, { type: blobType });
 
         console.log("Debug: Recording stopped", {
           blobSize: blob.size,
@@ -174,13 +224,31 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
     }
   }, []);
 
+  const cancelRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === "recording") {
+      discardRecordingRef.current = true;
+      recorder.stop();
+      return;
+    }
+
+    cleanupStream();
+    setIsRecording(false);
+  }, [cleanupStream]);
+
   useEffect(() => {
     return () => {
       cleanupStream();
     };
   }, [cleanupStream]);
 
-  return { isRecording, error, startRecording, stopRecording };
+  return {
+    isRecording,
+    error,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+  };
 };
 
 export default useVoiceRecorder;

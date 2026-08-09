@@ -11,7 +11,10 @@ class UsersController < ApplicationController
 
     ApplicationRecord.transaction do
       begin
-        result = AuthService.register(user_params)
+        result = AuthService.register(
+          user_params,
+          user_agent: request.user_agent, ip_address: request.remote_ip
+        )
 
         unless result[:user] && result[:access_token] && result[:refresh_token]
           Rails.logger.error "ユーザー登録処理で AuthService から必要な情報が返されませんでした: #{result.inspect}"
@@ -24,7 +27,12 @@ class UsersController < ApplicationController
           relationship: "self", active: true, position: 0
         )
       rescue AuthService::RegistrationError => e
-        error_response = { body: { error: e.message }, status: :unprocessable_entity }
+        # error は既存互換の人間向け文字列（英語混じり）。
+        # error_codes が機械可読な field/code で、フロントはこちらだけを見て文言を決める。
+        error_response = {
+          body: { error: e.message, error_codes: e.details },
+          status: :unprocessable_entity
+        }
         raise ActiveRecord::Rollback
       rescue ActiveRecord::RecordInvalid => e
         Rails.logger.error "自分プロフィールの自動作成に失敗しました: #{e.message}"
@@ -37,6 +45,8 @@ class UsersController < ApplicationController
       render json: error_response[:body], status: error_response[:status]
     else
       set_token_cookies(result[:access_token], result[:refresh_token])
+      # 登録完了後に確認メールを送る（best-effort・登録自体は既に成功している）
+      send_verification_email(result[:user])
       render json: { user: result[:user].as_json(only: [:id, :email, :username, :premium, :age_group, :analysis_tone]) }, status: :created
     end
   end

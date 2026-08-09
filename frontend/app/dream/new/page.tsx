@@ -129,9 +129,17 @@ export default function NewDreamPage() {
   const copy = getNewDreamCopy(user?.age_group);
 
   return (
-    <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">{copy.heading}</h1>
+    <div className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 md:px-8 xl:px-12">
       <div className="mb-6">
+        <p className="text-xs font-bold tracking-[0.16em] text-primary">
+          DREAM JOURNAL
+        </p>
+        <h1 className="mt-2 text-2xl font-bold md:text-3xl">{copy.heading}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          覚えていることを自由に書いて、モルペウスと一緒に気持ちを見つけましょう。
+        </p>
+      </div>
+      <div className="mb-6 lg:hidden">
         <MorpheusGuideCompose />
       </div>
 
@@ -151,6 +159,7 @@ export default function NewDreamPage() {
         onSubmit={handleCreateSubmit}
         isLoading={isSaving}
         defaultProfileId={preselectedProfileId}
+        layout="desktop-split"
       />
 
       <HarvestCelebration

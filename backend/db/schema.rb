@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_06_03_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_07_11_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -99,7 +99,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_03_000000) do
     t.datetime "analyzed_at"
     t.text "generated_image_url"
     t.datetime "image_generated_at"
-    t.bigint "dream_profile_id"
+    t.bigint "dream_profile_id", null: false
     t.index ["analysis_status"], name: "index_dreams_on_analysis_status"
     t.index ["dream_profile_id"], name: "index_dreams_on_dream_profile_id"
     t.index ["user_id", "created_at"], name: "index_dreams_on_user_id_and_created_at"
@@ -150,6 +150,20 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_03_000000) do
     t.index ["user_id"], name: "index_subscriptions_on_user_id"
   end
 
+  create_table "user_sessions", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "refresh_token_digest", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "revoked_at"
+    t.string "user_agent"
+    t.string "ip_address"
+    t.datetime "last_used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["refresh_token_digest"], name: "index_user_sessions_on_refresh_token_digest", unique: true
+    t.index ["user_id"], name: "index_user_sessions_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.string "email"
@@ -159,7 +173,6 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_03_000000) do
     t.string "username"
     t.boolean "trial_user"
     t.string "refresh_token"
-    t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.string "stripe_customer_id"
     t.integer "trial_analysis_count", default: 0, null: false
@@ -169,7 +182,12 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_03_000000) do
     t.string "analysis_tone", default: "auto", null: false
     t.integer "monthly_analysis_count", default: 0, null: false
     t.datetime "monthly_analysis_count_reset_at"
-    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.datetime "email_verified_at"
+    t.string "email_verification_token_digest"
+    t.datetime "email_verification_sent_at"
+    t.string "reset_password_token_digest"
+    t.index ["email_verification_token_digest"], name: "index_users_on_email_verification_token_digest", unique: true
+    t.index ["reset_password_token_digest"], name: "index_users_on_reset_password_token_digest", unique: true
     t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
   end
@@ -186,4 +204,5 @@ ActiveRecord::Schema[7.2].define(version: 2026_06_03_000000) do
   add_foreign_key "dreams", "users"
   add_foreign_key "payments", "users"
   add_foreign_key "subscriptions", "users"
+  add_foreign_key "user_sessions", "users"
 end

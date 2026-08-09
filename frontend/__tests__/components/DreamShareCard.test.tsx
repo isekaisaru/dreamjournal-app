@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import DreamShareCard from "@/app/components/DreamShareCard";
 import * as htmlToImage from "html-to-image";
 
@@ -504,6 +504,70 @@ describe("DreamShareCard", () => {
         expect(toast.error).toHaveBeenCalledWith("画像の保存に失敗しました");
       });
       expect(htmlToImage.toPng).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("プロフィール識別", () => {
+    it("profileName/profileEmoji/profileColorを渡すとカードにプロフィールチップが表示される", () => {
+      render(
+        <DreamShareCard
+          {...DEFAULT_PROPS}
+          profileName="ねこさん"
+          profileEmoji="🐱"
+          profileColor="#f97316"
+        />
+      );
+      const card = screen.getByTestId("dream-share-card");
+      const chip = within(card).getByTestId("profile-chip");
+      expect(chip.textContent).toContain("🐱");
+      expect(chip.textContent).toContain("ねこさん");
+    });
+
+    it("profile propsを渡さない場合はプロフィールチップを描画しない（後方互換）", () => {
+      render(<DreamShareCard {...DEFAULT_PROPS} />);
+      expect(screen.queryByTestId("profile-chip")).toBeNull();
+    });
+  });
+
+  describe("AI画像なしフォールバック", () => {
+    it("imageUrlがnullの場合はimgを描画せず既定アバターのフォールバックを表示する", () => {
+      render(<DreamShareCard {...DEFAULT_PROPS} imageUrl={null} />);
+      expect(screen.queryByRole("img")).toBeNull();
+      const fallback = screen.getByTestId("dream-share-card-fallback");
+      expect(fallback.textContent).toContain("🌙");
+    });
+
+    it("imageUrlがnullでprofileEmoji指定時はそのアバターをフォールバックに表示する", () => {
+      render(
+        <DreamShareCard
+          {...DEFAULT_PROPS}
+          imageUrl={null}
+          profileEmoji="🐱"
+        />
+      );
+      const fallback = screen.getByTestId("dream-share-card-fallback");
+      expect(fallback.textContent).toContain("🐱");
+    });
+
+    it("imageUrlがnullでも保存ボタンからtoPngに到達し、画像proxyへfetchしない", async () => {
+      const mockFetch = jest.fn<typeof fetch>();
+      global.fetch = mockFetch as unknown as typeof fetch;
+      jest.mocked(htmlToImage.toPng).mockResolvedValue("data:image/png;base64,abc");
+      const mockAnchor = { href: "", download: "", click: jest.fn() };
+      jest
+        .spyOn(document, "createElement")
+        .mockImplementation((tag: string) => {
+          if (tag === "a") return mockAnchor as unknown as HTMLElement;
+          return realCreateElement(tag as keyof HTMLElementTagNameMap) as HTMLElement;
+        });
+
+      render(<DreamShareCard {...DEFAULT_PROPS} imageUrl={null} />);
+      fireEvent.click(screen.getByTestId("save-image-button"));
+
+      await waitFor(() => {
+        expect(htmlToImage.toPng).toHaveBeenCalled();
+      });
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 });

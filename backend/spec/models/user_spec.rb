@@ -119,4 +119,20 @@ RSpec.describe User, type: :model do
       expect(user.premium_active_subscription?).to be false
     end
   end
+
+  describe '#self_dream_profile_id' do
+    it 'self プロフィールの id を返す' do
+      user = create(:user)
+      self_profile = create(:dream_profile, :self_profile, user: user)
+
+      expect(user.self_dream_profile_id).to eq(self_profile.id)
+    end
+
+    it 'self プロフィールが無ければ nil を返す' do
+      user = create(:user)
+      create(:dream_profile, user: user) # relationship: "other"
+
+      expect(user.self_dream_profile_id).to be_nil
+    end
+  end
 end

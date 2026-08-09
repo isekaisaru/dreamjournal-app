@@ -17,6 +17,8 @@ class DreamProfile < ApplicationRecord
   validate :active_count_within_limit, if: -> { active? }
   validate :self_profile_not_archived, if: -> { !active? && relationship == "self" }
   validate :self_profile_unique_per_user, if: -> { relationship == "self" }
+  validate :self_profile_relationship_immutable,
+           if: -> { persisted? && relationship_changed? && relationship_was == "self" }
 
   private
 
@@ -42,5 +44,13 @@ class DreamProfile < ApplicationRecord
     return unless scope.exists?
 
     errors.add(:relationship, "「自分」プロフィールはアカウントごとに1件のみ登録できます")
+  end
+
+  # dream作成時のフォールバック（DreamsController / AudioDreamsController）は
+  # 「selfプロフィールが必ず1件存在する」ことに依存している。ここでselfから
+  # 他の関係性への変更を禁止しないと、selfが消えてフォールバックがnilになり、
+  # dream_profile_id の NOT NULL制約でdream作成が失敗しうる。
+  def self_profile_relationship_immutable
+    errors.add(:relationship, "「自分」プロフィールの関係性は変更できません")
   end
 end

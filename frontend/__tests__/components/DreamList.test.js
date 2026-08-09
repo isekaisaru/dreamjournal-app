@@ -80,6 +80,24 @@ describe("DreamList (integration with DreamCard)", () => {
     ).toBeInTheDocument();
   });
 
+  it("uses the existing grid layout by default", () => {
+    render(<DreamList dreams={[makeDream()]} />);
+
+    const list = screen.getByTestId("dream-list");
+    expect(list).toHaveAttribute("data-view-mode", "grid");
+    expect(list).toHaveClass("grid");
+    expect(list.className).toContain("grid-cols-[repeat(auto-fill,minmax(280px,1fr))]");
+  });
+
+  it("uses a single-column layout in list mode", () => {
+    render(<DreamList dreams={[makeDream()]} viewMode="list" />);
+
+    const list = screen.getByTestId("dream-list");
+    expect(list).toHaveAttribute("data-view-mode", "list");
+    expect(list).toHaveClass("flex", "flex-col");
+    expect(list).not.toHaveClass("grid");
+  });
+
   it("renders a single item properly", () => {
     // Arrange
     const dreams = [makeDream({ id: 7, title: "単体" })];

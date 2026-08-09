@@ -21,7 +21,6 @@ export default function MorpheusLoginRequired({
           expression="cheerful"
           imageVariant="login"
           variant="detail"
-          size={168}
           title={title}
           message={message}
           action={

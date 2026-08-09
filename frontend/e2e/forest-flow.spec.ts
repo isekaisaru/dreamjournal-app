@@ -97,24 +97,56 @@ test.describe("夢の森", () => {
     ]);
   });
 
-  test("森 → 木タップ → プレビューシート → 詳細へ遷移できる", async ({ page }) => {
-    await page.goto("/forest");
+  test.describe("モバイル幅（下シート）", () => {
+    test.use({ viewport: { width: 390, height: 844 } });
 
-    await expect(
-      page.getByRole("heading", { name: "ゆめの もり" })
-    ).toBeVisible();
+    test("森 → 木タップ → プレビューシート → 詳細へ遷移できる", async ({ page }) => {
+      await page.goto("/forest");
 
-    // 「自分」の木をタップ → 下からプレビューシートが出る（直接遷移ではない）
-    await page.getByRole("button", { name: /自分の き/ }).first().click();
+      await expect(
+        page.getByRole("heading", { name: "ゆめの もり" })
+      ).toBeVisible();
 
-    // プレビューシートの「この きを 見る ›」で詳細へ遷移
-    const seeTreeButton = page.getByRole("button", { name: /この きを 見る/ });
-    await expect(seeTreeButton).toBeVisible();
-    await seeTreeButton.click();
+      // 「自分」の木をタップ → 下からプレビューシートが出る（直接遷移ではない）
+      await page.getByRole("button", { name: /自分の き/ }).first().click();
 
-    // dev サーバーは /forest/[id] を初回オンデマンドコンパイルするため、
-    // 遷移完了まで余裕を持って待つ（既定5秒だと初回コンパイルに間に合わずflakyになる）
-    await expect(page).toHaveURL(/\/forest\/1$/, { timeout: 30000 });
-    await expect(page.getByRole("heading", { name: /の き$/ })).toBeVisible();
+      // プレビューシート内の「この きを 見る ›」で詳細へ遷移
+      const sheet = page.getByTestId("tree-preview-sheet");
+      const seeTreeButton = sheet.getByRole("button", { name: /この きを 見る/ });
+      await expect(seeTreeButton).toBeVisible();
+      await seeTreeButton.click();
+
+      // dev サーバーは /forest/[id] を初回オンデマンドコンパイルするため、
+      // 遷移完了まで余裕を持って待つ（既定5秒だと初回コンパイルに間に合わずflakyになる）
+      await expect(page).toHaveURL(/\/forest\/1$/, { timeout: 30000 });
+      await expect(page.getByRole("heading", { name: /の き$/ })).toBeVisible();
+    });
+  });
+
+  test.describe("デスクトップ幅（常駐サイドパネル）", () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
+
+    test("森 → 木クリック → 右パネルにプレビュー表示 → 詳細へ遷移できる", async ({ page }) => {
+      await page.goto("/forest");
+
+      await expect(
+        page.getByRole("heading", { name: "ゆめの もり" })
+      ).toBeVisible();
+
+      const panel = page.getByTestId("tree-side-panel");
+
+      // 未選択時は右パネルに「きょうの もり」が出ている
+      await expect(panel.getByText("きょうの もり")).toBeVisible();
+
+      // 「自分」の木をクリック → 右パネルにプレビューが表示される
+      await page.getByRole("button", { name: /自分の き/ }).first().click();
+
+      const seeTreeButton = panel.getByRole("button", { name: /この きを 見る/ });
+      await expect(seeTreeButton).toBeVisible();
+      await seeTreeButton.click();
+
+      await expect(page).toHaveURL(/\/forest\/1$/, { timeout: 30000 });
+      await expect(page.getByRole("heading", { name: /の き$/ })).toBeVisible();
+    });
   });
 });

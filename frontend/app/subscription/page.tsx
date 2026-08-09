@@ -126,7 +126,6 @@ export default function SubscriptionPage() {
             expression="proud"
             imageVariant="praise"
             variant="home"
-            size={160}
             title="プレミアム会員です ✨"
             message="すべての機能をご利用いただけます。毎日の夢を存分に記録・分析してください！"
             className="mb-8"
@@ -168,7 +167,6 @@ export default function SubscriptionPage() {
           expression="cheerful"
           imageVariant="reward"
           variant="home"
-          size={160}
           title="YumeTree プレミアム"
           message="AI分析をたっぷり使える。夢の画像生成と月次サマリーで、毎日の夢がもっと深く楽しめる。"
         />

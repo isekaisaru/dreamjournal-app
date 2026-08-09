@@ -52,6 +52,9 @@ Rails.application.routes.draw do
     get 'verify', to: 'auth#verify'
     post 'register', to: 'users#create'
     post 'trial_login', to: 'trial_users#create'
+    patch 'convert_trial', to: 'auth#convert_trial'
+    post 'verify_email', to: 'auth#verify_email'
+    post 'resend_verification', to: 'auth#resend_verification'
   end
 
   # Stripe決済関連

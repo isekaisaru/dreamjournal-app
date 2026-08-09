@@ -28,9 +28,21 @@ jest.mock("@/lib/toast", () => ({
   toast: { success: jest.fn(), error: jest.fn() },
 }));
 
-jest.mock("@/app/components/MorpheusImage", () => ({
+jest.mock("@/app/components/MorpheusAvatar", () => ({
   __esModule: true,
-  default: () => <div data-testid="morpheus-image" />,
+  default: ({
+    variant,
+    size,
+  }: {
+    variant: string;
+    size?: number;
+  }) => (
+    <div
+      data-testid="morpheus-avatar"
+      data-variant={variant}
+      data-size={size}
+    />
+  ),
 }));
 
 jest.mock("@/app/components/MorpheusLoginRequired", () => ({
@@ -64,6 +76,7 @@ function makeAuthValue(overrides: Partial<AuthValue> = {}): AuthValue {
 
 /** 削除モーダルを開き、ジュニアロックを解いて最終確認まで進める */
 function proceedToFinalConfirm() {
+  fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
   fireEvent.click(screen.getByRole("button", { name: "さくじょ" }));
   const question = screen.getByText(/\d+ \+ \d+ = \?/).textContent ?? "";
   const [a, b] = (question.match(/\d+/g) ?? []).map(Number);
@@ -102,7 +115,50 @@ describe("未認証ガード", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. userId が無い状態での削除
+// 2. 設定ガイド
+// ---------------------------------------------------------------------------
+
+describe("設定ガイド", () => {
+  it("settings variant の円形MorpheusAvatarを表示する", () => {
+    mockedUseAuth.mockReturnValue(makeAuthValue());
+
+    render(<SettingsPage />);
+
+    const avatar = screen.getByTestId("morpheus-avatar");
+    expect(avatar).toHaveAttribute("data-variant", "settings");
+    expect(avatar).toHaveAttribute("data-size", "112");
+    expect(screen.queryByTestId("morpheus-image")).not.toBeInTheDocument();
+  });
+});
+
+describe("設定タブ", () => {
+  it("既存設定を4つのタブに分け、通知では未保存のスイッチを表示しない", () => {
+    mockedUseAuth.mockReturnValue(makeAuthValue());
+
+    render(<SettingsPage />);
+
+    const profileTab = screen.getByRole("tab", { name: "プロフィール" });
+    expect(profileTab).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("ニックネーム")).toBeInTheDocument();
+    expect(screen.queryByText("プレミアムプラン")).not.toBeInTheDocument();
+
+    fireEvent.keyDown(profileTab, { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: "通知" })).toHaveFocus();
+    expect(screen.getByText("通知設定は準備中です")).toBeInTheDocument();
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "プラン" }));
+    expect(screen.getByText("プレミアムプラン")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
+    expect(
+      screen.getByText("アカウントをさくじょする")
+    ).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. userId が無い状態での削除
 // ---------------------------------------------------------------------------
 
 describe("userId が無い状態での削除", () => {
@@ -123,7 +179,7 @@ describe("userId が無い状態での削除", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. 削除APIが失敗した場合
+// 4. 削除APIが失敗した場合
 // ---------------------------------------------------------------------------
 
 describe("削除APIが失敗した場合", () => {
@@ -147,7 +203,7 @@ describe("削除APIが失敗した場合", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 4. 削除成功時
+// 5. 削除成功時
 // ---------------------------------------------------------------------------
 
 describe("削除成功時", () => {

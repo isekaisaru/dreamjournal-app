@@ -115,6 +115,47 @@ RSpec.describe 'DreamProfiles API', type: :request do
         expect(response).to have_http_status(:unauthorized)
       end
     end
+
+    context 'トライアルユーザーのプロフィール作成制限' do
+      let!(:trial_user) { create(:user, trial_user: true) }
+
+      it 'トライアルユーザーは1件目を作成できる' do
+        expect {
+          authenticated_post('/dream_profiles', trial_user, params: valid_params)
+        }.to change(DreamProfile, :count).by(1)
+        expect(response).to have_http_status(:created)
+      end
+
+      it 'トライアルユーザーが1件以上持っていると2件目は403になる' do
+        create(:dream_profile, user: trial_user)
+
+        expect {
+          authenticated_post('/dream_profiles', trial_user, params: valid_params)
+        }.not_to change(DreamProfile, :count)
+        expect(response).to have_http_status(:forbidden)
+        json = JSON.parse(response.body)
+        expect(json['limit_reached']).to be true
+      end
+
+      it 'premium: true かつ trial_user: true のユーザーは2件目も作成できる' do
+        premium_trial = create(:user, trial_user: true, premium: true)
+        create(:dream_profile, user: premium_trial)
+
+        expect {
+          authenticated_post('/dream_profiles', premium_trial, params: valid_params)
+        }.to change(DreamProfile, :count).by(1)
+        expect(response).to have_http_status(:created)
+      end
+
+      it '通常ユーザーはプロフィールを複数作成できる' do
+        create(:dream_profile, user: user)
+
+        expect {
+          authenticated_post('/dream_profiles', user, params: valid_params)
+        }.to change(DreamProfile, :count).by(1)
+        expect(response).to have_http_status(:created)
+      end
+    end
   end
 
   # ------------------------------------------------------------------ #
@@ -141,6 +182,14 @@ RSpec.describe 'DreamProfiles API', type: :request do
         other_profile = create(:dream_profile, user: other_user)
         authenticated_patch("/dream_profiles/#{other_profile.id}", user, params: { name: '乗っ取り' })
         expect(response).to have_http_status(:not_found)
+      end
+
+      it 'self プロフィールの relationship は other に変更できない（422）' do
+        self_profile = create(:dream_profile, :self_profile, user: user)
+        authenticated_patch("/dream_profiles/#{self_profile.id}", user, params: { relationship: 'other' })
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(self_profile.reload.relationship).to eq('self')
       end
     end
 

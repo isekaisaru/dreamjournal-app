@@ -3,7 +3,9 @@
 import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "./EmotionTag";
 import { getJSTYearMonthKey } from "@/lib/date";
-import MorpheusImage from "./MorpheusImage";
+import { resolveDreamEmotionNames } from "@/lib/dreamEmotions";
+import { formatTopEmotionLabels, pickTopEmotionLabels } from "@/lib/emotionTie";
+import MorpheusAvatar from "./MorpheusAvatar";
 
 interface DreamStatsWidgetProps {
   dreams: Dream[];
@@ -33,10 +35,7 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
   // 今月の感情タグカウント
   const monthEmotionCounts: Record<string, number> = {};
   thisMonthDreams.forEach((dream) => {
-    const tags =
-      dream.analysis_json?.emotion_tags ??
-      dream.emotions?.map((e) => e.name) ??
-      [];
+    const tags = resolveDreamEmotionNames(dream);
     tags.forEach((tag) => {
       const label = getChildFriendlyEmotionLabel(tag);
       monthEmotionCounts[label] = (monthEmotionCounts[label] ?? 0) + 1;
@@ -50,18 +49,14 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
   // 今週のトップ感情
   const weekEmotionCounts: Record<string, number> = {};
   thisWeekDreams.forEach((dream) => {
-    const tags =
-      dream.analysis_json?.emotion_tags ??
-      dream.emotions?.map((e) => e.name) ??
-      [];
+    const tags = resolveDreamEmotionNames(dream);
     tags.forEach((tag) => {
       const label = getChildFriendlyEmotionLabel(tag);
       weekEmotionCounts[label] = (weekEmotionCounts[label] ?? 0) + 1;
     });
   });
-  const weekTop = Object.entries(weekEmotionCounts).sort(
-    ([, a], [, b]) => b - a
-  )[0];
+  // 同率1位もすべて表示する（月間ふりかえりと同じ共通ヘルパーを使用）
+  const weekTopLabels = pickTopEmotionLabels(weekEmotionCounts);
 
   if (sortedEmotions.length === 0) return null;
 
@@ -95,15 +90,13 @@ export default function DreamStatsWidget({ dreams }: DreamStatsWidgetProps) {
       </div>
 
       {/* モルペウスの今週サマリー */}
-      {weekTop && (
+      {weekTopLabels.length > 0 && (
         <div className="flex items-center gap-3 rounded-2xl border border-sky-200/60 bg-sky-50/80 p-3 dark:border-sky-500/20 dark:bg-slate-800/70">
-          <div className="shrink-0 rounded-xl bg-white/80 p-1 shadow-sm ring-1 ring-sky-100 dark:bg-white/10 dark:ring-white/10">
-            <MorpheusImage variant="analysis" size={54} />
-          </div>
+          <MorpheusAvatar variant="analysis" size={54} className="shadow-sm" />
           <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-200">
             今週いちばん多い きもちは{" "}
             <span className="font-bold text-sky-600 dark:text-sky-300">
-              「{weekTop[0]}」
+              {formatTopEmotionLabels(weekTopLabels)}
             </span>{" "}
             だったよ！
           </p>

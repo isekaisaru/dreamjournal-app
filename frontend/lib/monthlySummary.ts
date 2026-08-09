@@ -1,6 +1,7 @@
 import { Dream } from "@/app/types";
 import { getChildFriendlyEmotionLabel } from "@/app/components/EmotionTag";
 import { getJSTDateStr } from "@/lib/date";
+import { formatTopEmotionLabels, pickTopEmotionLabels } from "@/lib/emotionTie";
 
 export type MonthlySummary = {
   dreamCount: number;
@@ -45,6 +46,9 @@ export function buildMonthlySummary(
     .slice(0, 3)
     .map(([label, count]) => ({ label, count }));
 
+  // 同率1位をすべて拾い、共通ヘルパーで「「A」と「B」」に整形する
+  const topTiedLabels = pickTopEmotionLabels(emotionCounts);
+
   const highlights = [
     `${dreamCount}この ゆめ`,
     `${recordedDays}にち きろく`,
@@ -52,8 +56,8 @@ export function buildMonthlySummary(
   ];
 
   let message = `${fallbackMonthLabel}は ${dreamCount}この ゆめを きろくしたよ。`;
-  if (topEmotions[0]) {
-    message += ` いちばん多かった きもちは「${topEmotions[0].label}」だったよ。`;
+  if (topTiedLabels.length > 0) {
+    message += ` いちばん多かった きもちは${formatTopEmotionLabels(topTiedLabels)}だったよ。`;
   } else if (dreamCount > 0) {
     message += " これから きもちタグが ふえると、もっと たのしく ふりかえれるよ。";
   }

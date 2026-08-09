@@ -10,6 +10,13 @@ test.describe("ユーザー登録フロー", () => {
         body: JSON.stringify({ error: "Unauthorized" }),
       });
     });
+    await page.route("**/auth/refresh", async (route) => {
+      await route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Unauthorized" }),
+      });
+    });
   });
 
   test("登録フォームが表示される", async ({ page }) => {
@@ -128,7 +135,10 @@ test.describe("ユーザー登録フロー", () => {
   });
 
   test("登録成功でホームページに遷移する", async ({ page }) => {
+    let registered = false;
+
     await page.route("**/auth/register", async (route) => {
+      registered = true;
       await route.fulfill({
         status: 201,
         contentType: "application/json",
@@ -140,6 +150,15 @@ test.describe("ユーザー登録フロー", () => {
 
     // 登録後の認証検証（登録直後のリダイレクト先 /home で verify が呼ばれる）
     await page.route("**/auth/verify", async (route) => {
+      if (!registered) {
+        await route.fulfill({
+          status: 401,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Unauthorized" }),
+        });
+        return;
+      }
+
       await route.fulfill({
         status: 200,
         contentType: "application/json",

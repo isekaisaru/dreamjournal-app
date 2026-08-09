@@ -10,11 +10,13 @@ import {
 import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import { motion } from "framer-motion";
-import apiClient from "../../../lib/apiClient";
+import apiClient, { isEmailVerificationRequiredError } from "../../../lib/apiClient";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
 import { MorpheusGuideDetail } from "@/app/components/MorpheusGuide";
+import StreamingAnalysis from "@/app/components/StreamingAnalysis";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -102,9 +104,9 @@ export default function DreamDetailPage({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [isAnalysisFlipped, setIsAnalysisFlipped] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [imageVerificationRequired, setImageVerificationRequired] = useState(false);
   const [imageQuota, setImageQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
 
   useEffect(() => {
@@ -125,14 +127,11 @@ export default function DreamDetailPage({
     }
   }, [dream?.generated_image_url]);
 
-  useEffect(() => {
-    setIsAnalysisFlipped(false);
-  }, [dream?.id]);
-
   const handleGenerateImage = async () => {
     if (!dreamId || isGeneratingImage) return;
     setIsGeneratingImage(true);
     setImageError(null);
+    setImageVerificationRequired(false);
     try {
       const result = await apiClient.post<{ image_url: string }>(
         `/dreams/${dreamId}/generate_image`,
@@ -141,9 +140,13 @@ export default function DreamDetailPage({
       );
       setGeneratedImageUrl(result.image_url);
     } catch (err) {
-      setImageError(
-        err instanceof Error ? err.message : "えの せいせい に しっぱい しました"
-      );
+      if (isEmailVerificationRequiredError(err)) {
+        setImageVerificationRequired(true);
+      } else {
+        setImageError(
+          err instanceof Error ? err.message : "えの せいせい に しっぱい しました"
+        );
+      }
     } finally {
       setIsGeneratingImage(false);
     }
@@ -258,12 +261,44 @@ export default function DreamDetailPage({
   const displayTags = aiEmotionTags.length > 0 ? aiEmotionTags : dbEmotionTags;
   const analysisText =
     dream.analysis_json?.analysis || dream.analysis_json?.text || "";
-  const analysisPreview = displayTags.length
-    ? "感じたことを みつけたよ"
-    : "タップすると モルペウスの読み取りがひらくよ";
 
   return (
-    <div className="min-h-screen py-8 px-4 md:px-12 max-w-3xl mx-auto text-foreground">
+    <div className="min-h-screen px-4 pb-8 pt-0 text-foreground md:mx-auto md:max-w-3xl md:px-12 md:py-8">
+      <section
+        aria-label="夢のイメージ"
+        className="relative -mx-4 mb-6 h-60 overflow-hidden bg-gradient-to-br from-blue-900 via-violet-700 to-fuchsia-600 md:hidden"
+        style={
+          generatedImageUrl
+            ? {
+                backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.08), rgba(15,23,42,0.38)), url(${generatedImageUrl})`,
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+              }
+            : undefined
+        }
+      >
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-80"
+          style={{
+            backgroundImage:
+              "radial-gradient(2px 2px at 18% 28%, white, transparent), radial-gradient(2px 2px at 74% 20%, #fde68a, transparent), radial-gradient(1.5px 1.5px at 48% 58%, white, transparent)",
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => router.back()}
+          aria-label="前の画面に戻る"
+          className="absolute left-4 top-4 z-10 grid min-h-11 min-w-11 place-items-center rounded-full bg-slate-950/30 text-white backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <div className="absolute bottom-4 left-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-slate-950/35 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
+          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>{generatedImageUrl ? "AIが描いた夢" : "夢のイメージ"}</span>
+        </div>
+      </section>
+
       {/* ヘッダー：日付 */}
       <p className="text-sm text-muted-foreground mb-2" suppressHydrationWarning>
         {formatDate(dream.created_at)}
@@ -297,91 +332,40 @@ export default function DreamDetailPage({
 
       {/* モルペウスのゆめうらない */}
       {analysisText && (
-        <div className="mb-6" style={{ perspective: 1400 }}>
-          <button
-            type="button"
-            onClick={() => setIsAnalysisFlipped((current) => !current)}
-            className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-pressed={isAnalysisFlipped}
-          >
-            <motion.div
-              animate={{ rotateY: isAnalysisFlipped ? 180 : 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              style={{ transformStyle: "preserve-3d" }}
-              className="relative min-h-[220px]"
-            >
-              <div
-                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-primary/20 p-5 shadow-lg"
-                style={{
-                  backfaceVisibility: "hidden",
-                  background:
-                    "linear-gradient(160deg, rgba(255,255,255,0.96), rgba(240,249,255,0.94))",
-                }}
-              >
-                <p className="text-sm font-semibold text-muted-foreground">
-                  {copy.analysis}
-                </p>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="rounded-3xl bg-primary/10 px-4 py-3 text-3xl">
-                    🔮
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">
-                      モルペウスが 夢を読みほどいたよ
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {analysisPreview}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-6 rounded-2xl bg-background/80 px-4 py-4">
-                  <p className="text-sm leading-relaxed text-foreground/85 line-clamp-4">
-                    {!isAnalysisFlipped ? analysisText : null}
-                  </p>
-                </div>
-                <p className="mt-4 text-xs font-medium text-primary">
-                  タップで くるっと裏返して全文をみる
-                </p>
-              </div>
-              <div
-                className="absolute inset-0 overflow-y-auto rounded-[28px] border border-border bg-muted/50 p-5 shadow-lg"
-                style={{
-                  backfaceVisibility: "hidden",
-                  transform: "rotateY(180deg)",
-                }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    {copy.analysis}
-                  </p>
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    flip back
-                  </span>
-                </div>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                  {isAnalysisFlipped ? analysisText : null}
-                </p>
-              </div>
-            </motion.div>
-          </button>
+        <div className="mb-6">
+          <StreamingAnalysis
+            title={copy.analysis}
+            text={analysisText}
+            emotions={displayTags}
+            storageKey={dream.id ? String(dream.id) : undefined}
+          />
         </div>
       )}
 
       {/* ゆめのえ */}
       <div className="mb-6">
+        {imageVerificationRequired && (
+          <EmailVerificationBanner
+            title="ゆめのえを かくには メールの かくにんが ひつようだよ"
+            description="とどいた メールの リンクを ひらいてから、もういちど かいてみてね。"
+          />
+        )}
+        <DreamShareCard
+          imageUrl={generatedImageUrl}
+          title={dream.title}
+          recordedAt={dream.created_at}
+          emotionLabels={displayTags}
+          imageAlt={copy.imageAlt}
+          onImageError={handleImageLoadError}
+          profileName={dream.dream_profile?.name}
+          profileEmoji={dream.dream_profile?.avatar_emoji}
+          profileColor={dream.dream_profile?.color}
+        />
         {generatedImageUrl ? (
-          <div className="space-y-2">
+          <div className="space-y-2 mt-2">
             {imageError && (
               <p className="text-xs text-destructive">{imageError}</p>
             )}
-            <DreamShareCard
-              imageUrl={generatedImageUrl}
-              title={dream.title}
-              recordedAt={dream.created_at}
-              emotionLabels={displayTags}
-              imageAlt={copy.imageAlt}
-              onImageError={handleImageLoadError}
-            />
             <div className="flex justify-end">
               <button
                 type="button"
@@ -394,7 +378,7 @@ export default function DreamDetailPage({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 py-6 rounded-xl border border-dashed border-border bg-muted/20">
+          <div className="flex flex-col items-center gap-3 py-6">
             <button
               type="button"
               onClick={handleGenerateImage}

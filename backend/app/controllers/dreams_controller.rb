@@ -1,5 +1,9 @@
 class DreamsController < ApplicationController
   before_action :set_dream_and_authorize_user, only: [:show, :update, :destroy, :analyze, :analysis, :generate_image]
+  # OpenAI課金が発生するアクションはメール確認済みユーザーのみ（trialは対象外）。
+  # 宣言順が重要: set_dream の後（他人の夢は404のまま）、
+  # check_analysis_limit の前（枠を消費してから403にしない）。
+  before_action :require_verified_email, only: [:analyze, :preview_analysis, :generate_image]
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
   before_action :check_monthly_image_limit, only: [:generate_image]
   before_action :check_trial_dream_limit, only: [:create]
@@ -19,7 +23,7 @@ class DreamsController < ApplicationController
     # generated_image_url は base64 で最大 1MB になるため一覧では SELECT 時点で除外する。
     # as_json(only:) だけでは ActiveRecord が SELECT * でロードするためメモリに乗る。
     # 詳細画面（show）でのみ返す。
-    index_columns = %i[id title content created_at analysis_json analysis_status analyzed_at user_id dream_profile_id]
+    index_columns = %i[id title content created_at analysis_json analysis_status analyzed_at user_id dream_profile_id image_generated_at]
     initial_scope = current_user.dreams.select(index_columns).order(created_at: :desc)
     filter_params = params.permit(:query, :start_date, :end_date, :dream_profile_id, emotion_ids: [])
     @dreams = DreamFilterQuery.new(initial_scope, filter_params).call.includes(:emotions, :dream_profile)
@@ -79,15 +83,19 @@ class DreamsController < ApplicationController
   def show
     render json: @dream.as_json(
       only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id],
-      include: :emotions
+      include: {
+        emotions: {},
+        dream_profile: dream_profile_json_options
+      }
     )
   end
 
   # POST /dreams
   def create
+    # 夢のタイトル・本文は機微な自由記述のため、paramsの全文をログへ出さない
+    # （filter_parameter_logging.rb で :title / :content をマスク対象にしている）。
     Rails.logger.info "DreamsController#create called"
-    Rails.logger.info "Params: #{params.inspect}"
-    
+
     # 音声ファイルがあるかどうかで処理を分岐
     if params[:dream][:audio].present?
       @dream = current_user.dreams.build(
@@ -99,7 +107,7 @@ class DreamsController < ApplicationController
       @dream = current_user.dreams.build(dream_params)
     end
 
-    @dream.dream_profile_id ||= current_user.dream_profiles.find_by(relationship: 'self')&.id
+    @dream.dream_profile_id ||= current_user.self_dream_profile_id
 
     if @dream.save
       @dream.reload

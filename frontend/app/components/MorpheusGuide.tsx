@@ -54,8 +54,14 @@ export default function MorpheusGuide({
       ? `fixed z-50 flex flex-col items-end gap-2 ${positionClassName} ${className}`
       : `flex flex-col items-end gap-2 ${className}`;
 
+  // ボトムバー表示時（--bottom-nav-h>0）は、固定吹き出しをバー分だけ上に逃がす。
+  const fixedStyle =
+    placement === "fixed"
+      ? { transform: "translateY(calc(-1 * var(--bottom-nav-h, 0px)))" }
+      : undefined;
+
   return (
-    <div className={wrapper}>
+    <div className={wrapper} style={fixedStyle}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -184,7 +190,6 @@ export function MorpheusGuideEmpty({ ageGroup }: { ageGroup?: string }) {
           ? "ねたら でてくるよ 🌙　おきたら モルペウスに おしえてね。"
           : "今夜みた夢を、起きたらすぐ記録してみてください。モルペウスがそばで待っています。"
       }
-      size={210}
       className="w-full"
     />
   );
@@ -199,7 +204,6 @@ export function MorpheusGuideCompose() {
       variant="compose"
       title="モルペウスに ゆめを おしえてね"
       message="さいしょは ひとことでも だいじょうぶ。おもいだせる ぶんだけ、ゆっくり かいてみよう。"
-      size={220}
       className="w-full"
     />
   );

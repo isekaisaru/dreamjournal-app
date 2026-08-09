@@ -8,10 +8,10 @@ class PasswordResetsController < ApplicationController
     user = User.find_by(email: params[:email])
 
     if user
-      user.generate_password_reset_token
+      token = user.generate_password_reset_token
       # deliver_later を使用してメール送信をバックグラウンドジョブで非同期に処理します。
       # これにより、APIのレスポンスが高速になります。
-      UserMailer.password_reset(user).deliver_later
+      UserMailer.password_reset(user, token).deliver_later
     end
 
     # ユーザーが存在するかどうかにかかわらず、常に同じメッセージを返すことで、
@@ -22,7 +22,7 @@ class PasswordResetsController < ApplicationController
   # PATCH /password_resets/:id
   # トークンを使用してパスワードを更新する
   def update
-    user = User.find_by(reset_password_token: params[:id])
+    user = User.find_by_password_reset_token(params[:id])
 
     if user&.password_reset_valid?
       if user.update(password_reset_params)
@@ -36,7 +36,10 @@ class PasswordResetsController < ApplicationController
     end
   end
 
-  # 開発環境専用: 指定メールアドレスの最新リセットトークンを返す
+  # 開発環境専用: 指定メールアドレスのユーザーに新しいリセットトークンを発行して返す。
+  # DBにはdigestしか保存されないため、既存トークンの「読み出し」はできない。
+  # dev/E2E用途では「テストで使える有効なトークンを1つ得る」ことが目的なので、
+  # その場で新規発行して返す（POST /password_resets の直後に呼んでも問題ない）。
   # GET /dev/password_resets/token?email=...
   def dev_token
     unless Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
@@ -44,8 +47,9 @@ class PasswordResetsController < ApplicationController
     end
 
     user = User.find_by(email: params[:email])
-    if user&.reset_password_token.present?
-      render json: { token: user.reset_password_token }, status: :ok
+    if user
+      token = user.generate_password_reset_token
+      render json: { token: token }, status: :ok
     else
       render json: { error: 'Token not found' }, status: :not_found
     end

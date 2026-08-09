@@ -30,6 +30,12 @@ import ForestGuide from "@/app/components/forest/ForestGuide";
 import SeasonalParticles from "@/app/components/forest/SeasonalParticles";
 import FruitLegend from "@/app/components/forest/FruitLegend";
 import ParticleField from "@/app/components/forest/ParticleField";
+import {
+  isValidForestProfileId,
+  normalizeDreamProfilesResponse,
+  normalizeProfileDreamsResponse,
+  findActiveForestProfile,
+} from "./forestProfileUtils";
 
 // ---- 実タップで開く夢プレビューモーダル -----------------------------------
 function DreamPreviewModal({
@@ -110,7 +116,8 @@ export default function ForestProfilePage() {
   const { authStatus } = useAuth();
   const router = useRouter();
   const params = useParams();
-  const profileId = Number(params.profileId);
+  const rawProfileId = params.profileId;
+  const profileId = Number(rawProfileId);
   const reduceMotion = useReducedMotion();
 
   const [profile, setProfile] = useState<DreamProfile | null>(null);
@@ -127,25 +134,40 @@ export default function ForestProfilePage() {
 
   const load = useCallback(async () => {
     setIsLoading(true);
+    if (!isValidForestProfileId(profileId)) {
+      console.error("Invalid forest profileId", rawProfileId);
+      router.replace("/forest");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const [allProfiles, profileDreams] = await Promise.all([
+      const [profilesResponse, dreamsResponse]: [unknown, unknown] = await Promise.all([
         getDreamProfiles(),
         getDreamsForProfile(profileId),
       ]);
-      const found = allProfiles.find((p) => p.id === profileId && !p.archived);
+      const allProfiles = normalizeDreamProfilesResponse(profilesResponse);
+      if (!allProfiles) {
+        router.replace("/forest");
+        return;
+      }
+
+      const found = findActiveForestProfile(allProfiles, profileId);
       if (!found) {
         router.replace("/forest");
         return;
       }
+      const profileDreams = normalizeProfileDreamsResponse(dreamsResponse);
       setProfile(found);
       setDreams(profileDreams);
-    } catch {
+    } catch (error) {
+      console.error("Failed to load forest profile detail", error);
       toast.error("きを よみこめませんでした。");
       router.replace("/forest");
     } finally {
       setIsLoading(false);
     }
-  }, [profileId, router]);
+  }, [profileId, rawProfileId, router]);
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
@@ -171,7 +193,7 @@ export default function ForestProfilePage() {
 
       {/* 月 */}
       <div
-        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full animate-moon-pulse"
+        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full animate-forest-moon-pulse"
         style={{
           left: `${cel.moonXPct}%`,
           top: `${cel.moonYPct}%`,
@@ -202,6 +224,14 @@ export default function ForestProfilePage() {
           >
             {lvl.name}（{lvl.reading}）
           </span>
+        </div>
+        <div className="container mx-auto flex max-w-3xl justify-end px-4 pb-2">
+          <Link
+            href={`/room/${profile.id}`}
+            className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-bold text-white/80 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >
+            🖼️ へやを のぞく
+          </Link>
         </div>
       </header>
 

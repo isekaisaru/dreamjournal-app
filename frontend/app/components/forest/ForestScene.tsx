@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { DreamProfile } from "@/app/types";
+import type { DreamProfile, Dream } from "@/app/types";
 import {
   getTimePhase,
   getSeason,
@@ -20,7 +20,56 @@ import Critters from "./Critters";
 import WalkingMorpheus from "./WalkingMorpheus";
 import TreePreviewSheet from "./TreePreviewSheet";
 
-export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) {
+type ForestView = { x: number; y: number; z: number };
+
+export function getInitialForestView(profileCount: number, fieldW: number, viewportW: number): ForestView {
+  if (profileCount === 1 && viewportW < 768 && viewportW < fieldW) {
+    return { x: Math.round(viewportW / 2 - fieldW / 2), y: 0, z: 1 };
+  }
+
+  return { x: 0, y: 0, z: 1 };
+}
+
+export function clampForestView(v: ForestView, fieldW: number, viewportW: number, viewportH: number): ForestView {
+  const safeZ = Number.isFinite(v.z) ? v.z : 1;
+  const safeX = Number.isFinite(v.x) ? v.x : 0;
+  const safeY = Number.isFinite(v.y) ? v.y : 0;
+  const z = Math.max(0.7, Math.min(2.2, safeZ));
+
+  return {
+    z,
+    x: Math.max(Math.min(safeX, 40), Math.min(-(fieldW * z - viewportW) - 40, 40)),
+    y: Math.max(Math.min(safeY, 60), Math.min(-(viewportH * z - viewportH) - 40, 60)),
+  };
+}
+
+export function getSafePinchZoom(startZoom: number, currentDistance: number, startDistance: number): number | null {
+  if (!Number.isFinite(startZoom) || !Number.isFinite(currentDistance) || !Number.isFinite(startDistance)) {
+    return null;
+  }
+  if (startDistance <= 0) return null;
+
+  const nextZoom = startZoom * (currentDistance / startDistance);
+  return Number.isFinite(nextZoom) ? nextZoom : null;
+}
+
+interface ForestSceneProps {
+  profiles: DreamProfile[];
+  selectedProfileId: number | null;
+  onSelectTree: (profile: DreamProfile) => void;
+  onCloseSheet: () => void;
+  recentDream: Dream | null;
+  loading: boolean;
+}
+
+export default function ForestScene({
+  profiles,
+  selectedProfileId,
+  onSelectTree,
+  onCloseSheet,
+  recentDream,
+  loading,
+}: ForestSceneProps) {
   const reduceMotion = useReducedMotion();
   const router = useRouter();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -51,6 +100,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
 
   // パン & ズーム
   const [view, setView] = useState({ x: 0, y: 0, z: 1 });
+  const hasUserAdjustedViewRef = useRef(false);
   const dragRef = useRef<{ sx: number; sy: number; vx: number; vy: number } | null>(null);
   const movedRef = useRef(false);
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -58,16 +108,19 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   const [hinted, setHinted] = useState(true);
 
   const clamp = useCallback(
-    (v: { x: number; y: number; z: number }) => {
-      const z = Math.max(0.7, Math.min(2.2, v.z));
-      return {
-        z,
-        x: Math.max(Math.min(v.x, 40), Math.min(-(fieldW * z - W) - 40, 40)),
-        y: Math.max(Math.min(v.y, 60), Math.min(-(H * z - H) - 40, 60)),
-      };
-    },
+    (v: ForestView) => clampForestView(v, fieldW, W, H),
     [fieldW, W, H]
   );
+
+  const initialView = useMemo(
+    () => clamp(getInitialForestView(profiles.length, fieldW, W)),
+    [clamp, profiles.length, fieldW, W]
+  );
+
+  useEffect(() => {
+    if (profiles.length === 0 || hasUserAdjustedViewRef.current) return;
+    setView(initialView);
+  }, [initialView, profiles.length]);
 
   // ポインタ捕捉は「ドラッグと判定してから」遅延して行う。
   // pointerdown で即捕捉すると子の木ボタンの click が発火せず、タップで
@@ -75,6 +128,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   const capturedRef = useRef(false);
 
   const onPointerDown = (e: React.PointerEvent) => {
+    hasUserAdjustedViewRef.current = true;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     movedRef.current = false;
     capturedRef.current = false;
@@ -83,7 +137,8 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
       dragRef.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y };
     } else if (pointers.current.size === 2) {
       const pts = [...pointers.current.values()];
-      pinch.current = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), z: view.z };
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinch.current = Number.isFinite(dist) && dist > 0 ? { dist, z: view.z } : null;
       dragRef.current = null;
     }
   };
@@ -101,7 +156,9 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
       }
       const pts = [...pointers.current.values()];
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      setView((v) => clamp({ ...v, z: pinch.current!.z * (dist / pinch.current!.dist) }));
+      const nextZoom = getSafePinchZoom(pinch.current.z, dist, pinch.current.dist);
+      if (nextZoom === null) return;
+      setView((v) => clamp({ ...v, z: nextZoom }));
     } else if (dragRef.current) {
       const dx = e.clientX - dragRef.current.sx;
       const dy = e.clientY - dragRef.current.sy;
@@ -130,15 +187,15 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
   };
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
+    hasUserAdjustedViewRef.current = true;
     setView((v) => clamp({ ...v, z: v.z * (e.deltaY > 0 ? 0.92 : 1.08) }));
     setHinted(false);
   };
 
   // 木タップ → プレビューシート（ドラッグ中は選択しない）
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const selected = profiles.find((p) => p.id === selectedId) ?? null;
+  const selected = profiles.find((p) => p.id === selectedProfileId) ?? null;
   const selectTree = (p: DreamProfile) => {
-    if (!movedRef.current) setSelectedId(p.id);
+    if (!movedRef.current) onSelectTree(p);
   };
 
   // 木の配置（横に広げ、奇数列は少し奥に）
@@ -195,9 +252,9 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         aria-hidden="true"
       />
 
-      {/* きょうの もり カード（右上・固定） */}
+      {/* きょうの もり カード（右上・固定、lg+ では TreeSidePanel が同役割を担うため隠す） */}
       {!isEmpty && (
-        <div className="absolute right-3 top-3 z-20">
+        <div className="absolute right-3 top-3 z-20 lg:hidden">
           <ForestTodayCard totalDreams={totalDreams} topProfile={topProfile} />
         </div>
       )}
@@ -272,7 +329,7 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
               >
                 <MiniTree
                   profile={p}
-                  isSelected={selectedId === p.id}
+                  isSelected={selectedProfileId === p.id}
                   onSelect={() => selectTree(p)}
                   height={Math.round((120 + lvl * 22) * getCanopyScale(lvl) * 0.9 + 80)}
                 />
@@ -293,9 +350,30 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         <div className="absolute left-3 top-3 z-30 flex flex-col gap-2">
           {(
             [
-              ["＋", "ズームイン", () => setView((v) => clamp({ ...v, z: v.z * 1.2 }))],
-              ["－", "ズームアウト", () => setView((v) => clamp({ ...v, z: v.z * 0.83 }))],
-              ["⟳", "もとに もどす", () => setView({ x: 0, y: 0, z: 1 })],
+              [
+                "＋",
+                "ズームイン",
+                () => {
+                  hasUserAdjustedViewRef.current = true;
+                  setView((v) => clamp({ ...v, z: v.z * 1.2 }));
+                },
+              ],
+              [
+                "－",
+                "ズームアウト",
+                () => {
+                  hasUserAdjustedViewRef.current = true;
+                  setView((v) => clamp({ ...v, z: v.z * 0.83 }));
+                },
+              ],
+              [
+                "⟳",
+                "もとに もどす",
+                () => {
+                  hasUserAdjustedViewRef.current = false;
+                  setView(initialView);
+                },
+              ],
             ] as const
           ).map(([t, lab, fn], i) => (
             <button
@@ -341,11 +419,14 @@ export default function ForestScene({ profiles }: { profiles: DreamProfile[] }) 
         </div>
       )}
 
-      {/* 木タップ時のプレビューシート */}
+      {/* 木タップ時のプレビューシート（lg未満のみ表示。中身は TreeSidePanel と共通） */}
       <TreePreviewSheet
         profile={selected}
+        recentDream={recentDream}
+        loading={loading}
         onOpen={(p) => router.push(`/forest/${p.id}`)}
-        onClose={() => setSelectedId(null)}
+        onPeekRoom={(p) => router.push(`/room/${p.id}`)}
+        onClose={onCloseSheet}
       />
     </div>
   );

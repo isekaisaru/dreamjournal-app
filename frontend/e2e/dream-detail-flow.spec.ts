@@ -89,7 +89,7 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
 
     // タイトルが表示されていることを確認
     await expect(
-      page.getByRole("heading", { name: "テストの夢" })
+      page.getByRole("heading", { level: 1, name: "テストの夢" })
     ).toBeVisible();
 
     // 「ゆめの おはなし」セクションに夢の内容が表示されていることを確認
@@ -103,8 +103,8 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
       page.getByText("空を飛ぶ夢は自由への願望を表しています。")
     ).toBeVisible();
 
-    // 感情タグが表示されていることを確認（analysis_json.emotion_tags の "happy" が表示される）
-    await expect(page.getByText("happy")).toBeVisible();
+    // 感情タグが表示されていることを確認（StreamingAnalysis内にも同じタグが出るため先頭要素を指定）
+    await expect(page.getByText("happy").first()).toBeVisible();
 
     // 「✏️ なおす」ボタンが表示されていることを確認
     await expect(
@@ -135,7 +135,7 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     // 「やめる」をクリックすると閲覧モードに戻ることを確認
     await page.getByRole("button", { name: "やめる" }).click();
     await expect(
-      page.getByRole("heading", { name: "テストの夢" })
+      page.getByRole("heading", { level: 1, name: "テストの夢" })
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /✏️ なおす/ })
@@ -321,7 +321,7 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
 
     // 保存後に閲覧モードへ戻り、更新後のタイトルが表示されていることを確認
     await expect(
-      page.getByRole("heading", { name: "変更後のタイトル" })
+      page.getByRole("heading", { level: 1, name: "変更後のタイトル" })
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: /✏️ なおす/ })

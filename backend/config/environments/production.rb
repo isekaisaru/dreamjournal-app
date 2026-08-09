@@ -71,11 +71,37 @@ Rails.application.configure do
   # config.active_job.queue_adapter = :resque
   # config.active_job.queue_name_prefix = "app_production"
 
+  # deliver_later はメール本文だけでなく、パスワード再設定・メール認証用の
+  # トークンもジョブ引数として直列化する。引数を INFO ログへ出すと、
+  # ActionMailer の本文ログを抑止してもトークンが漏れるため、本番では出力しない。
+  config.active_job.log_arguments = false
+
   config.action_mailer.perform_caching = false
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # メール配信（SMTP・Resend等を想定）。
+  # SMTP_USERNAME / SMTP_PASSWORD が未設定の間は送信が失敗するだけで、
+  # 登録などのアプリ動作は継続する（送信は best-effort・deliver_later + rescue）。
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: ENV.fetch("SMTP_ADDRESS", "smtp.resend.com"),
+    port: ENV.fetch("SMTP_PORT", "465").to_i,
+    user_name: ENV["SMTP_USERNAME"],
+    password: ENV["SMTP_PASSWORD"],
+    authentication: :plain,
+    tls: true
+  }
+  # 送信失敗を検知できるようにする。
+  #
+  # false のままだと、Rails は送信に失敗しても例外を出さず、ログには
+  # 「Delivered mail ...」とだけ残る。そのため「送ったつもりで1通も届いていない」
+  # 状態に誰も気づけない（2026-07-27 のパスワードリセット調査でこれが起きた）。
+  #
+  # true にしてもユーザーのリクエストは落ちない。メール送信は
+  #   - password_resets_controller#create
+  #   - application_controller#send_verification_email
+  # の2箇所だけで、どちらも deliver_later（非同期ジョブ）だから。
+  # 失敗はジョブのエラーとしてログと Sentry に残り、HTTPレスポンスには影響しない。
+  config.action_mailer.raise_delivery_errors = true
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

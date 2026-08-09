@@ -18,7 +18,8 @@ interface ParticleFieldProps {
 function makeGlow(size: number, inner: string, outer: string): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = c.height = size;
-  const x = c.getContext("2d")!;
+  const x = c.getContext("2d");
+  if (!x) return c;
   const g = x.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   g.addColorStop(0, inner); g.addColorStop(0.45, outer); g.addColorStop(1, "rgba(0,0,0,0)");
   x.fillStyle = g; x.beginPath(); x.arc(size / 2, size / 2, size / 2, 0, 7); x.fill();
@@ -37,9 +38,15 @@ export default function ParticleField({ phase, season, weather = "firefly", star
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
+    const maybeContext = canvas.getContext("2d");
+    if (!maybeContext) {
+      console.error("ParticleField canvas 2d context is unavailable");
+      return;
+    }
+    const ctx: CanvasRenderingContext2D = maybeContext;
     const dpr = Math.min(1.5, window.devicePixelRatio || 1);
     let W = 0, H = 0;
+    let disposed = false;
 
     const fireGlow = makeGlow(40, "rgba(253,230,138,1)", "rgba(251,191,36,0.55)");
     const moteGlow = makeGlow(28, "rgba(199,210,254,0.85)", "rgba(199,210,254,0.18)");
@@ -70,11 +77,12 @@ export default function ParticleField({ phase, season, weather = "firefly", star
     }
 
     function resize() {
-      if (!canvas) return;
-      const r = canvas.getBoundingClientRect();
+      const currentCanvas = canvasRef.current;
+      if (disposed || !currentCanvas) return;
+      const r = currentCanvas.getBoundingClientRect();
       W = r.width; H = r.height;
-      canvas.width  = Math.max(1, W * dpr);
-      canvas.height = Math.max(1, H * dpr);
+      currentCanvas.width  = Math.max(1, W * dpr);
+      currentCanvas.height = Math.max(1, H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       seed();
       if (!propsRef.current.motion) frame(performance.now());
@@ -85,6 +93,7 @@ export default function ParticleField({ phase, season, weather = "firefly", star
     let raf = 0, lastT = 0;
 
     function frame(now: number) {
+      if (disposed || !canvasRef.current) return;
       const P = propsRef.current;
       const moving = P.motion;
       if (moving && now - lastT < FRAME_MS) {
@@ -180,9 +189,13 @@ export default function ParticleField({ phase, season, weather = "firefly", star
 
     resize();
     if (propsRef.current.motion) raf = requestAnimationFrame(frame);
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+    const ro = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(resize);
+    ro?.observe(canvas);
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+    };
   }, [reduceMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

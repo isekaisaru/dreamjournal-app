@@ -1,4 +1,5 @@
 import { resolveBackendUrl } from "@/app/api/checkout/backend-url";
+import { forwardedOriginHeaders } from "@/app/api/checkout/request-origin";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,8 @@ export async function POST(
         headers: {
           "Content-Type": "application/json",
           Cookie: req.headers.get("cookie") ?? "",
+          // RailsのCSRF対策（Origin検証）を通すため、ブラウザが送ってきたOrigin/Refererを転送する
+          ...forwardedOriginHeaders(req),
         },
         signal: controller.signal,
       }
