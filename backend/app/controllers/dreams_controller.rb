@@ -92,9 +92,10 @@ class DreamsController < ApplicationController
 
   # POST /dreams
   def create
+    # 夢のタイトル・本文は機微な自由記述のため、paramsの全文をログへ出さない
+    # （filter_parameter_logging.rb で :title / :content をマスク対象にしている）。
     Rails.logger.info "DreamsController#create called"
-    Rails.logger.info "Params: #{params.inspect}"
-    
+
     # 音声ファイルがあるかどうかで処理を分岐
     if params[:dream][:audio].present?
       @dream = current_user.dreams.build(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveBackendUrl } from "../checkout/backend-url";
+import { forwardedOriginHeaders } from "../checkout/request-origin";
 
 const BACKEND_URL = resolveBackendUrl();
 
@@ -60,6 +61,8 @@ export async function POST(req: NextRequest) {
         // 認証情報をCookie経由でバックエンドに渡す
         headers: {
           cookie: req.headers.get("cookie") ?? "",
+          // RailsのCSRF対策（Origin検証）を通すため、ブラウザが送ってきたOrigin/Refererを転送する
+          ...forwardedOriginHeaders(req),
         },
         signal: controller.signal,
       });

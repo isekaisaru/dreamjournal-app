@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
-import { User } from "@/app/types";
-import { previewAnalysis, verifyAuth } from "@/lib/apiClient";
+import { Dream, User } from "@/app/types";
+import {
+  ApiError,
+  createDream,
+  previewAnalysis,
+  updateDream,
+  verifyAuth,
+} from "@/lib/apiClient";
 import { Sparkles, Loader2 } from "lucide-react";
 
 type AnalysisResult = {
@@ -17,8 +23,23 @@ type AnalysisResult = {
 const MAX_TRIAL_DREAMS = 7;
 const MAX_TRIAL_ANALYSES = 3;
 
+// バックエンドの Dream を、このページのローカル表示形式へ変換する。
+const toLocalDream = (
+  dream: Dream
+): { title: string; description: string; analysis?: AnalysisResult } => ({
+  title: dream.title,
+  description: dream.content ?? "",
+  analysis:
+    dream.analysis_status === "done" && dream.analysis_json
+      ? {
+          analysis: dream.analysis_json.analysis,
+          emotion_tags: dream.analysis_json.emotion_tags,
+        }
+      : undefined,
+});
+
 export default function TrialPage() {
-  const { authStatus, login } = useAuth();
+  const { authStatus, user, login } = useAuth();
 
   // 認証済みユーザーもこのページは使える（自分のアカウントでAI分析される）
   // LPからの遷移で未認証の場合は、AI分析ボタン押下時にトライアルログインを自動実行
@@ -29,17 +50,143 @@ export default function TrialPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
+  // 既存のtrial夢をDBから読み込み中かどうか。
+  // Rails側は current_user.dreams.count（DB累計）で7件上限を強制しているが、
+  // このページの dreams state は毎回空配列から始まるため、既存の夢がある
+  // trialユーザーがリロードすると「0/7」に見えてしまっていた（表示上の不整合、
+  // データは失われていない）。初回マウント時に一度だけ既存件数を取り込んで補正する。
+  const [isLoadingExistingDreams, setIsLoadingExistingDreams] = useState(false);
+  // "idle": 未着手 / "loading": 取得中 / "done": 判定・取得済み。
+  // 完了(done)後は、ページ内でtrial_loginが後から発生してもこの判定を
+  // やり直さない（直後の setDreams(prev => [...prev, 新規夢]) を空配列取得結果で
+  // 上書きしてしまう競合を避けるため）。一方、開発時のReact Strict Modeによる
+  // setup→cleanup→setupの二重実行では、取得完了前にcleanupが走るため
+  // "loading"から"idle"へ戻し、直後の再setupで正しく最初からやり直せるようにする。
+  const existingDreamsFetchStateRef = useRef<"idle" | "loading" | "done">(
+    "idle"
+  );
+
   // AI分析関連
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [analysisError, setAnalysisError] = useState("");
   const [analysisCount, setAnalysisCount] = useState(0);
   const [analysisLimitReached, setAnalysisLimitReached] = useState(false);
+  // 「記録だけする」でDBへ保存している最中かどうか（二重送信防止）
+  const [isSaving, setIsSaving] = useState(false);
 
   // checking中はボタンを無効化するためのフラグ
   const isAuthChecking = authStatus === "checking";
 
-  // トライアルログイン → AI分析の一連フロー
+  // 初回のauthStatus確定時、既にログイン中のtrialユーザーであれば
+  // DB上の既存の夢を読み込み、件数表示とボタンの活性制御を実態に合わせる。
+  // 対象は trial_user かつ非premium のみ。
+  // - 本登録ユーザー（trial_user !== true）はこれまでどおり対象外
+  //   （このページの元々の上限表示は本登録ユーザーには効いていないため、挙動を変えない）
+  // - premium: true の trial 由来ユーザーは、バックエンドの
+  //   check_trial_dream_limit が明示的に7件上限から除外している
+  //   （課金済みなのに/trialだけ書けなくなるのを防ぐ）
+  // 未認証の新規訪問者は取得自体を行わない。
+  useEffect(() => {
+    if (isAuthChecking) return;
+    if (existingDreamsFetchStateRef.current !== "idle") return;
+
+    if (authStatus !== "authenticated" || !user?.trial_user || user?.premium) {
+      existingDreamsFetchStateRef.current = "done";
+      return;
+    }
+
+    existingDreamsFetchStateRef.current = "loading";
+    let cancelled = false;
+    setIsLoadingExistingDreams(true);
+
+    apiClient
+      .get<Dream[]>("/dreams")
+      .then((existingDreams) => {
+        if (cancelled) return;
+        setDreams(existingDreams.map(toLocalDream));
+      })
+      .catch(() => {
+        // 取得失敗時は空のまま進める。DB上の累計7件強制はバックエンド側で
+        // 引き続き働くため、表示が一時的に不正確でもデータは保護される。
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoadingExistingDreams(false);
+        existingDreamsFetchStateRef.current = "done";
+      });
+
+    return () => {
+      cancelled = true;
+      // Strict Mode（開発時のみ）の合成cleanupで、取得完了前に中断された場合は
+      // idle へ戻す。直後の再setupがこの中断分を正しくやり直せるようにするため。
+      if (existingDreamsFetchStateRef.current === "loading") {
+        existingDreamsFetchStateRef.current = "idle";
+        setIsLoadingExistingDreams(false);
+      }
+    };
+  }, [authStatus, isAuthChecking, user]);
+
+  // トライアルセッションを確保する（未認証ならトライアルアカウントを自動作成）。
+  // 成功したら true、失敗したらエラー文言を立てて false を返す。
+  const ensureTrialSession = async (): Promise<boolean> => {
+    if (authStatus !== "unauthenticated") return true;
+
+    let verified: Awaited<ReturnType<typeof verifyAuth>>;
+    try {
+      verified = await verifyAuth();
+    } catch {
+      // verify が失敗したときは既存セッション保護を優先して中断する
+      setAnalysisError(
+        "ログインじょうたいの かくにんに しっぱい したよ。もういちど ためしてね。"
+      );
+      return false;
+    }
+
+    if (verified?.user) {
+      login(verified.user);
+      return true;
+    }
+
+    setIsLoggingIn(true);
+    try {
+      const timestamp = Date.now();
+      const res = await apiClient.post<{ user: User }>("/auth/trial_login", {
+        trial_user: {
+          email: `trial_${timestamp}@example.com`,
+          username: `trial_${timestamp}`,
+          password: "trial_password_123",
+          password_confirmation: "trial_password_123",
+        },
+      });
+      if (res?.user) {
+        login({ ...res.user, id: String(res.user.id) });
+      }
+      // Cookieが設定されるのを待つ
+      await new Promise((r) => setTimeout(r, 500));
+      return true;
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  // 体験版で書いた夢もDBへ保存する。
+  // 以前は React の state に積むだけだったため、画面には「記録した夢」と出るのに
+  // 再読み込みで消え、本登録しても引き継がれなかった（実データの損失）。
+  const persistDream = () =>
+    createDream({
+      title: title.trim() || `ゆめ ${dreams.length + 1}`,
+      content: description.trim(),
+    });
+
+  // 保存の失敗理由は、件数上限などバックエンドが日本語で返してくれるものがあるため、
+  // 取得できるならそれをそのまま見せる。
+  const saveErrorMessage = (err: unknown) =>
+    err instanceof ApiError && err.message
+      ? err.message
+      : "ゆめを のこせなかったよ。もういちど ためしてね。";
+
+  // トライアルログイン → AI分析 → 保存の一連フロー
   const handleAnalyze = async () => {
     if (!description.trim()) {
       setAnalysisError("ゆめの おはなしを かいてね。");
@@ -61,86 +208,101 @@ export default function TrialPage() {
     setAnalysisError("");
 
     try {
-      // 未認証ならトライアルログインを行う
-      if (authStatus === "unauthenticated") {
-        let verified: Awaited<ReturnType<typeof verifyAuth>>;
-        try {
-          verified = await verifyAuth();
-        } catch {
-          // verify が失敗したときは既存セッション保護を優先して中断する
-          setAnalysisError(
-            "ログインじょうたいの かくにんに しっぱい したよ。もういちど ためしてね。"
-          );
-          return;
-        }
+      if (!(await ensureTrialSession())) return;
 
-        if (verified?.user) {
-          login(verified.user);
+      // 先に保存してから分析する。
+      // 逆順にすると、保存が失敗したときに「3回しかないAI分析だけ消費して、
+      // 夢も分析結果も残らない」という一番損な結果になる。
+      let saved: Awaited<ReturnType<typeof persistDream>>;
+      try {
+        saved = await persistDream();
+      } catch (err: unknown) {
+        setAnalysisError(saveErrorMessage(err));
+        return;
+      }
+
+      // ここから先が失敗しても、夢はすでに保存されているので失われない。
+      let result: AnalysisResult | undefined;
+      try {
+        result = await previewAnalysis(description);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "";
+        if (message.includes("分析上限")) {
+          setAnalysisLimitReached(true);
+          setAnalysisError("");
         } else {
-          setIsLoggingIn(true);
-          const timestamp = Date.now();
-          const res = await apiClient.post<{ user: User }>("/auth/trial_login", {
-            trial_user: {
-              email: `trial_${timestamp}@example.com`,
-              username: `trial_${timestamp}`,
-              password: "trial_password_123",
-              password_confirmation: "trial_password_123",
-            },
-          });
-          if (res?.user) {
-            login({ ...res.user, id: String(res.user.id) });
-          }
-          setIsLoggingIn(false);
-          // Cookieが設定されるのを待つ
-          await new Promise((r) => setTimeout(r, 500));
+          setAnalysisError("ぶんせきは できなかったけど、ゆめは のこして あるよ。");
         }
       }
 
-      // AI分析を実行
-      const result = await previewAnalysis(description);
+      if (result) {
+        // 分析結果を保存済みの夢へ紐づける。
+        // 失敗しても夢そのものは残っているので、画面の表示は続ける。
+        try {
+          await updateDream(saved.id, {
+            analysis_json: result,
+            analysis_status: "done",
+          });
+        } catch {
+          // 紐づけだけの失敗。夢は保存済みなので黙って表示を続ける
+        }
+        setAnalysisCount((prev) => prev + 1);
+      }
 
-      // 夢リストに分析結果付きで追加
       setDreams((prev) => [
         ...prev,
         {
-          title: title || `ゆめ ${prev.length + 1}`,
+          title: title.trim() || `ゆめ ${prev.length + 1}`,
           description,
           analysis: result,
         },
       ]);
-      setAnalysisCount((prev) => prev + 1);
       setTitle("");
       setDescription("");
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "分析に失敗しました";
-      if (message.includes("分析上限")) {
-        setAnalysisLimitReached(true);
-        setAnalysisError("");
-      } else {
-        setAnalysisError("ぶんせきに しっぱい しちゃった。もういちど ためしてね。");
-      }
+    } catch {
+      // ensureTrialSession（trial_login）の失敗など、上で拾えなかった例外。
+      // ここが無いと未処理のPromise拒否になり、画面に何も出ないまま終わる。
+      setAnalysisError("いま うまく つながらなかったよ。もういちど ためしてね。");
     } finally {
       setIsAnalyzing(false);
       setIsLoggingIn(false);
     }
   };
 
-  // 分析なしで記録だけ
-  const addDreamWithoutAnalysis = () => {
-    if (!title && !description) {
+  // 分析なしで記録する（DBへ保存する）
+  const addDreamWithoutAnalysis = async () => {
+    if (!description.trim()) {
+      setAnalysisError("ゆめの おはなしを かいてね。");
       return;
     }
     if (dreams.length >= MAX_TRIAL_DREAMS) {
       setAnalysisError("ここに かける ゆめは 7こ まで だよ。");
       return;
     }
-    setDreams((prev) => [
-      ...prev,
-      { title: title || `ゆめ ${prev.length + 1}`, description },
-    ]);
-    setTitle("");
-    setDescription("");
+    if (isAuthChecking) {
+      setAnalysisError("じゅんびちゅう... すこしまってね。");
+      return;
+    }
+
+    setIsSaving(true);
+    setAnalysisError("");
+
+    try {
+      if (!(await ensureTrialSession())) return;
+
+      await persistDream();
+
+      setDreams((prev) => [
+        ...prev,
+        { title: title.trim() || `ゆめ ${prev.length + 1}`, description },
+      ]);
+      setTitle("");
+      setDescription("");
+    } catch (err: unknown) {
+      setAnalysisError(saveErrorMessage(err));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -201,7 +363,9 @@ export default function TrialPage() {
             onClick={handleAnalyze}
             disabled={
               isAnalyzing ||
+              isSaving ||
               isAuthChecking ||
+              isLoadingExistingDreams ||
               analysisLimitReached ||
               dreams.length >= MAX_TRIAL_DREAMS ||
               !description.trim()
@@ -234,7 +398,12 @@ export default function TrialPage() {
             type="button"
             onClick={addDreamWithoutAnalysis}
             disabled={
-              dreams.length >= MAX_TRIAL_DREAMS || !description.trim()
+              isAnalyzing ||
+              isSaving ||
+              isAuthChecking ||
+              isLoadingExistingDreams ||
+              dreams.length >= MAX_TRIAL_DREAMS ||
+              !description.trim()
             }
             className="
               inline-flex items-center justify-center px-5 py-2.5
@@ -244,7 +413,7 @@ export default function TrialPage() {
               transition-all duration-200
             "
           >
-            記録だけする（分析なし）
+            {isSaving ? "のこしているよ…" : "記録だけする（分析なし）"}
           </button>
 
           {/* 残り回数バッジ */}
@@ -262,10 +431,12 @@ export default function TrialPage() {
       {/* 記録した夢リスト */}
       <div className="mb-8">
         <h3 className="text-lg font-bold mb-4">
-          記録した夢 ({dreams.length}/{MAX_TRIAL_DREAMS})
+          {isLoadingExistingDreams
+            ? "記録した夢を確認しています…"
+            : `記録した夢 (${dreams.length}/${MAX_TRIAL_DREAMS})`}
         </h3>
 
-        {dreams.length === 0 ? (
+        {isLoadingExistingDreams ? null : dreams.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             まだ記録がありません。上のフォームから夢を記録してみましょう。
           </p>

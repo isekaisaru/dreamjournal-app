@@ -364,6 +364,22 @@ export async function clientLogout(): Promise<null> {
   });
 }
 
+// パスワードリセットメール内のリンク（/password-reset/:token）から呼ばれる。
+// トークンは使い切り・60分制限で、無効/期限切れ/使用済みのいずれも
+// バックエンドが同じ { error: '無効または期限切れのトークンです。' } を返す。
+export async function confirmPasswordReset(
+  token: string,
+  credentials: { password: string; password_confirmation: string }
+): Promise<{ message: string }> {
+  return apiFetch<{ message: string }>(
+    `/password_resets/${encodeURIComponent(token)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(credentials),
+    }
+  );
+}
+
 export async function getEmotions(): Promise<Emotion[]> {
   return apiFetch("/emotions");
 }
@@ -371,6 +387,17 @@ export async function getEmotions(): Promise<Emotion[]> {
 export async function createDream(dream: DreamInput): Promise<Dream> {
   return apiFetch<Dream>("/dreams", {
     method: "POST",
+    body: JSON.stringify({ dream }),
+  });
+}
+
+// 保存済みの夢を部分更新する（体験版で分析結果を後から紐づける用途）。
+export async function updateDream(
+  id: number,
+  dream: Partial<DreamInput>
+): Promise<Dream> {
+  return apiFetch<Dream>(`/dreams/${id}`, {
+    method: "PATCH",
     body: JSON.stringify({ dream }),
   });
 }

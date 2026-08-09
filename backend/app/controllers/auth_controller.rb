@@ -61,7 +61,9 @@ class AuthController < ApplicationController
     send_verification_email(result[:user])
     render json: { user: user_json(result[:user]) }, status: :ok
   rescue AuthService::RegistrationError => e
-    render json: { error: e.message }, status: :unprocessable_entity
+    # error は既存互換の人間向け文字列（英語混じり）。
+    # error_codes が機械可読な field/code で、フロントはこちらだけを見て文言を決める。
+    render json: { error: e.message, error_codes: e.details }, status: :unprocessable_entity
   end
 
   # メールアドレス確認 POST /auth/verify_email（未ログインでも実行可能）

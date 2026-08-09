@@ -75,7 +75,8 @@
 `STRIPE_PREMIUM_PRICE_ID` を本番Renderに設定する前に、以下を確認する。
 
 - [ ] 本番Stripeダッシュボードで590円の月額価格（Price）が作成済みである
-- [ ] 作成した本番Price IDが `price_` で始まる本番用IDである（テスト用 `price_test_` ではない）
+- [ ] `STRIPE_MODE=live` が設定されている
+- [ ] Price IDはtest/liveともに`price_`で始まるため文字列では判定せず、Checkout前の`livemode`検証が成功することを確認
 - [ ] 本番Stripeの `STRIPE_SECRET_KEY` が `sk_live_` で始まることを確認（値は確認するが絶対にログや画面に出力しない）
 - [ ] 本番Stripeの `STRIPE_WEBHOOK_SECRET` が本番エンドポイント用のものであることを確認
 - [ ] RenderのWebhookエンドポイントURL（`https://dreamjournal-app.onrender.com/webhooks/stripe`）がStripeダッシュボードに登録されている
