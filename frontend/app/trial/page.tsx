@@ -56,11 +56,15 @@ export default function TrialPage() {
   // trialユーザーがリロードすると「0/7」に見えてしまっていた（表示上の不整合、
   // データは失われていない）。初回マウント時に一度だけ既存件数を取り込んで補正する。
   const [isLoadingExistingDreams, setIsLoadingExistingDreams] = useState(false);
-  // 初回のauthStatus確定（checking→authenticated/unauthenticated）でのみ判定する。
-  // ページ内でtrial_loginが後から発生しても再取得しない
-  // （直後の setDreams(prev => [...prev, 新規夢]) を空配列取得結果で
-  // 上書きしてしまう競合を避けるため）。
-  const hasCheckedExistingDreamsRef = useRef(false);
+  // "idle": 未着手 / "loading": 取得中 / "done": 判定・取得済み。
+  // 完了(done)後は、ページ内でtrial_loginが後から発生してもこの判定を
+  // やり直さない（直後の setDreams(prev => [...prev, 新規夢]) を空配列取得結果で
+  // 上書きしてしまう競合を避けるため）。一方、開発時のReact Strict Modeによる
+  // setup→cleanup→setupの二重実行では、取得完了前にcleanupが走るため
+  // "loading"から"idle"へ戻し、直後の再setupで正しく最初からやり直せるようにする。
+  const existingDreamsFetchStateRef = useRef<"idle" | "loading" | "done">(
+    "idle"
+  );
 
   // AI分析関連
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -76,16 +80,23 @@ export default function TrialPage() {
 
   // 初回のauthStatus確定時、既にログイン中のtrialユーザーであれば
   // DB上の既存の夢を読み込み、件数表示とボタンの活性制御を実態に合わせる。
-  // 本登録ユーザー（trial_user !== true）はこれまでどおり対象外
-  // （このページの元々の上限表示は本登録ユーザーには効いていないため、
-  // 挙動を変えない）。未認証の新規訪問者は取得自体を行わない。
+  // 対象は trial_user かつ非premium のみ。
+  // - 本登録ユーザー（trial_user !== true）はこれまでどおり対象外
+  //   （このページの元々の上限表示は本登録ユーザーには効いていないため、挙動を変えない）
+  // - premium: true の trial 由来ユーザーは、バックエンドの
+  //   check_trial_dream_limit が明示的に7件上限から除外している
+  //   （課金済みなのに/trialだけ書けなくなるのを防ぐ）
+  // 未認証の新規訪問者は取得自体を行わない。
   useEffect(() => {
     if (isAuthChecking) return;
-    if (hasCheckedExistingDreamsRef.current) return;
-    hasCheckedExistingDreamsRef.current = true;
+    if (existingDreamsFetchStateRef.current !== "idle") return;
 
-    if (authStatus !== "authenticated" || !user?.trial_user) return;
+    if (authStatus !== "authenticated" || !user?.trial_user || user?.premium) {
+      existingDreamsFetchStateRef.current = "done";
+      return;
+    }
 
+    existingDreamsFetchStateRef.current = "loading";
     let cancelled = false;
     setIsLoadingExistingDreams(true);
 
@@ -100,11 +111,19 @@ export default function TrialPage() {
         // 引き続き働くため、表示が一時的に不正確でもデータは保護される。
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingExistingDreams(false);
+        if (cancelled) return;
+        setIsLoadingExistingDreams(false);
+        existingDreamsFetchStateRef.current = "done";
       });
 
     return () => {
       cancelled = true;
+      // Strict Mode（開発時のみ）の合成cleanupで、取得完了前に中断された場合は
+      // idle へ戻す。直後の再setupがこの中断分を正しくやり直せるようにするため。
+      if (existingDreamsFetchStateRef.current === "loading") {
+        existingDreamsFetchStateRef.current = "idle";
+        setIsLoadingExistingDreams(false);
+      }
     };
   }, [authStatus, isAuthChecking, user]);
 

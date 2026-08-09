@@ -1,3 +1,4 @@
+import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import TrialPage from "@/app/trial/page";
@@ -375,5 +376,43 @@ describe("TrialPage: 既存の夢をDBから読み込んで件数表示に反映
         "お試しで のこせる ゆめは 7こ までだよ。アカウント登録すると、ずっと のこせるよ。"
       )
     ).toBeInTheDocument();
+  });
+
+  // premium: true の trial 由来ユーザーは、DreamsController#check_trial_dream_limit が
+  // 明示的に7件上限から除外している。フロントの既存件数取得・上限表示もこのユーザーには
+  // 適用しない（課金済みなのに/trialだけ書けなくなるのを防ぐ、Codexレビュー指摘）。
+  it("premium: trueのtrialユーザーは既存dreamを取得せず、上限表示も出さない", async () => {
+    mockedUseAuth.mockReturnValue(
+      makeAuth({ user: { id: "1", trial_user: true, premium: true } })
+    );
+
+    render(<TrialPage />);
+
+    expect(
+      await screen.findByText(/記録した夢 \(0\/7\)/)
+    ).toBeInTheDocument();
+    expect(mockedGet).not.toHaveBeenCalled();
+  });
+
+  // React/Next の開発時Strict Modeはマウント時にeffectを
+  // setup→cleanup→setupと二重実行する。一度きりのref判定だけで実装すると、
+  // 最初のsetupの取得がcleanupでキャンセルされた後、2回目のsetupがrefにより
+  // 素通りしてしまい、読み込み中表示のまま固まる（Codexレビュー指摘）。
+  it("Strict Modeでeffectが二重実行されても、読み込みが完了しボタンが使えるようになる", async () => {
+    mockedGet.mockResolvedValue([]);
+
+    render(
+      <React.StrictMode>
+        <TrialPage />
+      </React.StrictMode>
+    );
+
+    // 読み込み中表示のまま固まらないことを確認（Strict Modeの二重実行分だけ
+    // apiClient.get が2回呼ばれること自体は開発時のみの無害な副作用として許容する）。
+    await waitForExistingDreamsLoaded();
+    writeDream("Strict Modeでも かける ゆめ");
+    expect(
+      screen.getByRole("button", { name: /記録だけする/ })
+    ).not.toBeDisabled();
   });
 });
