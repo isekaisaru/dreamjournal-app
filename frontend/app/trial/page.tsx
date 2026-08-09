@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
-import { User } from "@/app/types";
+import { Dream, User } from "@/app/types";
 import {
   ApiError,
   createDream,
@@ -23,8 +23,23 @@ type AnalysisResult = {
 const MAX_TRIAL_DREAMS = 7;
 const MAX_TRIAL_ANALYSES = 3;
 
+// バックエンドの Dream を、このページのローカル表示形式へ変換する。
+const toLocalDream = (
+  dream: Dream
+): { title: string; description: string; analysis?: AnalysisResult } => ({
+  title: dream.title,
+  description: dream.content ?? "",
+  analysis:
+    dream.analysis_status === "done" && dream.analysis_json
+      ? {
+          analysis: dream.analysis_json.analysis,
+          emotion_tags: dream.analysis_json.emotion_tags,
+        }
+      : undefined,
+});
+
 export default function TrialPage() {
-  const { authStatus, login } = useAuth();
+  const { authStatus, user, login } = useAuth();
 
   // 認証済みユーザーもこのページは使える（自分のアカウントでAI分析される）
   // LPからの遷移で未認証の場合は、AI分析ボタン押下時にトライアルログインを自動実行
@@ -34,6 +49,22 @@ export default function TrialPage() {
   >([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
+  // 既存のtrial夢をDBから読み込み中かどうか。
+  // Rails側は current_user.dreams.count（DB累計）で7件上限を強制しているが、
+  // このページの dreams state は毎回空配列から始まるため、既存の夢がある
+  // trialユーザーがリロードすると「0/7」に見えてしまっていた（表示上の不整合、
+  // データは失われていない）。初回マウント時に一度だけ既存件数を取り込んで補正する。
+  const [isLoadingExistingDreams, setIsLoadingExistingDreams] = useState(false);
+  // "idle": 未着手 / "loading": 取得中 / "done": 判定・取得済み。
+  // 完了(done)後は、ページ内でtrial_loginが後から発生してもこの判定を
+  // やり直さない（直後の setDreams(prev => [...prev, 新規夢]) を空配列取得結果で
+  // 上書きしてしまう競合を避けるため）。一方、開発時のReact Strict Modeによる
+  // setup→cleanup→setupの二重実行では、取得完了前にcleanupが走るため
+  // "loading"から"idle"へ戻し、直後の再setupで正しく最初からやり直せるようにする。
+  const existingDreamsFetchStateRef = useRef<"idle" | "loading" | "done">(
+    "idle"
+  );
 
   // AI分析関連
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -46,6 +77,55 @@ export default function TrialPage() {
 
   // checking中はボタンを無効化するためのフラグ
   const isAuthChecking = authStatus === "checking";
+
+  // 初回のauthStatus確定時、既にログイン中のtrialユーザーであれば
+  // DB上の既存の夢を読み込み、件数表示とボタンの活性制御を実態に合わせる。
+  // 対象は trial_user かつ非premium のみ。
+  // - 本登録ユーザー（trial_user !== true）はこれまでどおり対象外
+  //   （このページの元々の上限表示は本登録ユーザーには効いていないため、挙動を変えない）
+  // - premium: true の trial 由来ユーザーは、バックエンドの
+  //   check_trial_dream_limit が明示的に7件上限から除外している
+  //   （課金済みなのに/trialだけ書けなくなるのを防ぐ）
+  // 未認証の新規訪問者は取得自体を行わない。
+  useEffect(() => {
+    if (isAuthChecking) return;
+    if (existingDreamsFetchStateRef.current !== "idle") return;
+
+    if (authStatus !== "authenticated" || !user?.trial_user || user?.premium) {
+      existingDreamsFetchStateRef.current = "done";
+      return;
+    }
+
+    existingDreamsFetchStateRef.current = "loading";
+    let cancelled = false;
+    setIsLoadingExistingDreams(true);
+
+    apiClient
+      .get<Dream[]>("/dreams")
+      .then((existingDreams) => {
+        if (cancelled) return;
+        setDreams(existingDreams.map(toLocalDream));
+      })
+      .catch(() => {
+        // 取得失敗時は空のまま進める。DB上の累計7件強制はバックエンド側で
+        // 引き続き働くため、表示が一時的に不正確でもデータは保護される。
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setIsLoadingExistingDreams(false);
+        existingDreamsFetchStateRef.current = "done";
+      });
+
+    return () => {
+      cancelled = true;
+      // Strict Mode（開発時のみ）の合成cleanupで、取得完了前に中断された場合は
+      // idle へ戻す。直後の再setupがこの中断分を正しくやり直せるようにするため。
+      if (existingDreamsFetchStateRef.current === "loading") {
+        existingDreamsFetchStateRef.current = "idle";
+        setIsLoadingExistingDreams(false);
+      }
+    };
+  }, [authStatus, isAuthChecking, user]);
 
   // トライアルセッションを確保する（未認証ならトライアルアカウントを自動作成）。
   // 成功したら true、失敗したらエラー文言を立てて false を返す。
@@ -285,6 +365,7 @@ export default function TrialPage() {
               isAnalyzing ||
               isSaving ||
               isAuthChecking ||
+              isLoadingExistingDreams ||
               analysisLimitReached ||
               dreams.length >= MAX_TRIAL_DREAMS ||
               !description.trim()
@@ -320,6 +401,7 @@ export default function TrialPage() {
               isAnalyzing ||
               isSaving ||
               isAuthChecking ||
+              isLoadingExistingDreams ||
               dreams.length >= MAX_TRIAL_DREAMS ||
               !description.trim()
             }
@@ -349,10 +431,12 @@ export default function TrialPage() {
       {/* 記録した夢リスト */}
       <div className="mb-8">
         <h3 className="text-lg font-bold mb-4">
-          記録した夢 ({dreams.length}/{MAX_TRIAL_DREAMS})
+          {isLoadingExistingDreams
+            ? "記録した夢を確認しています…"
+            : `記録した夢 (${dreams.length}/${MAX_TRIAL_DREAMS})`}
         </h3>
 
-        {dreams.length === 0 ? (
+        {isLoadingExistingDreams ? null : dreams.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             まだ記録がありません。上のフォームから夢を記録してみましょう。
           </p>
