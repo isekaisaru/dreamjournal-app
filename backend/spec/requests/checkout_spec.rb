@@ -73,7 +73,7 @@ RSpec.describe 'Checkout API', type: :request do
             mode: 'payment',
             success_url: "#{frontend_url}/donation/success",
             cancel_url: "#{frontend_url}/donation/cancel"
-          ))
+          ), hash_including(idempotency_key: a_kind_of(String)))
           .and_return(checkout_session)
 
         authenticated_post('/checkout', user)
@@ -95,7 +95,7 @@ RSpec.describe 'Checkout API', type: :request do
             mode: 'payment',
             success_url: "#{frontend_url}/donation/success",
             cancel_url: "#{frontend_url}/donation/cancel"
-          ))
+          ), hash_including(idempotency_key: a_kind_of(String)))
           .and_return(checkout_session)
 
         authenticated_post('/checkout', user)
@@ -117,7 +117,7 @@ RSpec.describe 'Checkout API', type: :request do
             line_items: [hash_including(price: premium_price_id, quantity: 1)],
             success_url: "#{frontend_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}",
             cancel_url: "#{frontend_url}/subscription/cancel"
-          ))
+          ), hash_including(idempotency_key: a_kind_of(String)))
           .and_return(checkout_session)
 
         authenticated_post('/checkout', user, params: { plan: 'premium' })
@@ -154,6 +154,27 @@ RSpec.describe 'Checkout API', type: :request do
 
         expect(response).to have_http_status(:internal_server_error)
         expect(JSON.parse(response.body)['error']).to include('プレミアム決済')
+      end
+
+      it '毎回異なる idempotency_key を Stripe に渡す' do
+        user = create(:user, stripe_customer_id: 'cus_existing_123')
+        allow(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        headers = auth_headers(user)
+
+        captured_keys = []
+        allow(Stripe::Checkout::Session).to receive(:create) do |_params, opts|
+          captured_keys << opts[:idempotency_key]
+          checkout_session
+        end
+
+        post '/checkout', params: {}, headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+        post '/checkout', params: {}, headers: headers, as: :json
+        expect(response).to have_http_status(:ok)
+
+        expect(captured_keys.size).to eq(2)
+        expect(captured_keys).to all(be_a(String))
+        expect(captured_keys.uniq.size).to eq(2)
       end
 
       it 'Priceがlive modeならCustomerやCheckout Sessionを作成しない' do
@@ -201,7 +222,7 @@ RSpec.describe 'Checkout API', type: :request do
             payment_method_types: ['card'],
             success_url: "#{frontend_url}/subscription/success?session_id={CHECKOUT_SESSION_ID}",
             cancel_url:  "#{frontend_url}/subscription/cancel"
-          ))
+          ), hash_including(idempotency_key: a_kind_of(String)))
           .and_return(subscription_session)
 
         authenticated_post('/checkout', user, params: { plan: 'premium' })

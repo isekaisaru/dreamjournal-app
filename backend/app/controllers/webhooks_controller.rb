@@ -203,46 +203,76 @@ class WebhooksController < ApplicationController
     Rails.logger.info("[Webhook] サブスク解約 user_id=#{user.id} sub_id=#{stripe_subscription_id}")
   end
 
+  # 同じ subscription に対する複数のWebhookイベント（checkout.session.completed /
+  # invoice.payment_succeeded / customer.subscription.deleted）がほぼ同時に届いても、
+  # 行ロックと一意制約違反時の再試行により最終的な状態が競合で壊れないようにする。
   def sync_subscription!(stripe_subscription, preferred_user: nil, fallback_customer_id: nil, fallback_current_period_end: nil)
     stripe_subscription_id = extract_object_id(stripe_subscription)
-    subscription = Subscription.find_or_initialize_by(stripe_subscription_id: stripe_subscription_id)
-    stripe_customer_id =
-      if stripe_subscription.respond_to?(:customer)
-        extract_object_id(stripe_subscription.customer).presence
-      end
-    stripe_customer_id ||= fallback_customer_id
-    stripe_customer_id ||= subscription.stripe_customer_id
+    raise InvalidCheckoutSessionPayloadError, 'Stripe subscription is missing id' if stripe_subscription_id.blank?
 
     status = stripe_subscription.respond_to?(:status) ? stripe_subscription.status.to_s : nil
-    current_period_end =
-      if stripe_subscription.respond_to?(:current_period_end)
-        timestamp_to_time(stripe_subscription.current_period_end)
-      end
-    current_period_end ||= fallback_current_period_end
-
-    raise InvalidCheckoutSessionPayloadError, 'Stripe subscription is missing id' if stripe_subscription_id.blank?
-    raise InvalidCheckoutSessionPayloadError, 'Stripe subscription is missing customer id' if stripe_customer_id.blank?
     unless Subscription::STATUSES.include?(status)
       raise InvalidCheckoutSessionPayloadError, "Unsupported Stripe subscription status: #{status.presence || 'missing'}"
     end
 
-    user = preferred_user || subscription.user || User.find_by(stripe_customer_id: stripe_customer_id)
-    raise UnresolvedWebhookDataError, 'Subscription user could not be resolved' unless user
+    stripe_customer_id_from_source =
+      if stripe_subscription.respond_to?(:customer)
+        extract_object_id(stripe_subscription.customer).presence
+      end
+    current_period_end_from_source =
+      if stripe_subscription.respond_to?(:current_period_end)
+        timestamp_to_time(stripe_subscription.current_period_end)
+      end
 
-    subscription.assign_attributes(
-      user: user,
-      stripe_customer_id: stripe_customer_id,
-      status: status,
-      current_period_end: current_period_end
-    )
-    subscription.save!
+    subscription, user = upsert_subscription_with_retry!(stripe_subscription_id) do |subscription|
+      stripe_customer_id = stripe_customer_id_from_source || fallback_customer_id || subscription.stripe_customer_id
+      raise InvalidCheckoutSessionPayloadError, 'Stripe subscription is missing customer id' if stripe_customer_id.blank?
 
-    user.update!(
-      stripe_customer_id: stripe_customer_id,
-      premium: user.premium_active_subscription?
-    )
+      user = preferred_user || subscription.user || User.find_by(stripe_customer_id: stripe_customer_id)
+      raise UnresolvedWebhookDataError, 'Subscription user could not be resolved' unless user
+
+      subscription.assign_attributes(
+        user: user,
+        stripe_customer_id: stripe_customer_id,
+        status: status,
+        current_period_end: current_period_end_from_source || fallback_current_period_end
+      )
+      subscription.save!
+
+      [subscription, user]
+    end
+
+    user.with_lock do
+      user.update!(
+        stripe_customer_id: subscription.stripe_customer_id,
+        premium: user.premium_active_subscription?
+      )
+    end
 
     [subscription, user]
+  end
+
+  # 既存のsubscription行があれば with_lock で排他制御しつつ更新する。
+  # 未作成の場合は新規作成を試み、一意制約違反（別イベントが先に作成した）を検知したら
+  # 既存行として取得し直して再試行する。
+  def upsert_subscription_with_retry!(stripe_subscription_id, attempts: 0, &block)
+    existing = Subscription.find_by(stripe_subscription_id: stripe_subscription_id)
+
+    if existing
+      existing.with_lock { block.call(existing) }
+    else
+      block.call(Subscription.new(stripe_subscription_id: stripe_subscription_id))
+    end
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+    raise if attempts >= 2 || !duplicate_stripe_subscription_id_error?(e)
+
+    upsert_subscription_with_retry!(stripe_subscription_id, attempts: attempts + 1, &block)
+  end
+
+  def duplicate_stripe_subscription_id_error?(error)
+    return true if error.is_a?(ActiveRecord::RecordNotUnique)
+
+    error.record.errors[:stripe_subscription_id].present?
   end
 
   def resolve_user_from_session(session)
