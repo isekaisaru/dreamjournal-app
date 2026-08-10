@@ -36,7 +36,8 @@ class CheckoutController < ApplicationController
           frontend_url: frontend_url,
           customer_id: customer_id,
           premium_price_id: premium_price_id
-        )
+        ),
+        idempotency_key: SecureRandom.uuid
       )
 
       PaymentsObservability.increment('checkout.session.created', user_id: current_user.id)
