@@ -113,15 +113,19 @@ bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: ni
 
 準備:
 - [ ] リポジトリルートで throwaway 用の `docker-compose.yml` のポートを既存の常駐スタック（3000/3001/5432）と衝突しないよう一時的にずらす（作業後は`git checkout --`で戻す）
+  - ⚠️ **ポートをずらしたら、`docker-compose.yml`内の`NEXT_PUBLIC_API_URL`（デフォルト`http://localhost:3001`）・`INTERNAL_API_URL`、および`backend/.env`の`FRONTEND_URL`（デフォルト`http://localhost:3000`）も、ずらした後のポートに合わせて必ず変更する。ここを揃えないと、ブラウザからのAPIリクエストや決済後のリダイレクトが常駐スタック側に向いてしまい、認証やセッションの検証が壊れる、または常駐スタックの方を誤って確認してしまう**
 - [ ] `backend/.env`にStripeの**testキー**（`STRIPE_SECRET_KEY`が`sk_test_`始まり、`STRIPE_PUBLISHABLE_KEY`が`pk_test_`始まり）と`STRIPE_PREMIUM_PRICE_ID`（testモードのPrice ID）を設定
-- [ ] 別ターミナルで `stripe listen --forward-to localhost:<ローカルbackendポート>/webhooks/stripe` を起動し、表示された`whsec_...`をローカルの`STRIPE_WEBHOOK_SECRET`に設定（`docs/runbook-payments.md`の「手動検証コマンド」参照）
+- [ ] 別ターミナルで `stripe listen --forward-to localhost:<ずらした後のローカルbackendポート>/webhooks/stripe` を起動し、表示された`whsec_...`をローカルの`STRIPE_WEBHOOK_SECRET`に設定（`docs/runbook-payments.md`の「手動検証コマンド」参照）
 - [ ] 接続先DBがローカルの開発/テスト用DBであり、本番DBでないことを値を表示せず確認する
+- [ ] **チェックアウト可能なテストユーザーを用意する**: `CheckoutController#create`は`require_verified_email`（`ApplicationController`）を通るため、新規登録しただけ・seedの一般ユーザーは`email_verified_at`が未設定で403になる。以下のどちらかで用意する
+  - trialユーザーとして`/trial`からログインする（`require_verified_email`はtrialユーザーを対象外にしている）
+  - 通常のテストユーザーで`bundle exec rails runner 'User.find_by(email: "...").update!(email_verified_at: Time.current)'`によりローカルDBだけで確認済み扱いにする（**本番DBでは絶対に行わない**）
 
 手順:
-- [ ] ローカルで起動したフロントエンド（`http://localhost:<ポート>`）にテストユーザーでログインする
+- [ ] 上記で用意したテストユーザーで、ローカルで起動したフロントエンド（ポートを揃えた`http://localhost:<ポート>`）にログインする
 - [ ] **サブスク/課金画面**から「プレミアム」購入 → Stripe Checkout へ遷移
   - 期待結果: `POST /checkout`が200を返し、Stripe Checkoutページへリダイレクトされる
-  - 失敗時に見るログ: バックエンドログの`checkout.error.*`系KPI（`docs/runbook-payments.md`参照）、`FRONTEND_URL`/`STRIPE_PREMIUM_PRICE_ID`の設定漏れ
+  - 失敗時に見るログ: 403の場合はテストユーザーが未確認（上記「チェックアウト可能なテストユーザー」を参照）。500系の場合はバックエンドログの`checkout.error.*`系KPI（`docs/runbook-payments.md`参照）、`FRONTEND_URL`/`STRIPE_PREMIUM_PRICE_ID`の設定漏れ
 - [ ] テストカード `4242 4242 4242 4242` / 任意の未来日 / 任意CVC で決済
 - [ ] `stripe listen`のターミナルで`checkout.session.completed`が転送され、ローカルbackendが**200**を返していることを確認
   - 失敗時に見るログ: `stripe listen`の出力（署名エラー・接続エラー）、バックエンドログの`webhook.error.*`系KPI
