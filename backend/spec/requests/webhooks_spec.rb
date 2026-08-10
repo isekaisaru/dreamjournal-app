@@ -723,6 +723,104 @@ RSpec.describe 'Webhooks API', type: :request do
             end
           end.to change(Subscription, :count).by(1)
         end
+
+        # 実スレッドでの競合再現はGVL・ローカルDBの高速な往復でウィンドウが狭すぎて
+        # 安定的に踏めないため（spec/services/auth_service_spec.rb と同じ判断）、
+        # find_by が「未作成」を返した直後に別イベントが先に作成済みにする状況を
+        # 確定的に作り出し、一意制約違反時の再試行が機能することを直接検証する。
+        it '一意制約違反（別イベントが先に作成済み）を検知して再試行し、Subscriptionを1件に保つ' do
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123')
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_subscription_completed)
+
+          call_count = 0
+          allow(Subscription).to receive(:find_by)
+            .with({ stripe_subscription_id: 'sub_test_123' })
+            .and_wrap_original do |original, *args|
+              call_count += 1
+              if call_count == 1
+                Subscription.create!(
+                  stripe_subscription_id: 'sub_test_123',
+                  user: user,
+                  stripe_customer_id: 'cus_test_123',
+                  status: 'past_due'
+                )
+                nil
+              else
+                original.call(*args)
+              end
+            end
+
+          expect do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+          end.to change(Subscription, :count).by(1)
+
+          expect(response).to have_http_status(:ok)
+          subscription = Subscription.find_by!(stripe_subscription_id: 'sub_test_123')
+          expect(subscription.status).to eq('active')
+          expect(user.reload.premium).to be true
+        end
+
+        # Codex #490 P2指摘の回帰防止テスト。
+        # 上のテストは Subscription.find_by の直前に横入りする形で「先着」レコードを
+        # 作成しているため、Railsのuniquenessバリデーション（事前SELECT）がそれを検出し、
+        # ActiveRecord::RecordInvalid になる（DBの一意制約までは到達しない）。
+        # しかし実際の同時webhookレースでは、両者のバリデーションSELECTが
+        # どちらも「衝突なし」と判定した後にINSERTが競合するため、
+        # 検証すべきは ActiveRecord::RecordNotUnique（真のDB一意制約違反）である。
+        # ここではuniquenessバリデーションを無効化し、その状況を確定的に再現したうえで、
+        # StripeWebhookEventProcessorが開く外側トランザクションがabortせず、
+        # 再試行のfind_byがPG::InFailedSqlTransactionにならないことをDB-backedで検証する。
+        it '真のDB一意制約違反（RecordNotUnique）が発生しても外側トランザクションを壊さず再試行できる' do
+          stripe_subscription_id = 'sub_savepoint_test_123'
+          user = create(:user, stripe_customer_id: 'cus_savepoint_test')
+          controller = WebhooksController.new
+
+          allow_any_instance_of(ActiveRecord::Validations::UniquenessValidator)
+            .to receive(:validate_each)
+
+          call_count = 0
+          allow(Subscription).to receive(:find_by)
+            .with({ stripe_subscription_id: stripe_subscription_id })
+            .and_wrap_original do |original, *args|
+              call_count += 1
+              if call_count == 1
+                Subscription.create!(
+                  stripe_subscription_id: stripe_subscription_id,
+                  user: user,
+                  stripe_customer_id: 'cus_savepoint_test',
+                  status: 'past_due'
+                )
+                nil
+              else
+                original.call(*args)
+              end
+            end
+
+          ApplicationRecord.transaction(requires_new: true) do
+            subscription, resolved_user = controller.send(
+              :upsert_subscription_with_retry!,
+              stripe_subscription_id
+            ) do |sub|
+              sub.assign_attributes(user: user, stripe_customer_id: 'cus_savepoint_test', status: 'active')
+              sub.save!
+              [sub, user]
+            end
+
+            expect(subscription.status).to eq('active')
+            expect(resolved_user).to eq(user)
+            expect(Subscription.where(stripe_subscription_id: stripe_subscription_id).count).to eq(1)
+
+            # 外側トランザクションがabortしていれば、ここで PG::InFailedSqlTransaction になる
+            expect(Subscription.find_by(stripe_subscription_id: stripe_subscription_id)).to be_present
+          end
+        end
       end
 
       context 'invoice.payment_succeeded の場合' do
