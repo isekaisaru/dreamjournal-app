@@ -59,6 +59,27 @@
 
 🛑 夢が消える／TrialBannerが残る場合は、**③に進まず**再現手順・発生時刻・夢のタイトルを記録して共有する。
 
+### ①-補足：reload表示・7件上限・Premium例外・スマホ表示（2026年8月11日追加）
+
+> 上のP3手順は「夢が残るか」の確認が中心。ここでは`/trial`のリロード時表示（[PR #488](https://github.com/isekaisaru/dreamjournal-app/pull/488)で修正済み）と、`TRIAL_DREAM_LIMIT = 7`（`backend/app/controllers/dreams_controller.rb`）まわりの回帰を、それぞれ「何を操作するか／期待結果／失敗時にどこを見るか」の形で確認する。すべて**ローカルDocker環境**または**本番の自分のtrialアカウント**のどちらで行ってもよいが、7件上限の確認は本番で実データを7件も作ることになるため、**ローカル環境での実施を推奨**する。
+
+- [ ] **reload時のDB累計表示**
+  - 操作: `/trial`で「記録だけする」またはAIプレビューを2〜3回行った後、ブラウザをリロードする
+  - 期待結果: リロード後の件数表示が、リロード前に記録した件数と一致する（0/7に戻らない）
+  - 失敗時に見るログ: ブラウザNetworkタブで`GET /dreams`が発行されているか、レスポンスの件数とUI表示が一致しているか。フロントのコンソールエラーも確認
+- [ ] **7件上限**
+  - 操作: ローカル環境のtrialアカウントで夢を7件作成した状態で、8件目を`/dream/new`から保存しようとする
+  - 期待結果: `お試しで のこせる ゆめは 7こ までだよ。アカウント登録すると、ずっと のこせるよ。`というエラーメッセージが表示され、8件目は保存されない
+  - 失敗時に見るログ: バックエンドの`POST /dreams`レスポンスstatus（422期待）、Railsログの`check_trial_dream_limit`周辺、`current_user.dreams.count`の実値
+- [ ] **Premium trialユーザーの例外**
+  - 操作: trialユーザーをローカルDBで`premium: true`にした状態（`User.find_by(email: "...").update!(premium: true)`、**本番DBでは行わない**）で、8件目以降の夢を保存する
+  - 期待結果: 7件上限に関係なく保存できる（`dreams_controller.rb`の`check_trial_dream_limit`は`current_user.premium?`が真なら即returnする実装のため）
+  - 失敗時に見るログ: 上と同様。加えて`current_user.premium?`が意図通りtrueになっているか（`ApplicationController`のcurrent_user解決ログ、または`rails runner`での直接確認）
+- [ ] **スマホ表示（`/trial`・`/home`）**
+  - 操作: ブラウザの幅を375px（またはスマホ実機）にして、`/trial`の入力フォーム・AI分析結果カード・`/home`のTrialBanner・夢一覧を一通り表示する
+  - 期待結果: テキストの折り返し崩れ・ボタンの見切れ・タップ領域の重なりがない（[PR #487](https://github.com/isekaisaru/dreamjournal-app/pull/487)の`/forest`ナビ折り返し修正と同種の崩れがないか、という観点）
+  - 失敗時に見るログ: 崩れが起きたページ・幅・要素をスクリーンショットで記録（ログではなく見た目の確認のため）
+
 ---
 
 ## ② データ安全化（dream_profile_id）— ✅ 完了済み・再実行禁止
@@ -84,8 +105,40 @@ bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: ni
 
 ---
 
+## ③-ローカル Stripe テストモード通し確認（2026年8月11日追加・現在の推奨手順）
+
+> 8月計画（Must②）の方針として、Stripe通し確認は**ローカル/専用ステージング環境限定**で行い、**本番のStripe関連環境変数は一切変更しない**ことになっている。下の元の「③ Stripe 本番フロー通しテスト」は本番URLを使う手順のため、**現時点ではこのローカル版を使う**。本番モードでの実購入は8月計画に含めない。
+>
+> 目的・確認ルートは元の③と同じ（購入→Webhook→premium反映→Portal）。差分は「本番URLではなくローカルDocker環境で、Stripeのtestキー・test Price IDを使う」こと。
+
+準備:
+- [ ] リポジトリルートで throwaway 用の `docker-compose.yml` のポートを既存の常駐スタック（3000/3001/5432）と衝突しないよう一時的にずらす（作業後は`git checkout --`で戻す）
+- [ ] `backend/.env`にStripeの**testキー**（`STRIPE_SECRET_KEY`が`sk_test_`始まり、`STRIPE_PUBLISHABLE_KEY`が`pk_test_`始まり）と`STRIPE_PREMIUM_PRICE_ID`（testモードのPrice ID）を設定
+- [ ] 別ターミナルで `stripe listen --forward-to localhost:<ローカルbackendポート>/webhooks/stripe` を起動し、表示された`whsec_...`をローカルの`STRIPE_WEBHOOK_SECRET`に設定（`docs/runbook-payments.md`の「手動検証コマンド」参照）
+- [ ] 接続先DBがローカルの開発/テスト用DBであり、本番DBでないことを値を表示せず確認する
+
+手順:
+- [ ] ローカルで起動したフロントエンド（`http://localhost:<ポート>`）にテストユーザーでログインする
+- [ ] **サブスク/課金画面**から「プレミアム」購入 → Stripe Checkout へ遷移
+  - 期待結果: `POST /checkout`が200を返し、Stripe Checkoutページへリダイレクトされる
+  - 失敗時に見るログ: バックエンドログの`checkout.error.*`系KPI（`docs/runbook-payments.md`参照）、`FRONTEND_URL`/`STRIPE_PREMIUM_PRICE_ID`の設定漏れ
+- [ ] テストカード `4242 4242 4242 4242` / 任意の未来日 / 任意CVC で決済
+- [ ] `stripe listen`のターミナルで`checkout.session.completed`が転送され、ローカルbackendが**200**を返していることを確認
+  - 失敗時に見るログ: `stripe listen`の出力（署名エラー・接続エラー）、バックエンドログの`webhook.error.*`系KPI
+- [ ] アプリに戻り、**user.premium が true** になっていること
+  - 確認: ローカルのRailsコンソール/`rails runner`で `User.find_by(email: "<テストユーザーのメール>")&.premium` を確認
+  - 失敗時に見るログ: `webhook.subscription.started`ログ、`Subscription`テーブルの該当行（`stripe_subscription_id`・`status`）
+- [ ] 課金画面から **顧客ポータル(billing_portal)** を開けること
+- [ ] （任意）ポータルで解約 → `stripe listen`で`customer.subscription.deleted`が200 → premiumがfalseに戻ることを確認
+
+🛑 Webhookが200にならない/premiumが反映されない場合、または**ローカル/専用ステージング環境そのものを用意できない場合**は、Stripe通し確認は「未完了」のまま記録してSTOPする。本番環境で代替確認せず、原因を切り分けてから再度ローカルで試みる。
+
+---
+
 ## ③ Stripe 本番フロー通しテスト
 
+> ⚠️ **8月計画では現在このセクションは対象外**（上の「③-ローカル」を参照）。本番モードでの実購入は8月Mustに含めないという方針のため、当面はローカル版のみを使う。将来、本番での最終確認が必要になった場合のための手順として残してある。
+>
 > 目的: 購入→Webhook→premium反映→Portal の一連が通ること。
 > ルート: `POST /checkout`（購入セッション作成）/ `POST /billing_portal`（顧客ポータル）/ `POST /webhooks/stripe`（Webhook受信）。
 > ⚠️ **まず Stripe テストモードで通し確認する**（同じコード経路・実課金なし）。テストで通ってから、必要なら本番モードで**1回だけ**実購入する。**再実行＝二重課金**なので安易に繰り返さない。
