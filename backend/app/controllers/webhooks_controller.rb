@@ -261,7 +261,14 @@ class WebhooksController < ApplicationController
     if existing
       existing.with_lock { block.call(existing) }
     else
-      block.call(Subscription.new(stripe_subscription_id: stripe_subscription_id))
+      # 新規INSERTだけをsavepointに隔離する。ここでRecordNotUnique（DBの一意制約違反）が
+      # 発生した場合、Railsはこのsavepointだけをロールバックして例外を再送出するため、
+      # StripeWebhookEventProcessor#call が開いている外側トランザクションはabortしない。
+      # 隔離しないと、外側トランザクションごとabort状態になり、下のrescueで再試行する
+      # find_byがPG::InFailedSqlTransactionで失敗してしまう。
+      ApplicationRecord.transaction(requires_new: true) do
+        block.call(Subscription.new(stripe_subscription_id: stripe_subscription_id))
+      end
     end
   rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
     raise if attempts >= 2 || !duplicate_stripe_subscription_id_error?(e)
