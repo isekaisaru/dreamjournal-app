@@ -34,10 +34,16 @@ RSpec.describe Dream, type: :model do
       expect(dream.errors[:dream_profile_id]).to include('は自分のプロフィールを指定してください')
     end
 
-    it 'dream_profile_idが未指定でも保存できる' do
+    it 'dream_profile_idが未指定だとRailsのバリデーションは通るが、DBのNOT NULL制約で保存に失敗する' do
+      # dreams.dream_profile_id は schema.rb で null: false。
+      # モデルにpresenceバリデーションはないため valid? はtrueになるが、
+      # 実際の保存は失敗する（このギャップがあるため、実際に夢を作る唯一の経路である
+      # DreamsController#create は self_dream_profile_id へのフォールバックで必ず埋めている。
+      # 下のrequest specでそのフォールバックを確認している）。
       dream = build(:dream, user: user, dream_profile: nil)
 
       expect(dream).to be_valid
+      expect { dream.save!(validate: false) }.to raise_error(ActiveRecord::NotNullViolation)
     end
   end
 

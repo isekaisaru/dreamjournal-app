@@ -96,6 +96,15 @@ RSpec.describe 'Dreams API', type: :request do
         expect(created_dream.emotions.count).to eq(2)
       end
 
+      it 'dream_profile_idを指定しない場合、自分のselfプロフィールへフォールバックする' do
+        expect(valid_dream_params[:dream]).not_to have_key(:dream_profile_id)
+
+        authenticated_post('/dreams', user, params: valid_dream_params)
+
+        expect(response).to have_http_status(:created)
+        expect(Dream.last.dream_profile_id).to eq(user.self_dream_profile_id)
+      end
+
       it '無効なパラメーターで夢作成に失敗する' do
         expect {
           authenticated_post('/dreams', user, params: invalid_dream_params)
