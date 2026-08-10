@@ -16,6 +16,31 @@ RSpec.describe Dream, type: :model do
     it { should have_many(:emotions).through(:dream_emotions) }
   end
 
+  describe 'dream_profile_id のバリデーション' do
+    let(:other_user) { create(:user) }
+
+    it '自分のdream_profileなら保存できる' do
+      profile = create(:dream_profile, user: user)
+      dream = build(:dream, user: user, dream_profile: profile)
+
+      expect(dream).to be_valid
+    end
+
+    it '他人のdream_profileを指定すると無効になる' do
+      other_profile = create(:dream_profile, user: other_user)
+      dream = build(:dream, user: user, dream_profile: other_profile)
+
+      expect(dream).not_to be_valid
+      expect(dream.errors[:dream_profile_id]).to include('は自分のプロフィールを指定してください')
+    end
+
+    it 'dream_profile_idが未指定でも保存できる' do
+      dream = build(:dream, user: user, dream_profile: nil)
+
+      expect(dream).to be_valid
+    end
+  end
+
   describe 'スコープ' do
     let!(:dream_with_image) do
       create(:dream, user: user, generated_image_url: 'https://example.com/image.png', image_generated_at: Time.current)
