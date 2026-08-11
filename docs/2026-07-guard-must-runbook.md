@@ -214,4 +214,4 @@ bundle exec rails runner 'puts "NULL dreams = #{Dream.where(dream_profile_id: ni
 - [x] README更新（PR #444）
 - [ ] Search Console 登録（SEO土台は #393 で反映済み）
 
-> 次は①の再QAを訂正済み手順で行い、通ったら③を上から1項目ずつ進める。詰まった場合は、①なら再現手順・発生時刻・夢のタイトルを、③ならStripeのイベント名・HTTPステータス・発生時刻をそのまま共有する。
+> ①は2026年8月12日に正式PASSで完了した。**次は③**（ローカル/専用ステージング限定のStripeテストモード通し確認。手順は上記「③-ローカル」参照）を上から1項目ずつ進める。詰まった場合は、Stripeのイベント名・HTTPステータス・発生時刻をそのまま共有する。
