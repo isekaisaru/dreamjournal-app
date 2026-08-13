@@ -58,6 +58,42 @@
 3. `processed_webhook_events` に該当 `stripe_event_id` が存在するか確認。
 4. user または Subscription を解決できない間は 5xx を返し、処理済み行を作らない。対応データを復旧した後、Stripe の再送が 200 になることを確認。
 
+## Subscription / Billing Portal（2026年8月11日追加）
+
+対象範囲: `POST /checkout`（`plan=premium`）/ `POST /billing_portal`（`billing_portal_controller.rb`）/ `POST /webhooks/stripe`（`checkout.session.completed` mode=subscription・`invoice.payment_succeeded`・`customer.subscription.deleted`）。
+
+### 5) サブスク決済後も `user.premium` が true にならない
+
+- 原因候補:
+1. `checkout.session.completed` Webhookが届いていない、または署名検証で弾かれている。
+2. `sync_subscription!`内でuser解決に失敗している（`client_reference_id`不一致等）。
+3. 同一`stripe_subscription_id`への複数イベントが競合し、片方が5xxで終わっている（[PR #490](https://github.com/isekaisaru/dreamjournal-app/pull/490)で`requires_new`savepointによる再試行を追加済み）。
+- 対応:
+1. ログで `webhook.subscription.started` / `webhook.subscription.invoice_paid` の有無を確認。
+2. `Subscription`テーブルで該当`stripe_subscription_id`の行と`status`を確認。
+3. `webhook.error.processing` が出ていないか確認（出ていればイベント種別と`stripe_event_id`を控える）。
+
+### 6) 顧客ポータル(`POST /billing_portal`)が開けない
+
+- 原因候補:
+1. `current_user.premium?`がfalse（403 `プレミアム会員のみご利用いただけます。`）。
+2. `current_user.stripe_customer_id`が未設定（422 `Stripe顧客情報が見つかりません。`）。
+3. `FRONTEND_URL`未設定（500）。
+4. Stripe API側エラー（500、`Stripe::StripeError`）。
+- 対応:
+1. レスポンスのエラーメッセージでどの分岐かを特定する（`billing_portal_controller.rb`参照）。
+2. `Rails.logger`の`[BillingPortal]`プレフィックスでエラー詳細を確認（このコントローラはKPIカウンターを持たず、ログのみ）。
+3. `stripe_customer_id`が未設定の場合、`checkout`が一度も成功していない可能性が高いため症状3)・4)から遡って確認する。
+
+### 7) 解約(`customer.subscription.deleted`)後もpremiumが戻らない
+
+- 原因候補:
+1. 該当ユーザーに他のactive/past_due状態のSubscriptionが残っている（`User#premium_active_subscription?`が true のまま）。これは仕様どおり（複数サブスクの一部解約では降格しない）。
+2. Webhookが届いていない、またはuser解決に失敗している。
+- 対応:
+1. `Subscription.where(user: user).pluck(:stripe_subscription_id, :status)`で全件のstatusを確認する。
+2. 意図せず複数Subscription行が残っている場合は、Stripeダッシュボード側の実際の契約状態と突き合わせる。
+
 ## KPI / ログの見方
 
 - 構造化ログ:
