@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Dream } from "../app/types";
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +25,10 @@ export const useDream = (id?: string) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
   const { authStatus, isLoggedIn } = useAuth();
+  // 夢IDを素早く切り替えると、古いIDの応答が新しい方より後に届くことがある。
+  // その古い応答で表示を上書きしないよう、「自分が最後に発行したfetchDreamDetailか」
+  // をrefで判定する（#493/#494と同じ最小パターン）。
+  const latestDreamFetchIdRef = useRef(0);
 
   const fetchDreamDetail = useCallback(async () => {
     const numericId = id ? parseInt(id, 10) : null;
@@ -41,13 +45,18 @@ export const useDream = (id?: string) => {
       setIsLoading(false);
       return;
     }
+
+    const fetchId = ++latestDreamFetchIdRef.current;
+
     setError(null);
     setIsLoading(true);
     try {
       // apiClient.getに型を指定: 単一のDreamオブジェクトを返すAPI
       const dream = await apiClient.get<Dream>(`/dreams/${numericId}`);
+      if (fetchId !== latestDreamFetchIdRef.current) return;
       setDream(dream);
     } catch (error) {
+      if (fetchId !== latestDreamFetchIdRef.current) return;
       let message = "夢の詳細データ取得に失敗しました";
       if (error instanceof Error) {
         message = error.message;
@@ -55,7 +64,9 @@ export const useDream = (id?: string) => {
       setError(message);
       setDream(null);
     } finally {
-      setIsLoading(false);
+      if (fetchId === latestDreamFetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [id, authStatus, isLoggedIn]);
 
