@@ -679,6 +679,13 @@ RSpec.describe 'Webhooks API', type: :request do
 
         it 'Subscription レコードを作成し、users.premium が true になる' do
           user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123', premium: false)
+          checkout_attempt = create(
+            :checkout_attempt,
+            user: user,
+            stripe_customer_id: 'cus_test_123',
+            stripe_checkout_session_id: 'cs_sub_test_xxx',
+            status: 'open'
+          )
           allow(Stripe::Webhook).to receive(:construct_event)
             .and_return(stripe_event_subscription_completed)
 
@@ -696,6 +703,52 @@ RSpec.describe 'Webhooks API', type: :request do
           expect(subscription.user_id).to eq(user.id)
           expect(subscription.status).to eq('active')
           expect(user.reload.premium).to be true
+          expect(checkout_attempt.reload.status).to eq('completed')
+        end
+
+        it '同じeventを重複受信してもcompletedのまま冪等である' do
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123', premium: false)
+          checkout_attempt = create(
+            :checkout_attempt,
+            user: user,
+            stripe_customer_id: 'cus_test_123',
+            stripe_checkout_session_id: 'cs_sub_test_xxx',
+            status: 'open'
+          )
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_subscription_completed)
+
+          2.times do
+            post '/webhooks/stripe',
+              params: payload,
+              headers: {
+                'Content-Type' => 'application/json',
+                'Stripe-Signature' => sig_header,
+                'HOST' => 'backend'
+              }
+            expect(response).to have_http_status(:ok)
+          end
+
+          expect(checkout_attempt.reload.status).to eq('completed')
+          expect(Subscription.where(stripe_subscription_id: 'sub_test_123').count).to eq(1)
+        end
+
+        it '対応attemptが存在しなくてもsubscription処理を完了する' do
+          user = create(:user, email: customer_email, stripe_customer_id: 'cus_test_123', premium: false)
+          allow(Stripe::Webhook).to receive(:construct_event)
+            .and_return(stripe_event_subscription_completed)
+
+          post '/webhooks/stripe',
+            params: payload,
+            headers: {
+              'Content-Type' => 'application/json',
+              'Stripe-Signature' => sig_header,
+              'HOST' => 'backend'
+            }
+
+          expect(response).to have_http_status(:ok)
+          expect(user.reload.premium).to be true
+          expect(user.checkout_attempts).to be_empty
         end
 
         it '同じ stripe_subscription_id を2回受信しても Subscription は1件のまま' do
