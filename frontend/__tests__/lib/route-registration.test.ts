@@ -25,3 +25,18 @@ describe("認証ゲート登録: /room", () => {
     expect(matcherSource).toContain('"/room/:path*"');
   });
 });
+
+describe("認証ゲート登録: /profiles", () => {
+  it("AuthContext と protectedRoutes の両方で認証確認対象にする", () => {
+    expect(AUTH_VERIFY_PATH_PREFIXES).toContain("/profiles");
+    expect(PROTECTED_PAGE_PREFIXES).toContain("/profiles");
+  });
+
+  it("proxy.ts の config.matcher に /profiles/:path* が含まれる", () => {
+    const proxySource = fs.readFileSync(path.join(process.cwd(), "proxy.ts"), "utf8");
+    const matcherSource = proxySource.match(/matcher:\s*\[([\s\S]*?)\]/)?.[1];
+
+    expect(matcherSource).toBeDefined();
+    expect(matcherSource).toContain('"/profiles/:path*"');
+  });
+});
