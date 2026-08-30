@@ -116,6 +116,6 @@ describe("TreeSidePanel", () => {
     );
 
     const panel = screen.getByTestId("tree-side-panel");
-    expect(panel).toHaveClass("hidden", "lg:flex");
+    expect(panel).toHaveClass("hidden", "lg:flex", "lg:self-start", "lg:w-[320px]");
   });
 });

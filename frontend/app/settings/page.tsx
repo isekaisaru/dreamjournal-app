@@ -253,6 +253,7 @@ const SettingsPage = () => {
             <MorpheusAvatar
               variant="settings"
               size={112}
+              priority
               className="shadow-lg ring-white/25"
             />
           </div>
@@ -261,7 +262,7 @@ const SettingsPage = () => {
         <div
           role="tablist"
           aria-label="設定メニュー"
-          className="flex gap-1 overflow-x-auto border-b border-border px-1"
+          className="grid grid-cols-4 border-b border-border sm:flex sm:gap-1 sm:px-1"
         >
           {SETTINGS_TABS.map((tab, index) => {
             const isActive = activeTab === tab.id;
@@ -294,7 +295,7 @@ const SettingsPage = () => {
                   setActiveTab(nextTab.id);
                   document.getElementById(`settings-tab-${nextTab.id}`)?.focus();
                 }}
-                className={`-mb-px min-h-11 shrink-0 border-b-2 px-4 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`-mb-px min-h-11 min-w-0 whitespace-nowrap border-b-2 px-1 py-2.5 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:shrink-0 sm:px-4 sm:text-sm ${
                   isActive
                     ? "border-primary font-bold text-primary"
                     : "border-transparent font-medium text-muted-foreground hover:text-foreground"

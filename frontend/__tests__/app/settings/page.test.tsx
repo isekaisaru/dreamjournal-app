@@ -33,14 +33,17 @@ jest.mock("@/app/components/MorpheusAvatar", () => ({
   default: ({
     variant,
     size,
+    priority,
   }: {
     variant: string;
     size?: number;
+    priority?: boolean;
   }) => (
     <div
       data-testid="morpheus-avatar"
       data-variant={variant}
       data-size={size}
+      data-priority={priority ? "true" : "false"}
     />
   ),
 }));
@@ -127,6 +130,7 @@ describe("設定ガイド", () => {
     const avatar = screen.getByTestId("morpheus-avatar");
     expect(avatar).toHaveAttribute("data-variant", "settings");
     expect(avatar).toHaveAttribute("data-size", "112");
+    expect(avatar).toHaveAttribute("data-priority", "true");
     expect(screen.queryByTestId("morpheus-image")).not.toBeInTheDocument();
   });
 });
