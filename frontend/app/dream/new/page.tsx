@@ -139,7 +139,7 @@ export default function NewDreamPage() {
           覚えていることを自由に書いて、モルペウスと一緒に気持ちを見つけましょう。
         </p>
       </div>
-      <div className="mb-6 lg:hidden">
+      <div className="mb-6 hidden sm:block lg:hidden">
         <MorpheusGuideCompose />
       </div>
 

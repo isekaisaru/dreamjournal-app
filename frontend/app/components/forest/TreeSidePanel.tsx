@@ -40,7 +40,7 @@ export default function TreeSidePanel({
   return (
     <div
       data-testid="tree-side-panel"
-      className="hidden lg:flex lg:w-[360px] lg:flex-none lg:flex-col lg:rounded-3xl lg:border lg:border-white/10 lg:bg-[rgba(12,12,32,0.5)] lg:p-4 lg:text-white lg:backdrop-blur-lg"
+      className="hidden lg:flex lg:w-[320px] lg:flex-none lg:self-start lg:flex-col lg:rounded-3xl lg:border lg:border-indigo-400/20 lg:bg-gradient-to-b lg:from-slate-900 lg:via-indigo-950 lg:to-slate-950 lg:p-4 lg:text-white lg:shadow-lg"
     >
       {selectedProfile ? (
         <>
@@ -59,7 +59,7 @@ export default function TreeSidePanel({
           />
         </>
       ) : (
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+        <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
           <ForestTodayCard totalDreams={totalDreams} topProfile={topProfile} />
           <p className="text-[13px] text-white/50">きを えらんでね</p>
         </div>
