@@ -50,7 +50,9 @@ describe("Sidebar", () => {
     render(<Sidebar />);
     expect(screen.getByRole("link", { name: "ホーム" })).toHaveAttribute("href", "/home");
     expect(screen.getByRole("link", { name: "夢の森" })).toHaveAttribute("href", "/forest");
-    expect(screen.queryByRole("link", { name: "マイ夢" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "マイ夢" })
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "設定" })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("button", { name: /さがす/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /ログアウト/ })).toBeInTheDocument();

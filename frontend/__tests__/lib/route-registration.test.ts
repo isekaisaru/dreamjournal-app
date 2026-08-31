@@ -18,7 +18,10 @@ describe("認証ゲート登録: /room", () => {
   });
 
   it("proxy.ts の config.matcher に /room/:path* が含まれる", () => {
-    const proxySource = fs.readFileSync(path.join(process.cwd(), "proxy.ts"), "utf8");
+    const proxySource = fs.readFileSync(
+      path.join(process.cwd(), "proxy.ts"),
+      "utf8"
+    );
     const matcherSource = proxySource.match(/matcher:\s*\[([\s\S]*?)\]/)?.[1];
 
     expect(matcherSource).toBeDefined();

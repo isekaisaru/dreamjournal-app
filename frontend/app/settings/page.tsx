@@ -47,7 +47,7 @@ const generateMathProblem = () => {
 };
 
 const SettingsPage = () => {
-  const { authStatus, userId, user, deleteUser } = useAuth();
+  const { authStatus, userId, user, logout, deleteUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
   // プロフィール編集フォーム用 state
@@ -534,6 +534,23 @@ const SettingsPage = () => {
               <h3 className="px-2 text-sm font-bold uppercase tracking-wider text-muted-foreground">
                 アカウントの せってい
               </h3>
+              <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
+                <div className="flex items-center justify-between gap-4 p-6">
+                  <div>
+                    <h4 className="mb-1 text-base font-bold">ログアウトする</h4>
+                    <p className="text-xs text-muted-foreground">
+                      この端末での利用を終了します。夢は削除されません。
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    className="shrink-0 rounded-lg border border-border bg-background px-4 py-2 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    ログアウト
+                  </button>
+                </div>
+              </div>
               <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
                 <div className="p-6">
                   <div className="flex items-start justify-between">

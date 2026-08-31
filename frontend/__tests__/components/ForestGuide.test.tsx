@@ -8,7 +8,9 @@ jest.mock("@/app/components/MorpheusImage", () => ({
 
 describe("ForestGuide responsive layout", () => {
   it("スマートフォン幅では森とボトムナビを覆わないよう隠す", () => {
-    const { container } = render(<ForestGuide variant="forest" profiles={[]} />);
+    const { container } = render(
+      <ForestGuide variant="forest" profiles={[]} />
+    );
     expect(container.firstChild).toHaveClass("hidden", "sm:flex");
   });
 });

@@ -155,9 +155,20 @@ describe("設定タブ", () => {
     expect(screen.getByText("プレミアムプラン")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
-    expect(
-      screen.getByText("アカウントをさくじょする")
-    ).toBeInTheDocument();
+    expect(screen.getByText("アカウントをさくじょする")).toBeInTheDocument();
+  });
+});
+
+describe("ログアウト", () => {
+  it("アカウント設定から既存の logout を実行できる", () => {
+    const authValue = makeAuthValue();
+    mockedUseAuth.mockReturnValue(authValue);
+
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
+    fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
+
+    expect(authValue.logout).toHaveBeenCalledTimes(1);
   });
 });
 

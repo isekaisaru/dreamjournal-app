@@ -10,11 +10,17 @@ import CommandPaletteTrigger from "./components/CommandPaletteTrigger";
 
 export default function Header() {
   return (
-    <header data-app-header className="flex flex-wrap items-center gap-3 border-b border-border bg-background px-4 py-3 text-foreground sm:px-6 md:flex-nowrap md:gap-8">
+    <header
+      data-app-header
+      className="flex flex-wrap items-center gap-3 border-b border-border bg-background px-4 py-3 text-foreground sm:px-6 md:flex-nowrap md:gap-8"
+    >
       <div className="flex-shrink-0">
         <HeaderLogo />
       </div>
-      <div data-auth-navigation className="order-3 w-full flex-grow md:order-none">
+      <div
+        data-auth-navigation
+        className="order-3 w-full flex-grow md:order-none"
+      >
         <AuthNav />
       </div>
       {/* ⌘K コマンドパレットの起動口（デスクトップのみ） */}

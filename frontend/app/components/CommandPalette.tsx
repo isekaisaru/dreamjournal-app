@@ -22,7 +22,15 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, House, Plus, Search, Settings, Sparkles, Trees } from "lucide-react";
+import {
+  BarChart3,
+  House,
+  Plus,
+  Search,
+  Settings,
+  Sparkles,
+  Trees,
+} from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";

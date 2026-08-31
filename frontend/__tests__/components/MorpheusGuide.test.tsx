@@ -34,6 +34,8 @@ describe("MorpheusGuide bottom-nav 逃がし", () => {
   it("ホームの固定ガイドは情報カードを覆わないよう初期状態を閉じる", () => {
     render(<MorpheusGuideHome title="きょうは？" message="おしえてね" />);
     expect(screen.queryByText("おしえてね")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "モルペウスのメッセージを開く" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "モルペウスのメッセージを開く" })
+    ).toBeInTheDocument();
   });
 });
