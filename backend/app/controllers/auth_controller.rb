@@ -124,32 +124,29 @@ class AuthController < ApplicationController
   end
 
   # ログアウト
-  # リフレッシュトークンを受け取り、それを無効化する方式に変更
+  # ログアウトはidempotentにする。無効・失効済みのtokenを認証成功とは扱わないが、
+  # この端末のCookieは常に破棄して未認証状態へ戻す。
   def logout
     refresh_token = cookies[:refresh_token]
 
-    unless refresh_token
-      Rails.logger.warn "ログアウトリクエストにリフレッシュトークンが含まれていません"
-      render json: { error: "ログアウトにはリフレッシュトークンが必要です" }, status: :bad_request # 400 Bad Request
-      return
-    end
-
     begin
       # 該当セッションのみを失効させる（他端末のログインは維持される）
-      AuthService.revoke_session(refresh_token)
-      cookies.delete(:access_token)
-      cookies.delete(:refresh_token, path: '/')
-      render json: { message: "ログアウトしました" }, status: :ok
-    rescue AuthService::InvalidRefreshTokenError => e
-      # 無効なリフレッシュトークンが指定された場合 (既にログアウト済み、または不正なトークン)
-      render json: { error: "無効なリフレッシュトークンです。ログアウトできませんでした。" }, status: :unauthorized
+      AuthService.revoke_session(refresh_token) if refresh_token.present?
+    rescue AuthService::InvalidRefreshTokenError
+      Rails.logger.info "無効または失効済みのリフレッシュトークンでログアウトしました"
     rescue ActiveRecord::RecordInvalid => e # update_column では通常発生しないが、万が一のため
       Rails.logger.error "ログアウト処理中のDB更新に失敗: #{e.message}"
       render json: { error: 'ログアウト処理中にデータベースエラーが発生しました' }, status: :internal_server_error
+      return
     rescue StandardError => e # その他の予期せぬエラー
-      Rails.logger.error "ログアウト処理中に予期せぬエラーが発生: #{e.message}\n#{e.backtrace.join("\n")}"
+      Rails.logger.error("ログアウト処理中に予期せぬエラーが発生: #{e.message}")
       render json: { error: 'ログアウト処理中にエラーが発生しました' }, status: :internal_server_error
+      return
     end
+
+    cookies.delete(:access_token)
+    cookies.delete(:refresh_token, path: '/')
+    render json: { message: "ログアウトしました" }, status: :ok
   end
 
   # トークンの検証

@@ -186,7 +186,6 @@ export default function ForestScene({
     }
   };
   const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
     hasUserAdjustedViewRef.current = true;
     setView((v) => clamp({ ...v, z: v.z * (e.deltaY > 0 ? 0.92 : 1.08) }));
     setHinted(false);
