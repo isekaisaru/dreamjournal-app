@@ -11,6 +11,9 @@ RSpec.describe 'PasswordResets API', type: :request do
   describe 'POST /password_resets' do
     context '存在するメールアドレスの場合' do
       it '200 OKを返し、パスワードリセットメールを送信キューに入れる' do
+        frontend_url = 'https://example.test'
+        stub_const('ENV', ENV.to_hash.merge('FRONTEND_URL' => frontend_url))
+
         expect {
           # perform_enqueued_jobsブロック内でリクエストを実行することで、
           # deliver_laterでキューに入れられたジョブをその場で即座に実行させます。
@@ -29,10 +32,12 @@ RSpec.describe 'PasswordResets API', type: :request do
         # このユーザーが引けることを確認する（平文カラムを直接読めないため）
         sent_email = ActionMailer::Base.deliveries.last
         expect(sent_email.to).to include(user.email)
+        expect(sent_email.from).to eq([ENV.fetch('MAIL_FROM', 'support@yumelog.com')])
         expect(sent_email.subject).to eq('[ユメログ] パスワードリセット')
         text_body = sent_email.text_part.body.to_s
         token = text_body[%r{/password-reset/(\S+)}, 1]
         expect(token).to be_present
+        expect(text_body).to include("#{frontend_url}/password-reset/#{token}")
         expect(User.find_by_password_reset_token(token)).to eq(user)
       end
     end
