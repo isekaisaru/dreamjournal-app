@@ -109,6 +109,7 @@ RSpec.describe 'Checkout API', type: :request do
         customer_keys = []
         customer = double('StripeCustomer', id: 'cus_shared_123')
 
+        allow(Stripe::Customer).to receive(:retrieve).with('cus_shared_123').and_return(customer)
         allow(Stripe::Customer).to receive(:create) do |_params, options|
           customer_keys << options[:idempotency_key]
           customer
@@ -520,10 +521,13 @@ RSpec.describe 'Checkout API', type: :request do
 
         post '/checkout', params: { plan: 'premium' }, headers: headers, as: :json
         expect(response).to have_http_status(:service_unavailable)
+        persisted_customer_key = user.reload.stripe_customer_idempotency_key
+        expect(persisted_customer_key).to be_present
         post '/checkout', params: { plan: 'premium' }, headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(customer_keys.uniq.size).to eq(1)
+        expect(customer_keys).to all(eq(persisted_customer_key))
         expect(user.reload.stripe_customer_id).to eq('cus_recovered')
       end
 

@@ -274,65 +274,72 @@ class CheckoutController < ApplicationController
   end
 
   def ensure_stripe_customer_id!(checkout_attempt)
-    current_user.with_lock do
+    candidate_id = current_user.with_lock do
       current_user.reload
-      existing_id = current_user.stripe_customer_id
+      current_user.stripe_customer_id.presence || checkout_attempt.stripe_customer_id.presence
+    end
 
-      if existing_id.blank? && checkout_attempt.stripe_customer_id.present?
-        existing_id = checkout_attempt.stripe_customer_id
-        current_user.update!(stripe_customer_id: existing_id)
-      end
-
-      if existing_id.present?
-        begin
-          customer = Stripe::Customer.retrieve(existing_id)
-        rescue Stripe::InvalidRequestError => e
-          # retrieveの無効な参照だけを新規作成へフォールバックする。
-          # Customer.create自体のInvalidRequestErrorは再試行せず外側でfailedにする。
-          PaymentsObservability.increment('checkout.customer.invalid_reference', user_id: current_user.id)
-          PaymentsObservability.log(
-            event: 'checkout.customer.invalid_reference',
-            level: :warn,
-            user_id: current_user.id,
-            stripe_customer_id: existing_id,
-            error_class: e.class.name
-          )
-          return create_and_save_stripe_customer!(checkout_attempt)
-        end
-
-        # Stripeで削除済みの顧客を再利用しないようにチェック
-        # 削除済み顧客でCheckout Sessionを作ると500エラーになるため
+    if candidate_id.present?
+      begin
+        customer = Stripe::Customer.retrieve(candidate_id)
         unless customer.respond_to?(:deleted) && customer.deleted
           PaymentsObservability.increment('checkout.customer.reused', user_id: current_user.id)
-          PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: existing_id)
-          checkout_attempt.update!(stripe_customer_id: existing_id)
-          return existing_id
+          PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: candidate_id)
+          return persist_customer_reference!(checkout_attempt, candidate_id)
         end
-
-        # 削除済みだった場合は新規作成へフォールスルー
-        PaymentsObservability.increment('checkout.customer.deleted', user_id: current_user.id)
-        PaymentsObservability.log(event: 'checkout.customer.deleted', level: :warn, user_id: current_user.id, stripe_customer_id: existing_id)
-        current_user.update!(stripe_customer_id: nil)
+      rescue Stripe::InvalidRequestError => e
+        # retrieveの無効な参照だけを新規作成へフォールバックする。
+        # Customer.create自体のInvalidRequestErrorは再試行せず外側でfailedにする。
+        PaymentsObservability.increment('checkout.customer.invalid_reference', user_id: current_user.id)
+        PaymentsObservability.log(
+          event: 'checkout.customer.invalid_reference',
+          level: :warn,
+          user_id: current_user.id,
+          stripe_customer_id: candidate_id,
+          error_class: e.class.name
+        )
       end
 
-      create_and_save_stripe_customer!(checkout_attempt)
+      PaymentsObservability.increment('checkout.customer.deleted', user_id: current_user.id) if customer&.deleted
     end
+
+    existing_id, idempotency_key = current_user.with_lock do
+      current_user.reload
+      if current_user.stripe_customer_id.present? && current_user.stripe_customer_id != candidate_id
+        [current_user.stripe_customer_id, nil]
+      else
+        current_user.update!(stripe_customer_id: nil) if current_user.stripe_customer_id == candidate_id
+        [nil, customer_idempotency_key_for_current_user]
+      end
+    end
+
+    return persist_customer_reference!(checkout_attempt, existing_id) if existing_id.present?
+
+    create_and_save_stripe_customer!(checkout_attempt, idempotency_key)
   end
 
-  def create_and_save_stripe_customer!(checkout_attempt)
+  def create_and_save_stripe_customer!(checkout_attempt, idempotency_key)
     customer = Stripe::Customer.create(
       {
         email: current_user.email,
         name: current_user.username,
         metadata: { user_id: current_user.id.to_s }
       },
-      idempotency_key: customer_idempotency_key_for_current_user
+      idempotency_key: idempotency_key
     )
-    checkout_attempt.update!(stripe_customer_id: customer.id)
-    current_user.update!(stripe_customer_id: customer.id)
     PaymentsObservability.increment('checkout.customer.created', user_id: current_user.id)
     PaymentsObservability.log(event: 'checkout.customer.created', user_id: current_user.id, stripe_customer_id: customer.id)
-    customer.id
+    persist_customer_reference!(checkout_attempt, customer.id)
+  end
+
+  def persist_customer_reference!(checkout_attempt, customer_id)
+    current_user.with_lock do
+      current_user.reload
+      canonical_id = current_user.stripe_customer_id.presence || customer_id
+      current_user.update!(stripe_customer_id: canonical_id) if current_user.stripe_customer_id.blank?
+      checkout_attempt.update!(stripe_customer_id: canonical_id)
+      canonical_id
+    end
   end
 
   def customer_idempotency_key_for_current_user
