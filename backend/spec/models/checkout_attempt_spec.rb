@@ -62,6 +62,16 @@ RSpec.describe CheckoutAttempt, type: :model do
     end
   end
 
+  it 'terminates a recoverable attempt after Stripe confirms its session is invalid' do
+    %w[pending open uncertain].each do |status|
+      attempt = create(:checkout_attempt, status: status, stripe_checkout_session_id: 'cs_invalid')
+
+      attempt.transition_after_invalid_session!
+
+      expect(attempt.reload.status).to eq('failed')
+    end
+  end
+
   it 'recovers the existing active attempt after a database uniqueness race' do
     user = create(:user)
     existing = create(:checkout_attempt, user: user, plan: 'premium', status: 'pending')

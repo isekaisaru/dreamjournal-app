@@ -100,6 +100,46 @@ RSpec.describe 'Checkout API', type: :request do
         expect(attempt.expires_at).to be_present
       end
 
+      it '同じuserのdonationとpremiumでCustomer作成のキーとCustomerを共有する' do
+        user = create(:user, stripe_customer_id: nil)
+        donation_attempt = create(:checkout_attempt, user: user, plan: 'donation', price_reference: 'donation:jpy:500')
+        premium_attempt = create(:checkout_attempt, user: user, plan: 'premium', price_reference: premium_price_id)
+        controller = CheckoutController.new
+        allow(controller).to receive(:current_user).and_return(user)
+        customer_keys = []
+        customer = double('StripeCustomer', id: 'cus_shared_123')
+
+        allow(Stripe::Customer).to receive(:create) do |_params, options|
+          customer_keys << options[:idempotency_key]
+          customer
+        end
+
+        expect(controller.send(:ensure_stripe_customer_id!, donation_attempt)).to eq('cus_shared_123')
+        expect(controller.send(:ensure_stripe_customer_id!, premium_attempt)).to eq('cus_shared_123')
+
+        expect(Stripe::Customer).to have_received(:create).once
+        expect(customer_keys).to eq([user.reload.stripe_customer_idempotency_key])
+        expect(user.reload.stripe_customer_id).to eq('cus_shared_123')
+        expect(donation_attempt.reload.stripe_customer_id).to eq('cus_shared_123')
+        expect(premium_attempt.reload.stripe_customer_id).to eq('cus_shared_123')
+      end
+
+      it '既存userのCustomer IDを別AttemptのCustomer IDで上書きしない' do
+        user = create(:user, stripe_customer_id: 'cus_canonical')
+        attempt = create(
+          :checkout_attempt,
+          user: user,
+          stripe_customer_id: 'cus_stale_attempt'
+        )
+        controller = CheckoutController.new
+        allow(controller).to receive(:current_user).and_return(user)
+        allow(Stripe::Customer).to receive(:retrieve).with('cus_canonical').and_return(double('StripeCustomer'))
+
+        expect(controller.send(:ensure_stripe_customer_id!, attempt)).to eq('cus_canonical')
+        expect(user.reload.stripe_customer_id).to eq('cus_canonical')
+        expect(attempt.reload.stripe_customer_id).to eq('cus_canonical')
+      end
+
       it 'stripe_customer_id がある場合は再利用して customer を新規作成しない' do
         user = create(:user, stripe_customer_id: 'cus_existing_123')
 
@@ -382,6 +422,46 @@ RSpec.describe 'Checkout API', type: :request do
         expect(old_attempt.reload.status).to eq('expired')
         expect(user.checkout_attempts.count).to eq(2)
         expect(user.checkout_attempts.order(:created_at).last.status).to eq('open')
+      end
+
+      it '無効な保存済みSessionをfailedにして次回は新しいattemptを使う' do
+        user = create(:user, stripe_customer_id: 'cus_existing_123')
+        old_attempt = create(
+          :checkout_attempt,
+          user: user,
+          plan: 'premium',
+          price_reference: premium_price_id,
+          stripe_customer_id: user.stripe_customer_id,
+          stripe_checkout_session_id: 'cs_invalid_saved',
+          status: 'open'
+        )
+        invalid_session_error = Stripe::InvalidRequestError.new('session not found', 'session')
+        new_session = double(
+          'StripeCheckoutSession',
+          id: 'cs_replacement',
+          url: checkout_url,
+          status: 'open',
+          expires_at: 1.hour.from_now.to_i
+        )
+
+        expect(Stripe::Checkout::Session).to receive(:retrieve).with('cs_invalid_saved').and_raise(invalid_session_error)
+        expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
+        expect(Stripe::Checkout::Session).to receive(:create).once.and_return(new_session)
+
+        authenticated_post('/checkout', user, params: { plan: 'premium' })
+
+        expect(response).to have_http_status(:ok)
+        expect(old_attempt.reload.status).to eq('failed')
+        replacement = user.checkout_attempts.where.not(id: old_attempt.id).order(:created_at).last
+        expect(replacement).to have_attributes(stripe_checkout_session_id: 'cs_replacement', status: 'open')
+
+        expect(Stripe::Checkout::Session).to receive(:retrieve).with('cs_replacement').and_return(new_session)
+        expect(Stripe::Checkout::Session).not_to receive(:create)
+
+        authenticated_post('/checkout', user, params: { plan: 'premium' })
+
+        expect(response).to have_http_status(:ok)
+        expect(user.checkout_attempts.where(stripe_checkout_session_id: 'cs_invalid_saved').count).to eq(1)
       end
 
       it '同一Checkoutの連続POSTでは有効なSessionを複数作らない' do

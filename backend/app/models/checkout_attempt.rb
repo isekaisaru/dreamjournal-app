@@ -34,6 +34,13 @@ class CheckoutAttempt < ApplicationRecord
     reload
   end
 
+  def transition_after_invalid_session!
+    self.class
+      .where(id: id, status: RECOVERABLE_STATUSES)
+      .update_all(status: 'failed', updated_at: Time.current)
+    reload
+  end
+
   # Webhookが先にcompletedへ進めた場合、遅いController応答でopenへ戻さない。
   def persist_open_session!(stripe_session_id:, expires_at:)
     self.class

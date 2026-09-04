@@ -42,23 +42,33 @@ class CheckoutController < ApplicationController
       end
 
       if checkout_attempt.stripe_checkout_session_id.present?
-        session = Stripe::Checkout::Session.retrieve(checkout_attempt.stripe_checkout_session_id)
-
-        case session.status
-        when 'expired'
-          checkout_attempt.update!(status: 'expired')
-          log_attempt(checkout_attempt, 'checkout.attempt.expired')
+        begin
+          session = Stripe::Checkout::Session.retrieve(checkout_attempt.stripe_checkout_session_id)
+        rescue Stripe::InvalidRequestError => e
+          # 保存済みSessionがStripe上に存在しないことが確定した場合だけAttemptを終了する。
+          checkout_attempt.transition_after_invalid_session!
+          log_attempt(checkout_attempt, 'checkout.attempt.invalid_session', level: :warn, error_class: e.class.name)
           checkout_attempt = create_checkout_attempt!(plan: plan, price_reference: price_reference)
-        when 'complete'
-          # completedへの遷移はpremium/subscription更新と同じWebhook transactionだけで行う。
-          # Webhook到着まではactiveなopenとして保持し、2件目のCheckout作成を防ぐ。
-          persist_checkout_session!(checkout_attempt, session)
-          log_attempt(checkout_attempt, 'checkout.attempt.awaiting_webhook')
-          raise CheckoutAlreadyCompletedError
-        else
-          persist_checkout_session!(checkout_attempt, session)
-          log_attempt(checkout_attempt, 'checkout.attempt.reused', stripe_request_id: stripe_request_id_from(session))
-          return render json: { url: session.url }, status: :ok
+          session = nil
+        end
+
+        if session
+          case session.status
+          when 'expired'
+            checkout_attempt.update!(status: 'expired')
+            log_attempt(checkout_attempt, 'checkout.attempt.expired')
+            checkout_attempt = create_checkout_attempt!(plan: plan, price_reference: price_reference)
+          when 'complete'
+            # completedへの遷移はpremium/subscription更新と同じWebhook transactionだけで行う。
+            # Webhook到着まではactiveなopenとして保持し、2件目のCheckout作成を防ぐ。
+            persist_checkout_session!(checkout_attempt, session)
+            log_attempt(checkout_attempt, 'checkout.attempt.awaiting_webhook')
+            raise CheckoutAlreadyCompletedError
+          else
+            persist_checkout_session!(checkout_attempt, session)
+            log_attempt(checkout_attempt, 'checkout.attempt.reused', stripe_request_id: stripe_request_id_from(session))
+            return render json: { url: session.url }, status: :ok
+          end
         end
       end
 
@@ -258,51 +268,55 @@ class CheckoutController < ApplicationController
       plan: plan,
       price_reference: price_reference,
       idempotency_key: SecureRandom.uuid,
-      customer_idempotency_key: SecureRandom.uuid,
+      customer_idempotency_key: customer_idempotency_key_for_current_user,
       status: 'pending'
     }
   end
 
   def ensure_stripe_customer_id!(checkout_attempt)
-    if checkout_attempt.stripe_customer_id.present?
-      current_user.update!(stripe_customer_id: checkout_attempt.stripe_customer_id) if current_user.stripe_customer_id != checkout_attempt.stripe_customer_id
-      return checkout_attempt.stripe_customer_id
-    end
+    current_user.with_lock do
+      current_user.reload
+      existing_id = current_user.stripe_customer_id
 
-    existing_id = current_user.stripe_customer_id
-
-    if existing_id.present?
-      begin
-        customer = Stripe::Customer.retrieve(existing_id)
-      rescue Stripe::InvalidRequestError => e
-        # retrieveの無効な参照だけを新規作成へフォールバックする。
-        # Customer.create自体のInvalidRequestErrorは再試行せず外側でfailedにする。
-        PaymentsObservability.increment('checkout.customer.invalid_reference', user_id: current_user.id)
-        PaymentsObservability.log(
-          event: 'checkout.customer.invalid_reference',
-          level: :warn,
-          user_id: current_user.id,
-          stripe_customer_id: existing_id,
-          error_class: e.class.name
-        )
-        return create_and_save_stripe_customer!(checkout_attempt)
+      if existing_id.blank? && checkout_attempt.stripe_customer_id.present?
+        existing_id = checkout_attempt.stripe_customer_id
+        current_user.update!(stripe_customer_id: existing_id)
       end
 
-      # Stripeで削除済みの顧客を再利用しないようにチェック
-      # 削除済み顧客でCheckout Sessionを作ると500エラーになるため
-      unless customer.respond_to?(:deleted) && customer.deleted
-        PaymentsObservability.increment('checkout.customer.reused', user_id: current_user.id)
-        PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: existing_id)
-        checkout_attempt.update!(stripe_customer_id: existing_id)
-        return existing_id
+      if existing_id.present?
+        begin
+          customer = Stripe::Customer.retrieve(existing_id)
+        rescue Stripe::InvalidRequestError => e
+          # retrieveの無効な参照だけを新規作成へフォールバックする。
+          # Customer.create自体のInvalidRequestErrorは再試行せず外側でfailedにする。
+          PaymentsObservability.increment('checkout.customer.invalid_reference', user_id: current_user.id)
+          PaymentsObservability.log(
+            event: 'checkout.customer.invalid_reference',
+            level: :warn,
+            user_id: current_user.id,
+            stripe_customer_id: existing_id,
+            error_class: e.class.name
+          )
+          return create_and_save_stripe_customer!(checkout_attempt)
+        end
+
+        # Stripeで削除済みの顧客を再利用しないようにチェック
+        # 削除済み顧客でCheckout Sessionを作ると500エラーになるため
+        unless customer.respond_to?(:deleted) && customer.deleted
+          PaymentsObservability.increment('checkout.customer.reused', user_id: current_user.id)
+          PaymentsObservability.log(event: 'checkout.customer.reused', user_id: current_user.id, stripe_customer_id: existing_id)
+          checkout_attempt.update!(stripe_customer_id: existing_id)
+          return existing_id
+        end
+
+        # 削除済みだった場合は新規作成へフォールスルー
+        PaymentsObservability.increment('checkout.customer.deleted', user_id: current_user.id)
+        PaymentsObservability.log(event: 'checkout.customer.deleted', level: :warn, user_id: current_user.id, stripe_customer_id: existing_id)
+        current_user.update!(stripe_customer_id: nil)
       end
 
-      # 削除済みだった場合は新規作成へフォールスルー
-      PaymentsObservability.increment('checkout.customer.deleted', user_id: current_user.id)
-      PaymentsObservability.log(event: 'checkout.customer.deleted', level: :warn, user_id: current_user.id, stripe_customer_id: existing_id)
+      create_and_save_stripe_customer!(checkout_attempt)
     end
-
-    create_and_save_stripe_customer!(checkout_attempt)
   end
 
   def create_and_save_stripe_customer!(checkout_attempt)
@@ -312,13 +326,18 @@ class CheckoutController < ApplicationController
         name: current_user.username,
         metadata: { user_id: current_user.id.to_s }
       },
-      idempotency_key: checkout_attempt.customer_idempotency_key
+      idempotency_key: customer_idempotency_key_for_current_user
     )
     checkout_attempt.update!(stripe_customer_id: customer.id)
     current_user.update!(stripe_customer_id: customer.id)
     PaymentsObservability.increment('checkout.customer.created', user_id: current_user.id)
     PaymentsObservability.log(event: 'checkout.customer.created', user_id: current_user.id, stripe_customer_id: customer.id)
     customer.id
+  end
+
+  def customer_idempotency_key_for_current_user
+    current_user.stripe_customer_idempotency_key.presence ||
+      current_user.update!(stripe_customer_idempotency_key: SecureRandom.uuid).stripe_customer_idempotency_key
   end
 
   def persist_checkout_session!(checkout_attempt, session)
