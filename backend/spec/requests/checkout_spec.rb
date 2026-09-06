@@ -444,12 +444,13 @@ RSpec.describe 'Checkout API', type: :request do
           status: 'open',
           expires_at: 1.hour.from_now.to_i
         )
+        headers = auth_headers(user)
 
         expect(Stripe::Checkout::Session).to receive(:retrieve).with('cs_invalid_saved').and_raise(invalid_session_error)
         expect(Stripe::Customer).to receive(:retrieve).with('cus_existing_123').and_return(double('StripeCustomer'))
         expect(Stripe::Checkout::Session).to receive(:create).once.and_return(new_session)
 
-        authenticated_post('/checkout', user, params: { plan: 'premium' })
+        post '/checkout', params: { plan: 'premium' }, headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(old_attempt.reload.status).to eq('failed')
@@ -459,7 +460,7 @@ RSpec.describe 'Checkout API', type: :request do
         expect(Stripe::Checkout::Session).to receive(:retrieve).with('cs_replacement').and_return(new_session)
         expect(Stripe::Checkout::Session).not_to receive(:create)
 
-        authenticated_post('/checkout', user, params: { plan: 'premium' })
+        post '/checkout', params: { plan: 'premium' }, headers: headers, as: :json
 
         expect(response).to have_http_status(:ok)
         expect(user.checkout_attempts.where(stripe_checkout_session_id: 'cs_invalid_saved').count).to eq(1)
