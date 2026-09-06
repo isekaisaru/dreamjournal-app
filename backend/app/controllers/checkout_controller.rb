@@ -343,8 +343,10 @@ class CheckoutController < ApplicationController
   end
 
   def customer_idempotency_key_for_current_user
-    current_user.stripe_customer_idempotency_key.presence ||
-      current_user.update!(stripe_customer_idempotency_key: SecureRandom.uuid).stripe_customer_idempotency_key
+    return current_user.stripe_customer_idempotency_key if current_user.stripe_customer_idempotency_key.present?
+
+    current_user.update!(stripe_customer_idempotency_key: SecureRandom.uuid)
+    current_user.reload.stripe_customer_idempotency_key
   end
 
   def persist_checkout_session!(checkout_attempt, session)

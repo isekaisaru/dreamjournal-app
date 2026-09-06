@@ -64,7 +64,7 @@ RSpec.describe CheckoutAttempt, type: :model do
 
   it 'terminates a recoverable attempt after Stripe confirms its session is invalid' do
     %w[pending open uncertain].each do |status|
-      attempt = create(:checkout_attempt, status: status, stripe_checkout_session_id: 'cs_invalid')
+      attempt = create(:checkout_attempt, status: status, stripe_checkout_session_id: "cs_invalid_#{status}")
 
       attempt.transition_after_invalid_session!
 
