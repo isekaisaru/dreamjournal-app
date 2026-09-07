@@ -9,7 +9,7 @@ class CheckoutAttempt < ApplicationRecord
 
   validates :plan, :price_reference, :idempotency_key, :customer_idempotency_key, presence: true
   validates :status, inclusion: { in: STATUSES }
-  validates :idempotency_key, :customer_idempotency_key, uniqueness: true
+  validates :idempotency_key, uniqueness: true
   validates :stripe_checkout_session_id, uniqueness: true, allow_nil: true
 
   def self.find_or_create_recoverable!(user:, plan:, attributes:)

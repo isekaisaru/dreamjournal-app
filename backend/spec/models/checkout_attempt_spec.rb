@@ -15,6 +15,24 @@ RSpec.describe CheckoutAttempt, type: :model do
     expect(attempt.errors[:customer_idempotency_key]).to be_present
   end
 
+  it 'allows the same Customer idempotency key for different plans of one user' do
+    user = create(:user)
+    customer_key = SecureRandom.uuid
+    create(:checkout_attempt, user: user, plan: 'donation', customer_idempotency_key: customer_key)
+
+    attempt = build(:checkout_attempt, user: user, plan: 'premium', customer_idempotency_key: customer_key)
+
+    expect(attempt).to be_valid
+  end
+
+  it 'keeps Checkout Session idempotency keys unique' do
+    existing = create(:checkout_attempt)
+    duplicate = build(:checkout_attempt, idempotency_key: existing.idempotency_key)
+
+    expect(duplicate).not_to be_valid
+    expect(duplicate.errors[:idempotency_key]).to be_present
+  end
+
   it 'treats pending, open, and uncertain attempts as recoverable' do
     recoverable = CheckoutAttempt::RECOVERABLE_STATUSES.map do |status|
       create(:checkout_attempt, status: status)

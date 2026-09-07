@@ -18,7 +18,7 @@ class CreateCheckoutAttempts < ActiveRecord::Migration[7.2]
     end
 
     add_index :checkout_attempts, :idempotency_key, unique: true
-    add_index :checkout_attempts, :customer_idempotency_key, unique: true
+    add_index :checkout_attempts, :customer_idempotency_key
     add_index :checkout_attempts, :stripe_checkout_session_id, unique: true
     add_index :checkout_attempts,
       [:user_id, :plan],

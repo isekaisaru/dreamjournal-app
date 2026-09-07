@@ -62,7 +62,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_09_05_000000) do
     t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["customer_idempotency_key"], name: "index_checkout_attempts_on_customer_idempotency_key", unique: true
+    t.index ["customer_idempotency_key"], name: "index_checkout_attempts_on_customer_idempotency_key"
     t.index ["idempotency_key"], name: "index_checkout_attempts_on_idempotency_key", unique: true
     t.index ["stripe_checkout_session_id"], name: "index_checkout_attempts_on_stripe_checkout_session_id", unique: true
     t.index ["user_id", "plan"], name: "index_checkout_attempts_on_active_user_and_plan", unique: true, where: "((status)::text = ANY ((ARRAY['pending'::character varying, 'open'::character varying, 'uncertain'::character varying])::text[]))"
