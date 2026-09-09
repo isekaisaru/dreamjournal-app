@@ -76,6 +76,8 @@
 
 - [ ] 本番Stripeダッシュボードで590円の月額価格（Price）が作成済みである
 - [ ] `STRIPE_MODE=live` が設定されている
+> **限定test-mode QAの注意**: Railsがproductionでも、test-modeのキー・Price・Webhook Eventを使う場合は `STRIPE_MODE=test` を明示する。未設定のproduction Railsはliveとして起動時検証するため、test keyとの不一致で安全に停止する。値は記録せず、modeと`livemode`の一致だけを確認する。
+
 - [ ] Price IDはtest/liveともに`price_`で始まるため文字列では判定せず、Checkout前の`livemode`検証が成功することを確認
 - [ ] 本番Stripeの `STRIPE_SECRET_KEY` が `sk_live_` で始まることを確認（値は確認するが絶対にログや画面に出力しない）
 - [ ] 本番Stripeの `STRIPE_WEBHOOK_SECRET` が本番エンドポイント用のものであることを確認
