@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_07_11_000000) do
+ActiveRecord::Schema[7.2].define(version: 2026_09_05_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -48,6 +48,26 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_11_000000) do
     t.datetime "created_at", null: false
     t.index ["user_id", "feature", "created_at"], name: "index_ai_usage_logs_on_user_feature_created_at"
     t.index ["user_id"], name: "index_ai_usage_logs_on_user_id"
+  end
+
+  create_table "checkout_attempts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "plan", null: false
+    t.string "price_reference", null: false
+    t.string "idempotency_key", null: false
+    t.string "customer_idempotency_key", null: false
+    t.string "stripe_customer_id"
+    t.string "stripe_checkout_session_id"
+    t.string "status", default: "pending", null: false
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_idempotency_key"], name: "index_checkout_attempts_on_customer_idempotency_key"
+    t.index ["idempotency_key"], name: "index_checkout_attempts_on_idempotency_key", unique: true
+    t.index ["stripe_checkout_session_id"], name: "index_checkout_attempts_on_stripe_checkout_session_id", unique: true
+    t.index ["user_id", "plan"], name: "index_checkout_attempts_on_active_user_and_plan", unique: true, where: "((status)::text = ANY ((ARRAY['pending'::character varying, 'open'::character varying, 'uncertain'::character varying])::text[]))"
+    t.index ["user_id"], name: "index_checkout_attempts_on_user_id"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'open'::character varying, 'uncertain'::character varying, 'completed'::character varying, 'expired'::character varying, 'failed'::character varying]::text[])", name: "checkout_attempts_status_check"
   end
 
   create_table "dream_emotions", force: :cascade do |t|
@@ -186,15 +206,18 @@ ActiveRecord::Schema[7.2].define(version: 2026_07_11_000000) do
     t.string "email_verification_token_digest"
     t.datetime "email_verification_sent_at"
     t.string "reset_password_token_digest"
+    t.string "stripe_customer_idempotency_key"
     t.index ["email_verification_token_digest"], name: "index_users_on_email_verification_token_digest", unique: true
     t.index ["reset_password_token_digest"], name: "index_users_on_reset_password_token_digest", unique: true
     t.index ["stripe_customer_id"], name: "index_users_on_stripe_customer_id", unique: true
+    t.index ["stripe_customer_idempotency_key"], name: "index_users_on_stripe_customer_idempotency_key", unique: true
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_usage_logs", "users"
+  add_foreign_key "checkout_attempts", "users"
   add_foreign_key "dream_emotions", "dreams"
   add_foreign_key "dream_emotions", "emotions"
   add_foreign_key "dream_image_generations", "dreams"

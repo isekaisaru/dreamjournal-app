@@ -1,6 +1,8 @@
 # このファイルは 'rails generate rspec:install' を実行した際に spec/ にコピーされます。
 require 'spec_helper'
 ENV['RAILS_ENV'] ||= 'test'
+# request specのOriginをローカル.envやCI環境から切り離し、testだけで固定する。
+ENV['ALLOWED_ORIGINS'] = 'http://localhost:3000'
 require_relative '../config/environment'
 # production環境でのデータベース切り捨てを防止します。
 abort("The Rails environment is running in production mode!") if Rails.env.production?
