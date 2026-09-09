@@ -167,6 +167,32 @@ RSpec.describe 'Authentication API', type: :request do
         expect(response.cookies['refresh_token']).to be_blank
       end
     end
+
+    context '無効または失効済みのリフレッシュトークンの場合' do
+      it 'Cookieを破棄して成功として扱う' do
+        allow(AuthService).to receive(:revoke_session)
+          .and_raise(AuthService::InvalidRefreshTokenError, 'invalid token')
+
+        post '/auth/logout', as: :json,
+             headers: { 'Cookie' => 'refresh_token=invalid-token', 'HOST' => 'backend' }
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['message']).to include('ログアウト')
+        expect(response.cookies['access_token']).to be_blank
+        expect(response.cookies['refresh_token']).to be_blank
+      end
+    end
+
+    context 'リフレッシュトークンがない場合' do
+      it 'Cookieを破棄して成功として扱う' do
+        post '/auth/logout', as: :json, headers: { 'HOST' => 'backend' }
+
+        expect(response).to have_http_status(:ok)
+        expect(json_response['message']).to include('ログアウト')
+        expect(response.cookies['access_token']).to be_blank
+        expect(response.cookies['refresh_token']).to be_blank
+      end
+    end
   end
 
   describe 'POST /auth/register' do
