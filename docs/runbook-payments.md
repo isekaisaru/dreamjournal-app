@@ -9,6 +9,16 @@
 - `payments` / `processed_webhook_events` 永続化
 - KPI ログ（`[PaymentsKPI]`）
 
+
+## Stripe環境モードと起動ガード（2026-09-10）
+
+`StripeEnvironmentGuard` は、`STRIPE_MODE` が未設定なら Rails の環境名から mode を補完する。production では未設定を **live** と扱う。
+
+- production Rails で Stripe test-mode を使う限定QAでは、`STRIPE_MODE=test` を明示する。
+- test-modeでは、Secret Key / Publishable Key / Price / Webhook Event がすべてtest modeであることを、値そのものを記録せず接頭辞またはStripeの`livemode=false`で確認する。
+- production Rails + mode未設定 + test key は起動時に不一致として停止する。これは誤ってtest/liveを混在させない安全ガードであり、無効化しない。
+- 起動失敗時はCheckoutを試さず、mode・key種別・Price・Webhook Eventの境界をread-onlyで確認する。環境変数を変更する判断は人間が別途行う。
+
 ## まず確認すること
 
 1. フロントから `POST /api/checkout` が `200` を返しているか。
@@ -118,6 +128,56 @@
 2. `processed_webhook_events` に行がなければ、受信済みでも処理完了とは限らない。
 3. 5xx のイベントはStripeからの再送対象。UserやSubscriptionの照合状態を直した後、再送成功とDB状態を確認する。
 4. 同じ `stripe_event_id` の200再送は正常な重複排除であり、業務更新は再実行されない。
+
+
+## PR #504後: Stripe test-mode 通しQA（人間が1回だけ実施）
+
+目的は、test-modeで `Checkout → Webhook 200 → CheckoutAttempt completed → premium=true → Billing Portal` を1回だけ確認すること。これは本番購入の手順ではない。
+
+### QA前のread-only確認
+
+すべて満たすまでCheckoutを作成しない。
+
+1. 対象main SHAとRenderの稼働releaseを照合し、PR #504を含むことを確認する。
+2. Rails configurationのStripe modeが`test`であること、キー種別がtestであることを確認する。値・署名secretは表示・記録しない。production Railsでmodeを省略してはいけない。
+3. premium用Priceがtest mode（`livemode=false`）であることを確認する。Price IDの文字列だけでは判定しない。
+4. QA対象ユーザー、接続DB、実行環境の境界を人間が承認する。DB境界が不明ならSTOPする。
+5. QA対象ユーザーの`CheckoutAttempt`をread-onlyで確認し、`pending` / `open` / `uncertain` がないこと、保存済みSessionを再利用すべきAttemptがないことを確認する。
+6. Webhook endpointがtest-mode用に準備済みで、署名secretが設定済みであることを値を表示せず確認する。migration/schemaの適用状態もread-onlyで一致を確認する。
+
+### 実行
+
+1. QA対象ユーザーでpremium Checkoutを開始する。**新しいCheckoutは最大1回**とする。
+2. Checkout画面へ遷移できたら、test cardで完了する。決済操作後は追加のCheckoutを作らない。
+3. timeout、通信エラー、画面遷移失敗、またはRailsの結果不明が起きたら、再POST・再クリック・新規Checkoutをしない。下の証拠確認へ移る。
+4. saved Sessionを持つactive Attemptが見つかった場合は、そのSessionのread-only確認を優先する。`uncertain`は成功/失敗を断定しない。
+
+### 実行後の証拠（値はID・種別・状態だけを記録）
+
+次を1件のQA記録として残す。secret、token、署名値、カード情報は記録しない。
+
+- main SHA / Render release識別子
+- QAユーザー識別子（必要最小限）
+- CheckoutAttempt ID と最終status
+- Stripe Session ID
+- `checkout.session.completed` のWebhook event type とHTTP status（期待: 200）
+- `premium` の最終値（期待: true）
+- Billing Portal遷移の成否（期待: URLを取得して表示できる）
+
+Webhookでsubscription処理とAttempt完了が確定する。同期Checkout応答だけで`completed`や`premium=true`と判断しない。
+
+### STOP条件
+
+次のいずれかなら、その場でSTOPし、新しいCheckoutを作らない。
+
+- Stripe test/live不一致、またはproduction Stripeの可能性がある。
+- 接続DBまたはQA対象ユーザーの境界が不明。
+- `pending` / `open` / `uncertain` のAttempt、または再利用すべき保存済みSessionがある。
+- Stripe側では成功した可能性があるが、Railsの結果が不明（timeout・接続エラー・`uncertain`）。
+- Webhook署名検証失敗、Webhookが200以外、またはeventの`livemode`不一致。
+- migration/schemaの不一致、または起動ガードのConfigurationError。
+
+STOP後は、Renderログ、Stripe Dashboard、対象Attempt、Webhook配送結果をread-onlyで照合し、人間が次の操作を判断する。
 
 ## 手動検証コマンド（開発環境）
 
