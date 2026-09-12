@@ -14,7 +14,7 @@ class TrialUsersController < ApplicationController
         )
 
         unless result[:user] && result[:access_token] && result[:refresh_token]
-          Rails.logger.error "トライアルユーザー作成処理で必要な情報が不足しています: #{result.inspect}"
+          Rails.logger.error "トライアルユーザー作成処理で必要な情報が不足しています"
           error_response = { body: { error: "トライアルユーザー作成処理に失敗しました" }, status: :internal_server_error }
           raise ActiveRecord::Rollback
         end
@@ -24,11 +24,11 @@ class TrialUsersController < ApplicationController
           relationship: "self", active: true, position: 0
         )
       rescue AuthService::RegistrationError => e
-        Rails.logger.error "Error in TrialUsersController#create: #{e.message}"
+        Rails.logger.error "TrialUsersController#create failed error_class=#{e.class}"
         error_response = { body: { error: e.message }, status: :internal_server_error }
         raise ActiveRecord::Rollback
       rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error "自分プロフィールの自動作成に失敗しました: #{e.message}"
+        Rails.logger.error "自分プロフィールの自動作成に失敗しました error_class=#{e.class}"
         error_response = { body: { error: "トライアルユーザー作成処理に失敗しました" }, status: :internal_server_error }
         raise ActiveRecord::Rollback
       end

@@ -145,13 +145,10 @@ class SecurityLogger
   def self.log_authentication_failure(email:, ip_address:, reason:)
     if defined?(StructuredLogger)
       StructuredLogger.security_event(
-        event: 'authentication_failure',
-        email: email,
-        ip_address: ip_address,
-        reason: reason
+        event: 'authentication_failure'
       )
     else
-      Rails.logger.warn "Authentication failure: #{email} from #{ip_address} - #{reason}"
+      Rails.logger.warn "Authentication failure"
     end
   end
 
