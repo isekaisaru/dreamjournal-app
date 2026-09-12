@@ -19,12 +19,21 @@ RSpec.describe 'Users API', type: :request do
     end
 
     context 'Stripe 解約に失敗する場合' do
-      it 'ユーザーを削除せず 422 を返す' do
+      it '安全な原因クラスだけをログに残し、ユーザーを削除せず 422 を返す' do
         user = create(:user)
         create(:subscription, user: user, stripe_subscription_id: 'sub_ng_1', status: 'active')
+        error_message_marker = "stripe-message-#{SecureRandom.hex(12)}"
+        response_body_marker = "stripe-payload-#{SecureRandom.hex(12)}"
+        recorded_logs = []
+
+        allow(Rails.logger).to receive(:error) { |message| recorded_logs << message.to_s }
 
         allow(Stripe::Subscription).to receive(:cancel).and_raise(
-          Stripe::APIConnectionError.new('connection failed')
+          Stripe::APIConnectionError.new(
+            error_message_marker,
+            http_body: response_body_marker,
+            json_body: { 'error' => response_body_marker }
+          )
         )
 
         authenticated_delete("/users/#{user.id}", user)
@@ -32,6 +41,16 @@ RSpec.describe 'Users API', type: :request do
         expect(response).to have_http_status(:unprocessable_content)
         expect(JSON.parse(response.body)['error']).to include('解約に失敗')
         expect(User.exists?(user.id)).to be true
+
+        log_output = recorded_logs.join("\n")
+        expect(log_output.include?('cause_class=Stripe::APIConnectionError')).to be(true)
+
+        leaked_labels = {
+          'Stripe error message' => error_message_marker,
+          'Stripe response payload' => response_body_marker,
+          'Stripe subscription identifier' => 'sub_ng_1'
+        }.filter_map { |label, value| label if log_output.include?(value) }
+        expect(leaked_labels).to be_empty
       end
     end
 

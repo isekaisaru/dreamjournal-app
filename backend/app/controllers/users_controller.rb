@@ -57,7 +57,8 @@ class UsersController < ApplicationController
     begin
       SubscriptionCanceler.new(current_user).call
     rescue SubscriptionCanceler::CancellationError => e
-      Rails.logger.error("[AccountDeletion] Stripe解約失敗 user_id=#{current_user.id} error_class=#{e.class}")
+      cause_class = e.cause.is_a?(Stripe::StripeError) ? e.cause.class.name : 'unknown'
+      Rails.logger.error("[AccountDeletion] Stripe解約失敗 user_id=#{current_user.id} error_class=#{e.class} cause_class=#{cause_class}")
       return render json: { error: "サブスクリプションの解約に失敗しました。時間をおいて再度お試しください。" },
                     status: :unprocessable_content
     end
