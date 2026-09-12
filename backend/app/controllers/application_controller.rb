@@ -67,7 +67,7 @@ class ApplicationController < ActionController::API
 
       Rails.logger.info "認証成功: ユーザー ID #{user_id}" if Rails.env.development?
     rescue => e
-      Rails.logger.warn "認証失敗: #{e.class} - #{e.message}"
+      Rails.logger.warn "認証失敗 error_class=#{e.class}"
       render json: { error: '認証に失敗しました。再度ログインしてください。' }, status: :unauthorized
     end
   end
