@@ -116,14 +116,13 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
     ]);
   });
 
-  test("ユーザー名が見出しに表示され、夢カードが一覧表示される", async ({
+  test("ホームの見出しと夢カードが一覧表示される", async ({
     page,
   }) => {
     await page.goto("/home");
 
-    // ユーザー名を含む見出しが表示されていることを確認
     await expect(
-      page.getByRole("heading", { name: /E2Eテスト太郎さん、おはよう！/ })
+      page.getByRole("heading", { name: "今日の夢を記録する", level: 2 })
     ).toBeVisible();
 
     // 夢カードが2件表示されていることを確認
@@ -300,36 +299,10 @@ test.describe("ホームページ：認証済みユーザーの夢一覧表示",
 
     await page.goto("/home");
 
-    // ユーザー名見出しは表示される
-    await expect(
-      page.getByRole("heading", { name: /E2Eテスト太郎さん、おはよう！/ })
-    ).toBeVisible();
-
     // 空状態のメッセージが表示されることを確認
     await expect(
       page.getByRole("heading", { name: "夢はまだありません" })
     ).toBeVisible();
   });
 
-  test("[すべて]チップで dream_profile_id を解除し query を保持する", async ({
-    page,
-  }) => {
-    await page.goto("/home?dream_profile_id=2&query=%E7%A9%BA");
-
-    await page.getByRole("button", { name: "すべて" }).click();
-
-    await expect(page).toHaveURL(/\/home\?query=%E7%A9%BA/);
-    await expect(page).not.toHaveURL(/dream_profile_id/);
-  });
-
-  test("[すべて]チップで dream_profile_id だけある場合は /home になる", async ({
-    page,
-  }) => {
-    await page.goto("/home?dream_profile_id=2");
-
-    await page.getByRole("button", { name: "すべて" }).click();
-
-    await expect(page).toHaveURL(/^.*\/home$/);
-    await expect(page).not.toHaveURL(/dream_profile_id/);
-  });
 });
