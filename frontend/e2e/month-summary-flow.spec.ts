@@ -34,7 +34,7 @@ test.describe("月次サマリーページ", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          user: { id: 1, email: "test@example.com", username: "E2Eユーザー" },
+          user: { id: 1, email: "test@example.com", username: "E2Eユーザー", premium: true },
         }),
       });
     });
@@ -54,7 +54,7 @@ test.describe("月次サマリーページ", () => {
     ]);
   });
 
-  test("夢がある月は件数・日数・分析済み数・感情タグ・サマリーメッセージが表示される", async ({
+  test("プレミアムユーザーでは夢の件数・日数・分析済み数・感情タグ・サマリーメッセージが表示される", async ({
     page,
   }) => {
     await page.route("**/dreams/month/2024-01", async (route) => {
