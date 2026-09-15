@@ -40,6 +40,7 @@ const nextConfig = {
     removeConsole: isProd ? { exclude: ["error"] } : false,
   },
   experimental: {
+    useTypeScriptCli: false,
     optimizePackageImports: ["lucide-react"],
   },
 };
