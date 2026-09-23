@@ -76,6 +76,12 @@ jobs:
           puts "Verified default-deny RLS on #{expected_tables.length} tables"
           RUBY
 
+      - name: Verify structure.sql regeneration
+        working-directory: ./backend
+        run: |
+          bundle exec rails db:schema:dump
+          git diff --ignore-blank-lines --exit-code -- db/structure.sql
+
       - name: Run tests
         working-directory: ./backend
         run: |
