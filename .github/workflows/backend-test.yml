@@ -79,8 +79,60 @@ jobs:
       - name: Verify structure.sql regeneration
         working-directory: ./backend
         run: |
+          pg_dump --version
+          psql --version
+          bundle exec rails runner 'puts "PostgreSQL server #{ActiveRecord::Base.connection.select_value("SHOW server_version")}"'
+
+          original_structure=$(mktemp)
+          generated_structure=$(mktemp)
+          normalized_original=$(mktemp)
+          normalized_generated=$(mktemp)
+          cp db/structure.sql "$original_structure"
+
+          cleanup() {
+            cp "$original_structure" db/structure.sql
+            rm -f "$original_structure" "$generated_structure" "$normalized_original" "$normalized_generated"
+          }
+          trap cleanup EXIT
+
           bundle exec rails db:schema:dump
-          git diff --ignore-blank-lines --exit-code -- db/structure.sql
+          cp db/structure.sql "$generated_structure"
+
+          ruby - "$original_structure" "$generated_structure" "$normalized_original" "$normalized_generated" <<'RUBY'
+          public_schema_block = <<~'SQL'
+            --
+            -- Name: public; Type: SCHEMA; Schema: -; Owner: -
+            --
+
+            -- *not* creating schema, since initdb creates it
+
+
+          SQL
+
+          def normalize(source_path, destination_path, public_schema_block)
+            content = File.binread(source_path)
+            block_count = content.scan(public_schema_block).length
+            abort "#{source_path}: public schema block appeared #{block_count} times" if block_count > 1
+
+            content = content.sub(public_schema_block, "")
+            trailing_newlines = content[/\n*\z/].length
+            unless (1..2).cover?(trailing_newlines)
+              abort "#{source_path}: expected 1 or 2 trailing newlines, got #{trailing_newlines}"
+            end
+
+            content = content.delete_suffix("\n") if trailing_newlines == 2
+            File.binwrite(destination_path, content)
+            puts "#{source_path}: public_schema_blocks=#{block_count}, trailing_blank_lines=#{trailing_newlines - 1}"
+          end
+
+          normalize(ARGV.fetch(0), ARGV.fetch(2), public_schema_block)
+          normalize(ARGV.fetch(1), ARGV.fetch(3), public_schema_block)
+          RUBY
+
+          diff -u "$normalized_original" "$normalized_generated"
+          cleanup
+          trap - EXIT
+          git diff --exit-code -- db/structure.sql
 
       - name: Run tests
         working-directory: ./backend
