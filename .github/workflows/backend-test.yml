@@ -33,12 +33,48 @@ jobs:
           bundler-cache: true
           working-directory: ./backend
 
-      - name: Setup database
+      - name: Setup fresh database from structure.sql
         working-directory: ./backend
         run: |
           bundle exec rails db:create
           bundle exec rails db:schema:load
           bundle exec rails db:migrate
+
+      - name: Verify RLS state
+        working-directory: ./backend
+        run: |
+          bundle exec rails runner - <<'RUBY'
+          expected_tables = %w[
+            dream_profiles
+            ai_usage_logs
+            payments
+            processed_webhook_events
+            dream_image_generations
+            checkout_attempts
+          ]
+
+          rows = ActiveRecord::Base.connection.exec_query(<<~SQL).to_a
+            SELECT c.relname AS table_name,
+                   c.relrowsecurity AS rls_enabled,
+                   c.relforcerowsecurity AS force_rls,
+                   COUNT(p.polname)::integer AS policy_count
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace
+              LEFT JOIN pg_policy p ON p.polrelid = c.oid
+             WHERE n.nspname = 'public'
+               AND c.relname IN (#{expected_tables.map { |name| ActiveRecord::Base.connection.quote(name) }.join(', ')})
+             GROUP BY c.relname, c.relrowsecurity, c.relforcerowsecurity
+          SQL
+
+          states = rows.index_by { |row| row.fetch("table_name") }
+          invalid_tables = expected_tables.reject do |table_name|
+            state = states[table_name]
+            state && state.fetch("rls_enabled") && !state.fetch("force_rls") && state.fetch("policy_count").zero?
+          end
+
+          abort "Unexpected RLS state: #{invalid_tables.join(', ')}" if invalid_tables.any?
+          puts "Verified default-deny RLS on #{expected_tables.length} tables"
+          RUBY
 
       - name: Run tests
         working-directory: ./backend
