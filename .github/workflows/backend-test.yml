@@ -87,7 +87,7 @@ jobs:
           generated_structure=$(mktemp)
           normalized_original=$(mktemp)
           normalized_generated=$(mktemp)
-          cp db/structure.sql "$original_structure"
+          git show HEAD:backend/db/structure.sql > "$original_structure"
 
           cleanup() {
             cp "$original_structure" db/structure.sql
