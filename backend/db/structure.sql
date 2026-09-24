@@ -1263,6 +1263,7 @@ ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260923000000'),
 ('20260905000000'),
 ('20260828000000'),
 ('20260711000000'),
