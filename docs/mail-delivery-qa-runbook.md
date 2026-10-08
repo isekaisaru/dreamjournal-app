@@ -10,6 +10,23 @@
 - DNS / Render / Resend設定変更、production DB操作、migration、deploy、Stripe操作、secret表示は本手順で行わない。必要ならSTOPして別承認へ切り出す。
 - 実際の宛先、本文、token付きURL、password、Cookie、SMTP認証値は公開GitHub・CIログへ載せない。実測記録は個人用の非公開ファイルへ残す。
 
+2026-10-09のPR再検証基準はmain `e20f16b8747a287d083af611a60a15316f238b5a`（Next.js 16.3.8）。これはコード基準であり、frontend / backendのproduction稼働SHAを示す証拠ではない。
+
+| 証拠区分 | 判定 |
+|---|---|
+| code | PASS / FAIL / 未確認 |
+| local tests | PASS / FAIL / 未確認 |
+| GitHub CI | PASS / FAIL / 未確認 |
+| Preview | PASS / FAIL / 未確認 |
+| main merge | PASS / FAIL / 未確認 |
+| production runtime | PASS / FAIL / 未確認 |
+| real email send | PASS / FAIL / 未確認 |
+| inbox receipt | PASS / FAIL / 未確認 |
+| Resend Delivered | PASS / FAIL / 未確認 |
+| real verification/reset link usage | PASS / FAIL / 未確認 |
+| login after reset | PASS / FAIL / 未確認 |
+| verified-user feature unlock | PASS / FAIL / 未確認 |
+
 ## 1. 最初のGO確認（読み取りのみ）
 
 | 確認 | 記録する内容 | 初期状態 |
@@ -18,7 +35,7 @@
 | 試験アカウント | 所有者以外の同意済み宛先を非公開の別名で識別。新規本登録・未確認ユーザー | 未確認 |
 | 既存アカウントとの差 | Trialとmigrationで確認済みの既存ユーザーは検証ゲートの対象外なので、このQAの代わりにしない | 未確認 |
 | 配信ドメイン | Resendの現時点のVerified状態と送信元ドメインの一致を確認。秘密値をコピーしない | 未確認 |
-| 配信設定 | SMTP_USERNAME / SMTP_PASSWORD / MAIL_FROMの存在、FRONTEND_URLの対象環境一致。値は記録・表示しない | 未確認 |
+| 配信設定 | SMTP_ADDRESS / SMTP_PORT / SMTP_USERNAME / SMTP_PASSWORD / MAIL_FROMの存在、FRONTEND_URLの対象環境一致。値は記録・表示しない | 未確認 |
 | 外部操作範囲 | 登録・確認メール・再設定メール・password更新に対する明示承認。生成・決済の費用/副作用は別承認 | 未確認 |
 
 YumeTreeのmainにあるproduction環境向けコードはRails Action MailerからSMTP配信する。実際に稼働中のSHA・設定は別途確認する。登録や再設定リクエストのHTTP 200、画面の「送ったよ」、Railsの配信ログだけで、メールが届いたと判定しない。
@@ -26,6 +43,8 @@ YumeTreeのmainにあるproduction環境向けコードはRails Action Mailerか
 Resendの共有テストドメインは所有者宛に制限される。一般ユーザーへの配信には検証済み独自ドメインが必要。[Resend公式の制限説明](https://resend.com/docs/knowledge-base/403-error-resend-dev-domain)、[Verified domains](https://resend.com/docs/dashboard/domains/introduction)。この文書作成時点の実アカウント設定は未確認。
 
 ## 2. 確認メール：一段ずつ記録する
+
+この節をPhase 1として独立判定する。途中で異常があればPhase 1でSTOPし、Phase 2・3へ進まない。
 
 1. GO条件が揃った環境で、同意済みの試験利用者が新規本登録する。確認待ちバナーの表示と登録結果を記録する。
 2. 確認メールの発行時刻を記録する。自動送信があるため、不安を理由に再送を連打しない。
@@ -38,6 +57,8 @@ Resendの共有テストドメインは所有者宛に制限される。一般�
 
 ## 3. パスワード再設定：確認メールとは別に記録する
 
+この節をPhase 2として独立判定する。途中で異常があればPhase 2でSTOPし、Phase 3へ進まない。
+
 1. 同じ承認済み試験アカウントで`/forgot-password`からリセットを1回要求する。
 2. 画面の成功案内、実メール受信、Resend Deliveredをそれぞれ記録する。存在しないユーザーでも同じHTTP成功案内を返す設計なので、成功表示をアカウント存在や配信完了の証拠にしない。
 3. 本人が実メールの`/password-reset/...`リンクから、試験アカウントのpasswordを再設定する。実passwordを記録しない。
@@ -47,6 +68,8 @@ Resendの共有テストドメインは所有者宛に制限される。一般�
 現行`User`実装の有効期間は、メール確認24時間、再設定60分、確認メールの再送間隔5分。古い本文の表記を正とせず、#508などの未merge修正は別に扱う。期限の境界はローカルテストで確認し、production DBの時刻を書き換えない。
 
 ## 4. メール確認前後の機能解放
+
+この節をPhase 3として独立判定する。AI、画像、音声、Checkoutはそれぞれ別欄に記録し、未承認または異常のある項目ではその場でSTOPする。
 
 対象は **新規本登録の非Trialユーザー**。現在のbackendは未確認ユーザーに`403 + email_verification_required: true`を返す。
 
@@ -82,9 +105,16 @@ CIで新しいE2EがPASSしても、上の実地項目は自動でチェック�
 操作者・承認記録:
 環境名:
 main SHA:
-frontend / backend稼働SHA:
+frontend production SHA: PASS / FAIL / 未確認
+backend production SHA: PASS / FAIL / 未確認
 試験アカウント別名（実アドレスは非公開）:
 送信ドメインVerifiedと環境一致: PASS / FAIL / 未確認
+SMTP_ADDRESS存在: PASS / FAIL / 未確認
+SMTP_PORT存在: PASS / FAIL / 未確認
+SMTP_USERNAME存在: PASS / FAIL / 未確認
+SMTP_PASSWORD存在: PASS / FAIL / 未確認
+MAIL_FROMドメイン一致: PASS / FAIL / 未確認
+FRONTEND_URL環境一致: PASS / FAIL / 未確認
 確認メール: 発行 / 実受信 / Delivered / 実リンク結果を別記
 再設定メール: 発行 / 実受信 / Delivered / password更新 / ログインを別記
 機能解放: AI / preview / 画像 / 音声 / Checkoutを別記
