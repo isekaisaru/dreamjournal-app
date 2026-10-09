@@ -14,7 +14,7 @@ require 'uri'
 
 class HealthController < ApplicationController
   # 認証をスキップ（外部監視ツールからのアクセスを許可）
-  skip_before_action :authorize_request, only: [:check, :detailed_check, :live, :ready], raise: false
+  skip_before_action :authorize_request, only: [:check, :live, :ready], raise: false
   
   # ========================================
   # 🔍 基本的なヘルスチェック
@@ -51,10 +51,10 @@ class HealthController < ApplicationController
       timestamp: Time.current
     }, status: :ok
   rescue => e
+    Rails.logger.error "Readiness check failed error_class=#{e.class}"
     render json: {
       status: 'error',
-      db: 'disconnected',
-      message: e.message
+      db: 'disconnected'
     }, status: :service_unavailable
   end
 
@@ -109,12 +109,7 @@ class HealthController < ApplicationController
     render json: {
       timestamp: Time.current.iso8601,
       status: "critical",
-      error: e.message,
-      version: {
-        app: ENV['APP_VERSION'] || '1.0.0',
-        rails: Rails.version,
-        ruby: RUBY_VERSION
-      }
+      error: "health check failed"
     }, status: 503
   end
 
@@ -148,7 +143,7 @@ class HealthController < ApplicationController
     rescue => e
       {
         status: "critical",
-        error: e.message,
+        error: "database check failed",
         response_time_ms: ((Time.current - start_time) * 1000).round(2)
       }
     end
@@ -191,7 +186,7 @@ class HealthController < ApplicationController
       rescue => e
         apis[:openai] = {
           status: "degraded",
-          error: e.message,
+          error: "external API check failed",
           response_time_ms: ((Time.current - start_time) * 1000).round(2)
         }
       end
@@ -234,7 +229,7 @@ class HealthController < ApplicationController
     rescue => e
       {
         status: "error",
-        error: e.message
+        error: "memory check failed"
       }
     end
   end
