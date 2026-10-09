@@ -10,7 +10,7 @@
 - DNS / Render / Resend設定変更、production DB操作、migration、deploy、Stripe操作、secret表示は本手順で行わない。必要ならSTOPして別承認へ切り出す。
 - 実際の宛先、本文、token付きURL、password、Cookie、SMTP認証値は公開GitHub・CIログへ載せない。実測記録は個人用の非公開ファイルへ残す。
 
-2026-10-09のPR再検証基準はmain `e20f16b8747a287d083af611a60a15316f238b5a`（Next.js 16.3.8）。これはコード基準であり、frontend / backendのproduction稼働SHAを示す証拠ではない。
+2026-10-10のPR再検証基準はmain `27dfd9937b00b853e518867c7efa5b83ce9fb6a5`（Next.js 16.3.8、#508のpassword reset有効期限表記修正を含む）。これはコード基準であり、frontend / backendのproduction稼働SHAを示す証拠ではない。
 
 | 証拠区分 | 判定 |
 |---|---|
