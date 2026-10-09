@@ -42,7 +42,7 @@ class PasswordResetsController < ApplicationController
   # その場で新規発行して返す（POST /password_resets の直後に呼んでも問題ない）。
   # GET /dev/password_resets/token?email=...
   def dev_token
-    unless Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
+    unless Rails.env.development? || (Rails.env.test? && ENV['ENABLE_DEV_ENDPOINTS'] == 'true')
       head :forbidden and return
     end
 
