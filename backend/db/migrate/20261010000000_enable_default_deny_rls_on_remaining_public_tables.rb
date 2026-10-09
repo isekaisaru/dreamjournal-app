@@ -37,13 +37,13 @@ class EnableDefaultDenyRlsOnRemainingPublicTables < ActiveRecord::Migration[7.2]
       SELECT c.relname
         FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
-        JOIN pg_roles current_role ON current_role.rolname = current_user
+        JOIN pg_roles role_state ON role_state.rolname = current_user
        WHERE n.nspname = 'public'
          AND c.relname IN (#{TABLES.map { |name| connection.quote(name) }.join(', ')})
          AND NOT (
-           current_role.rolsuper
-           OR current_role.rolbypassrls
-           OR c.relowner = current_role.oid
+           role_state.rolsuper
+           OR role_state.rolbypassrls
+           OR c.relowner = role_state.oid
          )
     SQL
 
