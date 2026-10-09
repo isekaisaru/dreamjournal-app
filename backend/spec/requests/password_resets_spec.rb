@@ -35,6 +35,9 @@ RSpec.describe 'PasswordResets API', type: :request do
         expect(sent_email.from).to eq([ENV.fetch('MAIL_FROM', 'support@yumelog.com')])
         expect(sent_email.subject).to eq('[ユメログ] パスワードリセット')
         text_body = sent_email.text_part.body.to_s
+        html_body = sent_email.html_part.body.to_s
+        expect(text_body).to include('60分')
+        expect(html_body).to include('60分')
         token = text_body[%r{/password-reset/(\S+)}, 1]
         expect(token).to be_present
         expect(text_body).to include("#{frontend_url}/password-reset/#{token}")
@@ -82,7 +85,7 @@ RSpec.describe 'PasswordResets API', type: :request do
 
     context '期限切れのトークンの場合' do
       it '422 Unprocessable Entityを返す' do
-        user.update_column(:reset_password_sent_at, 2.hours.ago)
+        user.update_column(:reset_password_sent_at, 61.minutes.ago)
         patch "/password_resets/#{token}", params: { password: 'new_password_456', password_confirmation: 'new_password_456' }, as: :json, headers: { 'HOST' => 'backend' }
         expect(response).to have_http_status(:unprocessable_content)
         expect(json_response['error']).to eq('無効または期限切れのトークンです。')
