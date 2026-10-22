@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
 
 import type { AnalysisResult } from "@/app/types";
@@ -44,6 +44,13 @@ export default function DreamEntryLauncher({
     "idle" | "confirming" | "preparing" | "recording"
   >("idle");
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  // 送信に失敗した録音。破棄されるまで保持し、同じ Blob を再送できるようにする
+  const [failedAudio, setFailedAudio] = useState<{
+    blob: Blob;
+    message: string;
+  } | null>(null);
+  // state 反映前の連打でも二重送信しないためのガード
+  const isSubmittingRef = useRef(false);
 
   // お試しユーザー（課金前）だけ音声の残り回数を表示・制限する
   const isTrial = user?.trial_user === true && !user?.premium;
@@ -66,9 +73,12 @@ export default function DreamEntryLauncher({
 
   const handleBlobReady = useCallback(
     async (blob: Blob) => {
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
       setIsProcessing(true);
       try {
         const result = await uploadAndAnalyzeAudio(blob);
+        setFailedAudio(null);
         // お試しユーザーは録音成功で使用回数が1増える。backendの再取得を待たず
         // グローバルのuserを更新し、残り回数表示（このボタン・/homeのTrialBanner）を
         // 即座に最新化する（premiumは制限対象外なので更新しない）
@@ -81,17 +91,30 @@ export default function DreamEntryLauncher({
         handleAnalysisResult(result);
       } catch (err) {
         console.error("Failed to analyze audio dream", err);
-        toast.error(
+        const message =
           err instanceof Error
             ? err.message
-            : "ちょっと つかれちゃった みたい。あとで また はなしてね。"
-        );
+            : "ちょっと つかれちゃった みたい。あとで また はなしてね。";
+        toast.error(message);
+        // 録音を捨てずに残し、利用者の操作で再送・破棄できるようにする（自動再送はしない）
+        setFailedAudio({ blob, message });
       } finally {
+        isSubmittingRef.current = false;
         setIsProcessing(false);
       }
     },
     [handleAnalysisResult, login, user]
   );
+
+  const handleRetryUpload = () => {
+    if (!failedAudio || isProcessing) return;
+    void handleBlobReady(failedAudio.blob);
+  };
+
+  const handleDiscardRecording = () => {
+    if (isProcessing) return;
+    setFailedAudio(null);
+  };
 
   const {
     isRecording,
@@ -195,7 +218,9 @@ export default function DreamEntryLauncher({
 
   const openLauncher = async () => {
     setIsOpen(true);
-    if (!voiceFirst || audioLimitReached || isProcessing) return;
+    // 送信に失敗した録音が残っている間は、いきなり新しい録音を始めず
+    // シートで「もう一度送信」「録音を破棄」を選んでもらう
+    if (!voiceFirst || audioLimitReached || isProcessing || failedAudio) return;
 
     setStatus("preparing");
     try {
@@ -480,6 +505,37 @@ export default function DreamEntryLauncher({
                 </Link>
               ) : null}
             </div>
+
+            {/* 送信に失敗した録音が残っているときは、再送と破棄を選べるようにする */}
+            {failedAudio ? (
+              <div
+                className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                aria-live="assertive"
+              >
+                <p>{failedAudio.message}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleRetryUpload}
+                    disabled={isProcessing}
+                    className="min-h-11 rounded-full"
+                  >
+                    もう一度送信
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDiscardRecording}
+                    disabled={isProcessing}
+                    className="min-h-11 rounded-full"
+                  >
+                    録音を破棄
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             {error ? (
               <p
