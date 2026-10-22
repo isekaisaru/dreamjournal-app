@@ -234,7 +234,7 @@ export default function PendingDreamsMonitor() {
   // タイムアウト時: 再試行を促すバナーを表示
   if (isTimedOut) {
     return (
-      <div className="fixed bottom-4 left-4 z-50 animate-in slide-in-from-bottom-2 fade-in">
+      <div className="fixed bottom-[calc(var(--bottom-nav-h,0px)+1rem)] left-4 z-50 animate-in slide-in-from-bottom-2 fade-in">
         <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-950/90 text-amber-100 rounded-full shadow-lg border border-amber-700/50 backdrop-blur-sm">
           <span className="text-base">⏱</span>
           <span className="text-xs font-medium">かんがえるのに時間がかかってるよ</span>
@@ -253,7 +253,7 @@ export default function PendingDreamsMonitor() {
   if (pendingIds.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 animate-in slide-in-from-bottom-2 fade-in pointer-events-none">
+    <div className="fixed bottom-[calc(var(--bottom-nav-h,0px)+1rem)] left-4 z-50 animate-in slide-in-from-bottom-2 fade-in pointer-events-none">
       <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/90 text-slate-100 rounded-full shadow-lg border border-slate-700/50 backdrop-blur-sm pointer-events-auto">
         <div className="relative flex h-3 w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
