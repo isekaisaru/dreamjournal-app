@@ -220,14 +220,17 @@ export default function ForestProfilePage() {
       {/* sticky ヘッダー */}
       <header className="sticky top-0 z-10 bg-black/20 backdrop-blur-md">
         <div className="container mx-auto flex h-14 max-w-3xl items-center px-4">
-          <Link href="/forest" className="flex min-h-[44px] items-center px-1 text-white/80 hover:text-white">
+          <Link href="/forest" className="flex min-h-[44px] shrink-0 items-center px-1 text-white/80 hover:text-white">
             <ChevronLeft className="mr-1 h-5 w-5" /> もりに もどる
           </Link>
-          <h1 className="ml-3 whitespace-nowrap text-lg font-bold">
+          <h1
+            className="ml-3 min-w-0 truncate pr-2 text-lg font-bold"
+            title={`${profile.avatar_emoji} ${profile.name} の き`}
+          >
             {profile.avatar_emoji} {profile.name} の き
           </h1>
           <span
-            className="ml-auto rounded-full px-3 py-1 text-[13px] font-black"
+            className="ml-auto shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[13px] font-black"
             style={{
               background: `${profile.color}22`,
               border: `1px solid ${profile.color}66`,
