@@ -8,6 +8,42 @@ export const AUDIO_UPLOAD_TIMEOUT_MS = 60_000;
 export const AUDIO_UPLOAD_TIMEOUT_MESSAGE =
   "送信がタイムアウトしました。通信状況を確認して、もう一度送信してください。";
 
+/**
+ * 音声送信の失敗。`Error` を継承しているので、message だけを見る既存の呼び出し側はそのまま動く。
+ * - retryable: 同じ録音を再送すれば結果が変わりうるか（422 無音 / 400 / 回数上限は false）
+ * - maybeSaved: サーバー側ではすでに Dream が保存済みの可能性があるか（タイムアウト / 504）
+ */
+export class AudioUploadError extends Error {
+  readonly status?: number;
+  readonly retryable: boolean;
+  readonly maybeSaved: boolean;
+
+  constructor(
+    message: string,
+    {
+      status,
+      retryable = true,
+      maybeSaved = false,
+    }: { status?: number; retryable?: boolean; maybeSaved?: boolean } = {}
+  ) {
+    super(message);
+    this.name = "AudioUploadError";
+    this.status = status;
+    this.retryable = retryable;
+    this.maybeSaved = maybeSaved;
+  }
+}
+
+// 再送しても同じ結果になる失敗。メール未確認の 403 は確認後に再送できるので対象外
+const isRetryableFailure = (
+  status: number,
+  data: { limit_reached?: unknown } | null
+): boolean => {
+  if (status === 400 || status === 422) return false;
+  if (status === 403 && data?.limit_reached === true) return false;
+  return true;
+};
+
 type UploadAndAnalyzeAudioOptions = {
   timeoutMs?: number;
 };
@@ -44,8 +80,9 @@ export async function uploadAndAnalyzeAudio(
 
     if (!res.ok) {
       let message = "音声解析に失敗しました。";
+      let data: { error?: unknown; limit_reached?: unknown } | null = null;
       try {
-        const data = await res.json();
+        data = await res.json();
         console.error("Debug: API Error Response", data);
         if (data?.error && typeof data.error === "string") {
           message = data.error;
@@ -53,14 +90,23 @@ export async function uploadAndAnalyzeAudio(
       } catch (e) {
         console.error("Debug: Failed to parse API error JSON", e);
       }
-      throw new Error(message);
+      throw new AudioUploadError(message, {
+        status: res.status,
+        retryable: isRetryableFailure(res.status, data),
+        // プロキシの 504 は backend の応答待ちで切れただけで、保存済みの可能性がある
+        maybeSaved: res.status === 504,
+      });
     }
 
     return (await res.json()) as AnalysisResult;
   } catch (err) {
-    // タイムアウトによる中断は、録音を保持したまま再送できる失敗として扱う
+    // タイムアウトによる中断は、録音を保持したまま再送できる失敗として扱う。
+    // サーバーで保存済みの可能性があるので maybeSaved も立てる
     if (controller.signal.aborted) {
-      throw new Error(AUDIO_UPLOAD_TIMEOUT_MESSAGE);
+      throw new AudioUploadError(AUDIO_UPLOAD_TIMEOUT_MESSAGE, {
+        retryable: true,
+        maybeSaved: true,
+      });
     }
     throw err;
   } finally {

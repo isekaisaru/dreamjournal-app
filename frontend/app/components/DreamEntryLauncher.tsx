@@ -8,7 +8,7 @@ import { Loader2, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
 import type { AnalysisResult } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
-import { uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
+import { AudioUploadError, uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +48,10 @@ export default function DreamEntryLauncher({
   const [failedAudio, setFailedAudio] = useState<{
     blob: Blob;
     message: string;
+    /** 再送しても結果が変わらない失敗（無音・上限など）では false */
+    retryable: boolean;
+    /** タイムアウト等で、サーバー側にはすでに保存されている可能性がある */
+    maybeSaved: boolean;
   } | null>(null);
   // state 反映前の連打でも二重送信しないためのガード
   const isSubmittingRef = useRef(false);
@@ -97,7 +101,12 @@ export default function DreamEntryLauncher({
             : "ちょっと つかれちゃった みたい。あとで また はなしてね。";
         toast.error(message);
         // 録音を捨てずに残し、利用者の操作で再送・破棄できるようにする（自動再送はしない）
-        setFailedAudio({ blob, message });
+        setFailedAudio({
+          blob,
+          message,
+          retryable: err instanceof AudioUploadError ? err.retryable : true,
+          maybeSaved: err instanceof AudioUploadError ? err.maybeSaved : false,
+        });
       } finally {
         isSubmittingRef.current = false;
         setIsProcessing(false);
@@ -107,7 +116,7 @@ export default function DreamEntryLauncher({
   );
 
   const handleRetryUpload = () => {
-    if (!failedAudio || isProcessing) return;
+    if (!failedAudio || !failedAudio.retryable || isProcessing) return;
     void handleBlobReady(failedAudio.blob);
   };
 
@@ -195,8 +204,9 @@ export default function DreamEntryLauncher({
       return;
     }
 
-    // お試しの残り回数が0なら開始させない
-    if (audioLimitReached) return;
+    // お試しの残り回数が0なら開始させない。のこっている録音がある間も、
+    // 確認なしに旧録音が捨てられないよう新しい録音は始めさせない
+    if (audioLimitReached || failedAudio) return;
 
     // 1回目のタップでは録音せず、説明を見せて一拍おく
     if (status === "idle") {
@@ -424,7 +434,7 @@ export default function DreamEntryLauncher({
               <button
                 type="button"
                 onClick={handleVoiceToggle}
-                disabled={isProcessing || audioLimitReached}
+                disabled={isProcessing || audioLimitReached || !!failedAudio}
                 className={cn(
                   "flex min-h-16 w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   status === "recording"
@@ -432,7 +442,7 @@ export default function DreamEntryLauncher({
                     : status === "confirming"
                       ? "border-sky-400 bg-sky-100/70"
                       : "border-sky-200/70 bg-sky-50/60 hover:bg-sky-50",
-                  isProcessing || audioLimitReached
+                  isProcessing || audioLimitReached || failedAudio
                     ? "cursor-not-allowed opacity-70"
                     : ""
                 )}
@@ -457,7 +467,9 @@ export default function DreamEntryLauncher({
                   <p className="mt-1 text-sm text-muted-foreground">
                     {isProcessing
                       ? "モルペウスが まとめているよ"
-                      : status === "recording"
+                      : failedAudio
+                        ? "さきに のこっている 録音を おくるか すてるか してね"
+                        : status === "recording"
                         ? "おわったら もういちど おしてね"
                         : status === "confirming"
                           ? "マイクを つかうよ。よういが できたら もういちど おしてね"
@@ -513,16 +525,27 @@ export default function DreamEntryLauncher({
                 aria-live="assertive"
               >
                 <p>{failedAudio.message}</p>
+                {/* タイムアウト/504 はサーバー側で保存済みの可能性がある。重複を避けるため先に確認してもらう */}
+                {failedAudio.maybeSaved ? (
+                  <p className="mt-2">
+                    すでに ほぞんされている ことが あるよ。ホームで ゆめを
+                    たしかめてから おくってね。
+                  </p>
+                ) : null}
+                <p className="mt-2">このページを はなれると 録音は きえるよ。</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleRetryUpload}
-                    disabled={isProcessing}
-                    className="min-h-11 rounded-full"
-                  >
-                    もう一度送信
-                  </Button>
+                  {/* 再送しても同じ結果になる失敗（無音・上限など）では再送を出さない */}
+                  {failedAudio.retryable ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleRetryUpload}
+                      disabled={isProcessing}
+                      className="min-h-11 rounded-full"
+                    >
+                      もう一度送信
+                    </Button>
+                  ) : null}
                   <Button
                     type="button"
                     size="sm"

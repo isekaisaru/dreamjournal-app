@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
 import {
   AUDIO_UPLOAD_TIMEOUT_MESSAGE,
+  AudioUploadError,
   uploadAndAnalyzeAudio,
 } from "@/lib/audioAnalysis";
 import type { User } from "@/app/types";
@@ -218,10 +219,21 @@ describe("DreamEntryLauncher", () => {
       expect(mockedUpload).toHaveBeenCalledTimes(2);
       expect(mockedUpload.mock.calls[0][0]).toBe(blob);
       expect(mockedUpload.mock.calls[1][0]).toBe(blob);
-      // 成功したので保持していた録音と再送ボタンは消える
+      // 成功するとシートは閉じる。開き直しても、保持していた録音が
+      // クリアされていて再送パネルも案内も出ないことを確認する
+      openSheet();
       expect(
         screen.queryByRole("button", { name: "もう一度送信" })
       ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "録音を破棄" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/さきに のこっている 録音/)
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /こえで はなす/ })
+      ).toBeEnabled();
     });
 
     it("送信中は同じ録音を二重送信しない", async () => {
@@ -272,9 +284,16 @@ describe("DreamEntryLauncher", () => {
       expect(mockedUpload).toHaveBeenCalledTimes(1);
     });
 
-    it("タイムアウトは再送できる失敗として案内する", async () => {
+    const savedNotice = /すでに ほぞんされている ことが あるよ/;
+
+    it("タイムアウトは再送できる失敗として案内し、保存済みの可能性を伝える", async () => {
       currentUser = { trial_user: false, premium: false };
-      failOnce(AUDIO_UPLOAD_TIMEOUT_MESSAGE);
+      mockedUpload.mockRejectedValueOnce(
+        new AudioUploadError(AUDIO_UPLOAD_TIMEOUT_MESSAGE, {
+          retryable: true,
+          maybeSaved: true,
+        })
+      );
       render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
       openSheet();
 
@@ -285,9 +304,112 @@ describe("DreamEntryLauncher", () => {
       expect(
         screen.getByText(AUDIO_UPLOAD_TIMEOUT_MESSAGE)
       ).toBeInTheDocument();
+      expect(screen.getByText(savedNotice)).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: "もう一度送信" })
       ).toBeInTheDocument();
+    });
+
+    it("504 でも保存済みの可能性を伝え、再送は残す", async () => {
+      currentUser = { trial_user: false, premium: false };
+      mockedUpload.mockRejectedValueOnce(
+        new AudioUploadError("音声分析サービスへの接続がタイムアウトしました。", {
+          status: 504,
+          maybeSaved: true,
+        })
+      );
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      await act(async () => {
+        await capturedOnBlobReady?.(makeBlob());
+      });
+
+      expect(screen.getByText(savedNotice)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "もう一度送信" })
+      ).toBeInTheDocument();
+    });
+
+    it("保存済みの可能性がない失敗では注意書きを出さない", async () => {
+      currentUser = { trial_user: false, premium: false };
+      failOnce("音声分析サービスへの接続に失敗しました。");
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      await act(async () => {
+        await capturedOnBlobReady?.(makeBlob());
+      });
+
+      expect(screen.queryByText(savedNotice)).not.toBeInTheDocument();
+    });
+
+    it("再送しても変わらない失敗（無音など）では再送ボタンを出さず破棄だけ出す", async () => {
+      currentUser = { trial_user: false, premium: false };
+      mockedUpload.mockRejectedValueOnce(
+        new AudioUploadError("音声ファイルが小さすぎるか、無音の可能性があります。", {
+          status: 422,
+          retryable: false,
+        })
+      );
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      await act(async () => {
+        await capturedOnBlobReady?.(makeBlob());
+      });
+
+      expect(
+        screen.getByText("音声ファイルが小さすぎるか、無音の可能性があります。")
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "もう一度送信" })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "録音を破棄" })
+      ).toBeInTheDocument();
+      expect(mockedUpload).toHaveBeenCalledTimes(1);
+    });
+
+    it("失敗パネルにページ離脱で録音が消えることを案内する", async () => {
+      currentUser = { trial_user: false, premium: false };
+      failOnce("音声分析サービスへの接続に失敗しました。");
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      await act(async () => {
+        await capturedOnBlobReady?.(makeBlob());
+      });
+
+      expect(
+        screen.getByText("このページを はなれると 録音は きえるよ。")
+      ).toBeInTheDocument();
+    });
+
+    it("録音が残っている間は「こえで はなす」を押せず、案内を出す", async () => {
+      currentUser = { trial_user: false, premium: false };
+      failOnce("音声分析サービスへの接続に失敗しました。");
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      await act(async () => {
+        await capturedOnBlobReady?.(makeBlob());
+      });
+
+      const voiceButton = screen.getByRole("button", { name: /こえで はなす/ });
+      expect(voiceButton).toBeDisabled();
+      expect(
+        screen.getByText("さきに のこっている 録音を おくるか すてるか してね")
+      ).toBeInTheDocument();
+      fireEvent.click(voiceButton);
+      expect(startRecording).not.toHaveBeenCalled();
+      expect(screen.queryByText("はなしはじめる")).not.toBeInTheDocument();
+
+      // 破棄すれば、また録音を始められる
+      fireEvent.click(screen.getByRole("button", { name: "録音を破棄" }));
+      expect(
+        screen.getByRole("button", { name: /こえで はなす/ })
+      ).toBeEnabled();
     });
 
     it("録音が残っている間は voiceFirst でも新しい録音を自動で始めない", async () => {

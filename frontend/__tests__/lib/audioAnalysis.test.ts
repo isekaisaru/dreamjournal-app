@@ -1,6 +1,7 @@
 import {
   AUDIO_UPLOAD_TIMEOUT_MESSAGE,
   AUDIO_UPLOAD_TIMEOUT_MS,
+  AudioUploadError,
   uploadAndAnalyzeAudio,
 } from "@/lib/audioAnalysis";
 
@@ -65,6 +66,53 @@ describe("uploadAndAnalyzeAudio", () => {
     await assertion;
   });
 
+  it("タイムアウトは再送できて、保存済みの可能性がある失敗として扱う", async () => {
+    jest.useFakeTimers();
+    fetchMock.mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted.", "AbortError"));
+          });
+        })
+    );
+
+    const promise = uploadAndAnalyzeAudio(makeBlob());
+    const caught = promise.catch((e) => e);
+    jest.advanceTimersByTime(AUDIO_UPLOAD_TIMEOUT_MS);
+    const err = await caught;
+
+    expect(err).toBeInstanceOf(AudioUploadError);
+    expect(err).toBeInstanceOf(Error);
+    expect(err.retryable).toBe(true);
+    expect(err.maybeSaved).toBe(true);
+  });
+
+  it.each([
+    [504, undefined, true, true],
+    [503, undefined, true, false],
+    [500, undefined, true, false],
+    [422, undefined, false, false],
+    [400, undefined, false, false],
+    [403, { limit_reached: true }, false, false],
+    [403, { email_verification_required: true }, true, false],
+  ])(
+    "HTTP %i %j は retryable=%s / maybeSaved=%s として扱う",
+    async (status, extra, retryable, maybeSaved) => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({ error: "エラーです。", ...extra }, status)
+      );
+
+      const err = await uploadAndAnalyzeAudio(makeBlob()).catch((e) => e);
+
+      expect(err).toBeInstanceOf(AudioUploadError);
+      expect(err.message).toBe("エラーです。");
+      expect(err.status).toBe(status);
+      expect(err.retryable).toBe(retryable);
+      expect(err.maybeSaved).toBe(maybeSaved);
+    }
+  );
+
   it("タイムアウト前の応答は中断しない", async () => {
     jest.useFakeTimers();
     let aborted = false;
@@ -100,8 +148,9 @@ describe("uploadAndAnalyzeAudio", () => {
   it("中断以外の通信エラーはそのまま投げ直す", async () => {
     fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
 
-    await expect(uploadAndAnalyzeAudio(makeBlob())).rejects.toThrow(
-      "Failed to fetch"
-    );
+    const err = await uploadAndAnalyzeAudio(makeBlob()).catch((e) => e);
+
+    expect(err).toBeInstanceOf(TypeError);
+    expect(err.message).toBe("Failed to fetch");
   });
 });
