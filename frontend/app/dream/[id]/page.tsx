@@ -11,6 +11,7 @@ import { useDream, type DreamInput } from "../../../hooks/useDream";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
 import apiClient, { isEmailVerificationRequiredError } from "../../../lib/apiClient";
+import { toFriendlyErrorMessage } from "../../../lib/friendlyErrors";
 import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
@@ -144,7 +145,9 @@ export default function DreamDetailPage({
         setImageVerificationRequired(true);
       } else {
         setImageError(
-          err instanceof Error ? err.message : "えの せいせい に しっぱい しました"
+          err instanceof Error
+            ? toFriendlyErrorMessage(err)
+            : "えの せいせい に しっぱい しました"
         );
       }
     } finally {
@@ -206,7 +209,9 @@ export default function DreamDetailPage({
 
   if (error && !dream)
     return (
-      <p className="text-destructive text-center mt-10">エラー: {error}</p>
+      <p className="text-destructive text-center mt-10">
+        エラー: {toFriendlyErrorMessage(error)}
+      </p>
     );
 
   if (!dream)
