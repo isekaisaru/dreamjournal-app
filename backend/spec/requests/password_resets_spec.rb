@@ -71,6 +71,19 @@ RSpec.describe 'PasswordResets API', type: :request do
         expect(user.reload.reset_password_token_digest).to be_nil
         expect(user.reload.authenticate('new_password_456')).to be_truthy
       end
+
+      it '既存のrefresh sessionとlegacy refresh tokenをすべて失効する' do
+        active_session = create(:user_session, user: user)
+        other_session = create(:user_session, user: user)
+        user.update_column(:refresh_token, 'legacy-refresh-token')
+
+        patch "/password_resets/#{token}", params: valid_password_params, as: :json, headers: { 'HOST' => 'backend' }
+
+        expect(response).to have_http_status(:ok)
+        expect(active_session.reload.revoked_at).to be_present
+        expect(other_session.reload.revoked_at).to be_present
+        expect(user.reload.refresh_token).to be_nil
+      end
     end
 
     context 'パスワードが一致しない場合' do
