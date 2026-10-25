@@ -391,6 +391,17 @@ export async function createDream(dream: DreamInput): Promise<Dream> {
   });
 }
 
+// 保存済みの夢を部分更新する（体験版で分析結果を後から紐づける用途）。
+export async function updateDream(
+  id: number,
+  dream: Partial<DreamInput>
+): Promise<Dream> {
+  return apiFetch<Dream>(`/dreams/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ dream }),
+  });
+}
+
 export async function previewAnalysis(
   content: string
 ): Promise<{ analysis: string; emotion_tags: string[] }> {

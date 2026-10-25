@@ -2,6 +2,10 @@ class MonthlySummariesController < ApplicationController
   YEAR_MONTH_FORMAT = /\A\d{4}-(0[1-9]|1[0-2])\z/
   MONTHLY_SUMMARY_LIMIT = 3
 
+  # OpenAI を呼ぶ AI 課金系のため、dreams#analyze / audio_dreams と同様にメール確認を必須にする。
+  # 月次カウント（AiUsageLog）や OpenAI 呼び出しより前に拒否する。
+  before_action :require_verified_email, only: [:create]
+
   def create
     unless current_user.premium?
       return render json: { error: 'プレミアム会員のみご利用いただけます。' }, status: :forbidden

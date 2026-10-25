@@ -4,6 +4,7 @@ export const PROTECTED_PAGE_PREFIXES = [
   "/forest",
   "/insights",
   "/settings",
+  "/profiles",
   "/room",
 ];
 

@@ -15,21 +15,36 @@ def ensure_demo_user(email:, username:, password:)
   user
 end
 
+# dreams.dream_profile_id は NOT NULL のため、実際の登録導線（UsersController#create）と
+# 同じ形で「自分」プロフィールを用意してから夢を作る。
+def ensure_self_profile(user)
+  user.dream_profiles.find_or_create_by!(relationship: "self") do |profile|
+    profile.name = "自分"
+    profile.avatar_emoji = "😴"
+    profile.color = "#6366f1"
+    profile.active = true
+    profile.position = 0
+  end
+end
+
 family_demo = ensure_demo_user(
   email: 'family_demo@example.com',
   username: '家族デモ',
   password: 'password123'
 )
+family_self_profile = ensure_self_profile(family_demo)
 
 child_demo = ensure_demo_user(
   email: 'child_demo@example.com',
   username: 'こどもデモ',
   password: 'password123'
 )
+child_self_profile = ensure_self_profile(child_demo)
 
-def ensure_dream(user:, title:, content:, emotion_names:, emotion_cache:)
+def ensure_dream(user:, dream_profile:, title:, content:, emotion_names:, emotion_cache:)
   dream = user.dreams.find_or_initialize_by(title: title)
   dream.content = content
+  dream.dream_profile = dream_profile
   dream.save!
 
   emotions = emotion_names.filter_map { |name| emotion_cache[name] }
@@ -64,6 +79,7 @@ family_dreams = [
 family_dreams.each do |dream_attrs|
   ensure_dream(
     user: family_demo,
+    dream_profile: family_self_profile,
     title: dream_attrs[:title],
     content: dream_attrs[:content],
     emotion_names: dream_attrs[:emotion_names],
@@ -97,6 +113,7 @@ child_dreams = [
 child_dreams.each do |dream_attrs|
   ensure_dream(
     user: child_demo,
+    dream_profile: child_self_profile,
     title: dream_attrs[:title],
     content: dream_attrs[:content],
     emotion_names: dream_attrs[:emotion_names],

@@ -3,7 +3,7 @@ source "https://rubygems.org"
 ruby "3.3.0"
 
 # Rails
-gem "rails", ">= 7.2.3.1", "< 7.3"
+gem "rails", ">= 7.2.3.2", "< 7.3"
 
 # PostgreSQL as the database
 gem "pg", "~> 1.6"
@@ -66,7 +66,7 @@ group :development, :test do
   # Testing
   gem "capybara"
   gem "selenium-webdriver"
-  gem 'rspec-rails', '~> 6.1.0'
+  gem 'rspec-rails', '~> 8.0.4'
   gem 'factory_bot_rails', '~> 6.5.1'
   gem 'shoulda-matchers', '~> 8.0.1'
   gem 'database_cleaner-active_record'

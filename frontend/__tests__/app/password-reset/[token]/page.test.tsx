@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import PasswordResetPage from "@/app/(auth)/password-reset/[token]/page";
 import { confirmPasswordReset, ApiError } from "@/lib/apiClient";
 
 jest.mock("next/navigation", () => ({
   useParams: jest.fn(),
+  useRouter: jest.fn(),
 }));
 
 jest.mock("@/lib/apiClient", () => {
@@ -20,8 +21,10 @@ jest.mock("@/lib/apiClient", () => {
 });
 
 const mockedUseParams = useParams as jest.MockedFunction<typeof useParams>;
+const mockedUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
 const mockedConfirmPasswordReset =
   confirmPasswordReset as jest.MockedFunction<typeof confirmPasswordReset>;
+const mockedReplace = jest.fn();
 
 const fillPasswords = (password: string, confirmation: string) => {
   fireEvent.change(
@@ -46,6 +49,9 @@ beforeEach(() => {
   mockedUseParams.mockReturnValue({
     token: "abc123token",
   } as ReturnType<typeof useParams>);
+  mockedUseRouter.mockReturnValue({
+    replace: mockedReplace,
+  } as unknown as ReturnType<typeof useRouter>);
 });
 
 describe("PasswordResetPage", () => {
@@ -64,7 +70,7 @@ describe("PasswordResetPage", () => {
     });
   });
 
-  it("成功時は成功メッセージとログイン画面へのリンクを表示する", async () => {
+  it("成功時は成功メッセージと今すぐ進むリンクを表示する", async () => {
     mockedConfirmPasswordReset.mockResolvedValue({ message: "ok" });
     render(<PasswordResetPage />);
 
@@ -75,8 +81,45 @@ describe("PasswordResetPage", () => {
       await screen.findByText(/パスワードを変更しました/)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "ログイン画面へ" })
+      screen.getByRole("link", { name: "今すぐログイン画面へ進む" })
     ).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "3秒後にログイン画面へ移動します。"
+    );
+  });
+
+  it("成功から3秒後にログイン画面へ自動遷移する", async () => {
+    jest.useFakeTimers({ advanceTimers: true });
+    mockedConfirmPasswordReset.mockResolvedValue({ message: "ok" });
+    render(<PasswordResetPage />);
+
+    fillPasswords("newpass123", "newpass123");
+    submit();
+    await screen.findByText(/パスワードを変更しました/);
+
+    expect(mockedReplace).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(3000);
+    expect(mockedReplace).toHaveBeenCalledWith("/login");
+
+    jest.useRealTimers();
+  });
+
+  it("「今すぐ進む」を待たずクリックしても、後から自動遷移が重複しない（アンマウントでタイマー解除）", async () => {
+    jest.useFakeTimers({ advanceTimers: true });
+    mockedConfirmPasswordReset.mockResolvedValue({ message: "ok" });
+    const { unmount } = render(<PasswordResetPage />);
+
+    fillPasswords("newpass123", "newpass123");
+    submit();
+    await screen.findByText(/パスワードを変更しました/);
+
+    // リンククリック相当（実際の画面遷移はNext.jsが担うため、ここではアンマウントで代替する）
+    unmount();
+    jest.advanceTimersByTime(3000);
+
+    expect(mockedReplace).not.toHaveBeenCalled();
+
+    jest.useRealTimers();
   });
 
   it("パスワードが一致しない場合はAPIを呼ばずエラーを表示する", async () => {

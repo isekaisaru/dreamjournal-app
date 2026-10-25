@@ -1,6 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 
-import useVoiceRecorder from "@/hooks/useVoiceRecorder";
+import useVoiceRecorder, {
+  getVoiceRecorderErrorMessage,
+} from "@/hooks/useVoiceRecorder";
 
 jest.mock("@/lib/toast", () => ({
   toast: { success: jest.fn(), error: jest.fn() },
@@ -130,5 +132,32 @@ describe("useVoiceRecorder", () => {
 
     expect(result.current.isRecording).toBe(false);
     expect(onBlobReady).not.toHaveBeenCalled();
+  });
+
+  it("マイク権限拒否の生エラーをユーザー向け日本語に置き換える", async () => {
+    getUserMedia.mockRejectedValue({
+      name: "NotAllowedError",
+      message: "Permission denied",
+    });
+    const { result } = renderHook(() =>
+      useVoiceRecorder({ onBlobReady: jest.fn() })
+    );
+
+    await act(async () => {
+      await result.current.startRecording();
+    });
+
+    expect(result.current.error).toBe(
+      "マイクの使用が許可されていません。ブラウザの設定からマイクを許可してください。文字入力はそのまま利用できます。"
+    );
+  });
+
+  it("マイクが利用できない場合とその他の録音失敗を区別する", () => {
+    expect(getVoiceRecorderErrorMessage({ name: "NotFoundError" })).toContain(
+      "利用できるマイクが見つかりません"
+    );
+    expect(getVoiceRecorderErrorMessage(new Error("Permission denied"))).toBe(
+      "録音を開始できませんでした。文字入力はそのまま利用できます。"
+    );
   });
 });

@@ -96,6 +96,15 @@ RSpec.describe 'Dreams API', type: :request do
         expect(created_dream.emotions.count).to eq(2)
       end
 
+      it 'dream_profile_idを指定しない場合、自分のselfプロフィールへフォールバックする' do
+        expect(valid_dream_params[:dream]).not_to have_key(:dream_profile_id)
+
+        authenticated_post('/dreams', user, params: valid_dream_params)
+
+        expect(response).to have_http_status(:created)
+        expect(Dream.last.dream_profile_id).to eq(user.self_dream_profile_id)
+      end
+
       it '無効なパラメーターで夢作成に失敗する' do
         expect {
           authenticated_post('/dreams', user, params: invalid_dream_params)
@@ -120,10 +129,23 @@ RSpec.describe 'Dreams API', type: :request do
       it '内容が1000文字を超える場合失敗する' do
         long_content = 'あ' * 1001
         params = valid_dream_params.merge(dream: { title: 'タイトル', content: long_content })
-        
+
         authenticated_post('/dreams', user, params: params)
-        
+
         expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it '他人のdream_profile_idを指定すると夢を作成できない' do
+        other_profile = create(:dream_profile, user: other_user)
+        params = valid_dream_params.deep_merge(dream: { dream_profile_id: other_profile.id })
+
+        expect {
+          authenticated_post('/dreams', user, params: params)
+        }.not_to change(Dream, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error'].join).to include('自分のプロフィール')
       end
     end
 
@@ -268,6 +290,21 @@ RSpec.describe 'Dreams API', type: :request do
         authenticated_put('/dreams/99999', user, params: update_params)
 
         expect(response).to have_http_status(:not_found)
+      end
+
+      it '自分の夢を他人のdream_profile_idへ付け替えられない' do
+        other_profile = create(:dream_profile, user: other_user)
+        original_profile_id = user_dream.dream_profile_id
+        params = update_params.deep_merge(dream: { dream_profile_id: other_profile.id })
+
+        authenticated_put("/dreams/#{user_dream.id}", user, params: params)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error'].join).to include('自分のプロフィール')
+        # 更新は丸ごと失敗しなければならない（dream_profile_idだけでなくtitle等も一切変わらない）
+        expect(user_dream.reload.dream_profile_id).to eq(original_profile_id)
+        expect(user_dream.title).to eq('元のタイトル')
       end
     end
 

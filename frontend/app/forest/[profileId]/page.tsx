@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -132,7 +132,13 @@ export default function ForestProfilePage() {
   const cel = getCelestial(phase);
   const haze = HAZE[phase];
 
+  // 別のプロフィール詳細（別のprofileId）へ素早く切り替えると、古いprofileIdの
+  // 応答が新しい方より後に届くことがある。その古い応答で表示を上書きしないよう、
+  // 「自分が最後に発行したloadか」をrefで判定する。
+  const latestLoadIdRef = useRef(0);
+
   const load = useCallback(async () => {
+    const loadId = ++latestLoadIdRef.current;
     setIsLoading(true);
     if (!isValidForestProfileId(profileId)) {
       console.error("Invalid forest profileId", rawProfileId);
@@ -146,6 +152,9 @@ export default function ForestProfilePage() {
         getDreamProfiles(),
         getDreamsForProfile(profileId),
       ]);
+
+      if (loadId !== latestLoadIdRef.current) return;
+
       const allProfiles = normalizeDreamProfilesResponse(profilesResponse);
       if (!allProfiles) {
         router.replace("/forest");
@@ -161,11 +170,14 @@ export default function ForestProfilePage() {
       setProfile(found);
       setDreams(profileDreams);
     } catch (error) {
+      if (loadId !== latestLoadIdRef.current) return;
       console.error("Failed to load forest profile detail", error);
       toast.error("きを よみこめませんでした。");
       router.replace("/forest");
     } finally {
-      setIsLoading(false);
+      if (loadId === latestLoadIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [profileId, rawProfileId, router]);
 

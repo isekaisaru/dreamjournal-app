@@ -34,6 +34,7 @@ export const AUTH_VERIFY_PATH_PREFIXES = [
   "/forest",
   "/insights",
   "/settings",
+  "/profiles",
   "/subscription",
   "/register",
   "/room",

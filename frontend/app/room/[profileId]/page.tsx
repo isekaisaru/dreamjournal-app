@@ -49,8 +49,14 @@ export default function DreamRoomPage() {
   const [frames, setFrames] = useState<Frame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const frameAbortRef = useRef<AbortController | null>(null);
+  // 別のプロフィールの部屋へ素早く切り替えると、古いprofileIdの応答が新しい方より
+  // 後に届くことがある。その古い応答で表示を上書きしないよう、「自分が最後に発行した
+  // loadRoomか」をrefで判定する。
+  const latestRoomLoadIdRef = useRef(0);
 
   const loadRoom = useCallback(async () => {
+    const loadId = ++latestRoomLoadIdRef.current;
+
     if (!Number.isInteger(profileId) || profileId <= 0) {
       router.replace("/forest");
       setIsLoading(false);
@@ -63,6 +69,9 @@ export default function DreamRoomPage() {
         getDreamProfiles(),
         getDreamsForProfile(profileId),
       ]);
+
+      if (loadId !== latestRoomLoadIdRef.current) return;
+
       const selectedProfile = Array.isArray(profiles)
         ? profiles.find((candidate) =>
             candidate.id === profileId && !candidate.archived
@@ -77,10 +86,13 @@ export default function DreamRoomPage() {
       setProfile(selectedProfile);
       setDreams(profileDreams);
     } catch (error) {
+      if (loadId !== latestRoomLoadIdRef.current) return;
       console.error("Failed to load dream room", error);
       router.replace("/forest");
     } finally {
-      setIsLoading(false);
+      if (loadId === latestRoomLoadIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [profileId, router]);
 

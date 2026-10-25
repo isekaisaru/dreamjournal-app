@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { confirmPasswordReset, ApiError } from "@/lib/apiClient";
 
 const defaultResetError =
@@ -10,8 +10,14 @@ const defaultResetError =
 const invalidTokenError =
   "リンクが正しくないみたい。もう一度メールのリンクを確認してね。";
 
+// 成功表示のまま留まり、手動でリンクをクリックしないとログイン画面へ
+// 進めない問題への対応。自動遷移までの猶予を数秒設け、その間に
+// メッセージを読めるようにする。
+const AUTO_REDIRECT_DELAY_MS = 3000;
+
 export default function PasswordResetPage() {
   const params = useParams();
+  const router = useRouter();
   const rawToken = params?.token;
   const token = typeof rawToken === "string" ? rawToken : "";
 
@@ -74,6 +80,14 @@ export default function PasswordResetPage() {
     }
   };
 
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => {
+      router.replace("/login");
+    }, AUTO_REDIRECT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [successMessage, router]);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-background text-foreground px-4 sm:px-6 lg:px-8">
       <form
@@ -86,19 +100,20 @@ export default function PasswordResetPage() {
         </h2>
 
         {successMessage ? (
-          <>
-            <p className="text-green-600 text-center" aria-live="polite">
-              {successMessage}
+          <div role="status" aria-live="polite">
+            <p className="text-green-600 text-center">{successMessage}</p>
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              3秒後にログイン画面へ移動します。
             </p>
             <div className="mt-6 text-center text-sm">
               <Link
                 href="/login"
                 className="font-medium text-primary hover:underline"
               >
-                ログイン画面へ
+                今すぐログイン画面へ進む
               </Link>
             </div>
-          </>
+          </div>
         ) : (
           <>
             {!token && (

@@ -186,7 +186,6 @@ export default function ForestScene({
     }
   };
   const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
     hasUserAdjustedViewRef.current = true;
     setView((v) => clamp({ ...v, z: v.z * (e.deltaY > 0 ? 0.92 : 1.08) }));
     setHinted(false);
@@ -254,7 +253,7 @@ export default function ForestScene({
 
       {/* きょうの もり カード（右上・固定、lg+ では TreeSidePanel が同役割を担うため隠す） */}
       {!isEmpty && (
-        <div className="absolute right-3 top-3 z-20 lg:hidden">
+        <div className="absolute right-3 top-3 z-20 hidden sm:block lg:hidden">
           <ForestTodayCard totalDreams={totalDreams} topProfile={topProfile} />
         </div>
       )}
