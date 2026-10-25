@@ -16,7 +16,7 @@ ARG RAILS_ENV=production
 # ========================================
 # 📦 Base Stage: 共通基盤
 # ========================================
-FROM ruby:${RUBY_VERSION}-bullseye AS base
+FROM ruby:${RUBY_VERSION}-bookworm AS base
 
 # 環境変数設定
 ENV RAILS_ENV=${RAILS_ENV} \
@@ -27,10 +27,18 @@ ENV RAILS_ENV=${RAILS_ENV} \
 # 基本的なランタイム依存関係のインストール
 # apt-get clean と rm を同じRUNレイヤーで実行し、イメージサイズを最適化
 RUN apt-get update -qq && apt-get install -y --no-install-recommends \
-      libvips \
-      postgresql-client \
-      # ヘルスチェック用
+      ca-certificates \
       curl \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl --fail --silent --show-error \
+      -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+      https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+      > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update -qq \
+    && apt-get install -y --no-install-recommends \
+      libvips \
+      postgresql-client-16 \
       # Whisperでの音声ファイル変換用
       ffmpeg \
       # タイムゾーンデータ

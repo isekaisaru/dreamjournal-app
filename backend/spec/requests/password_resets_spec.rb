@@ -35,6 +35,9 @@ RSpec.describe 'PasswordResets API', type: :request do
         expect(sent_email.from).to eq([ENV.fetch('MAIL_FROM', 'support@yumelog.com')])
         expect(sent_email.subject).to eq('[ユメログ] パスワードリセット')
         text_body = sent_email.text_part.body.to_s
+        html_body = sent_email.html_part.body.to_s
+        expect(text_body).to include('60分')
+        expect(html_body).to include('60分')
         token = text_body[%r{/password-reset/(\S+)}, 1]
         expect(token).to be_present
         expect(text_body).to include("#{frontend_url}/password-reset/#{token}")
@@ -82,7 +85,7 @@ RSpec.describe 'PasswordResets API', type: :request do
 
     context '期限切れのトークンの場合' do
       it '422 Unprocessable Entityを返す' do
-        user.update_column(:reset_password_sent_at, 2.hours.ago)
+        user.update_column(:reset_password_sent_at, 61.minutes.ago)
         patch "/password_resets/#{token}", params: { password: 'new_password_456', password_confirmation: 'new_password_456' }, as: :json, headers: { 'HOST' => 'backend' }
         expect(response).to have_http_status(:unprocessable_content)
         expect(json_response['error']).to eq('無効または期限切れのトークンです。')
@@ -99,9 +102,12 @@ RSpec.describe 'PasswordResets API', type: :request do
   end
 
   # NOTE: GET /dev/password_resets/token はRailsのルーティング自体が
-  # `if Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'` で
+  # `if Rails.env.development? || (Rails.env.test? && ENV['ENABLE_DEV_ENDPOINTS'] == 'true')` で
   # 起動時に条件分岐しているため、リクエストspec内でのENV切り替えでは
-  # ルートを有効化できない（元々テストカバレッジもなかった箇所）。
+  # ルートを有効化できない。
+  # ルート登録の有無は spec/routing/dev_password_reset_route_spec.rb、
+  # コントローラー側のガード（本番等では403）は
+  # spec/controllers/password_resets_dev_token_guard_spec.rb で検証している。
   # dev_token が内部で使う generate_password_reset_token /
   # find_by_password_reset_token のロジックは上記の POST・PATCH specで
   # 実質的に検証済み。

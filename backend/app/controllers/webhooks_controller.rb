@@ -87,6 +87,7 @@ class WebhooksController < ApplicationController
       else
         handle_donation_checkout_completed(session, event.id)
       end
+      mark_checkout_attempt_completed!(session)
     when 'invoice.payment_succeeded'
       handle_invoice_payment_succeeded(event.data.object, event.id)
     when 'customer.subscription.deleted'
@@ -307,6 +308,21 @@ class WebhooksController < ApplicationController
 
   def extract_object_id(value)
     value.respond_to?(:id) ? value.id : value
+  end
+
+  def mark_checkout_attempt_completed!(session)
+    attempt = CheckoutAttempt.find_by(stripe_checkout_session_id: session.id)
+    unless attempt
+      PaymentsObservability.log(event: 'checkout.attempt.not_found', level: :warn)
+      return
+    end
+
+    attempt.update!(status: 'completed') unless attempt.status == 'completed'
+    PaymentsObservability.log(
+      event: 'checkout.attempt.completed',
+      checkout_attempt_id: attempt.id,
+      attempt_status: attempt.status
+    )
   end
 
   def extract_current_period_end(invoice)
