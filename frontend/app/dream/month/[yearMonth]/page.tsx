@@ -9,6 +9,7 @@ import { DreamListSkeleton } from "@/app/components/DreamCardSkeleton";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
 import MorpheusAvatar from "@/app/components/MorpheusAvatar";
 import MoodCalendar from "@/app/components/MoodCalendar";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import { Dream } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
@@ -35,6 +36,8 @@ export default function DreamByMonthPage() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [emailVerificationRequired, setEmailVerificationRequired] =
+    useState(false);
 
   const { authStatus, user } = useAuth();
 
@@ -66,6 +69,7 @@ export default function DreamByMonthPage() {
     if (!yearMonth) return;
     setIsGenerating(true);
     setAiError(null);
+    setEmailVerificationRequired(false);
 
     try {
       const res = await fetch(
@@ -73,6 +77,14 @@ export default function DreamByMonthPage() {
         { method: "POST" }
       );
       const data = await res.json().catch(() => null);
+
+      if (
+        res.status === 403 &&
+        data?.email_verification_required === true
+      ) {
+        setEmailVerificationRequired(true);
+        return;
+      }
 
       if (!res.ok || !data?.summary) {
         throw new Error(data?.error ?? "サマリーの生成に失敗しました。");
@@ -155,6 +167,12 @@ export default function DreamByMonthPage() {
                   {user?.premium ? (
                     /* プレミアム: AIサマリー */
                     <div className="mt-3">
+                      {emailVerificationRequired && (
+                        <EmailVerificationBanner
+                          title="AIサマリーには メールの かくにんが ひつようだよ"
+                          description="とどいた メールの リンクを ひらいてから、もういちど つくってみてね。"
+                        />
+                      )}
                       {aiSummary ? (
                         <p className="text-sm leading-7 text-muted-foreground">
                           {aiSummary}

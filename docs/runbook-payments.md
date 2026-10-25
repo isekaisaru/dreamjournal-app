@@ -44,16 +44,34 @@
 2. バックエンド `health` エンドポイントが生きているか確認。
 3. Render コールドスタート中なら再試行。
 
-### 3) `Stripe決済の準備に失敗しました`（500）
+### 3) Checkout が開けない（`POST /checkout` が 4xx / 5xx）
 
-- 原因候補:
-1. `FRONTEND_URL` 未設定。
-2. `STRIPE_SECRET_KEY` 無効。
-3. `STRIPE_MODE` とSecret KeyまたはPriceの`livemode`が不一致。
-4. Stripe API 側障害。
+メール未確認以外の分岐は画面の文言では判別できない。寄付ページ・サブスクページは、403 かつ本文に `email_verification_required: true` を含む場合だけメール確認の案内バナー（確認メールの再送ボタン付き）を出し（`frontend/app/donation/page.tsx:22-30`、`frontend/app/subscription/page.tsx:74-82`）、それ以外の失敗は一律「決済ページの準備に失敗しました。」（`frontend/app/donation/page.tsx:32-34`、`frontend/app/subscription/page.tsx:84-86`）、`DonationButton` は「決済の準備に失敗しました」（`frontend/app/components/DonationButton.tsx:28-30`）を出す。旧版にあった「Stripe決済の準備に失敗しました」という文言はコードに存在しない。Network タブで `/api/checkout` の **HTTP status とレスポンス本文の `error`** を確認し、下表で分岐を特定する（根拠は `backend/app/controllers/checkout_controller.rb`）。
+
+| status | `error`（本文） | 原因 | Attempt | 根拠 |
+| --- | --- | --- | --- | --- |
+| 403 | `メールアドレスの確認が必要です。…`（`email_verification_required: true`） | メール未確認 | 作らない | `application_controller.rb:96-104` |
+| 403 | `不正なリクエスト元からの操作は許可されていません。` | Origin/Referer 不一致 | 作らない | `application_controller.rb:20-32` |
+| 500 | `FRONTEND_URLが設定されていません。` | `FRONTEND_URL` 未設定 | 作らない | `:24-30` |
+| 500 | `プレミアム決済の設定が未完了です。` | `STRIPE_PREMIUM_PRICE_ID` 未設定 | 作らない | `:104-108` |
+| 500 | `プレミアム決済の設定が一致していません。` | `STRIPE_MODE` と Price の `livemode` 不一致 | 作らない | `:109-113` |
+| 500 | `予期しないエラーが発生しました。` | 想定外の例外 | 状態は変えない | `:137-141` |
+| 504 | `Stripeとの通信がタイムアウトしました。…` | Rails→Stripe の timeout | `uncertain` | `:114-116` |
+| 503 | `Stripeへ一時的に接続できません。…` | `Stripe::APIConnectionError` | `uncertain` | `:117-119` |
+| 503 | `Stripeで一時的な問題が発生しました。…` | `Stripe::APIError` | `uncertain` | `:123-125` |
+| 503 | `Stripe決済の状態を確認できませんでした。…` | 未分類の `Stripe::StripeError`（Secret Key 無効などもここに入りうる **（推測）**） | `uncertain` | `:132-136` |
+| 429 | `決済サービスが混み合っています。…` | `Stripe::RateLimitError` | `uncertain` | `:120-122` |
+| 409 | `この決済はすでに完了しています。反映をお待ちください。` | 保存済み Session が Stripe 上で `complete`、Webhook 未着 | `open` のまま | `:61-66`, `:100-101` |
+| 409 | `以前の決済処理を確認中です。…` | 既存 Attempt と `price_reference` 不一致（Price 変更など） | 変えない | `:40-42`, `:102-103` |
+| 409 | `同じ決済処理を確認中です。…` | `Stripe::IdempotencyError` | `uncertain` | `:126-128` |
+| 422 | `すでにプレミアム会員です。` | premium 会員が再度 premium Checkout | 作らない | `:32-34` |
+| 422 | `決済情報を確認できませんでした。` | `Stripe::InvalidRequestError` | `failed` | `:129-131` |
+
+- Next.js の中継自体が返す status もある: `BACKEND_URL_NOT_SET`（500）、15秒タイムアウト（504、本文 `Checkout request timed out after 15s`）、upstream 到達不可（502 `UPSTREAM_FETCH_FAILED`）（`frontend/app/api/checkout/route.ts:10-12`, `:39-46`）。Rails 側の 504 とは本文で区別する。Next.js の 504 は Rails の処理結果が不明な状態である。
+- `uncertain` / 409 / 504 / 503 / 429 は Stripe 側で Session が作られた可能性がある。**再POST・再クリックを重ねず**、`[Payments] event=checkout.attempt.*` ログと該当ユーザーの `checkout_attempts`（status・`stripe_checkout_session_id`）を read-only で確認する。
 - 対応:
-1. 環境変数を確認。
-2. `checkout.error.*` KPI を確認。
+1. 上表で分岐を特定し、該当する環境変数（値ではなく present / blank）を確認。
+2. `checkout.error.*` カウンター（`frontend_url_missing` / `premium_price_missing` / `stripe_mode_mismatch` / `uncertain` / `failed` / `stripe` / `unexpected`）を確認（`checkout_controller.rb:26`, `:105`, `:110`, `:135`, `:138`, `:367`）。
 3. Stripe Dashboard の API ログを確認。
 
 ### 4) 決済成功したのに Payment が保存されない
@@ -121,6 +139,15 @@
 8. `webhook.event.duplicate`
 9. `webhook.error.processing`
 10. `webhook.error.stripe_mode_mismatch`
+11. `webhook.subscription.started`（premium の `checkout.session.completed`。`webhooks_controller.rb:159`）
+12. `webhook.subscription.invoice_paid`（`invoice.payment_succeeded`。同 `:181`）
+13. `webhook.subscription.deleted`（`customer.subscription.deleted`。同 `:197`）
+14. `webhook.subscription.unmatched_user`（premium Checkout の user 解決失敗。同 `:143`, `:347`）
+
+- カウンターとログの区別:
+1. カウンターは `PaymentsObservability.increment` が出す `[PaymentsKPI] counter=...` 行（`backend/app/services/payments_observability.rb:11-20`）。
+2. `checkout.attempt.*`（`open` / `reused` / `expired` / `awaiting_webhook` / `invalid_session` / `timeout` / `connection_error` / `rate_limited` / `api_error` / `idempotency_error` / `invalid_request` / `stripe_error` / `finished` / `completed` / `not_found`）は **`[Payments] event=...` のログであってカウンターではない**（`PaymentsObservability.log` 経由: `checkout_controller.rb:377-387`、`webhooks_controller.rb:313-326`）。`[PaymentsKPI]` 行を検索しても出てこない。
+3. Attempt 系エラーのカウンターは `checkout.error.uncertain` / `checkout.error.failed`（`checkout_controller.rb:367`）。
 
 ## Webhook 再送と処理確定
 
@@ -185,6 +212,12 @@ STOP後は、Renderログ、Stripe Dashboard、対象Attempt、Webhook配送結�
 stripe listen --forward-to localhost:3001/webhooks/stripe
 stripe trigger checkout.session.completed
 ```
+
+**注意: 上の「Stripe test-mode 通しQA」の実施中は `stripe trigger checkout.session.completed` を使わない。**
+
+- `stripe trigger` が送るイベントのセッションは、アプリの `POST /checkout` で作ったものではないため `client_reference_id` を持たず、アプリのユーザーの `stripe_customer_id` / email とも一致しない見込み **（推測：Stripe CLI の fixture の内容はこのリポジトリでは確認していない）**。その場合 user を解決できず 500 になり、Stripe からの再送対象になる（`webhooks_controller.rb:116-121`, `:68-70`, `:286-298`）。
+- Stripe test-mode 上に QA 対象外の Checkout Session / イベントが増え、QA 記録との照合を難しくする **（推測）**。
+- QA の Webhook 確認は、実際の Checkout 完了で届いた `checkout.session.completed` だけで行う。`stripe trigger` は QA と切り離したローカル開発での配線確認に限る。
 
 ## エスカレーション条件
 
