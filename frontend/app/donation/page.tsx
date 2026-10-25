@@ -2,18 +2,32 @@
 
 import { useState } from "react";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 
 export default function DonationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [emailVerificationRequired, setEmailVerificationRequired] =
+    useState(false);
 
   const handleCheckout = async () => {
     setIsLoading(true);
     setErrorMessage(null);
+    setEmailVerificationRequired(false);
 
     try {
       const response = await fetch("/api/checkout", { method: "POST" });
       const data = await response.json().catch(() => null);
+
+      // メール未確認（backend の require_verified_email）は汎用エラーではなく確認の案内を出す
+      if (
+        response.status === 403 &&
+        data?.email_verification_required === true
+      ) {
+        setEmailVerificationRequired(true);
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok || !data?.url) {
         throw new Error("決済ページの準備に失敗しました。");
@@ -55,6 +69,15 @@ export default function DonationPage() {
           >
             {isLoading ? "準備中..." : "500円で応援する"}
           </button>
+
+          {emailVerificationRequired && (
+            <div className="mt-6 text-left">
+              <EmailVerificationBanner
+                title="おうえんするには メールの かくにんが ひつようだよ"
+                description="とどいた メールの リンクを ひらいてから、もういちど ためしてみてね。"
+              />
+            </div>
+          )}
 
           {errorMessage && (
             <p className="mt-4 text-sm font-medium text-destructive">

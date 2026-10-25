@@ -17,7 +17,7 @@ class UsersController < ApplicationController
         )
 
         unless result[:user] && result[:access_token] && result[:refresh_token]
-          Rails.logger.error "ユーザー登録処理で AuthService から必要な情報が返されませんでした: #{result.inspect}"
+          Rails.logger.error "ユーザー登録処理で AuthService から必要な情報が返されませんでした"
           error_response = { body: { error: "ユーザー登録処理に失敗しました" }, status: :internal_server_error }
           raise ActiveRecord::Rollback
         end
@@ -35,7 +35,7 @@ class UsersController < ApplicationController
         }
         raise ActiveRecord::Rollback
       rescue ActiveRecord::RecordInvalid => e
-        Rails.logger.error "自分プロフィールの自動作成に失敗しました: #{e.message}"
+        Rails.logger.error "自分プロフィールの自動作成に失敗しました error_class=#{e.class}"
         error_response = { body: { error: "ユーザー登録処理に失敗しました" }, status: :internal_server_error }
         raise ActiveRecord::Rollback
       end
@@ -57,7 +57,8 @@ class UsersController < ApplicationController
     begin
       SubscriptionCanceler.new(current_user).call
     rescue SubscriptionCanceler::CancellationError => e
-      Rails.logger.error("[AccountDeletion] Stripe解約失敗 user_id=#{current_user.id}: #{e.message}")
+      cause_class = e.cause.is_a?(Stripe::StripeError) ? e.cause.class.name : 'unknown'
+      Rails.logger.error("[AccountDeletion] Stripe解約失敗 user_id=#{current_user.id} error_class=#{e.class} cause_class=#{cause_class}")
       return render json: { error: "サブスクリプションの解約に失敗しました。時間をおいて再度お試しください。" },
                     status: :unprocessable_content
     end
