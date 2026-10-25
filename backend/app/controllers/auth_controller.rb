@@ -8,11 +8,6 @@ class AuthController < ApplicationController
         params[:email], params[:password],
         user_agent: request.user_agent, ip_address: request.remote_ip
       )
-
-
-      Rails.logger.debug "生成されたトークン: #{result[:access_token]}" if Rails.env.development?
-      Rails.logger.debug "生成されたリフレッシュトークン: #{result[:refresh_token]}" if Rails.env.development?
-
       unless result[:user] && result[:access_token] && result[:refresh_token]
         Rails.logger.error "ログイン処理で必要な情報が不足しています"
         render json: { error: "ログイン処理に失敗しました" }, status: :internal_server_error
@@ -24,7 +19,7 @@ class AuthController < ApplicationController
     rescue AuthService::InvalidCredentialsError => e
       render json: { error: e.message }, status: :unauthorized
     rescue StandardError => e # その他の予期せぬエラー
-      Rails.logger.error "ログイン処理中に予期せぬエラーが発生: #{e.message}\n#{e.backtrace.join("\n")}"
+      Rails.logger.error "ログイン処理中に予期せぬエラーが発生 error_class=#{e.class}"
       render json: { error: 'ログイン処理中にエラーが発生しました' }, status: :internal_server_error
     end
   end
@@ -99,7 +94,7 @@ class AuthController < ApplicationController
   def refresh
     refresh_token = cookies[:refresh_token]
 
-    Rails.logger.info "受け取ったリフレッシュトークン: #{refresh_token.present? ? '[FILTERED]' : '[なし]'}" if Rails.env.development?
+    Rails.logger.info "リフレッシュ処理を開始 token_present=#{refresh_token.present?}" if Rails.env.development?
     if refresh_token.nil?
       Rails.logger.warn "リフレッシュトークンがリクエストに含まれていません"
       render json: { error: "リフレッシュトークンがありません" }, status: :unauthorized
@@ -111,45 +106,41 @@ class AuthController < ApplicationController
         refresh_token,
         user_agent: request.user_agent, ip_address: request.remote_ip
       )
-      Rails.logger.info "新しいアクセストークンを発行: #{result[:access_token]}" if Rails.env.development?
       set_token_cookies(result[:access_token], result[:refresh_token]) 
       render json: { message: "トークンを更新しました" }, status: :ok
     rescue AuthService::InvalidRefreshTokenError => e
-      Rails.logger.warn "無効なリフレッシュトークン: #{e.message}"
+      Rails.logger.warn "リフレッシュ処理に失敗 error_class=#{e.class}"
       render json: { error: e.message }, status: :unauthorized
     rescue StandardError => e # その他の予期せぬエラー
-      Rails.logger.error "トークンリフレッシュ中に予期せぬエラーが発生: #{e.message}\n#{e.backtrace.join("\n")}"
+      Rails.logger.error "トークンリフレッシュ中に予期せぬエラーが発生 error_class=#{e.class}"
       render json: { error: 'トークンリフレッシュ中にエラーが発生しました' }, status: :internal_server_error
     end
   end
 
   # ログアウト
-  # リフレッシュトークンを受け取り、それを無効化する方式に変更
+  # ログアウトはidempotentにする。無効・失効済みのtokenを認証成功とは扱わないが、
+  # この端末のCookieは常に破棄して未認証状態へ戻す。
   def logout
     refresh_token = cookies[:refresh_token]
 
-    unless refresh_token
-      Rails.logger.warn "ログアウトリクエストにリフレッシュトークンが含まれていません"
-      render json: { error: "ログアウトにはリフレッシュトークンが必要です" }, status: :bad_request # 400 Bad Request
+    begin
+      # 該当セッションのみを失効させる（他端末のログインは維持される）
+      AuthService.revoke_session(refresh_token) if refresh_token.present?
+    rescue AuthService::InvalidRefreshTokenError
+      Rails.logger.info "無効または失効済みのリフレッシュトークンでログアウトしました"
+    rescue ActiveRecord::RecordInvalid => e # update_column では通常発生しないが、万が一のため
+      Rails.logger.error "ログアウト処理中のDB更新に失敗 error_class=#{e.class}"
+      render json: { error: 'ログアウト処理中にデータベースエラーが発生しました' }, status: :internal_server_error
+      return
+    rescue StandardError => e # その他の予期せぬエラー
+      Rails.logger.error("ログアウト処理中に予期せぬエラーが発生 error_class=#{e.class}")
+      render json: { error: 'ログアウト処理中にエラーが発生しました' }, status: :internal_server_error
       return
     end
 
-    begin
-      # 該当セッションのみを失効させる（他端末のログインは維持される）
-      AuthService.revoke_session(refresh_token)
-      cookies.delete(:access_token)
-      cookies.delete(:refresh_token, path: '/')
-      render json: { message: "ログアウトしました" }, status: :ok
-    rescue AuthService::InvalidRefreshTokenError => e
-      # 無効なリフレッシュトークンが指定された場合 (既にログアウト済み、または不正なトークン)
-      render json: { error: "無効なリフレッシュトークンです。ログアウトできませんでした。" }, status: :unauthorized
-    rescue ActiveRecord::RecordInvalid => e # update_column では通常発生しないが、万が一のため
-      Rails.logger.error "ログアウト処理中のDB更新に失敗: #{e.message}"
-      render json: { error: 'ログアウト処理中にデータベースエラーが発生しました' }, status: :internal_server_error
-    rescue StandardError => e # その他の予期せぬエラー
-      Rails.logger.error "ログアウト処理中に予期せぬエラーが発生: #{e.message}\n#{e.backtrace.join("\n")}"
-      render json: { error: 'ログアウト処理中にエラーが発生しました' }, status: :internal_server_error
-    end
+    cookies.delete(:access_token)
+    cookies.delete(:refresh_token, path: '/')
+    render json: { message: "ログアウトしました" }, status: :ok
   end
 
   # トークンの検証

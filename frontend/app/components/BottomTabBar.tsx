@@ -81,6 +81,7 @@ export default function BottomTabBar(): React.JSX.Element | null {
           <DreamEntryLauncher
             buttonLabel="夢をきろくする"
             buttonClassName="-mt-6 h-14 w-14 justify-center rounded-full bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-[0_10px_24px_rgba(14,165,233,0.42)] [&>span]:sr-only"
+            showSparkles
             voiceFirst
           />
         </div>

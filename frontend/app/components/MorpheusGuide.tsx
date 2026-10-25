@@ -155,7 +155,8 @@ export function MorpheusGuideHome({
       imageVariant="search"
       title={title}
       message={message}
-      size={118}
+      size={64}
+      defaultOpen={false}
       positionClassName="bottom-24 right-3 sm:bottom-10 sm:right-8"
       className="hidden sm:flex"
     />
@@ -172,6 +173,7 @@ export function MorpheusGuideDetail() {
       message="ちゃんと記録できてえらいよ。分析結果も見てみてね。"
       size={140}
       positionClassName="bottom-6 right-4 sm:bottom-10 sm:right-8"
+      className="hidden sm:flex"
     />
   );
 }
