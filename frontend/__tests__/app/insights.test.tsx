@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import InsightsPage, { computeStreak } from "@/app/insights/page";
+import InsightsPage from "@/app/insights/page";
+import { computeStreak } from "@/lib/insightsStreak";
 import type { Dream } from "@/app/types";
 
 const mockUseAuth = jest.fn();
