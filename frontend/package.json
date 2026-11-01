@@ -37,7 +37,7 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "form-data": "^4.0.4",
     "framer-motion": "^12.23.24",
-    "glob": "^13.0.6",
+    "glob": "^14.0.2",
     "html-to-image": "^1.11.13",
     "js-yaml": "^4.3.2",
     "jwt-decode": "^4.0.0",
@@ -80,7 +80,7 @@
     "wait-on": "^9.0.10"
   },
   "resolutions": {
-    "glob": "^13.0.6",
+    "glob": "^14.0.2",
     "js-yaml": "^4.3.2",
     "minimatch": "^10.2.5",
     "picomatch": "^4.0.4",
