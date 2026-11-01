@@ -15,6 +15,45 @@ RSpec.describe 'MonthlySummaries API', type: :request do
       end
     end
 
+    context 'メールアドレス確認ガード' do
+      it '未検証のプレミアム会員は 403 + email_verification_required を返し、OpenAI を呼ばず枠も消費しない' do
+        user = create(:user, :unverified, premium: true)
+
+        expect(MonthlySummaryService).not_to receive(:generate)
+
+        expect {
+          authenticated_post '/dreams/month/2026-04/ai_summary', user
+        }.not_to change { AiUsageLog.where(user: user, feature: 'monthly_summary').count }
+
+        expect(response).to have_http_status(:forbidden)
+        expect(JSON.parse(response.body)['email_verification_required']).to be true
+      end
+
+      it '検証済みのプレミアム会員は従来どおり 200 を返す' do
+        user = create(:user, premium: true)
+
+        allow(MonthlySummaryService).to receive(:generate)
+          .and_return({ summary: 'テスト' })
+
+        authenticated_post '/dreams/month/2026-04/ai_summary', user
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it '未検証のトライアルユーザーはメール確認ガードの対象外（従来どおりプレミアム判定で 403）' do
+        user = create(:user, :unverified, trial_user: true, premium: false)
+
+        expect(MonthlySummaryService).not_to receive(:generate)
+
+        authenticated_post '/dreams/month/2026-04/ai_summary', user
+
+        expect(response).to have_http_status(:forbidden)
+        body = JSON.parse(response.body)
+        expect(body['email_verification_required']).to be_nil
+        expect(body['error']).to include('プレミアム会員のみ')
+      end
+    end
+
     context '不正な year_month フォーマットの場合' do
       it '文字列は 400 を返す' do
         user = create(:user, premium: true)

@@ -86,7 +86,7 @@ describe("DreamList (integration with DreamCard)", () => {
     const list = screen.getByTestId("dream-list");
     expect(list).toHaveAttribute("data-view-mode", "grid");
     expect(list).toHaveClass("grid");
-    expect(list.className).toContain("grid-cols-[repeat(auto-fill,minmax(280px,1fr))]");
+    expect(list.className).toContain("grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))]");
   });
 
   it("uses a single-column layout in list mode", () => {

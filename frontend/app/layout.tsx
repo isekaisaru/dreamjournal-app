@@ -1,5 +1,5 @@
 import React from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
@@ -56,6 +56,14 @@ export const metadata: Metadata = {
   ...(GOOGLE_SITE_VERIFICATION
     ? { verification: { google: GOOGLE_SITE_VERIFICATION } }
     : {}),
+};
+
+// env(safe-area-inset-*) をiOSで有効にするため viewportFit: "cover" を指定する。
+// ズーム制限（maximumScale / userScalable）はアクセシビリティのため設定しない。
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
