@@ -1,5 +1,11 @@
 .git
 .env*
+config/master.key
+config/credentials/*.key
+*.key
+*.pem
+*.p12
+*.pfx
 log
 tmp
 node_modules
