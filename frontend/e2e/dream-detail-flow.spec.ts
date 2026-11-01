@@ -204,6 +204,22 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     page,
   }) => {
     const GENERATED_IMAGE_URL = "https://example.com/dream-image.png";
+    // 有効な1×1 PNGを返し、外部画像サーバーや読込タイミングに依存させない。
+    const GENERATED_IMAGE_PNG = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+      "base64"
+    );
+    let imageRequestCount = 0;
+
+    await page.route(GENERATED_IMAGE_URL, async (route) => {
+      expect(route.request().method()).toBe("GET");
+      imageRequestCount += 1;
+      await route.fulfill({
+        status: 200,
+        contentType: "image/png",
+        body: GENERATED_IMAGE_PNG,
+      });
+    });
 
     // 画像生成 API をモック
     await page.route("**/dreams/1/generate_image", async (route) => {
@@ -230,8 +246,24 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     // POST リクエストが送信されたことを確認
     await postRequestPromise;
 
-    // 成功後に画像が表示されることを確認
-    await expect(page.locator('[data-testid="dream-share-card"] img')).toBeVisible();
+    // 要素の表示だけでなく、画像データの読込成功まで確認する。
+    const image = page.locator('[data-testid="dream-share-card"] img');
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() =>
+        image.evaluate(
+          (element: HTMLImageElement) =>
+            element.complete &&
+            element.naturalWidth > 0 &&
+            element.naturalHeight > 0
+        )
+      )
+      .toBe(true);
+    expect(imageRequestCount).toBeGreaterThan(0);
+    await expect(page.getByTestId("dream-share-card-fallback")).toHaveCount(0);
+    await expect(
+      page.getByText("ゆめのえ を ひょうじ できませんでした。", { exact: true })
+    ).toHaveCount(0);
 
     // 「かきなおす」ボタンが表示されることを確認
     await expect(
