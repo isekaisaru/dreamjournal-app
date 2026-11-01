@@ -105,6 +105,24 @@ RSpec.describe 'Dreams API', type: :request do
         expect(Dream.last.dream_profile_id).to eq(user.self_dream_profile_id)
       end
 
+      it '分析結果と分析状態をクライアント入力から設定できない' do
+        params = valid_dream_params.deep_merge(
+          dream: {
+            analysis_status: 'done',
+            analyzed_at: Time.current,
+            analysis_json: { analysis: '偽装された分析結果', emotion_tags: ['偽装'] }
+          }
+        )
+
+        authenticated_post('/dreams', user, params: params)
+
+        expect(response).to have_http_status(:created)
+        created_dream = Dream.last
+        expect(created_dream.analysis_status).not_to eq('done')
+        expect(created_dream.analyzed_at).to be_nil
+        expect(created_dream.analysis_json).to be_nil
+      end
+
       it '無効なパラメーターで夢作成に失敗する' do
         expect {
           authenticated_post('/dreams', user, params: invalid_dream_params)
@@ -259,6 +277,25 @@ RSpec.describe 'Dreams API', type: :request do
         user_dream.reload
         expect(user_dream.title).to eq('更新されたタイトル')
         expect(user_dream.content).to eq('更新された内容です。新しい情報が追加されました。')
+      end
+
+      it '分析結果と分析状態をクライアント入力から更新できない' do
+        user_dream.update!(analysis_status: 'pending', analysis_json: nil, analyzed_at: nil)
+        params = update_params.deep_merge(
+          dream: {
+            analysis_status: 'done',
+            analyzed_at: Time.current,
+            analysis_json: { analysis: '偽装された分析結果', emotion_tags: ['偽装'] }
+          }
+        )
+
+        authenticated_put("/dreams/#{user_dream.id}", user, params: params)
+
+        expect(response).to have_http_status(:ok)
+        user_dream.reload
+        expect(user_dream.analysis_status).to eq('pending')
+        expect(user_dream.analyzed_at).to be_nil
+        expect(user_dream.analysis_json).to be_nil
       end
 
       it '感情の関連付けを更新できる' do

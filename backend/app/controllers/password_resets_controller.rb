@@ -25,8 +25,20 @@ class PasswordResetsController < ApplicationController
     user = User.find_by_password_reset_token(params[:id])
 
     if user&.password_reset_valid?
-      if user.update(password_reset_params)
+      password_updated = false
+
+      user.transaction do
+        password_updated = user.update(password_reset_params)
+        raise ActiveRecord::Rollback unless password_updated
+
+        # パスワードを知っていた端末も、リセット後は再認証を必須にする。
+        # access token は短命JWTのため即時失効できないが、refresh token をすべて
+        # 失効させることで有効期限後のセッション継続を防ぐ。
         user.use_password_reset_token!
+        AuthService.revoke_all_sessions(user)
+      end
+
+      if password_updated
         render json: { message: 'パスワードが正常に更新されました。' }, status: :ok
       else
         render json: { errors: user.errors.full_messages }, status: :unprocessable_content

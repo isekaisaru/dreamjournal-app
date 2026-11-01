@@ -67,6 +67,20 @@ RSpec.describe "Rack::Attack rate limiting", type: :request do
 
       expect(response).to have_http_status(429)
     end
+
+    it "X-Forwarded-Forの先頭値を変えても同一remote IPの制限を回避できない" do
+      6.times do |i|
+        post "/auth/login",
+             params: { email: "test@example.com", password: "wrong" }.to_json,
+             headers: {
+               "Content-Type" => "application/json",
+               "X-Forwarded-For" => "198.51.100.#{i}, 203.0.113.10",
+               "REMOTE_ADDR" => "203.0.113.10"
+             }
+      end
+
+      expect(response).to have_http_status(429)
+    end
   end
 
   describe "POST /auth/register (大量登録防止)" do
