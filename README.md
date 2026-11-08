@@ -6,16 +6,29 @@
 
 音声入力、AI分析、感情タグ、夢の画像生成を通じて、ひとりでも、家族・恋人・友達とも楽しめるプライベートな夢の記録体験を目指しています。
 
-[![E2E Tests](https://github.com/isekaisaru/dream-journal-app/actions/workflows/e2e-test.yml/badge.svg)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/e2e-test.yml)
-[![Backend Tests](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml/badge.svg)](https://github.com/isekaisaru/dream-journal-app/actions/workflows/backend-test.yml)
-[![Production](https://img.shields.io/badge/status-production%20ready-success)](https://dreamjournal-app.vercel.app)
+[![E2E Tests](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/e2e-test.yml/badge.svg)](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/e2e-test.yml)
+[![Backend Tests](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/backend-test.yml/badge.svg)](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/backend-test.yml)
 
-**🌐 本番URL:** https://dreamjournal-app.vercel.app
+**🌐 公開URL:** https://dreamjournal-app.vercel.app
 
 ## 概要
 
 YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可視化・夢の画像生成を組み合わせた、プライベートなAI夢ノートです。
-フロントエンドは Next.js 16、バックエンドは Rails 7.2 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発で一貫して構築しています。
+フロントエンドは Next.js 16、バックエンドは Rails 7.2 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
+
+### 検証状況と既知の制限（2026-11-08 時点）
+
+「実装済み」「CI 成功」「本番で動作確認済み」は区別して管理しています。CI の成功は、外部サービスをモックした範囲を含むため、本番での動作保証とは扱っていません。
+
+| 項目 | 状況 |
+|---|---|
+| CI（Jest / RSpec / Playwright） | `main` で成功を確認。E2E の一部は API・Stripe をモックしたシナリオ |
+| Stripe 決済（寄付・月額課金） | 実装済み・過去に本番での決済記録あり。現行コードに対する test-mode の通し QA は未完了 |
+| 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 修正を検証中・未マージ |
+| 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。対策は未マージ |
+| Sentry に送るデータの機密保護 | 導入済み。送信データのマスキング強化は対応中 |
+| 夢の森のスマホ実機表示 | 最新版での実機確認は未完了 |
+| 本番環境と `main` の一致 | デプロイ中のバージョンと `main` の照合は未確認 |
 
 技術選定では「モダンだから」ではなく、ひとりでも、大切な人とも迷わず使える UX と、継続運用しやすい構成になるかを重視しています。
 
@@ -56,10 +69,10 @@ Whisper API を使った音声録音→テキスト変換→分析の一連フ�
 
 認証は JWT を HttpOnly Cookie で扱い、フロントエンドとバックエンドを分離した構成でも安全にセッションを維持できるようにしています。
 
-決済は2種類の Stripe フローを実装し、いずれも本番稼働済みです。
+決済は2種類の Stripe フローを実装しています（検証状況は上の「検証状況と既知の制限」を参照）。
 
 - **寄付（一回払い）**: Stripe Checkout → `checkout.session.completed` Webhook → Payment 永続化
-- **プレミアム月額課金（¥500/月）**: Stripe Subscription → Webhook 3イベント（`checkout.session.completed` / `invoice.payment_succeeded` / `customer.subscription.deleted`）→ `users.premium` フラグ更新
+- **プレミアム月額課金**: Stripe Subscription → Webhook（`checkout.session.completed` / `invoice.payment_succeeded` / `customer.subscription.deleted` など）→ Subscription の状態を保存し、有効な契約の有無から premium を判定
 - **Stripe Billing Portal**: 解約・カード変更・請求履歴をホスト型ポータルに委譲し、PCI 対応の負担なく会員管理を実現
 
 ---
@@ -148,11 +161,11 @@ Sentry をフロントエンドとバックエンドの両方に導入し、本�
 
 ### ⑦ Stripe 決済フローの堅牢化
 
-寄付（一回払い）と月額サブスクリプション（¥500/月）の2フローを実装し、いずれも本番稼働済みです。
+寄付（一回払い）と月額サブスクリプションの2フローを実装しています。過去に本番での決済記録がありますが、現行コードに対する test-mode の通し QA は未完了です。
 
 共通の設計方針として、`ensure_stripe_customer_id!` による顧客再利用、Webhook 署名検証（`STRIPE_WEBHOOK_SECRET`）、`ProcessedWebhookEvent` による重複イベント排除、`PaymentsObservability` による構造化ログを整備しています。
 
-Subscription フローでは `client_reference_id` → `stripe_customer_id` → `email` の3段階フォールバックでユーザーを解決し、解約時には `customer.subscription.deleted` を受けて `premium` フラグを安全に降ろす設計にしています。
+Subscription フローでは `client_reference_id` → `stripe_customer_id` → `email` の3段階フォールバックでユーザーを解決し、解約時には `customer.subscription.deleted` を受けて Subscription の状態を更新し、有効な契約が残っていない場合に premium を外す設計にしています。
 一次切り分け用に [`docs/runbook-payments.md`](docs/runbook-payments.md) も用意し、機能実装だけでなく運用時の対応手順まで残しています。
 
 ### ⑧ 日時処理の一元化とバグ予防
@@ -186,7 +199,7 @@ Subscription フローでは `client_reference_id` → `stripe_customer_id` → 
 <details>
 <summary>利用技術</summary>
 
-- **Frontend**: Next.js 16, React 18, TypeScript, Tailwind CSS, Framer Motion
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, Framer Motion
 - **Backend**: Ruby on Rails 7.2 (API mode), Ruby 3.3, PostgreSQL
 - **Testing**: Playwright, RSpec, Jest
 - **AI / External Services**: OpenAI API (`gpt-4o-mini`, `whisper-1`, `gpt-image-1`), Stripe Checkout / Subscription / Billing Portal, Sentry
@@ -198,8 +211,8 @@ Subscription フローでは `client_reference_id` → `stripe_customer_id` → 
 <summary>ローカル開発環境の立ち上げ</summary>
 
 ```bash
-git clone https://github.com/isekaisaru/dream-journal-app.git
-cd dream-journal-app
+git clone https://github.com/isekaisaru/dreamjournal-app.git
+cd dreamjournal-app
 cp backend/.env.example backend/.env
 make dev-up
 ```
@@ -236,4 +249,6 @@ CI（GitHub Actions）では認証不要・APIモック済みのシナリオを�
 ## Author
 
 **Tyougorou**
-物流・現場マネジメント経験を経て、手触りのあるソフトウェアで課題解決を行うため Web 開発技術を習得。要件定義から実装、デプロイ、運用改善まで一貫して取り組んでいます。
+物流・現場マネジメント経験を経て、手触りのあるソフトウェアで課題解決を行うため Web 開発技術を学んでいます。
+
+YumeTree は Claude Code・Codex を活用して開発している個人プロダクトです。私は課題発見・要件整理・優先順位の決定、AI への実装依頼、結果の確認、作業を進めるか止めるかの判断を担当し、AI は調査・実装・テスト作成・レビューを支援しています。実装・テスト成功・`main` へのマージ・本番での動作確認を分けて記録し、未確認のものは完了として扱わない運用にしています。コードの理解と自力での実装力は、別の小規模アプリや Ruby の演習で継続して鍛えています。
