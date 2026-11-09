@@ -45,12 +45,21 @@ jobs:
         run: |
           bundle exec rails runner - <<'RUBY'
           expected_tables = %w[
-            dream_profiles
+            active_storage_attachments
+            active_storage_blobs
+            active_storage_variant_records
             ai_usage_logs
+            checkout_attempts
+            dream_emotions
+            dream_image_generations
+            dream_profiles
+            dreams
+            emotions
             payments
             processed_webhook_events
-            dream_image_generations
-            checkout_attempts
+            subscriptions
+            user_sessions
+            users
           ]
 
           rows = ActiveRecord::Base.connection.exec_query(<<~SQL).to_a

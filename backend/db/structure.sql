@@ -1215,6 +1215,24 @@ ALTER TABLE ONLY public.dreams
 
 
 --
+-- Name: active_storage_attachments; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.active_storage_attachments ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: active_storage_blobs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.active_storage_blobs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: active_storage_variant_records; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.active_storage_variant_records ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: ai_usage_logs; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1225,6 +1243,12 @@ ALTER TABLE public.ai_usage_logs ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.checkout_attempts ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: dream_emotions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dream_emotions ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: dream_image_generations; Type: ROW SECURITY; Schema: public; Owner: -
@@ -1239,6 +1263,18 @@ ALTER TABLE public.dream_image_generations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dream_profiles ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: dreams; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.dreams ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: emotions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.emotions ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: payments; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -1251,10 +1287,22 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.processed_webhook_events ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: subscriptions; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: user_sessions; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
 ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: users; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 --
 -- PostgreSQL database dump complete
@@ -1263,6 +1311,7 @@ ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261010000000'),
 ('20260923000000'),
 ('20260905000000'),
 ('20260828000000'),
