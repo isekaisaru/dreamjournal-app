@@ -110,6 +110,78 @@ RSpec.describe 'Sentry 送信前のトークン・検索語の除去' do
 
       expect(before_send.call(event, {})).to be_nil
     end
+
+    # 例外メッセージで対応する範囲: 単一引用符の SQL 値・DETAIL 行・
+    # 「型への変換に失敗した入力値」。それ以外の自由文は対象外。
+    describe 'PostgreSQL の例外メッセージに入る値' do
+      def filtered_value(message)
+        event = error_event(error: ActiveRecord::StatementInvalid.new(message))
+        before_send.call(event, {}).exception.values.first.value
+      end
+
+      it 'DETAIL 行のキーの値（Key (...)=(...)）を除く' do
+        value = filtered_value(
+          "PG::UniqueViolation: ERROR:  duplicate key value violates unique constraint \"index_users_on_email\"\n" \
+          "DETAIL:  Key (email)=(#{search_word}@example.invalid) already exists.\n" \
+          ': INSERT INTO "users" ("email") VALUES ($1) RETURNING "id"'
+        )
+
+        expect(value).not_to include(search_word)
+        expect(value).to include('DETAIL:  [FILTERED]')
+        expect(value).to include('"index_users_on_email"')
+      end
+
+      it 'DETAIL 行の行の中身（Failing row contains）を除く' do
+        value = filtered_value(
+          "PG::NotNullViolation: ERROR:  null value in column \"user_id\" of relation \"dreams\" violates not-null constraint\n" \
+          "DETAIL:  Failing row contains (7, #{search_word}, null).\n" \
+          ': INSERT INTO "dreams" ("title") VALUES ($1) RETURNING "id"'
+        )
+
+        expect(value).not_to include(search_word)
+        expect(value).to include('relation "dreams"')
+      end
+
+      it '型への変換に失敗した入力値を除く' do
+        value = filtered_value(
+          "PG::InvalidTextRepresentation: ERROR:  invalid input syntax for type integer: \"#{search_word}\"\n" \
+          'LINE 1: SELECT "dreams".* FROM "dreams" WHERE "dreams"."id" = $1'
+        )
+
+        expect(value).not_to include(search_word)
+        expect(value).to include('for type integer: "[FILTERED]"')
+      end
+    end
+  end
+
+  # トークンの親パスをエンコードや区切りの重複で隠しても見落とさない。
+  describe '再設定パスの表記ゆれ' do
+    # TOKEN の位置に合成トークンを入れる。
+    [
+      ['エンコードした親パス名', '/%70assword_resets/TOKEN'],
+      ['二重にエンコードした親パス名', '/%2570assword_resets/TOKEN'],
+      ['大文字の親パス名', '/PASSWORD_RESETS/TOKEN'],
+      ['空の区間をはさむ', '/password_resets//TOKEN'],
+      ['エンコードした区切りをはさむ', '/password_resets/%2F/TOKEN'],
+      ['親パスとトークンを1つの区間に押し込む', '/password_resets%2FTOKEN']
+    ].each do |label, template|
+      it "#{label}: URL とトランザクション名からトークンを除く" do
+        path = template.sub('TOKEN', token)
+        error = before_send.call(error_event(env: rack_env("https://api.example.invalid#{path}")), {})
+        transaction = before_send_transaction.call(transaction_event(name: path), {})
+
+        expect(error.request.url).not_to include(token)
+        expect(transaction.transaction).not_to include(token)
+      end
+    end
+
+    it '4重以上にエンコードされて判定できない区間とその次は送らない' do
+      path = "/%25252570assword_resets/#{token}"
+
+      transaction = before_send_transaction.call(transaction_event(name: path), {})
+
+      expect(transaction.transaction).to eq('/[FILTERED]/[FILTERED]')
+    end
   end
 
   describe 'トランザクションイベント' do
