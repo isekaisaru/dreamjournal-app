@@ -1576,3 +1576,146 @@ describe("独立再レビュー: 長さの境界(4095・4096・4097文字)", () 
     expect(url.startsWith("/password-reset/[token]/")).toBe(true);
   });
 });
+
+describe("Codexレビュー: 親パスの直後に空の区間がはさまる", () => {
+  // 数字を含まないので、長い英数字の塊として置き換わる保険には頼れない。
+  const T = "SYNTHETIC_TOKEN_letters_only";
+  const cases: Array<[string, string]> = [
+    [`/password-reset//${T}`, "/password-reset//[token]"],
+    [`/password-reset/%2f/${T}`, "/password-reset/[token]/[token]"],
+    [`/password-reset/%2F%2F/${T}`, "/password-reset/[token]/[token]"],
+    [`/password-reset///${T}/next`, "/password-reset///[token]/next"],
+    [`/password_resets//${T}`, "/password_resets//[token]"],
+  ];
+
+  it.each(cases)("sanitizeUrl(%s)", (input, expected) => {
+    expect(sanitizeUrl(input)).toBe(expected);
+  });
+
+  it.each(cases)(
+    "request.url・transaction・breadcrumb でも消す: %s",
+    (path) => {
+      const out = sanitizeEvent({
+        transaction: `GET ${path}`,
+        request: { url: `https://dreamjournal-app.vercel.app${path}` },
+        breadcrumbs: [
+          { category: "navigation", data: { from: path, to: path } },
+          {
+            category: "fetch",
+            data: { method: "PATCH", url: `/proxy${path}` },
+          },
+        ],
+      });
+      expect(JSON.stringify(out)).not.toContain(T);
+
+      const crumb = sanitizeBreadcrumb({
+        category: "xhr",
+        data: { method: "GET", url: path },
+      });
+      expect(JSON.stringify(crumb)).not.toContain(T);
+    }
+  );
+
+  it("ファイル名でも消す", () => {
+    expect(sanitizeFilename(`app:///password-reset//${T}/page.js`)).toBe(
+      "app:///password-reset//[token]/page.js"
+    );
+  });
+
+  it("消しすぎない: 親パスでない区間のあとの空の区間は影響しない", () => {
+    expect(sanitizeUrl("/dreams//42/edit")).toBe("/dreams//42/edit");
+    expect(sanitizeUrl("/password-reset/[token]//page.tsx")).toBe(
+      "/password-reset/[token]//page.tsx"
+    );
+  });
+});
+
+describe("Codexレビュー: debug_meta(ソースマップの Debug ID)", () => {
+  // SDK 10.75.2 は beforeSend より前(prepareEvent の applyDebugMeta)で、フレームの
+  // debug_id を debug_meta.images に移す。ここで捨てるとソースマップを対応付けられない。
+  const DEBUG_ID = "0f1e2d3c-4b5a-4968-8776-a5b4c3d2e1f0";
+  const CHUNK =
+    "https://dreamjournal-app.vercel.app/_next/static/chunks/app/home/page-1a2b3c4d5e6f7a8b.js";
+
+  function eventWith(
+    frames: Array<Record<string, unknown>>,
+    images: unknown[]
+  ): Record<string, any> {
+    return sanitizeEvent({
+      exception: { values: [{ type: "Error", stacktrace: { frames } }] },
+      debug_meta: { images },
+    }) as Record<string, any>;
+  }
+
+  it("フレームに一致する sourcemap の Debug ID を残す", () => {
+    const out = eventWith(
+      [{ filename: CHUNK, lineno: 1, colno: 2 }],
+      [{ type: "sourcemap", code_file: CHUNK, debug_id: DEBUG_ID }]
+    );
+    expect(out.debug_meta).toEqual({
+      images: [{ type: "sourcemap", code_file: CHUNK, debug_id: DEBUG_ID }],
+    });
+  });
+
+  it("abs_path がある場合は abs_path で一致を見る(SDK と同じ)", () => {
+    const out = eventWith(
+      [{ filename: "app:///page.js", abs_path: CHUNK }],
+      [{ type: "sourcemap", code_file: CHUNK, debug_id: DEBUG_ID }]
+    );
+    expect(out.debug_meta.images).toHaveLength(1);
+  });
+
+  it("code_file はフレームと同じ規則で整形し、トークンを残さない", () => {
+    const raw = `https://dreamjournal-app.vercel.app/password-reset/${S.resetToken}/page.js?v=${S.verifyToken}`;
+    const out = eventWith(
+      [{ filename: raw }],
+      [{ type: "sourcemap", code_file: raw, debug_id: DEBUG_ID }]
+    );
+    expect(out.debug_meta.images).toEqual([
+      {
+        type: "sourcemap",
+        code_file:
+          "https://dreamjournal-app.vercel.app/password-reset/[token]/page.js",
+        debug_id: DEBUG_ID,
+      },
+    ]);
+    expectNoSecrets(out);
+  });
+
+  it("フレームに無い code_file・形の違う debug_id・sourcemap 以外・余分な項目は送らない", () => {
+    const out = eventWith(
+      [{ filename: CHUNK }],
+      [
+        {
+          type: "sourcemap",
+          code_file: "https://dreamjournal-app.vercel.app/other.js",
+          debug_id: DEBUG_ID,
+        },
+        { type: "sourcemap", code_file: CHUNK, debug_id: S.email },
+        { type: "macho", code_file: CHUNK, debug_id: DEBUG_ID },
+        "not-an-object",
+        {
+          type: "sourcemap",
+          code_file: CHUNK,
+          debug_id: DEBUG_ID,
+          debug_file: S.dream,
+        },
+      ]
+    );
+    expect(out.debug_meta.images).toEqual([
+      { type: "sourcemap", code_file: CHUNK, debug_id: DEBUG_ID },
+    ]);
+    expectNoSecrets(out);
+  });
+
+  it("残すものが無ければ debug_meta 自体を送らない", () => {
+    const out = eventWith(
+      [{ filename: CHUNK }],
+      [{ type: "sourcemap", code_file: "x.js", debug_id: "nope" }]
+    );
+    expect(out).not.toHaveProperty("debug_meta");
+    expect(
+      sanitizeEvent({ debug_meta: { sdk_info: S.dream } })
+    ).not.toHaveProperty("debug_meta");
+  });
+});

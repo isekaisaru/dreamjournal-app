@@ -226,10 +226,9 @@ function sanitizePath(pathname: string): string {
   return pathname
     .split("/")
     .map((segment) => {
-      if (segment === "") {
-        afterTokenParent = false;
-        return segment;
-      }
+      // 空の区間(`//`)では判定を解除しない。`/password-reset//<token>` のように
+      // 区切りを重ねても、次の値はトークンとして扱う。
+      if (segment === "") return segment;
 
       const { parts, undecidable } = comparable(segment);
       const names = parts.map(withoutParams);
@@ -256,7 +255,11 @@ function sanitizePath(pathname: string): string {
         result = classifySegment(segment);
       }
       // 判断できなかった区間は親パスだったかもしれないので、直後も置き換える側に倒す。
-      afterTokenParent = undecidable || TOKEN_PARENT_SEGMENTS.has(lastName);
+      // 区切りだけの区間(`%2F` など、名前が空)は、空の区間と同じく判定を引き継ぐ。
+      afterTokenParent =
+        undecidable ||
+        TOKEN_PARENT_SEGMENTS.has(lastName) ||
+        (lastName === "" && afterTokenParent);
       return result;
     })
     .join("/");
@@ -652,6 +655,56 @@ function sanitizeBreadcrumbs(
     .filter((item): item is UnknownRecord => item !== null);
 }
 
+// ソースマップの Debug ID(UUID 形式)。
+const DEBUG_ID =
+  /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
+const MAX_DEBUG_IMAGES = 100;
+
+// 整形後のフレームが指しているファイル名(filename / abs_path)。
+function frameFiles(exception: UnknownRecord | undefined): Set<string> {
+  const files = new Set<string>();
+  const values = Array.isArray(exception?.values) ? exception.values : [];
+  for (const value of values) {
+    const frames =
+      isRecord(value) && isRecord(value.stacktrace)
+        ? value.stacktrace.frames
+        : undefined;
+    if (!Array.isArray(frames)) continue;
+    for (const frame of frames) {
+      if (!isRecord(frame)) continue;
+      for (const file of [frame.filename, frame.abs_path]) {
+        if (typeof file === "string" && file !== FILTERED) files.add(file);
+      }
+    }
+  }
+  return files;
+}
+
+// SDK 10.75.2 は beforeSend の前(prepareEvent の applyDebugMeta)で、フレームの debug_id を
+// debug_meta.images({ type: "sourcemap", code_file, debug_id })に移す。これが無いと
+// ソースマップを対応付けられないので、次の条件を満たすものだけ写し取る。
+// - type が sourcemap で、debug_id が UUID の形
+// - code_file をフレームと同じ規則で整形した結果が、送るフレームのどれかと一致する
+function sanitizeDebugMeta(
+  debugMeta: unknown,
+  files: Set<string>
+): UnknownRecord | undefined {
+  if (!isRecord(debugMeta) || !Array.isArray(debugMeta.images)) {
+    return undefined;
+  }
+  const images = debugMeta.images
+    .slice(0, MAX_DEBUG_IMAGES)
+    .flatMap((image): UnknownRecord[] => {
+      if (!isRecord(image) || image.type !== "sourcemap") return [];
+      const debugId = safeText(image.debug_id, DEBUG_ID);
+      if (debugId === undefined || image.code_file === undefined) return [];
+      const codeFile = sanitizeFilename(image.code_file);
+      if (!files.has(codeFile)) return [];
+      return [{ type: "sourcemap", code_file: codeFile, debug_id: debugId }];
+    });
+  return images.length > 0 ? { images } : undefined;
+}
+
 function sanitizeEventValue(event: unknown): UnknownRecord | null {
   if (!isRecord(event)) return null;
   // エラー以外(transaction など)は、保護の方法がまだ決まっていないので送らない。
@@ -692,6 +745,14 @@ function sanitizeEventValue(event: unknown): UnknownRecord | null {
         .filter((value): value is UnknownRecord => value !== undefined),
     };
   }
+  assign(
+    out,
+    "debug_meta",
+    sanitizeDebugMeta(
+      event.debug_meta,
+      frameFiles(out.exception as UnknownRecord | undefined)
+    )
+  );
 
   // user / extra / server_name / fingerprint / spans などの上記以外の項目は、
   // 許可リストに無いのでここで自然に捨てられる。
