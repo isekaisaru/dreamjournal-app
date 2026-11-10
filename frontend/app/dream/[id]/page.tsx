@@ -101,8 +101,10 @@ function DreamDetailContent({ dreamId }: { dreamId: string }) {
     error,
     isLoading: dreamLoading,
     isUpdating,
+    editConflict = false,
     updateDream: hookUpdateDream,
     deleteDream: hookDeleteDream,
+    reloadDream,
   } = useDream(dreamId);
 
   const { user } = useAuth();
@@ -195,6 +197,20 @@ function DreamDetailContent({ dreamId }: { dreamId: string }) {
     }
   };
 
+  // 保存の競合（Issue #561）のあと、利用者が選んだときだけ最新を読み込む。
+  // 読み込み中は編集フォームが外れて最新の内容で作り直されるので、いまの入力は消える。
+  const handleReloadLatest = async () => {
+    await reloadDream?.();
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // 競合を知ったまま閲覧に戻ると、古い内容を表示し続けてしまうため読み込み直す
+    if (editConflict) {
+      void reloadDream?.();
+    }
+  };
+
   const handleDeleteClick = () => {
     setDeleteTargetId(dream?.id ?? null);
     setIsDeleteDialogOpen(true);
@@ -256,12 +272,37 @@ function DreamDetailContent({ dreamId }: { dreamId: string }) {
           <h1 className="text-2xl font-bold text-foreground">ゆめ の なおし</h1>
           <button
             type="button"
-            onClick={() => setIsEditing(false)}
+            onClick={handleCancelEdit}
             className="text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg px-4 py-2 transition-colors"
           >
             やめる
           </button>
         </div>
+
+        {editConflict ? (
+          <div
+            role="alert"
+            className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-foreground"
+          >
+            <p className="font-semibold">
+              べつの がめんや たんまつで、さきに ほぞんされているよ。
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              いまの にゅうりょくは まだ のこっているよ。さいしんの ないようを みるときは、ボタンを おしてね。
+            </p>
+            <button
+              type="button"
+              onClick={handleReloadLatest}
+              className="mt-3 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              さいしんの ないようを よみこむ（いまの にゅうりょくは きえるよ）
+            </button>
+          </div>
+        ) : error ? (
+          <p role="alert" className="mb-6 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
 
         <DreamForm
           initialData={dream}
