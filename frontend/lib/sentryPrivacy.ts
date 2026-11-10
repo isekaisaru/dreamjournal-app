@@ -9,7 +9,7 @@
  *   最初から「送らないもの」として扱う。
  * - 処理中に何かが失敗したら、生データを返さず null(= 送らない)に倒す。
  *
- * まだ Sentry の初期化設定にはつないでいない(つなぐのは次のPR)。
+ * Sentry の初期化設定へは lib/sentryPrivacyOptions.ts 経由でつなぐ。
  */
 
 export const FILTERED = "[Filtered]";
