@@ -693,6 +693,99 @@ describe("DreamDetailPage: 同じ夢IDで認証状態が変わったときの古
   });
 });
 
+describe("DreamDetailPage: 編集中の保存の失敗（Issue #561）", () => {
+  const CONFLICT_TEXT = /べつの がめんや たんまつで、さきに ほぞんされているよ/;
+  const RELOAD_BUTTON = "さいしんの ないようを よみこむ（いまの にゅうりょくは きえるよ）";
+
+  function showEditingDream(state: {
+    editConflict?: boolean;
+    error?: string | null;
+    updateDream?: unknown;
+    reloadDream?: unknown;
+  }) {
+    useDream.mockReturnValue({
+      dream: dreamOf(1),
+      error: state.error ?? null,
+      isLoading: false,
+      isUpdating: false,
+      editConflict: state.editConflict ?? false,
+      updateDream: state.updateDream ?? jest.fn(async () => false),
+      deleteDream: jest.fn(),
+      reloadDream: state.reloadDream ?? jest.fn(async () => {}),
+    });
+  }
+
+  it("409で保存できなかったら、編集フォーム（入力）を残したまま競合を知らせる", async () => {
+    const updateDream = jest.fn(async (_data: unknown) => false);
+    showEditingDream({ updateDream });
+    const { rerender } = render(pageFor("1"));
+    fireEvent.click(screen.getByText("✏️ なおす"));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("フォームをほぞん"));
+    });
+    // フックが競合を知らせた状態で再描画される
+    showEditingDream({ updateDream, editConflict: true });
+    rerender(pageFor("1"));
+
+    expect(screen.getByText("DreamForm")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toMatch(CONFLICT_TEXT);
+    expect(screen.getByRole("button", { name: RELOAD_BUTTON })).toBeTruthy();
+  });
+
+  it("「さいしんの ないようを よみこむ」を押したときだけ最新を読み込む（自動で読み込まない）", async () => {
+    const reloadDream = jest.fn(async () => {});
+    showEditingDream({ editConflict: true, reloadDream });
+    render(pageFor("1"));
+    fireEvent.click(screen.getByText("✏️ なおす"));
+    expect(reloadDream).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: RELOAD_BUTTON }));
+    });
+
+    expect(reloadDream).toHaveBeenCalledTimes(1);
+  });
+
+  it("競合のあとで「やめる」を押したら、古い内容のまま閲覧に戻らないよう最新を読み込む", async () => {
+    const reloadDream = jest.fn(async () => {});
+    showEditingDream({ editConflict: true, reloadDream });
+    render(pageFor("1"));
+    fireEvent.click(screen.getByText("✏️ なおす"));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("やめる"));
+    });
+
+    expect(screen.queryByText("DreamForm")).toBeNull();
+    expect(reloadDream).toHaveBeenCalledTimes(1);
+  });
+
+  it("競合がなければ「やめる」で再読み込みしない（回帰）", async () => {
+    const reloadDream = jest.fn(async () => {});
+    showEditingDream({ reloadDream });
+    render(pageFor("1"));
+    fireEvent.click(screen.getByText("✏️ なおす"));
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("やめる"));
+    });
+
+    expect(reloadDream).not.toHaveBeenCalled();
+  });
+
+  it("競合以外の保存エラー（422など）も、編集フォームを残したまま表示する", () => {
+    const message = "版番号（expected_edit_version）は0以上の整数で指定してください。";
+    showEditingDream({ error: message });
+    render(pageFor("1"));
+    fireEvent.click(screen.getByText("✏️ なおす"));
+
+    expect(screen.getByText("DreamForm")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(message);
+    expect(screen.queryByRole("button", { name: RELOAD_BUTTON })).toBeNull();
+  });
+});
+
 describe("DreamDetailPage: 保存の二重送信（呼び出し元の挙動）", () => {
   it("保存中にもう一度保存しても（フックが2件目を false で断る）、1件目の成功で編集を終える", async () => {
     const firstSave = deferred<boolean>();
