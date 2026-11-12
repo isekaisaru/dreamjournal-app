@@ -75,6 +75,8 @@ export interface Dream {
   analyzed_at?: string;
   generated_image_url?: string;
   image_generated_at?: string;
+  /** 利用者の編集の版番号（Issue #561）。#566 より前のバックエンドは返さない */
+  edit_version?: number;
 }
 export type LoginCredentials = {
   email: string;

@@ -793,3 +793,260 @@ describe("useDream: 古いGET/PUTの完了処理で別の夢の画面を書き�
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Issue #561: 編集の基準にした版番号（edit_version）を PUT で送り、
+// 古い内容での保存はサーバーが 409 edit_conflict で拒否する。
+// ---------------------------------------------------------------------------
+
+function apiError(status: number, data: unknown, message = `failed with status ${status}`) {
+  return Object.assign(new Error(message), { status, data });
+}
+
+const conflictError = () =>
+  apiError(
+    409,
+    {
+      error: "ほかの画面で この夢が先に保存されました。最新の内容を確認してください。",
+      code: "edit_conflict",
+      current: { id: 1, title: "べつの画面の保存", content: "べつの本文", emotion_ids: [], edit_version: 4 },
+    },
+    "ほかの画面で この夢が先に保存されました。最新の内容を確認してください。"
+  );
+
+const putBody = (index: number) => mockedPut.mock.calls[index][1] as Record<string, unknown>;
+
+describe("useDream: 版番号つきの保存（Issue #561）", () => {
+  beforeEach(() => {
+    pendingGets = [];
+    pendingPuts = [];
+    mockedGet.mockReset();
+    mockedPut.mockReset();
+    mockUseAuth.mockReturnValue({ authStatus: "authenticated", isLoggedIn: true });
+    mockedGet.mockImplementation(
+      (url: string) =>
+        new Promise<Dream>((resolve, reject) => {
+          pendingGets.push({ url, resolve, reject });
+        }) as any
+    );
+    mockedPut.mockImplementation(
+      (url: string) =>
+        new Promise<unknown>((resolve, reject) => {
+          pendingPuts.push({ url, resolve, reject });
+        }) as any
+    );
+  });
+
+  async function loadDream(loaded: Dream, id = "1") {
+    const hook = renderUseDream(id);
+    await act(async () => {
+      takeGet(`/dreams/${id}`).resolve(loaded);
+    });
+    return hook;
+  }
+
+  function startUpdate(
+    result: { current: ReturnType<typeof useDream> },
+    data: { title: string } = { title: "夢A改" }
+  ) {
+    let promise!: Promise<boolean>;
+    act(() => {
+      promise = result.current.updateDream(data);
+    });
+    return promise;
+  }
+
+  it("読み込んだ夢の edit_version を、dream の外側の expected_edit_version として送る", async () => {
+    const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+
+    startUpdate(result, { title: "夢A改" });
+
+    expect(mockedPut).toHaveBeenCalledTimes(1);
+    expect(mockedPut.mock.calls[0][0]).toBe("/dreams/1");
+    expect(putBody(0)).toEqual({ dream: { title: "夢A改" }, expected_edit_version: 3 });
+  });
+
+  it.each([
+    ["返さない（#566より前のバックエンド）", undefined],
+    ["null", null],
+    ["文字列", "3"],
+    ["小数", 1.5],
+    ["負の数", -1],
+  ])("edit_version が分からないとき（%s）は expected_edit_version を送らない", async (_label, version) => {
+    const { result } = await loadDream(dream({ id: 1, edit_version: version as never }));
+
+    startUpdate(result);
+
+    expect(putBody(0)).toEqual({ dream: { title: "夢A改" } });
+    expect(putBody(0)).not.toHaveProperty("expected_edit_version");
+  });
+
+  it("保存が200で返ったら、応答の edit_version を次の保存の基準にする（続けて保存しても409にしない）", async () => {
+    const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+
+    const first = startUpdate(result, { title: "1回目" });
+    await act(async () => {
+      takePut("/dreams/1").resolve({ id: 1, title: "1回目", edit_version: 4 });
+    });
+    await act(async () => {
+      takeGet("/dreams/1").resolve(dream({ id: 1, title: "1回目", edit_version: 4 }));
+    });
+    await expect(first).resolves.toBe(true);
+
+    startUpdate(result, { title: "2回目" });
+
+    expect(putBody(1)).toEqual({ dream: { title: "2回目" }, expected_edit_version: 4 });
+  });
+
+  it("再取得のGETが版番号を返さなくても、200の応答の edit_version を基準にする", async () => {
+    const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+
+    const first = startUpdate(result, { title: "1回目" });
+    await act(async () => {
+      takePut("/dreams/1").resolve({ id: 1, title: "1回目", edit_version: 4 });
+    });
+    // 再取得の応答は、PUTの応答より新しい版を知らない（版番号なし）
+    await act(async () => {
+      takeGet("/dreams/1").resolve(dream({ id: 1, title: "1回目" }));
+    });
+    await expect(first).resolves.toBe(true);
+
+    startUpdate(result, { title: "2回目" });
+
+    expect(putBody(1)).toEqual({ dream: { title: "2回目" }, expected_edit_version: 4 });
+  });
+
+  describe("409 edit_conflict", () => {
+    it("入力の元になった夢を変えず（再取得もせず）、競合を知らせて false を返す", async () => {
+      const loaded = dream({ id: 1, title: "夢A", edit_version: 3 });
+      const { result } = await loadDream(loaded);
+
+      const update = startUpdate(result);
+      await act(async () => {
+        takePut("/dreams/1").reject(conflictError());
+      });
+
+      await expect(update).resolves.toBe(false);
+      expect(result.current.editConflict).toBe(true);
+      // 編集フォームの初期値（dream）を差し替えると入力が消えるため、同じオブジェクトのまま
+      expect(result.current.dream).toBe(loaded);
+      expect(getCallCount("/dreams/1")).toBe(1);
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isUpdating).toBe(false);
+      expect(result.current.error).toBeNull();
+    });
+
+    it("current の版番号を勝手に採用しない（再度保存しても同じ版で送り、自動で再送もしない）", async () => {
+      const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+
+      startUpdate(result);
+      await act(async () => {
+        takePut("/dreams/1").reject(conflictError());
+      });
+      expect(mockedPut).toHaveBeenCalledTimes(1);
+
+      startUpdate(result, { title: "もういちど" });
+
+      expect(mockedPut).toHaveBeenCalledTimes(2);
+      expect(putBody(1)).toEqual({ dream: { title: "もういちど" }, expected_edit_version: 3 });
+    });
+
+    it("reloadDream で最新を読み込むと、競合表示を消し、新しい版番号を基準にする", async () => {
+      const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+      startUpdate(result);
+      await act(async () => {
+        takePut("/dreams/1").reject(conflictError());
+      });
+
+      await act(async () => {
+        void result.current.reloadDream();
+      });
+      expect(result.current.editConflict).toBe(false);
+      await act(async () => {
+        takeGet("/dreams/1").resolve(dream({ id: 1, title: "べつの画面の保存", edit_version: 4 }));
+      });
+      expect(result.current.dream?.title).toBe("べつの画面の保存");
+
+      startUpdate(result, { title: "最新をみてから" });
+
+      expect(putBody(1)).toEqual({ dream: { title: "最新をみてから" }, expected_edit_version: 4 });
+    });
+
+    it("夢1→2→1と戻ったあとに古い世代のPUTが409で返っても、新しい画面に何もしない", async () => {
+      const { result, rerender } = await loadDream(dream({ id: 1, edit_version: 3 }));
+
+      const staleUpdate = startUpdate(result, { title: "最初の編集" });
+      rerender({ id: "2" });
+      rerender({ id: "1" });
+      await act(async () => {
+        takeGet("/dreams/2").resolve(dream({ id: 2, title: "夢B", edit_version: 0 }));
+        takeGet("/dreams/1").resolve(dream({ id: 1, title: "夢A", edit_version: 3 }));
+      });
+      const freshUpdate = startUpdate(result, { title: "新しい編集" });
+      const [stalePut, freshPut] = pendingPuts;
+      pendingPuts = [];
+
+      await act(async () => {
+        stalePut.reject(conflictError());
+      });
+
+      await expect(staleUpdate).resolves.toBe(false);
+      expect(result.current.editConflict).toBe(false);
+      expect(result.current.error).toBeNull();
+      expect(result.current.isUpdating).toBe(true);
+
+      await act(async () => {
+        freshPut.resolve({ id: 1, edit_version: 4 });
+      });
+      await act(async () => {
+        takeGet("/dreams/1").resolve(dream({ id: 1, title: "新しい編集", edit_version: 4 }));
+      });
+      await expect(freshUpdate).resolves.toBe(true);
+      expect(result.current.editConflict).toBe(false);
+    });
+
+    it("別の夢へ移動したら、前の夢の競合表示を持ち越さない", async () => {
+      const { result, rerender } = await loadDream(dream({ id: 1, edit_version: 3 }));
+      startUpdate(result);
+      await act(async () => {
+        takePut("/dreams/1").reject(conflictError());
+      });
+      expect(result.current.editConflict).toBe(true);
+
+      rerender({ id: "2" });
+      await act(async () => {
+        takeGet("/dreams/2").resolve(dream({ id: 2, title: "夢B", edit_version: 0 }));
+      });
+
+      expect(result.current.editConflict).toBe(false);
+    });
+
+    it("code が edit_conflict でない409は、通常のエラーとして扱う", async () => {
+      const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+
+      const update = startUpdate(result);
+      await act(async () => {
+        takePut("/dreams/1").reject(apiError(409, { error: "べつの理由" }, "べつの理由"));
+      });
+
+      await expect(update).resolves.toBe(false);
+      expect(result.current.editConflict).toBe(false);
+      expect(result.current.error).toBe("べつの理由");
+    });
+  });
+
+  it("422（版番号の形式が不正）は競合ではなくエラーとして表示し、再取得しない", async () => {
+    const { result } = await loadDream(dream({ id: 1, edit_version: 3 }));
+    const message = "版番号（expected_edit_version）は0以上の整数で指定してください。";
+
+    const update = startUpdate(result);
+    await act(async () => {
+      takePut("/dreams/1").reject(apiError(422, { error: message }, message));
+    });
+
+    await expect(update).resolves.toBe(false);
+    expect(result.current.error).toBe(message);
+    expect(result.current.editConflict).toBe(false);
+    expect(getCallCount("/dreams/1")).toBe(1);
+  });
+});
