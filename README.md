@@ -16,17 +16,17 @@
 YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可視化・夢の画像生成を組み合わせた、プライベートなAI夢ノートです。
 フロントエンドは Next.js 16、バックエンドは Rails 7.2 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
 
-### 検証状況と既知の制限（2026-11-08 時点）
+### 検証状況と既知の制限（2026-11-14 時点）
 
 「実装済み」「CI 成功」「本番で動作確認済み」は区別して管理しています。CI の成功は、外部サービスをモックした範囲を含むため、本番での動作保証とは扱っていません。
 
 | 項目 | 状況 |
 |---|---|
-| CI（Jest / RSpec / Playwright） | `main` で成功を確認。E2E の一部は API・Stripe をモックしたシナリオ |
+| CI（Jest / RSpec / Playwright） | 確認時の `main`（`aa35ed1f`）は Jest・Playwright 成功。RSpec ジョブは `structure.sql` 再生成の整合性確認で失敗し、テスト本体は未実行（[実行結果](https://github.com/isekaisaru/dreamjournal-app/actions/runs/43482810957)）。E2E の一部は API・Stripe をモックしたシナリオ |
 | Stripe 決済（寄付・月額課金） | 実装済み・過去に本番での決済記録あり。現行コードに対する test-mode の通し QA は未完了 |
-| 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 修正を検証中・未マージ |
-| 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。対策は未マージ |
-| Sentry に送るデータの機密保護 | 導入済み。送信データのマスキング強化は対応中 |
+| 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 古い通信結果の画面反映を防ぐ修正（[#558](https://github.com/isekaisaru/dreamjournal-app/pull/558)）は `main` にマージ済み。古い版からの保存を拒否する処理と分析中の編集保護（[#566](https://github.com/isekaisaru/dreamjournal-app/pull/566)・[#567](https://github.com/isekaisaru/dreamjournal-app/pull/567)・[#569](https://github.com/isekaisaru/dreamjournal-app/pull/569)）もマージ済み。本番での動作確認は未確認 |
+| 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。再送 UI・注意喚起の [#542](https://github.com/isekaisaru/dreamjournal-app/pull/542) は未マージで、サーバー側の重複防止は同 PR の対象外 |
+| Sentry に送るデータの機密保護 | フロントの許可リストによる送信前処理とブラウザ・Node.js・Edge への接続（[#564](https://github.com/isekaisaru/dreamjournal-app/pull/564)・[#565](https://github.com/isekaisaru/dreamjournal-app/pull/565)）は `main` にマージ済み。フロントのトランザクション・ログ・メトリクス送信は停止。バックエンドの追加保護（[#563](https://github.com/isekaisaru/dreamjournal-app/pull/563)）は未マージ。本番イベント・ソースマップの復号は未確認 |
 | 夢の森のスマホ実機表示 | 最新版での実機確認は未完了 |
 | 本番環境と `main` の一致 | デプロイ中のバージョンと `main` の照合は未確認 |
 
