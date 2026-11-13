@@ -4,16 +4,12 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { sentryPrivacyOptions } from "./lib/sentryPrivacyOptions";
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
-
-  // PII（個人識別情報）の自動送信は無効化。エラー調査に必要な場合のみ有効化する。
-  sendDefaultPii: false,
+  // 機密情報の保護(送信前の整形・トランザクション/ログ/メトリクスを送らない設定)。
+  // 詳細は lib/sentryPrivacyOptions.ts。3つの Sentry 設定ファイルが同じ値を使う。
+  ...sentryPrivacyOptions,
 });

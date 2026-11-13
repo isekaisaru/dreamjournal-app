@@ -13,7 +13,10 @@ jobs:
       DATABASE_URL: postgres://postgres:password@localhost:5432/test_db
     services:
       postgres:
-        image: postgres:14
+        # 14.24 に digest で固定する。14.25（2026-11-12）では pg_dump が全列に
+        # `ALTER COLUMN ... SET (pg_attver=...)` を出し、下の structure.sql 検証が失敗するため。
+        # 14系は 14.25 で保守終了の予定。CI の版を本番とそろえるときに、この固定を外す。
+        image: postgres:14@sha256:834a046089d76edd1d2e81c4741f3ad5d1853646ededc86c2708936aad31c1ed
         env:
           POSTGRES_PASSWORD: password
         options: >-
