@@ -314,7 +314,8 @@ CREATE TABLE public.dreams (
     analyzed_at timestamp(6) without time zone,
     generated_image_url text,
     image_generated_at timestamp(6) without time zone,
-    dream_profile_id bigint NOT NULL
+    dream_profile_id bigint NOT NULL,
+    edit_version integer DEFAULT 0 NOT NULL
 );
 
 
@@ -1263,6 +1264,7 @@ ALTER TABLE public.user_sessions ENABLE ROW LEVEL SECURITY;
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261110000000'),
 ('20260923000000'),
 ('20260905000000'),
 ('20260828000000'),
