@@ -82,7 +82,7 @@ class DreamsController < ApplicationController
   # GET /dreams/:id
   def show
     render json: @dream.as_json(
-      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id],
+      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id, :edit_version],
       include: {
         emotions: {},
         dream_profile: dream_profile_json_options
@@ -118,18 +118,40 @@ class DreamsController < ApplicationController
   end
 
   # PATCH/PUT /dreams/:id
+  #
+  # 利用者の編集（title / content / dream_profile_id / emotion_ids を含む更新）では、
+  # 編集開始時にGETで受け取った版番号を expected_edit_version として送らせる。
+  # 保存時点の版と一致しなければ、古い内容で新しい保存を上書きしないよう 409 を返す（Issue #561）。
   def update
     # 音声ファイルが添付された更新リクエストの場合
     if params[:dream][:audio].present?
       @dream.audio.attach(params[:dream][:audio])
       # ここでジョブを起動することも可能
     end
-    if @dream.update(dream_params)
+
+    saved =
+      if user_edit_request?
+        @dream.apply_user_edit(dream_params, expected_version: expected_edit_version!)
+      else
+        # 分析結果だけの更新（Trialの分析紐付けなど）は版番号を問わず、版も進めない
+        @dream.update(dream_params)
+      end
+
+    if saved
       @dream.reload
       render json: @dream.as_json(include: :emotions)
     else
       render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end
+  rescue InvalidEditVersion
+    render json: { error: '版番号（expected_edit_version）は0以上の整数で指定してください。' }, status: :unprocessable_content
+  rescue Dream::EditConflict
+    render_edit_conflict
+  rescue ActiveRecord::RecordNotFound
+    # 行ロックで読み直す前に削除された場合だけ404にする（存在しない感情IDなどは従来どおり）
+    raise if Dream.exists?(@dream.id)
+
+    render json: { error: '指定された夢が見つかりません' }, status: :not_found
   end
 
   # DELETE /dreams/:id
@@ -298,7 +320,36 @@ class DreamsController < ApplicationController
   end
 
   private
-   
+
+    class InvalidEditVersion < StandardError; end
+
+    def user_edit_request?
+      (params.require(:dream).keys & Dream::USER_EDITABLE_ATTRIBUTES).any?
+    end
+
+    # 版番号を送らない旧クライアント（更新前に開いたままのタブ等）は移行期間中だけ受理し、
+    # 必須化の判断材料として夢IDだけをログに残す（本文はログに出さない）。
+    def expected_edit_version!
+      unless params.key?(:expected_edit_version)
+        Rails.logger.warn("[dream_update] expected_edit_version なしの編集を受理 dream_id=#{@dream.id}")
+        return nil
+      end
+
+      value = params[:expected_edit_version]
+      raise InvalidEditVersion unless value.is_a?(Integer) && value >= 0
+
+      value
+    end
+
+    def render_edit_conflict
+      current = @dream.as_json(only: [:id, :title, :content, :dream_profile_id, :edit_version, :updated_at])
+      render json: {
+        error: 'ほかの画面で この夢が先に保存されました。最新の内容を確認してください。',
+        code: 'edit_conflict',
+        current: current.merge('emotion_ids' => @dream.emotion_ids.sort)
+      }, status: :conflict
+    end
+
     # 認可されたパラメーターを取得する
     def dream_params
       params.require(:dream).permit(
