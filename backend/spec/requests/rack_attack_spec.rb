@@ -86,7 +86,8 @@ RSpec.describe "Rack::Attack rate limiting", type: :request do
   end
 
   describe "POST /dreams/:id/generate_image (DALL-E 3 レート制限)" do
-    let(:user) { create(:user) }
+    # 画像生成はプレミアム限定のため、レート制限の確認はプレミアムユーザーで行う
+    let(:user) { create(:user, premium: true) }
     let(:dream) { create(:dream, user: user, content: "雲の上を歩く夢") }
     let(:access_token) { AuthService.encode_token(user.id) }
     let(:images_client) { double("OpenAI::Images") }

@@ -8,6 +8,7 @@ import {
   getChildFriendlyEmotionLabel,
 } from "../../components/EmotionTag";
 import { useDream, type DreamInput } from "../../../hooks/useDream";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, use } from "react";
 import apiClient, { isEmailVerificationRequiredError } from "../../../lib/apiClient";
@@ -41,6 +42,8 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         button: "ゆめのえを かく",
         imageRedraw: "かきなおす",
         imageGenerating: "かいています...",
+        imagePremiumOnly: "ゆめのえは プレミアムで かけるよ",
+        imagePremiumLink: "プレミアムを みる",
       };
     case "preteen":
       return {
@@ -51,6 +54,8 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         button: "夢のイラストを生成",
         imageRedraw: "描き直す",
         imageGenerating: "生成中...",
+        imagePremiumOnly: "夢のイラストはプレミアムプランで描けます",
+        imagePremiumLink: "プレミアムを見る",
       };
     case "teen":
     case "adult":
@@ -63,6 +68,8 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         button: "画像を生成する",
         imageRedraw: "再生成",
         imageGenerating: "生成中...",
+        imagePremiumOnly: "夢の画像生成はプレミアムプランの機能です",
+        imagePremiumLink: "プレミアムを見る",
       };
   }
 }
@@ -110,6 +117,8 @@ function DreamDetailContent({ dreamId }: { dreamId: string }) {
 
   const { user } = useAuth();
   const copy = getDreamDetailCopy(user?.age_group);
+  // 画像生成はプレミアム限定（バックエンドも premium? で 403 を返す）
+  const canGenerateImage = user?.premium === true;
 
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -139,10 +148,13 @@ function DreamDetailContent({ dreamId }: { dreamId: string }) {
   }, [error]);
 
   useEffect(() => {
+    if (!canGenerateImage) return;
     apiClient.get<{ used: number; limit: number; remaining: number }>("/dreams/image_quota")
-      .then(setImageQuota)
+      .then((quota) => {
+        if (isActiveRef.current) setImageQuota(quota);
+      })
       .catch(() => {/* 非致命的 */});
-  }, []);
+  }, [canGenerateImage]);
 
   useEffect(() => {
     if (dream?.generated_image_url) {
@@ -440,20 +452,34 @@ function DreamDetailContent({ dreamId }: { dreamId: string }) {
           profileColor={dream.dream_profile?.color}
         />
         {generatedImageUrl ? (
-          <div className="space-y-2 mt-2">
-            {imageError && (
-              <p className="text-xs text-destructive">{imageError}</p>
-            )}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleGenerateImage}
-                disabled={isGeneratingImage}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
-              </button>
+          canGenerateImage ? (
+            <div className="space-y-2 mt-2">
+              {imageError && (
+                <p className="text-xs text-destructive">{imageError}</p>
+              )}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
+                </button>
+              </div>
             </div>
+          ) : null
+        ) : !canGenerateImage ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              🎨 {copy.imagePremiumOnly}
+            </p>
+            <Link
+              href="/subscription"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-primary/40 px-4 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              {copy.imagePremiumLink}
+            </Link>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-6">
