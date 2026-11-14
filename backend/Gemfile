@@ -3,10 +3,10 @@ source "https://rubygems.org"
 ruby "3.3.0"
 
 # Rails
-gem "rails", ">= 7.2.3.2", "< 7.3"
+gem "rails", "~> 8.0.5", ">= 8.0.5.2"
 
 # PostgreSQL as the database
-gem "pg", "~> 1.6"
+gem "pg", "~> 1.7"
 
 # Puma as the web server
 gem "puma", "~> 8.0"
@@ -44,7 +44,7 @@ gem "dotenv-rails"
 
 # OpenAI API integration
 gem "ruby-openai", "~> 8.3"
-gem 'faraday', '~> 2.14'
+gem 'faraday', '~> 2.15'
 gem 'faraday-multipart'
 gem 'faraday-net_http'
 gem 'multipart-post'
@@ -81,9 +81,6 @@ end
 group :development do
   # Console on exceptions pages
   gem "web-console"
-
-  # Annota for schema documentation
-  gem "annotate"
 
   # インブラウザでメール内容を確認
   gem "letter_opener"
