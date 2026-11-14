@@ -357,10 +357,7 @@ class DreamsController < ApplicationController
         :content,
         :audio,
         :dream_profile_id,
-        :analysis_status,
-        :analyzed_at,
-        emotion_ids: [],
-        analysis_json: [:analysis, :text, { emotion_tags: [] }]
+        emotion_ids: []
       )
     end
 

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "ipaddr"
-
 # ============================================================
 # Rack::Attack — レート制限設定
 #
@@ -18,15 +16,11 @@ require "ipaddr"
 
 class Rack::Attack
   def self.throttle_ip(req)
-    forwarded_for = req.get_header("HTTP_X_FORWARDED_FOR").to_s
-    forwarded_for.split(",").map(&:strip).find { |ip| valid_ip?(ip) } || req.ip
-  end
-
-  def self.valid_ip?(ip)
-    IPAddr.new(ip)
-    true
-  rescue IPAddr::InvalidAddressError
-    false
+    # X-Forwarded-For の先頭値はクライアントが自由に偽装できるため直接使わない。
+    # ActionDispatch::RemoteIp が信頼済みproxyを除外して確定した値を優先し、
+    # 利用できない実行環境だけ Rack::Request#ip にフォールバックする。
+    remote_ip = req.get_header("action_dispatch.remote_ip").to_s
+    remote_ip.present? ? remote_ip : req.ip
   end
 
   # ----------------------------------------------------------
