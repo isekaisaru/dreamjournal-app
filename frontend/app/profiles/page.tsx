@@ -279,7 +279,7 @@ export default function ProfilesPage() {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
           <div className="bg-card w-full max-w-sm rounded-3xl shadow-2xl border border-border/50 overflow-hidden">
-            <div className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
+            <div className="p-6 space-y-5 max-h-[85dvh] overflow-y-auto">
               <h2 className="text-lg font-bold">
                 {editingProfile ? "プロフィールを編集" : "プロフィールを追加"}
               </h2>
@@ -301,7 +301,7 @@ export default function ProfilesPage() {
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   maxLength={30}
                   placeholder="例: たろう / ねこのミー"
-                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base sm:text-sm text-foreground focus:ring-2 focus:ring-ring"
                 />
               </div>
 
@@ -419,7 +419,7 @@ function ProfileCard({
       <div className="flex gap-2 mt-1">
         <button
           onClick={onEdit}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
           aria-label="編集"
         >
           <Pencil className="w-3.5 h-3.5" />
@@ -427,7 +427,7 @@ function ProfileCard({
         {!isSelf && (
           <button
             onClick={onArchive}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
             aria-label="アーカイブ"
           >
             <Archive className="w-3.5 h-3.5" />
