@@ -14,6 +14,9 @@ module App
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 7.0
+    # Rails 8.0 は、この値が :zone でないと起動のたびに非推奨警告を出す（8.1 で :zone に固定される）。
+    # config.time_zone は未設定（UTC）で、アプリのコードは to_time を呼ばないので、挙動は変わらない。
+    config.active_support.to_time_preserves_timezone = :zone
     config.active_record.schema_format = :sql
     config.autoload_paths += [Rails.root.join('app/services'), Rails.root.join('lib')]
     config.debug_exception_response_format = :api
