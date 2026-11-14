@@ -46,7 +46,7 @@
 
 ### 3) Checkout が開けない（`POST /checkout` が 4xx / 5xx）
 
-画面の文言では分岐を判別できない。寄付ページ・サブスクページは失敗時に一律「決済ページの準備に失敗しました。」（`frontend/app/donation/page.tsx:18-20`、`frontend/app/subscription/page.tsx:70-72`）、`DonationButton` は「決済の準備に失敗しました」（`frontend/app/components/DonationButton.tsx:28-30`）を出す。旧版にあった「Stripe決済の準備に失敗しました」という文言はコードに存在しない。Network タブで `/api/checkout` の **HTTP status とレスポンス本文の `error`** を確認し、下表で分岐を特定する（根拠は `backend/app/controllers/checkout_controller.rb`）。
+メール未確認以外の分岐は画面の文言では判別できない。寄付ページ・サブスクページは、403 かつ本文に `email_verification_required: true` を含む場合だけメール確認の案内バナー（確認メールの再送ボタン付き）を出し（`frontend/app/donation/page.tsx:22-30`、`frontend/app/subscription/page.tsx:74-82`）、それ以外の失敗は一律「決済ページの準備に失敗しました。」（`frontend/app/donation/page.tsx:32-34`、`frontend/app/subscription/page.tsx:84-86`）、`DonationButton` は「決済の準備に失敗しました」（`frontend/app/components/DonationButton.tsx:28-30`）を出す。旧版にあった「Stripe決済の準備に失敗しました」という文言はコードに存在しない。Network タブで `/api/checkout` の **HTTP status とレスポンス本文の `error`** を確認し、下表で分岐を特定する（根拠は `backend/app/controllers/checkout_controller.rb`）。
 
 | status | `error`（本文） | 原因 | Attempt | 根拠 |
 | --- | --- | --- | --- | --- |
