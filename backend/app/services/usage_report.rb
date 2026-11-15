@@ -32,6 +32,15 @@ class UsageReport
 
   DAYS_BUCKETS = [["1日", 1, 1], ["2〜3日", 2, 3], ["4〜7日", 4, 7], ["8日以上", 8, nil]].freeze
 
+  # つづき具合（マネタイズ計画 M2〜M4 用）。月をまたいで、最初に書いた日から最後に書いた日まで（両端を含む）を数える。
+  NOT_WRITTEN_LABEL = "まだ書いていない"
+  SPAN_BUCKETS = [["1日", 1, 1], ["2〜6日", 2, 6], ["7〜13日", 7, 13], ["14日以上", 14, nil]].freeze
+  # M4「2週間以上つづける人が3人以上出たら、プレミアムを案内する」の目安
+  LONG_SPAN_DAYS = 14
+  LONG_SPAN_TARGET_USERS = 3
+  # 最後に書いてから何日たったか（どこで止まったか）
+  RECENCY_BUCKETS = [["7日以内", 0, 7], ["8〜30日", 8, 30], ["31日以上", 31, nil]].freeze
+
   # users.premium / users.trial_user から「いま」のプランを決める
   PLAN_SQL = <<~SQL.squish.freeze
     CASE WHEN users.premium THEN 'premium'
@@ -57,6 +66,7 @@ class UsageReport
       users: users_summary,
       usage: usage,
       dreams: dreams_summary,
+      continuation: continuation_summary,
       estimated_cost_jpy: estimated_cost(usage)
     }
   end
@@ -80,6 +90,12 @@ class UsageReport
     lines << "  書かれた夢: #{data[:dreams][:created]}件"
     lines << "  夢を書いた人数: #{format_plans(data[:dreams][:active_users])}"
     lines << "  この月に夢を書いた日数: " + data[:dreams][:days_written].map { |label, count| "#{label} #{count}人" }.join(" / ")
+    lines << ""
+    continuation = data[:continuation]
+    lines << "■ つづき具合（お試しを除く #{continuation[:users]}人・#{continuation[:as_of]} 時点・月をまたいで数える）"
+    lines << "  最初に書いた日から最後に書いた日まで: " + format_buckets(continuation[:span_days])
+    lines << "  #{LONG_SPAN_DAYS}日以上つづいた人: #{continuation[:long_span_users]}人（M4 の目安は#{LONG_SPAN_TARGET_USERS}人以上）"
+    lines << "  最後に書いてから: " + format_buckets(continuation[:days_since_last_written])
     lines << ""
     lines << "■ 概算の費用（目安・単価は未確認。実額は OpenAI の Usage で確認）"
     data[:estimated_cost_jpy][:by_feature].each do |feature, yen|
@@ -122,8 +138,7 @@ class UsageReport
     active = dreams.joins(:user).group(Arel.sql(PLAN_SQL)).distinct.count(:user_id)
 
     # 日本時間の日付で、1人が何日書いたかを数える（timestamp は UTC で保存されている）
-    local_date = "DATE((dreams.created_at AT TIME ZONE 'UTC') AT TIME ZONE '#{TIME_ZONE}')"
-    days_per_user = dreams.group(:user_id).distinct.count(Arel.sql(local_date)).values
+    days_per_user = dreams.group(:user_id).distinct.count(Arel.sql(local_date_sql)).values
 
     {
       created: dreams.count,
@@ -132,6 +147,49 @@ class UsageReport
         [label, days_per_user.count { |days| days >= min && (max.nil? || days <= max) }]
       end
     }
+  end
+
+  # 「何日つづいたか」と「どこで止まったか」を、集計期間の終わり（今月なら今日）の時点で数える。
+  # 1人ずつの値は出さず、人数の分布だけを返す。
+  def continuation_summary
+    as_of = continuation_as_of
+    # trial_user は NULL のことがある（ふつうの利用者）ので、プランの決め方（PLAN_SQL）でお試しだけを外す
+    users = User.where("(#{PLAN_SQL}) <> 'trial'").where("users.created_at < ?", @to)
+    first_and_last = Dream.joins(:user)
+                          .merge(users)
+                          .where("dreams.created_at < ?", @to)
+                          .group(:user_id)
+                          .pluck(Arel.sql("MIN(#{local_date_sql})"), Arel.sql("MAX(#{local_date_sql})"))
+    spans = first_and_last.map { |first, last| (last - first).to_i + 1 }
+    since_last = first_and_last.map { |_first, last| (as_of - last).to_i }
+
+    span_days = { NOT_WRITTEN_LABEL => users.count - first_and_last.size }.merge(count_buckets(spans, SPAN_BUCKETS))
+    {
+      as_of: as_of.iso8601,
+      users: users.count,
+      span_days: span_days,
+      long_span_users: spans.count { |days| days >= LONG_SPAN_DAYS },
+      days_since_last_written: count_buckets(since_last, RECENCY_BUCKETS)
+    }
+  end
+
+  # 集計期間の最後の日（今月の途中なら今日）を日本時間の日付で返す
+  def continuation_as_of
+    ([@to, Time.current].min - 1.second).in_time_zone(TIME_ZONE).to_date
+  end
+
+  def local_date_sql
+    "DATE((dreams.created_at AT TIME ZONE 'UTC') AT TIME ZONE '#{TIME_ZONE}')"
+  end
+
+  def count_buckets(values, buckets)
+    buckets.to_h do |label, min, max|
+      [label, values.count { |value| value >= min && (max.nil? || value <= max) }]
+    end
+  end
+
+  def format_buckets(counts)
+    counts.map { |label, count| "#{label} #{count}人" }.join(" / ")
   end
 
   def estimated_cost(usage)
