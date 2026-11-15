@@ -423,7 +423,7 @@ class DreamsController < ApplicationController
         return unless current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
 
         render json: {
-          error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると無制限に分析できます。",
+          error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると、無料プランでも月#{FREE_ANALYSIS_MONTHLY_LIMIT}回まで分析できます。",
           limit_reached: true
         }, status: :forbidden
         return
@@ -431,7 +431,7 @@ class DreamsController < ApplicationController
 
       unless current_user.reserve_monthly_analysis_slot!
         render json: {
-          error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると無制限で利用できます。",
+          error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると、もっとたくさん分析できます。",
           limit_reached: true,
           monthly_analysis_count: current_user.monthly_analysis_count,
           monthly_analysis_limit: FREE_ANALYSIS_MONTHLY_LIMIT
