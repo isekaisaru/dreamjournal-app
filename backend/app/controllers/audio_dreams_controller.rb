@@ -3,9 +3,33 @@
 class AudioDreamsController < ApplicationController
   # 音声分析はWhisper+GPTの二重課金のため、メール確認済みユーザーのみ（trialは対象外）
   before_action :require_verified_email, only: [:create]
-  before_action :check_trial_audio_limit, only: [:create]
+  before_action :check_audio_limit, only: [:create]
 
   TRIAL_AUDIO_LIMIT = 1 # トライアルユーザーの音声分析上限（Whisper+GPTで高コスト）
+  FREE_AUDIO_MONTHLY_LIMIT = 5 # 無料プラン（本登録・非プレミアム）の音声分析の月上限
+
+  # GET /audio_quota
+  # 録音を始める前に残り回数を出すために使う（録音してから断ると、話した夢が失われるため）
+  def quota
+    user = current_user
+    if user.premium?
+      render json: { unlimited: true, used: nil, limit: nil, remaining: nil }
+    elsif user.trial_user?
+      render json: {
+        trial: true,
+        used: user.trial_audio_count,
+        limit: TRIAL_AUDIO_LIMIT,
+        remaining: [TRIAL_AUDIO_LIMIT - user.trial_audio_count, 0].max
+      }
+    else
+      used = monthly_audio_count(user)
+      render json: {
+        used: used,
+        limit: FREE_AUDIO_MONTHLY_LIMIT,
+        remaining: [FREE_AUDIO_MONTHLY_LIMIT - used, 0].max
+      }
+    end
+  end
 
   def create
     user = current_user
@@ -32,6 +56,8 @@ class AudioDreamsController < ApplicationController
 
     if dream.save
       user.increment!(:trial_audio_count) if user.trial_user?
+      # 無料プランの月上限の数え方と、原価の把握に使う（プレミアムも記録する）
+      record_audio_usage_log(user)
 
       # 3. ジョブをエンキュー (非同期処理)
       AnalyzeDreamJob.perform_later(dream.id)
@@ -52,18 +78,43 @@ class AudioDreamsController < ApplicationController
 
   private
 
-  # トライアルユーザーの音声分析回数チェック
-  # 音声分析は Whisper + GPT で二重課金されるため厳しめに制限
-  def check_trial_audio_limit
+  # 音声分析の回数チェック
+  # 音声分析は Whisper + GPT で二重課金されるため、プレミアム以外は回数を制限する。
+  # premium? を先に見る: trial→課金後は premium: true, trial_user: true になり得るため
+  def check_audio_limit
     user = current_user
-    return if user&.premium?
-    return unless user&.trial_user?
+    return if user.nil? || user.premium?
 
-    if user.trial_audio_count >= TRIAL_AUDIO_LIMIT
+    if user.trial_user?
+      return if user.trial_audio_count < TRIAL_AUDIO_LIMIT
+
       render json: {
-        error: "トライアルユーザーの音声分析上限（#{TRIAL_AUDIO_LIMIT}回）に達しました。アカウント登録すると無制限に利用できます。",
+        error: "お試しの音声記録（#{TRIAL_AUDIO_LIMIT}回）を使い切りました。アカウント登録すると、無料プランでも月#{FREE_AUDIO_MONTHLY_LIMIT}回まで使えます。",
         limit_reached: true
       }, status: :forbidden
+      return
     end
+
+    count = monthly_audio_count(user)
+    return if count < FREE_AUDIO_MONTHLY_LIMIT
+
+    render json: {
+      error: "無料プランの音声記録は月#{FREE_AUDIO_MONTHLY_LIMIT}回までです。プレミアム会員になると、もっと使えます。",
+      limit_reached: true,
+      premium_required: true,
+      monthly_audio_count: count,
+      monthly_audio_limit: FREE_AUDIO_MONTHLY_LIMIT
+    }, status: :forbidden
+  end
+
+  def monthly_audio_count(user)
+    AiUsageLog.this_month_for_user(user, "audio_analysis").count
+  end
+
+  def record_audio_usage_log(user)
+    AiUsageLog.create!(user: user, feature: "audio_analysis")
+  rescue ActiveRecord::ActiveRecordError => e
+    # 記録の失敗で、受け付け済みの音声の解析を止めない
+    Rails.logger.error "[audio_usage] Failed to create usage log: #{e.class}"
   end
 end
