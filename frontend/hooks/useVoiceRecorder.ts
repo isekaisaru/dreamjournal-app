@@ -198,19 +198,23 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
         const blobType = mimeTypeRef.current || recordedChunk?.type || "";
         const blob = new Blob(chunksRef.current, { type: blobType });
 
-        console.log("Debug: Recording stopped", {
-          blobSize: blob.size,
-          duration,
-          mimeType: mimeTypeRef.current,
-          chunksCount: chunksRef.current.length,
-        });
+        if (process.env.NODE_ENV !== "production") {
+          console.log("Debug: Recording stopped", {
+            blobSize: blob.size,
+            duration,
+            mimeType: mimeTypeRef.current,
+            chunksCount: chunksRef.current.length,
+          });
+        }
 
         if (blob.size < MIN_BLOB_SIZE || duration < MIN_DURATION_MS) {
           const msg = "録音が短すぎるか、無音の可能性があります。";
-          console.warn("Debug: Recording too short or silent", {
-            blobSize: blob.size,
-            duration,
-          });
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("Debug: Recording too short or silent", {
+              blobSize: blob.size,
+              duration,
+            });
+          }
           setError(msg);
           toast.error(msg);
         } else {

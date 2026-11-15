@@ -60,6 +60,83 @@ RSpec.describe 'AudioDreams API', type: :request do
 
         expect(response).not_to have_http_status(:forbidden)
       end
+
+      it 'トライアルの上限メッセージは「無制限」と言わず、無料プランの月の回数を案内する' do
+        user.update!(trial_user: true, trial_audio_count: 1)
+
+        authenticated_post '/analyze_audio_dream', user
+
+        expect(json_response['error']).to include("月#{AudioDreamsController::FREE_AUDIO_MONTHLY_LIMIT}回")
+        expect(json_response['error']).not_to include('無制限')
+      end
+    end
+
+    context '無料プラン（本登録・非プレミアム）の月の上限' do
+      let(:limit) { AudioDreamsController::FREE_AUDIO_MONTHLY_LIMIT }
+
+      def audio_usage_count(target)
+        AiUsageLog.where(user: target, feature: 'audio_analysis').count
+      end
+
+      it '上限内なら音声夢を作り、利用ログを1件残す' do
+        create_list(:ai_usage_log, limit - 1, user: user, feature: 'audio_analysis')
+
+        expect {
+          post '/analyze_audio_dream',
+               params: { file: audio_upload },
+               headers: auth_headers(user)
+        }.to change { audio_usage_count(user) }.by(1)
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it '今月の上限に達していたら403で、夢もジョブも利用ログも増えない' do
+        create_list(:ai_usage_log, limit, user: user, feature: 'audio_analysis')
+
+        expect {
+          post '/analyze_audio_dream',
+               params: { file: audio_upload },
+               headers: auth_headers(user)
+        }.not_to change(Dream, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['limit_reached']).to be true
+        expect(json_response['premium_required']).to be true
+        expect(json_response['monthly_audio_limit']).to eq(limit)
+        expect(json_response['error']).to include("月#{limit}回")
+        expect(audio_usage_count(user)).to eq(limit)
+        analyze_jobs = ActiveJob::Base.queue_adapter.enqueued_jobs.select { |j| j['job_class'] == 'AnalyzeDreamJob' }
+        expect(analyze_jobs).to be_empty
+      end
+
+      it '先月の利用は今月の回数に入れない' do
+        create_list(:ai_usage_log, limit, user: user, feature: 'audio_analysis', created_at: 1.month.ago)
+
+        authenticated_post '/analyze_audio_dream', user
+
+        expect(response).not_to have_http_status(:forbidden)
+      end
+
+      it 'ほかの機能（夢の分析）の利用は音声の回数に入れない' do
+        create_list(:ai_usage_log, limit, user: user, feature: 'dream_analysis')
+
+        authenticated_post '/analyze_audio_dream', user
+
+        expect(response).not_to have_http_status(:forbidden)
+      end
+
+      it 'プレミアム会員は月の上限を超えても使え、利用ログは残す' do
+        user.update!(premium: true)
+        create_list(:ai_usage_log, limit, user: user, feature: 'audio_analysis')
+
+        expect {
+          post '/analyze_audio_dream',
+               params: { file: audio_upload },
+               headers: auth_headers(user)
+        }.to change { audio_usage_count(user) }.by(1)
+
+        expect(response).to have_http_status(:ok)
+      end
     end
 
     context 'メール未確認ユーザーのAI課金機能ゲート' do
@@ -106,6 +183,54 @@ RSpec.describe 'AudioDreams API', type: :request do
         expect(response).to have_http_status(:unauthorized)
         expect(first_user.dreams.reload).to be_empty
       end
+    end
+  end
+
+  describe 'GET /audio_quota' do
+    let(:limit) { AudioDreamsController::FREE_AUDIO_MONTHLY_LIMIT }
+
+    it '無料プランは今月の使用回数と残りを返す（先月とほかの機能は数えない）' do
+      create_list(:ai_usage_log, 2, user: user, feature: 'audio_analysis')
+      create(:ai_usage_log, user: user, feature: 'audio_analysis', created_at: 1.month.ago)
+      create(:ai_usage_log, user: user, feature: 'dream_analysis')
+
+      authenticated_get '/audio_quota', user
+
+      expect(response).to have_http_status(:ok)
+      expect(json_response).to include('used' => 2, 'limit' => limit, 'remaining' => limit - 2)
+    end
+
+    it '使い切っていれば残りは0' do
+      create_list(:ai_usage_log, limit + 1, user: user, feature: 'audio_analysis')
+
+      authenticated_get '/audio_quota', user
+
+      expect(json_response['remaining']).to eq(0)
+    end
+
+    it 'プレミアム会員は unlimited を返す' do
+      user.update!(premium: true)
+
+      authenticated_get '/audio_quota', user
+
+      expect(json_response['unlimited']).to be true
+    end
+
+    it 'トライアルユーザーはお試しの回数を返す' do
+      user.update!(trial_user: true, trial_audio_count: 1)
+
+      authenticated_get '/audio_quota', user
+
+      expect(json_response).to include(
+        'trial' => true,
+        'used' => 1,
+        'limit' => AudioDreamsController::TRIAL_AUDIO_LIMIT,
+        'remaining' => 0
+      )
+    end
+
+    context '認証されていない場合' do
+      it_behaves_like 'unauthorized request', :get, '/audio_quota'
     end
   end
 end

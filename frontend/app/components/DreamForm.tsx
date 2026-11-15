@@ -400,7 +400,7 @@ export default function DreamForm({
                 className="px-4 py-2 rounded-full font-bold text-sm bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-md hover:opacity-90 transition-opacity flex items-center gap-2"
               >
                 <span>✨</span>
-                <span>プレミアムで無制限に使う</span>
+                <span>プレミアムで もっと使う</span>
               </a>
             </div>
           ) : (
