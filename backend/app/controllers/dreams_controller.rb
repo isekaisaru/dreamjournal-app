@@ -5,12 +5,15 @@ class DreamsController < ApplicationController
   # check_analysis_limit の前（枠を消費してから403にしない）。
   before_action :require_verified_email, only: [:analyze, :preview_analysis, :generate_image]
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
+  # 画像生成はプレミアム限定（プランのページ・LandingFaq の案内と合わせる）。
+  # メール確認の後・月次上限の前に確認する。
+  before_action :require_premium_for_image, only: [:generate_image]
   before_action :check_monthly_image_limit, only: [:generate_image]
   before_action :check_trial_dream_limit, only: [:create]
 
   TRIAL_DREAM_LIMIT             = 7   # トライアルユーザーの夢作成件数上限
   TRIAL_ANALYSIS_LIMIT          = 3   # トライアルユーザーの分析回数上限
-  IMAGE_MONTHLY_LIMIT           = 31  # 全ユーザー共通の画像生成月次上限
+  IMAGE_MONTHLY_LIMIT           = 31  # 画像生成の月次上限（プレミアム限定機能）
   FREE_ANALYSIS_MONTHLY_LIMIT   = User::FREE_ANALYSIS_MONTHLY_LIMIT
   PREMIUM_DAILY_ANALYSIS_LIMIT  = 50  # プレミアムユーザーの1日あたりフェアユース上限
   
@@ -82,7 +85,7 @@ class DreamsController < ApplicationController
   # GET /dreams/:id
   def show
     render json: @dream.as_json(
-      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id],
+      only: [:id, :title, :created_at, :content, :analysis_json, :analysis_status, :analyzed_at, :generated_image_url, :dream_profile_id, :edit_version],
       include: {
         emotions: {},
         dream_profile: dream_profile_json_options
@@ -92,9 +95,10 @@ class DreamsController < ApplicationController
 
   # POST /dreams
   def create
+    # 夢のタイトル・本文は機微な自由記述のため、paramsの全文をログへ出さない
+    # （filter_parameter_logging.rb で :title / :content をマスク対象にしている）。
     Rails.logger.info "DreamsController#create called"
-    Rails.logger.info "Params: #{params.inspect}"
-    
+
     # 音声ファイルがあるかどうかで処理を分岐
     if params[:dream][:audio].present?
       @dream = current_user.dreams.build(
@@ -117,18 +121,40 @@ class DreamsController < ApplicationController
   end
 
   # PATCH/PUT /dreams/:id
+  #
+  # 利用者の編集（title / content / dream_profile_id / emotion_ids を含む更新）では、
+  # 編集開始時にGETで受け取った版番号を expected_edit_version として送らせる。
+  # 保存時点の版と一致しなければ、古い内容で新しい保存を上書きしないよう 409 を返す（Issue #561）。
   def update
     # 音声ファイルが添付された更新リクエストの場合
     if params[:dream][:audio].present?
       @dream.audio.attach(params[:dream][:audio])
       # ここでジョブを起動することも可能
     end
-    if @dream.update(dream_params)
+
+    saved =
+      if user_edit_request?
+        @dream.apply_user_edit(dream_params, expected_version: expected_edit_version!)
+      else
+        # 分析結果だけの更新（Trialの分析紐付けなど）は版番号を問わず、版も進めない
+        @dream.update(dream_params)
+      end
+
+    if saved
       @dream.reload
       render json: @dream.as_json(include: :emotions)
     else
       render json: { error: @dream.errors.full_messages }, status: :unprocessable_content
     end
+  rescue InvalidEditVersion
+    render json: { error: '版番号（expected_edit_version）は0以上の整数で指定してください。' }, status: :unprocessable_content
+  rescue Dream::EditConflict
+    render_edit_conflict
+  rescue ActiveRecord::RecordNotFound
+    # 行ロックで読み直す前に削除された場合だけ404にする（存在しない感情IDなどは従来どおり）
+    raise if Dream.exists?(@dream.id)
+
+    render json: { error: '指定された夢が見つかりません' }, status: :not_found
   end
 
   # DELETE /dreams/:id
@@ -297,7 +323,36 @@ class DreamsController < ApplicationController
   end
 
   private
-   
+
+    class InvalidEditVersion < StandardError; end
+
+    def user_edit_request?
+      (params.require(:dream).keys & Dream::USER_EDITABLE_ATTRIBUTES).any?
+    end
+
+    # 版番号を送らない旧クライアント（更新前に開いたままのタブ等）は移行期間中だけ受理し、
+    # 必須化の判断材料として夢IDだけをログに残す（本文はログに出さない）。
+    def expected_edit_version!
+      unless params.key?(:expected_edit_version)
+        Rails.logger.warn("[dream_update] expected_edit_version なしの編集を受理 dream_id=#{@dream.id}")
+        return nil
+      end
+
+      value = params[:expected_edit_version]
+      raise InvalidEditVersion unless value.is_a?(Integer) && value >= 0
+
+      value
+    end
+
+    def render_edit_conflict
+      current = @dream.as_json(only: [:id, :title, :content, :dream_profile_id, :edit_version, :updated_at])
+      render json: {
+        error: 'ほかの画面で この夢が先に保存されました。最新の内容を確認してください。',
+        code: 'edit_conflict',
+        current: current.merge('emotion_ids' => @dream.emotion_ids.sort)
+      }, status: :conflict
+    end
+
     # 認可されたパラメーターを取得する
     def dream_params
       params.require(:dream).permit(
@@ -368,7 +423,7 @@ class DreamsController < ApplicationController
         return unless current_user.trial_analysis_count >= TRIAL_ANALYSIS_LIMIT
 
         render json: {
-          error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると無制限に分析できます。",
+          error: "トライアルユーザーの分析上限（#{TRIAL_ANALYSIS_LIMIT}回）に達しました。アカウント登録すると、無料プランでも月#{FREE_ANALYSIS_MONTHLY_LIMIT}回まで分析できます。",
           limit_reached: true
         }, status: :forbidden
         return
@@ -376,7 +431,7 @@ class DreamsController < ApplicationController
 
       unless current_user.reserve_monthly_analysis_slot!
         render json: {
-          error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると無制限で利用できます。",
+          error: "無料プランのAI分析上限（#{FREE_ANALYSIS_MONTHLY_LIMIT}回/月）に達しました。プレミアム会員になると、もっとたくさん分析できます。",
           limit_reached: true,
           monthly_analysis_count: current_user.monthly_analysis_count,
           monthly_analysis_limit: FREE_ANALYSIS_MONTHLY_LIMIT
@@ -405,7 +460,17 @@ class DreamsController < ApplicationController
       Rails.logger.error "[analysis_usage] Failed to create usage log: #{e.class} - #{e.message}"
     end
 
-    # 画像生成の月次上限チェック（全ユーザー共通）
+    # premium? を見る: trial→課金後は premium: true, trial_user: true になり得るため
+    def require_premium_for_image
+      return if current_user.premium?
+
+      render json: {
+        error: "夢の画像生成はプレミアム会員のみご利用いただけます。",
+        premium_required: true
+      }, status: :forbidden
+    end
+
+    # 画像生成の月次上限チェック
     def check_monthly_image_limit
       count = current_month_image_generation_count
 

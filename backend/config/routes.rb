@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
   # 音声解析用エンドポイント
   post "/analyze_audio_dream", to: "audio_dreams#create"
+  get "/audio_quota", to: "audio_dreams#quota" # 音声分析の残り回数
 
   resources :dreams, only: [:index, :show, :create, :update, :destroy] do
     member do
@@ -67,7 +68,7 @@ Rails.application.routes.draw do
   resources :password_resets, only: [:create, :update]
 
   # 開発環境専用: パスワードリセットトークン取得用エンドポイント（E2E用）
-  if Rails.env.development? || ENV['ENABLE_DEV_ENDPOINTS'] == 'true'
+  if Rails.env.development? || (Rails.env.test? && ENV['ENABLE_DEV_ENDPOINTS'] == 'true')
     get '/dev/password_resets/token', to: 'password_resets#dev_token'
   end
 

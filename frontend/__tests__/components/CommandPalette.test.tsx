@@ -70,6 +70,13 @@ describe("CommandPalette", () => {
     await flushFetch();
   });
 
+  it("ホームと同じ画面へ移動するマイ夢コマンドは表示しない", async () => {
+    setup();
+    fireEvent.keyDown(window, { key: "k", metaKey: true });
+    expect(screen.queryByText("マイ夢へ")).not.toBeInTheDocument();
+    await flushFetch();
+  });
+
   it("Enter で選択中コマンドを実行する（先頭=新しい夢を記録→/dream/new）", async () => {
     setup();
     fireEvent.keyDown(window, { key: "k", metaKey: true });

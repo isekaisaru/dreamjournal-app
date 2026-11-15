@@ -475,6 +475,11 @@
   body.has-bottom-nav {
     --bottom-nav-h: calc(env(safe-area-inset-bottom) + 5rem);
   }
+
+  /* ログイン後の主ナビはBottomTabBarへ一本化し、上部はロゴと補助操作だけにする */
+  body.has-bottom-nav [data-auth-navigation] {
+    display: none;
+  }
 }
 
 /* STEP4: PC(lg+)かつサイドバー表示時は、横長の既存ヘッダーを隠す（サイドバーが代替） */

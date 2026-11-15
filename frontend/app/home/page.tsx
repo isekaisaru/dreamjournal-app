@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LayoutGrid, List } from "lucide-react";
@@ -140,10 +140,18 @@ export default function HomePage() {
   const [weeklyNewsError, setWeeklyNewsError] = useState(false);
   const [dreamViewMode, setDreamViewMode] = useState<DreamViewMode>("grid");
 
+  // プロフィール切り替え等で検索条件が短時間に変わると、複数のfetchが同時に
+  // 飛ぶことがある。ネットワーク遅延で応答が逆転すると、古い（今は選ばれていない）
+  // 条件の結果で新しい結果を上書きしてしまうため、常に「最後に発行したリクエスト」の
+  // 結果だけを反映するようにする。
+  const latestFetchIdRef = useRef(0);
+
   const fetchDreams = useCallback(async () => {
     if (authStatus !== "authenticated") {
       return;
     }
+
+    const fetchId = ++latestFetchIdRef.current;
 
     setLoading(true);
     setErrorMessage(null);
@@ -168,14 +176,24 @@ export default function HomePage() {
       const url = queryString ? `/dreams?${queryString}` : "/dreams";
       const dreamsData = await apiClient.get<Dream[]>(url);
 
+      // 待っている間に、より新しい条件でのfetchが発行されていたら、この結果は捨てる
+      if (fetchId !== latestFetchIdRef.current) {
+        return;
+      }
+
       setDreams(dreamsData);
     } catch (error) {
+      if (fetchId !== latestFetchIdRef.current) {
+        return;
+      }
       console.error("Error fetching dreams:", error);
       setErrorMessage(
         "データの取得に失敗しました。ページを再読み込みしてください。"
       );
     } finally {
-      setLoading(false);
+      if (fetchId === latestFetchIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [authStatus, searchParams]);
 
@@ -573,7 +591,7 @@ export default function HomePage() {
             {analysisQuota.remaining === 0 ? (
               <p className="text-xs text-destructive">
                 今月の上限に達しました。
-                <Link href="/subscription" className="underline ml-1">プレミアムで無制限に</Link>
+                <Link href="/subscription" className="underline ml-1">プレミアムで もっと使う</Link>
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -636,7 +654,7 @@ export default function HomePage() {
           >
             <p className="font-bold text-primary mb-1">✨ プレミアムを試してみる</p>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              AI分析 たっぷり使える・夢の画像生成・月次サマリー。月額¥590で使い放題。
+              AI分析 たっぷり使える・夢の画像生成・月次サマリー。月額¥590。
             </p>
           </Link>
         )}

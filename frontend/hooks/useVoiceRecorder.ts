@@ -22,6 +22,27 @@ type UseVoiceRecorderOptions = {
   onBlobReady: (blob: Blob) => void;
 };
 
+export const getVoiceRecorderErrorMessage = (error: unknown): string => {
+  const name =
+    typeof error === "object" && error !== null && "name" in error
+      ? String(error.name)
+      : "";
+
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return "マイクの使用が許可されていません。ブラウザの設定からマイクを許可してください。文字入力はそのまま利用できます。";
+  }
+
+  if (
+    name === "NotFoundError" ||
+    name === "DevicesNotFoundError" ||
+    name === "NotReadableError"
+  ) {
+    return "利用できるマイクが見つかりません。接続や他のアプリの使用状況を確認してください。文字入力はそのまま利用できます。";
+  }
+
+  return "録音を開始できませんでした。文字入力はそのまま利用できます。";
+};
+
 export const selectSupportedAudioMimeType = (): string => {
   if (
     typeof MediaRecorder === "undefined" ||
@@ -68,7 +89,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
   // 先に権限を取得し、許可後に可能なら「モニター系の無音マイク」を避けて選択する
   const getPreferredAudioStream = async (): Promise<MediaStream> => {
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error("このブラウザは音声録音に対応していません。");
+      throw new Error("unsupported-recorder");
     }
 
     const initialStream = await navigator.mediaDevices.getUserMedia({
@@ -129,7 +150,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
         throw new Error("音声トラックの取得に失敗しました。");
       }
       if (typeof MediaRecorder === "undefined") {
-        throw new Error("このブラウザは音声録音に対応していません。");
+        throw new Error("unsupported-recorder");
       }
 
       // Chrome × モニターで「無音デバイス」を掴んでないかチェック
@@ -177,19 +198,23 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
         const blobType = mimeTypeRef.current || recordedChunk?.type || "";
         const blob = new Blob(chunksRef.current, { type: blobType });
 
-        console.log("Debug: Recording stopped", {
-          blobSize: blob.size,
-          duration,
-          mimeType: mimeTypeRef.current,
-          chunksCount: chunksRef.current.length,
-        });
+        if (process.env.NODE_ENV !== "production") {
+          console.log("Debug: Recording stopped", {
+            blobSize: blob.size,
+            duration,
+            mimeType: mimeTypeRef.current,
+            chunksCount: chunksRef.current.length,
+          });
+        }
 
         if (blob.size < MIN_BLOB_SIZE || duration < MIN_DURATION_MS) {
           const msg = "録音が短すぎるか、無音の可能性があります。";
-          console.warn("Debug: Recording too short or silent", {
-            blobSize: blob.size,
-            duration,
-          });
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("Debug: Recording too short or silent", {
+              blobSize: blob.size,
+              duration,
+            });
+          }
           setError(msg);
           toast.error(msg);
         } else {
@@ -207,8 +232,7 @@ const useVoiceRecorder = ({ onBlobReady }: UseVoiceRecorderOptions) => {
         "録音を開始しました。話し終わったら再度タップしてください。"
       );
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "録音開始に失敗しました。";
+      const msg = getVoiceRecorderErrorMessage(err);
       setError(msg);
       toast.error(msg);
       cleanupStream();

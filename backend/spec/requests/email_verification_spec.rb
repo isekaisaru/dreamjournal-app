@@ -171,6 +171,8 @@ RSpec.describe 'Email verification', type: :request do
     it '確認URLとトークンが本文に含まれる' do
       user = create(:user, :unverified, email: 'mailbody@example.com')
       token = user.generate_email_verification_token!
+      frontend_url = 'https://example.test'
+      stub_const('ENV', ENV.to_hash.merge('FRONTEND_URL' => frontend_url))
 
       mail = UserMailer.email_verification(user, token)
 
@@ -182,9 +184,10 @@ RSpec.describe 'Email verification', type: :request do
       # ようにする（Codexレビュー指摘・#420）
       expect(mail.from).to eq([ENV.fetch('MAIL_FROM', 'support@yumelog.com')])
       expect(mail.subject).to include('メールアドレスの確認')
-      # マルチパート（text/html）それぞれに確認URLが含まれる
-      expect(mail.text_part.decoded).to include("/verify-email?token=#{token}")
-      expect(mail.html_part.decoded).to include("/verify-email?token=#{token}")
+      # マルチパート（text/html）それぞれにFRONTEND_URL基準の完全URLが含まれる
+      verification_url = "#{frontend_url}/verify-email?token=#{token}"
+      expect(mail.text_part.decoded).to include(verification_url)
+      expect(mail.html_part.decoded).to include(verification_url)
     end
   end
 end

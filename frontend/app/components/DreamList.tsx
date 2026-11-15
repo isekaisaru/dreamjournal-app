@@ -103,7 +103,7 @@ const DreamList = ({
         animate="show"
         className={
           viewMode === "grid"
-            ? "grid w-full grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4 p-4"
+            ? "grid w-full grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4 p-4"
             : "flex w-full flex-col gap-3 p-4"
         }
       >

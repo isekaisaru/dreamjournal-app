@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
 import MorpheusHero from "@/app/components/MorpheusHero";
 import MorpheusLoginRequired from "@/app/components/MorpheusLoginRequired";
+import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import { useAuth } from "@/context/AuthContext";
 import Loading from "../loading";
 
@@ -14,6 +15,7 @@ const FREE_FEATURES = [
   { label: "AI分析", detail: "月10回まで" },
   { label: "夢の記録", detail: "無制限" },
   { label: "感情タグ", detail: "利用可" },
+  { label: "音声で記録", detail: "月5回まで" },
   { label: "月次サマリー", detail: "利用不可" },
   { label: "夢の画像生成", detail: "利用不可" },
 ];
@@ -22,6 +24,7 @@ const PREMIUM_FEATURES = [
   { label: "AI分析", detail: "たっぷり使える" },
   { label: "夢の記録", detail: "無制限" },
   { label: "感情タグ", detail: "利用可" },
+  { label: "音声で記録", detail: "たっぷり使える" },
   { label: "月次サマリー", detail: "月ごとのAIまとめ" },
   { label: "夢の画像生成", detail: "月31枚" },
 ];
@@ -54,10 +57,13 @@ export default function SubscriptionPage() {
   const { user, authStatus } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [emailVerificationRequired, setEmailVerificationRequired] =
+    useState(false);
 
   const handleSubscribe = async () => {
     setIsLoading(true);
     setErrorMessage(null);
+    setEmailVerificationRequired(false);
 
     try {
       const response = await fetch("/api/checkout", {
@@ -66,6 +72,16 @@ export default function SubscriptionPage() {
         body: JSON.stringify({ plan: "premium" }),
       });
       const data = await response.json().catch(() => null);
+
+      // メール未確認（backend の require_verified_email）は汎用エラーではなく確認の案内を出す
+      if (
+        response.status === 403 &&
+        data?.email_verification_required === true
+      ) {
+        setEmailVerificationRequired(true);
+        setIsLoading(false);
+        return;
+      }
 
       if (!response.ok || !data?.url) {
         throw new Error("決済ページの準備に失敗しました。");
@@ -194,6 +210,15 @@ export default function SubscriptionPage() {
             <Sparkles size={18} />
             {isLoading ? "準備中..." : "プレミアムを始める"}
           </button>
+
+          {emailVerificationRequired && (
+            <div className="mt-6 text-left">
+              <EmailVerificationBanner
+                title="プレミアムに とうろくするには メールの かくにんが ひつようだよ"
+                description="とどいた メールの リンクを ひらいてから、もういちど ためしてみてね。"
+              />
+            </div>
+          )}
 
           {errorMessage && (
             <p className="mt-4 text-sm font-medium text-destructive">

@@ -101,6 +101,7 @@ export const config = {
     "/forest/:path*",
     "/insights/:path*",
     "/settings/:path*",
+    "/profiles/:path*",
     "/room/:path*",
     "/login",
     "/register",

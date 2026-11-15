@@ -96,6 +96,15 @@ RSpec.describe 'Dreams API', type: :request do
         expect(created_dream.emotions.count).to eq(2)
       end
 
+      it 'dream_profile_idを指定しない場合、自分のselfプロフィールへフォールバックする' do
+        expect(valid_dream_params[:dream]).not_to have_key(:dream_profile_id)
+
+        authenticated_post('/dreams', user, params: valid_dream_params)
+
+        expect(response).to have_http_status(:created)
+        expect(Dream.last.dream_profile_id).to eq(user.self_dream_profile_id)
+      end
+
       it '無効なパラメーターで夢作成に失敗する' do
         expect {
           authenticated_post('/dreams', user, params: invalid_dream_params)
@@ -120,10 +129,23 @@ RSpec.describe 'Dreams API', type: :request do
       it '内容が1000文字を超える場合失敗する' do
         long_content = 'あ' * 1001
         params = valid_dream_params.merge(dream: { title: 'タイトル', content: long_content })
-        
+
         authenticated_post('/dreams', user, params: params)
-        
+
         expect(response).to have_http_status(:unprocessable_content)
+      end
+
+      it '他人のdream_profile_idを指定すると夢を作成できない' do
+        other_profile = create(:dream_profile, user: other_user)
+        params = valid_dream_params.deep_merge(dream: { dream_profile_id: other_profile.id })
+
+        expect {
+          authenticated_post('/dreams', user, params: params)
+        }.not_to change(Dream, :count)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error'].join).to include('自分のプロフィール')
       end
     end
 
@@ -268,6 +290,21 @@ RSpec.describe 'Dreams API', type: :request do
         authenticated_put('/dreams/99999', user, params: update_params)
 
         expect(response).to have_http_status(:not_found)
+      end
+
+      it '自分の夢を他人のdream_profile_idへ付け替えられない' do
+        other_profile = create(:dream_profile, user: other_user)
+        original_profile_id = user_dream.dream_profile_id
+        params = update_params.deep_merge(dream: { dream_profile_id: other_profile.id })
+
+        authenticated_put("/dreams/#{user_dream.id}", user, params: params)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        json_response = JSON.parse(response.body)
+        expect(json_response['error'].join).to include('自分のプロフィール')
+        # 更新は丸ごと失敗しなければならない（dream_profile_idだけでなくtitle等も一切変わらない）
+        expect(user_dream.reload.dream_profile_id).to eq(original_profile_id)
+        expect(user_dream.title).to eq('元のタイトル')
       end
     end
 
@@ -653,6 +690,30 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response['monthly_analysis_limit']).to eq(User::FREE_ANALYSIS_MONTHLY_LIMIT)
       end
 
+      # プレミアムにも1日の上限（PREMIUM_DAILY_ANALYSIS_LIMIT）があるため「無制限」とは言わない
+      it '無料プランの上限メッセージは「無制限」と言わない' do
+        user.update!(
+          monthly_analysis_count: User::FREE_ANALYSIS_MONTHLY_LIMIT,
+          monthly_analysis_count_reset_at: Time.current.beginning_of_month
+        )
+
+        authenticated_post "/dreams/#{dream.id}/analyze", user
+
+        expect(json_response['error']).to include('プレミアム')
+        expect(json_response['error']).not_to include('無制限')
+      end
+
+      # 登録後は無料プラン（月の上限あり）になるため「無制限」とは言わない
+      it 'トライアルの上限メッセージは「無制限」と言わず、無料プランの月の回数を案内する' do
+        user.update!(trial_user: true, trial_analysis_count: DreamsController::TRIAL_ANALYSIS_LIMIT)
+
+        authenticated_post "/dreams/#{dream.id}/analyze", user
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['error']).to include("月#{User::FREE_ANALYSIS_MONTHLY_LIMIT}回")
+        expect(json_response['error']).not_to include('無制限')
+      end
+
       it '無料プランでは分析受付時に月次カウントを増やす' do
         expect do
           authenticated_post "/dreams/#{dream.id}/analyze", user
@@ -868,7 +929,35 @@ RSpec.describe 'Dreams API', type: :request do
       $openai_client = @original_openai_client
     end
 
-    context '認証済みユーザーの場合' do
+    context 'プレミアムでないユーザーの場合' do
+      it '画像を生成せず 403 と premium_required を返す' do
+        expect(images_client).not_to receive(:generate)
+
+        expect {
+          authenticated_post "/dreams/#{dream.id}/generate_image", user
+        }.not_to change(DreamImageGeneration, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['premium_required']).to eq(true)
+        expect(json_response['error']).to include('プレミアム')
+        expect(dream.reload.generated_image_url).to be_nil
+      end
+
+      it 'trial から課金していないユーザーも 403 を返す' do
+        trial_user = create(:user, trial_user: true, email_verified_at: Time.current)
+        trial_dream = create(:dream, user: trial_user, content: 'お試しの夢')
+        expect(images_client).not_to receive(:generate)
+
+        authenticated_post "/dreams/#{trial_dream.id}/generate_image", trial_user
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['premium_required']).to eq(true)
+      end
+    end
+
+    context 'プレミアムユーザーの場合' do
+      before { user.update!(premium: true) }
+
       it '画像を生成して generated_image_url を保存し 200 を返す' do
         expect(images_client).to receive(:generate).with(
           parameters: hash_including(
@@ -1001,32 +1090,32 @@ RSpec.describe 'Dreams API', type: :request do
         end
 
         context 'child ユーザー' do
-          let(:age_user) { create(:user, age_group: 'child') }
+          let(:age_user) { create(:user, age_group: 'child', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'pastel colors'
         end
 
         context 'child_small ユーザー' do
-          let(:age_user) { create(:user, age_group: 'child_small') }
+          let(:age_user) { create(:user, age_group: 'child_small', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
         end
 
         context 'preteen ユーザー' do
-          let(:age_user) { create(:user, age_group: 'preteen') }
+          let(:age_user) { create(:user, age_group: 'preteen', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'adventurous'
         end
 
         context 'teen ユーザー' do
-          let(:age_user) { create(:user, age_group: 'teen') }
+          let(:age_user) { create(:user, age_group: 'teen', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'cool and stylish'
         end
 
         context 'adult ユーザー' do
-          let(:age_user) { create(:user, age_group: 'adult') }
+          let(:age_user) { create(:user, age_group: 'adult', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'sophisticated'
         end
 
         context 'age_group がデフォルト（child）のユーザー' do
-          let(:age_user) { create(:user) }
+          let(:age_user) { create(:user, premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
         end
       end

@@ -22,7 +22,15 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { BarChart3, House, Moon, Plus, Search, Settings, Sparkles, Trees } from "lucide-react";
+import {
+  BarChart3,
+  House,
+  Plus,
+  Search,
+  Settings,
+  Sparkles,
+  Trees,
+} from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "@/lib/apiClient";
@@ -107,7 +115,6 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
       { id: "home", label: "ホームへ", icon: <House size={16} />, group: "action", run: () => router.push("/home") },
       { id: "insights", label: "きもちインサイトを見る", icon: <BarChart3 size={16} />, group: "action", run: () => router.push("/insights") },
       { id: "forest", label: "もりへ", icon: <Trees size={16} />, group: "action", run: () => router.push("/forest") },
-      { id: "my-dreams", label: "マイ夢へ", icon: <Moon size={16} />, group: "action", run: () => router.push("/my-dreams") },
       { id: "settings", label: "設定へ", icon: <Settings size={16} />, group: "action", run: () => router.push("/settings") },
     ];
     const dreamCmds: Command[] = recentDreams.map((d) => ({

@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_many :dream_image_generations, dependent: :destroy
   has_many :payments, dependent: :destroy
   has_many :subscriptions, dependent: :destroy
+  has_many :checkout_attempts, dependent: :destroy
   has_many :ai_usage_logs, dependent: :destroy
 
   AGE_GROUPS = %w[child_small child preteen teen adult].freeze

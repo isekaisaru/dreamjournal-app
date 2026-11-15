@@ -33,14 +33,17 @@ jest.mock("@/app/components/MorpheusAvatar", () => ({
   default: ({
     variant,
     size,
+    priority,
   }: {
     variant: string;
     size?: number;
+    priority?: boolean;
   }) => (
     <div
       data-testid="morpheus-avatar"
       data-variant={variant}
       data-size={size}
+      data-priority={priority ? "true" : "false"}
     />
   ),
 }));
@@ -127,6 +130,7 @@ describe("設定ガイド", () => {
     const avatar = screen.getByTestId("morpheus-avatar");
     expect(avatar).toHaveAttribute("data-variant", "settings");
     expect(avatar).toHaveAttribute("data-size", "112");
+    expect(avatar).toHaveAttribute("data-priority", "true");
     expect(screen.queryByTestId("morpheus-image")).not.toBeInTheDocument();
   });
 });
@@ -151,9 +155,20 @@ describe("設定タブ", () => {
     expect(screen.getByText("プレミアムプラン")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
-    expect(
-      screen.getByText("アカウントをさくじょする")
-    ).toBeInTheDocument();
+    expect(screen.getByText("アカウントをさくじょする")).toBeInTheDocument();
+  });
+});
+
+describe("ログアウト", () => {
+  it("アカウント設定から既存の logout を実行できる", () => {
+    const authValue = makeAuthValue();
+    mockedUseAuth.mockReturnValue(authValue);
+
+    render(<SettingsPage />);
+    fireEvent.click(screen.getByRole("tab", { name: "アカウント" }));
+    fireEvent.click(screen.getByRole("button", { name: "ログアウト" }));
+
+    expect(authValue.logout).toHaveBeenCalledTimes(1);
   });
 });
 

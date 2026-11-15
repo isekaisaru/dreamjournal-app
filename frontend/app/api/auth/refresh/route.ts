@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveBackendUrl } from "@/app/api/checkout/backend-url";
+import { forwardedOriginHeaders } from "@/app/api/checkout/request-origin";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: {
         Cookie: `refresh_token=${refreshToken}`,
+        // RailsのCSRF対策（Origin検証）を通すため、ブラウザが送ってきたOrigin/Refererを転送する
+        ...forwardedOriginHeaders(req),
       },
       cache: "no-store",
     });

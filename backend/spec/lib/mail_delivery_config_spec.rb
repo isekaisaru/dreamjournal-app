@@ -8,7 +8,8 @@ RSpec.describe MailDeliveryConfig do
     {
       'SMTP_USERNAME' => 'resend',
       'SMTP_PASSWORD' => 'dummy-api-key',
-      'MAIL_FROM' => 'no-reply@example.com'
+      'MAIL_FROM' => 'no-reply@example.com',
+      'FRONTEND_URL' => 'https://frontend.example.com'
     }
   end
 
@@ -35,9 +36,15 @@ RSpec.describe MailDeliveryConfig do
       expect(described_class.missing_env_keys(env)).to eq(['SMTP_USERNAME'])
     end
 
-    it '何も設定されていなければ3つとも返す' do
+    it 'FRONTEND_URL が未設定なら返す（メール内リンクが localhost にフォールバックするため）' do
+      env = complete_env.merge('FRONTEND_URL' => '')
+
+      expect(described_class.missing_env_keys(env)).to eq(['FRONTEND_URL'])
+    end
+
+    it '何も設定されていなければ4つとも返す' do
       expect(described_class.missing_env_keys({}))
-        .to match_array(%w[SMTP_USERNAME SMTP_PASSWORD MAIL_FROM])
+        .to match_array(%w[SMTP_USERNAME SMTP_PASSWORD MAIL_FROM FRONTEND_URL])
     end
   end
 
@@ -62,7 +69,15 @@ RSpec.describe MailDeliveryConfig do
 
       expect(message).to include('SMTP_PASSWORD')
       expect(message).to include('MAIL_FROM')
-      expect(message).to include('配信されません')
+      expect(message).to include('配信されない')
+    end
+
+    it 'FRONTEND_URL だけが欠けていてもキー名を含む警告を返す' do
+      env = complete_env.merge('FRONTEND_URL' => nil)
+      message = described_class.warning_message(env)
+
+      expect(message).to include('FRONTEND_URL')
+      expect(message).to include('リンク')
     end
 
     it '設定値そのものは含めない（APIキーを漏らさない）' do
@@ -71,6 +86,7 @@ RSpec.describe MailDeliveryConfig do
 
       expect(message).not_to include('dummy-api-key')
       expect(message).not_to include('resend')
+      expect(message).not_to include('frontend.example.com')
     end
   end
 end

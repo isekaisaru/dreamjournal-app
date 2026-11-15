@@ -1,4 +1,5 @@
 import { resolveBackendUrl } from "./backend-url";
+import { forwardedOriginHeaders } from "./request-origin";
 
 // Sentry OpenTelemetry との互換性のため、Node.js Runtime を使用
 export const runtime = "nodejs";
@@ -26,6 +27,8 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         // JWT認証のためCookieをバックエンドへ転送する（checkout はログイン必須）
         Cookie: req.headers.get("cookie") ?? "",
+        // RailsのCSRF対策（Origin検証）を通すため、ブラウザが送ってきたOrigin/Refererを転送する
+        ...forwardedOriginHeaders(req),
       },
       body: requestBody || undefined,
       signal: controller.signal,

@@ -32,6 +32,13 @@ Sentry.init do |config|
   #
   # 定数は呼び出し時に解決されるので、初期化順序の影響を受けない。
   config.before_send = lambda do |event, _hint|
-    SentryJobArgumentsFilter.call(event)
+    event = SentryJobArgumentsFilter.call(event)
+    event && SentryEventScrubber.call(event)
+  end
+
+  # トランザクションには before_send が効かないので別に登録する。
+  # 再設定トークンと SQL 内の検索語の扱いは lib/sentry_event_scrubber.rb 参照。
+  config.before_send_transaction = lambda do |event, _hint|
+    SentryEventScrubber.call(event)
   end
 end

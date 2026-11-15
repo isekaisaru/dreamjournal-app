@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -132,7 +132,13 @@ export default function ForestProfilePage() {
   const cel = getCelestial(phase);
   const haze = HAZE[phase];
 
+  // 別のプロフィール詳細（別のprofileId）へ素早く切り替えると、古いprofileIdの
+  // 応答が新しい方より後に届くことがある。その古い応答で表示を上書きしないよう、
+  // 「自分が最後に発行したloadか」をrefで判定する。
+  const latestLoadIdRef = useRef(0);
+
   const load = useCallback(async () => {
+    const loadId = ++latestLoadIdRef.current;
     setIsLoading(true);
     if (!isValidForestProfileId(profileId)) {
       console.error("Invalid forest profileId", rawProfileId);
@@ -146,6 +152,9 @@ export default function ForestProfilePage() {
         getDreamProfiles(),
         getDreamsForProfile(profileId),
       ]);
+
+      if (loadId !== latestLoadIdRef.current) return;
+
       const allProfiles = normalizeDreamProfilesResponse(profilesResponse);
       if (!allProfiles) {
         router.replace("/forest");
@@ -161,11 +170,14 @@ export default function ForestProfilePage() {
       setProfile(found);
       setDreams(profileDreams);
     } catch (error) {
+      if (loadId !== latestLoadIdRef.current) return;
       console.error("Failed to load forest profile detail", error);
       toast.error("きを よみこめませんでした。");
       router.replace("/forest");
     } finally {
-      setIsLoading(false);
+      if (loadId === latestLoadIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [profileId, rawProfileId, router]);
 
@@ -207,15 +219,18 @@ export default function ForestProfilePage() {
 
       {/* sticky ヘッダー */}
       <header className="sticky top-0 z-10 bg-black/20 backdrop-blur-md">
-        <div className="container mx-auto flex h-14 max-w-3xl items-center px-4">
-          <Link href="/forest" className="flex min-h-[44px] items-center px-1 text-white/80 hover:text-white">
+        <div className="container mx-auto flex max-w-3xl flex-wrap items-center gap-y-1 px-4 py-1 sm:h-14 sm:flex-nowrap sm:py-0">
+          <Link href="/forest" className="flex min-h-[44px] shrink-0 items-center px-1 text-white/80 hover:text-white">
             <ChevronLeft className="mr-1 h-5 w-5" /> もりに もどる
           </Link>
-          <h1 className="ml-3 whitespace-nowrap text-lg font-bold">
+          <h1
+            className="order-last ml-1 w-full min-w-0 truncate pr-2 text-lg font-bold sm:order-none sm:ml-3 sm:w-auto"
+            title={`${profile.avatar_emoji} ${profile.name} の き`}
+          >
             {profile.avatar_emoji} {profile.name} の き
           </h1>
           <span
-            className="ml-auto rounded-full px-3 py-1 text-[13px] font-black"
+            className="ml-auto shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[13px] font-black"
             style={{
               background: `${profile.color}22`,
               border: `1px solid ${profile.color}66`,

@@ -8,14 +8,12 @@ import { clientRegister, convertTrial } from "@/lib/apiClient";
 import { useAuth } from "@/context/AuthContext";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
 import AuthVisualPanel from "@/app/components/AuthVisualPanel";
+import { resolveRegistrationErrorMessage } from "@/lib/registrationErrors";
 
 const hiddenEmailStyle = {
   WebkitTextSecurity: "disc",
   textSecurity: "disc",
 } as React.CSSProperties;
-
-const defaultRegisterError =
-  "うまく はじめられなかったよ。もういちど ためしてね。";
 
 function getPasswordStrength(pw: string): { level: 1 | 2 | 3 | null; label: string; color: string } {
   if (pw.length < 8) return { level: null, label: "", color: "" };
@@ -117,10 +115,11 @@ export default function Register() {
         : await clientRegister(credentials);
       // 成功したら、取得したユーザー情報でログイン処理を呼び出します。
       login(nextUser);
-    } catch (err: any) {
-      // 以前: エラーメッセージは err.response.data.errors など、複数の可能性がありました。
-      // 今回: apiClientから来るエラーメッセージを直接表示します。シンプル！
-      setError(defaultRegisterError);
+    } catch (err: unknown) {
+      // バックエンドが422で返す error_codes（field/code）だけを見て理由を出し分ける。
+      // 500・タイムアウト・通信失敗や、知らないコードのときは
+      // resolveRegistrationErrorMessage が汎用メッセージを返す（内部情報は出さない）。
+      setError(resolveRegistrationErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

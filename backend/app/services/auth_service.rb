@@ -3,7 +3,37 @@ require 'jwt'
 class AuthService
   class InvalidCredentialsError < StandardError; end
   class InvalidRefreshTokenError < StandardError; end
-  class RegistrationError < StandardError; end
+
+  # 登録・昇格の失敗。
+  # message は既存互換の人間向け文字列、details は機械可読な field/code の配列。
+  # フロントは details だけを見て文言を出し分ける（英語メッセージを解析させない）。
+  class RegistrationError < StandardError
+    attr_reader :details
+
+    def initialize(message, details = [])
+      super(message)
+      @details = details
+    end
+  end
+
+  # field / code に許可する形（英小文字始まり・英数字とアンダースコアのみ）。
+  # バリデーションのtypeに任意の文字列が入っても、そのまま外へ出さないための安全弁。
+  SAFE_ERROR_TOKEN = /\A[a-z][a-z0-9_]*\z/
+
+  # user.errors から { "field" => ..., "code" => ... } の配列を作る。
+  # ActiveModel の error.attribute / error.type をそのまま使うので、
+  # 「Email has already been taken」のような英語メッセージを文字列解析しなくてよい。
+  # 通常登録（register）とトライアル昇格（convert_trial）で共通に使う。
+  # 入力値・パスワードは一切含めない。
+  def self.validation_details(user)
+    user.errors.filter_map do |error|
+      field = error.attribute.to_s
+      code  = error.type.to_s
+      next unless field.match?(SAFE_ERROR_TOKEN) && code.match?(SAFE_ERROR_TOKEN)
+
+      { 'field' => field, 'code' => code }
+    end
+  end
 
   # JWTシークレットキー
   # - 本番: 必須（未設定なら起動時に例外）
@@ -26,11 +56,11 @@ class AuthService
       Rails.logger.info "認証成功: ユーザーID=#{user.id} トークン生成完了"
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      Rails.logger.warn "認証失敗: email=#{email}"
+      Rails.logger.warn "認証失敗"
       raise InvalidCredentialsError, 'メールアドレスまたはパスワードが正しくありません'
     end
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "ログイン成功後、セッション作成に失敗: #{e.message}"
+    Rails.logger.error "ログイン成功後、セッション作成に失敗 error_class=#{e.class}"
     raise InvalidCredentialsError, "ログイン処理中にエラーが発生しました。"
   end
 
@@ -48,10 +78,10 @@ class AuthService
       Rails.logger.info "新規登録ユーザーID: #{user.id} のセッションを作成しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise RegistrationError, user.errors.full_messages.join(", ")
+      raise RegistrationError.new(user.errors.full_messages.join(", "), validation_details(user))
     end
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "ユーザー作成成功後、セッション作成に失敗: #{e.message}"
+    Rails.logger.error "ユーザー作成成功後、セッション作成に失敗 error_class=#{e.class}"
     raise RegistrationError, "ユーザー登録中にエラーが発生しました。"
   end
 
@@ -70,10 +100,10 @@ class AuthService
       Rails.logger.info "トライアルユーザーID: #{user.id} のセッションを作成しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise RegistrationError, user.errors.full_messages.join(", ")
+      raise RegistrationError.new(user.errors.full_messages.join(", "), validation_details(user))
     end
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "トライアルユーザー作成成功後、セッション作成に失敗: #{e.message}"
+    Rails.logger.error "トライアルユーザー作成成功後、セッション作成に失敗 error_class=#{e.class}"
     raise RegistrationError, "トライアルユーザー登録中にエラーが発生しました。"
   end
 
@@ -106,7 +136,7 @@ class AuthService
       Rails.logger.info "ユーザーID: #{user.id} をトライアルから本登録へ昇格しました。" if Rails.env.development?
       { access_token: access_token, refresh_token: refresh_token, user: user }
     else
-      raise RegistrationError, user.errors.full_messages.join(", ")
+      raise RegistrationError.new(user.errors.full_messages.join(", "), validation_details(user))
     end
   end
 
@@ -128,19 +158,17 @@ class AuthService
       decoded_array = JWT.decode(token, SECRET_KEY, true, { algorithm: 'HS256' })
       decoded = decoded_array[0]
 
-      Rails.logger.info "デコード後のトークン情報: #{decoded.inspect}" if Rails.env.development?
-
       unless decoded.is_a?(Hash) && decoded['user_id'].present?
-        Rails.logger.warn "JWT のデコード結果が無効です: #{decoded.inspect}"
+        Rails.logger.warn "JWT のデコード結果が無効です"
         return nil
       end
 
       decoded
-    rescue JWT::ExpiredSignature
-      Rails.logger.warn "JWT トークンが期限切れです (token_prefix=#{token.to_s[0..7]}...)"
+    rescue JWT::ExpiredSignature => e
+      Rails.logger.warn "JWT トークンが期限切れです error_class=#{e.class}"
       return nil
     rescue JWT::DecodeError => e
-      Rails.logger.warn "JWT トークンのデコードに失敗しました。Error: #{e.message} (token_prefix=#{token.to_s[0..7]}...)"
+      Rails.logger.warn "JWT トークンのデコードに失敗しました error_class=#{e.class}"
       return nil
     end
   end
@@ -166,7 +194,7 @@ class AuthService
       { access_token: encode_token(user.id), refresh_token: new_refresh_token }
     end
   rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.error "リフレッシュトークン検証成功後、DB更新に失敗: #{e.message}"
+    Rails.logger.error "リフレッシュトークン検証成功後、DB更新に失敗 error_class=#{e.class}"
     raise InvalidRefreshTokenError, "トークンリフレッシュ処理中にエラーが発生しました。"
   end
 
@@ -224,7 +252,7 @@ class AuthService
   def self.consume_legacy_refresh_token(refresh_token)
     user = User.find_by(refresh_token: refresh_token)
     if user.nil?
-      Rails.logger.warn "リフレッシュトークンが無効です (token_prefix=#{refresh_token.to_s[0..7]}...)"
+      Rails.logger.warn "リフレッシュトークンが無効です"
       raise InvalidRefreshTokenError, '無効なリフレッシュトークン'
     end
 

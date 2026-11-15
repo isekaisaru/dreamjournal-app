@@ -9,10 +9,14 @@
 # 実際、2026-07-27 のパスワードリセット調査では、MAIL_FROM が未設定で
 # 既定値にフォールバックしたまま、メールが1通も届いていなかった。
 #
+# また UserMailer はメール内リンク（パスワードリセット・メール確認）の
+# ベース URL を ENV.fetch("FRONTEND_URL", "http://localhost:8000") で組み立てるため、
+# FRONTEND_URL が未設定だと本番メールのリンクが localhost を指しても気づけない。
+#
 # そこで起動時にこの判定を使い、不足している設定名をログに出す。
 module MailDeliveryConfig
-  # これらが1つでも欠けると、実質メールは送信できない
-  REQUIRED_ENV_KEYS = %w[SMTP_USERNAME SMTP_PASSWORD MAIL_FROM].freeze
+  # これらが1つでも欠けると、実質メールは送信できない（または届いてもリンクが機能しない）
+  REQUIRED_ENV_KEYS = %w[SMTP_USERNAME SMTP_PASSWORD MAIL_FROM FRONTEND_URL].freeze
 
   # 未設定（空文字・空白のみを含む）のキーを返す
   def self.missing_env_keys(env = ENV)
@@ -30,6 +34,6 @@ module MailDeliveryConfig
     return nil if missing.empty?
 
     "メール送信の設定が不足しています（#{missing.join(', ')}）。" \
-      'この状態ではパスワードリセット・確認メールは配信されません。'
+      'この状態ではパスワードリセット・確認メールは配信されないか、メール内リンクが正しく機能しません。'
   end
 end
