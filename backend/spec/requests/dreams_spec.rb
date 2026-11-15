@@ -690,6 +690,30 @@ RSpec.describe 'Dreams API', type: :request do
         expect(json_response['monthly_analysis_limit']).to eq(User::FREE_ANALYSIS_MONTHLY_LIMIT)
       end
 
+      # プレミアムにも1日の上限（PREMIUM_DAILY_ANALYSIS_LIMIT）があるため「無制限」とは言わない
+      it '無料プランの上限メッセージは「無制限」と言わない' do
+        user.update!(
+          monthly_analysis_count: User::FREE_ANALYSIS_MONTHLY_LIMIT,
+          monthly_analysis_count_reset_at: Time.current.beginning_of_month
+        )
+
+        authenticated_post "/dreams/#{dream.id}/analyze", user
+
+        expect(json_response['error']).to include('プレミアム')
+        expect(json_response['error']).not_to include('無制限')
+      end
+
+      # 登録後は無料プラン（月の上限あり）になるため「無制限」とは言わない
+      it 'トライアルの上限メッセージは「無制限」と言わず、無料プランの月の回数を案内する' do
+        user.update!(trial_user: true, trial_analysis_count: DreamsController::TRIAL_ANALYSIS_LIMIT)
+
+        authenticated_post "/dreams/#{dream.id}/analyze", user
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['error']).to include("月#{User::FREE_ANALYSIS_MONTHLY_LIMIT}回")
+        expect(json_response['error']).not_to include('無制限')
+      end
+
       it '無料プランでは分析受付時に月次カウントを増やす' do
         expect do
           authenticated_post "/dreams/#{dream.id}/analyze", user
