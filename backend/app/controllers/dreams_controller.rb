@@ -5,12 +5,15 @@ class DreamsController < ApplicationController
   # check_analysis_limit の前（枠を消費してから403にしない）。
   before_action :require_verified_email, only: [:analyze, :preview_analysis, :generate_image]
   before_action :check_analysis_limit, only: [:analyze, :preview_analysis]
+  # 画像生成はプレミアム限定（プランのページ・LandingFaq の案内と合わせる）。
+  # メール確認の後・月次上限の前に確認する。
+  before_action :require_premium_for_image, only: [:generate_image]
   before_action :check_monthly_image_limit, only: [:generate_image]
   before_action :check_trial_dream_limit, only: [:create]
 
   TRIAL_DREAM_LIMIT             = 7   # トライアルユーザーの夢作成件数上限
   TRIAL_ANALYSIS_LIMIT          = 3   # トライアルユーザーの分析回数上限
-  IMAGE_MONTHLY_LIMIT           = 31  # 全ユーザー共通の画像生成月次上限
+  IMAGE_MONTHLY_LIMIT           = 31  # 画像生成の月次上限（プレミアム限定機能）
   FREE_ANALYSIS_MONTHLY_LIMIT   = User::FREE_ANALYSIS_MONTHLY_LIMIT
   PREMIUM_DAILY_ANALYSIS_LIMIT  = 50  # プレミアムユーザーの1日あたりフェアユース上限
   
@@ -457,7 +460,17 @@ class DreamsController < ApplicationController
       Rails.logger.error "[analysis_usage] Failed to create usage log: #{e.class} - #{e.message}"
     end
 
-    # 画像生成の月次上限チェック（全ユーザー共通）
+    # premium? を見る: trial→課金後は premium: true, trial_user: true になり得るため
+    def require_premium_for_image
+      return if current_user.premium?
+
+      render json: {
+        error: "夢の画像生成はプレミアム会員のみご利用いただけます。",
+        premium_required: true
+      }, status: :forbidden
+    end
+
+    # 画像生成の月次上限チェック
     def check_monthly_image_limit
       count = current_month_image_generation_count
 

@@ -124,9 +124,11 @@ jest.mock("@/hooks/useDream", () => ({
 
 type MockAuthStatus = "checking" | "authenticated" | "unauthenticated";
 let mockAuthStatus: MockAuthStatus = "authenticated";
+// 画像生成はプレミアム限定。既存の画像テストはプレミアムで動かし、無料の表示は個別に確かめる
+let mockUserPremium = true;
 jest.mock("@/context/AuthContext", () => ({
   useAuth: () => ({
-    user: { age_group: "child" },
+    user: { age_group: "child", premium: mockUserPremium },
     authStatus: mockAuthStatus,
     isLoggedIn: mockAuthStatus === "authenticated",
   }),
@@ -136,6 +138,7 @@ const { useDream } = require("@/hooks/useDream");
 
 beforeEach(() => {
   mockAuthStatus = "authenticated";
+  mockUserPremium = true;
   mockPush.mockReset();
   mockApiGet.mockReset();
   mockApiPost.mockReset();
@@ -558,6 +561,33 @@ describe("DreamDetailPage: 夢IDが変わったときの状態の持ち越し", 
       });
 
       expect(screen.queryByText("夢1の画像生成に失敗")).toBeNull();
+    });
+
+    describe("プレミアムでないユーザー", () => {
+      beforeEach(() => {
+        mockUserPremium = false;
+      });
+
+      it("画像生成ボタンの代わりにプレミアムの案内を出し、残り枚数も取りにいかない", () => {
+        showDream(dreamOf(1));
+        render(pageFor("1"));
+
+        expect(screen.queryByText(/ゆめのえを かく/)).toBeNull();
+        expect(screen.getByText(/ゆめのえは プレミアムで かけるよ/)).toBeTruthy();
+        expect(
+          screen.getByRole("link", { name: "プレミアムを みる" }).getAttribute("href")
+        ).toBe("/subscription");
+        expect(mockApiGet).not.toHaveBeenCalledWith("/dreams/image_quota");
+        expect(mockApiPost).not.toHaveBeenCalled();
+      });
+
+      it("前に作った画像は表示するが、かきなおすボタンは出さない", () => {
+        showDream(dreamOf(1, { generated_image_url: IMAGE_1 }));
+        const { container } = render(pageFor("1"));
+
+        expect(imgsWithSrc(container, IMAGE_1)).toHaveLength(1);
+        expect(screen.queryByText("かきなおす")).toBeNull();
+      });
     });
   });
 });

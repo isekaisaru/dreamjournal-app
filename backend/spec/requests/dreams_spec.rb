@@ -905,7 +905,35 @@ RSpec.describe 'Dreams API', type: :request do
       $openai_client = @original_openai_client
     end
 
-    context '認証済みユーザーの場合' do
+    context 'プレミアムでないユーザーの場合' do
+      it '画像を生成せず 403 と premium_required を返す' do
+        expect(images_client).not_to receive(:generate)
+
+        expect {
+          authenticated_post "/dreams/#{dream.id}/generate_image", user
+        }.not_to change(DreamImageGeneration, :count)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['premium_required']).to eq(true)
+        expect(json_response['error']).to include('プレミアム')
+        expect(dream.reload.generated_image_url).to be_nil
+      end
+
+      it 'trial から課金していないユーザーも 403 を返す' do
+        trial_user = create(:user, trial_user: true, email_verified_at: Time.current)
+        trial_dream = create(:dream, user: trial_user, content: 'お試しの夢')
+        expect(images_client).not_to receive(:generate)
+
+        authenticated_post "/dreams/#{trial_dream.id}/generate_image", trial_user
+
+        expect(response).to have_http_status(:forbidden)
+        expect(json_response['premium_required']).to eq(true)
+      end
+    end
+
+    context 'プレミアムユーザーの場合' do
+      before { user.update!(premium: true) }
+
       it '画像を生成して generated_image_url を保存し 200 を返す' do
         expect(images_client).to receive(:generate).with(
           parameters: hash_including(
@@ -1038,32 +1066,32 @@ RSpec.describe 'Dreams API', type: :request do
         end
 
         context 'child ユーザー' do
-          let(:age_user) { create(:user, age_group: 'child') }
+          let(:age_user) { create(:user, age_group: 'child', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'pastel colors'
         end
 
         context 'child_small ユーザー' do
-          let(:age_user) { create(:user, age_group: 'child_small') }
+          let(:age_user) { create(:user, age_group: 'child_small', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
         end
 
         context 'preteen ユーザー' do
-          let(:age_user) { create(:user, age_group: 'preteen') }
+          let(:age_user) { create(:user, age_group: 'preteen', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'adventurous'
         end
 
         context 'teen ユーザー' do
-          let(:age_user) { create(:user, age_group: 'teen') }
+          let(:age_user) { create(:user, age_group: 'teen', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'cool and stylish'
         end
 
         context 'adult ユーザー' do
-          let(:age_user) { create(:user, age_group: 'adult') }
+          let(:age_user) { create(:user, age_group: 'adult', premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'sophisticated'
         end
 
         context 'age_group がデフォルト（child）のユーザー' do
-          let(:age_user) { create(:user) }
+          let(:age_user) { create(:user, premium: true) }
           include_examples 'プロンプトにスタイルが含まれる', 'child-friendly'
         end
       end
