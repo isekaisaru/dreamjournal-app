@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
   # 音声解析用エンドポイント
   post "/analyze_audio_dream", to: "audio_dreams#create"
+  get "/audio_quota", to: "audio_dreams#quota" # 音声分析の残り回数
 
   resources :dreams, only: [:index, :show, :create, :update, :destroy] do
     member do
