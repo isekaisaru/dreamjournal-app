@@ -29,6 +29,14 @@ export const NON_INDEXABLE_PATH_PREFIXES = [
 ] as const;
 
 /**
+ * 問い合わせ先のメールアドレス。特定商取引法に基づく表記・プライバシーポリシー・フッターで共通に使う。
+ * 特商法の表記では販売事業者の情報を「請求があれば遅滞なく開示」にしているため、
+ * 請求を受け付けるこのアドレスが実在することが前提（__tests__/lib/site.test.ts で空・架空を止める）。
+ * TODO: 運営者が専用アドレスを用意したら設定する（それまでは画面に「準備中」と出る）。
+ */
+export const SUPPORT_EMAIL: string = "";
+
+/**
  * Google Search Console の HTMLタグ検証用トークン（任意）。
  * Search Console で発行された値を環境変数に設定すると <meta name="google-site-verification"> が出力される。
  */

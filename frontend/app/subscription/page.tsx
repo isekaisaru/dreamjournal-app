@@ -314,6 +314,11 @@ export default function SubscriptionPage() {
             {isLoading ? "準備中..." : "月額¥590でプレミアムを始める"}
           </button>
           <p className="mt-3 text-xs text-muted-foreground">いつでもキャンセル可能 · Stripe で安全に決済</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            <Link href="/tokushoho" className="underline underline-offset-2 hover:text-foreground transition-colors">
+              特定商取引法に基づく表記
+            </Link>
+          </p>
           <p className="mt-5 text-sm text-muted-foreground">
             <Link href="/home" className="underline underline-offset-2 hover:text-foreground transition-colors">
               フリープランのままにする
