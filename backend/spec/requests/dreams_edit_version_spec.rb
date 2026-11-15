@@ -149,6 +149,7 @@ RSpec.describe 'PUT /dreams/:id の版番号', type: :request do
 
   context 'AIの結果を保存したとき' do
     it '画像生成の保存では版番号が進まず、生成前の版で編集を保存できる' do
+      user.update!(premium: true) # 画像生成はプレミアム限定
       version = fetched_version
       fake_client = double('OpenAI::Client')
       allow(fake_client).to receive_message_chain(:images, :generate)

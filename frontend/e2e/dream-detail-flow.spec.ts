@@ -28,7 +28,8 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          user: { id: 1, email: "test@example.com", username: "E2Eユーザー", age_group: "child" },
+          // 画像生成はプレミアム限定のため、既定はプレミアムで検証する
+          user: { id: 1, email: "test@example.com", username: "E2Eユーザー", age_group: "child", premium: true },
         }),
       });
     });
@@ -198,6 +199,31 @@ test.describe("夢詳細の閲覧・編集・再分析・保存フロー", () =>
     await expect(
       page.getByRole("button", { name: /🎨 ゆめのえを かく/ })
     ).toBeVisible();
+  });
+
+  test("プレミアムでないユーザーには画像生成ボタンの代わりにプレミアムの案内が出る", async ({
+    page,
+  }) => {
+    // beforeEach の認証モックを、無料ユーザーで上書きする（後から登録した route が優先される）
+    await page.route("**/auth/verify", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          user: { id: 1, email: "test@example.com", username: "E2Eユーザー", age_group: "child", premium: false },
+        }),
+      });
+    });
+
+    await page.goto("/dream/1");
+
+    await expect(page.getByText("ゆめのえは プレミアムで かけるよ")).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "プレミアムを みる" })
+    ).toHaveAttribute("href", "/subscription");
+    await expect(
+      page.getByRole("button", { name: /🎨 ゆめのえを かく/ })
+    ).toHaveCount(0);
   });
 
   test("「🎨 ゆめのえを かく」をクリックすると POST リクエストが飛び、成功時に画像が表示される", async ({
