@@ -8,4 +8,4 @@ local:
 
 # このアプリは Rails の credentials（credentials.yml.enc と master key）を使わない。
 # 外部ストレージを使うときは、鍵を環境変数から読む設定をここに足す。
-# YAML のコメントの中でも ERB（<%= %>）は実行されるので、コメントにも ERB を書かないこと。
+# YAML のコメントの中でも ERB のタグは実行されるので、コメントにも ERB のタグを書かないこと。

@@ -8,14 +8,21 @@ require 'rails_helper'
 RSpec.describe 'Rails credentials are not used' do
   let(:backend_root) { Rails.root }
 
+  # Rails.application.credentials / app.credentials / config.credentials と、
+  # credentials.dig などの読み出し。CORS の `credentials: true` には当たらない。
+  let(:credentials_read) do
+    /(?:Rails\.application|\bapp|\bconfig)\.credentials\b|\bcredentials\.(?:dig|config|fetch|secret_key_base)\b/
+  end
+
   it 'does not ship an encrypted credentials file' do
     expect(backend_root.join('config/credentials.yml.enc')).not_to exist
     expect(Dir.glob(backend_root.join('config/credentials/*.yml.enc'))).to be_empty
   end
 
-  it 'does not read Rails.application.credentials in app, config or lib' do
-    files = Dir.glob(backend_root.join('{app,config,lib}/**/*.{rb,yml,erb}'))
-    offenders = files.select { |path| File.read(path).include?('Rails.application.credentials') }
+  it 'does not read credentials in app, config, lib, db or bin' do
+    files = Dir.glob(backend_root.join('{app,config,lib,db}/**/*.{rb,rake,yml,erb}')) +
+            Dir.glob(backend_root.join('bin/*'))
+    offenders = files.uniq.select { |path| File.file?(path) && File.read(path).match?(credentials_read) }
 
     expect(offenders.map { |path| Pathname(path).relative_path_from(backend_root).to_s }).to eq([])
   end
