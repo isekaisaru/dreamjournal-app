@@ -45,25 +45,6 @@
         89
       ],
       "note": "誤検知。local_date_sql は定数 TIME_ZONE（\"Asia/Tokyo\"）だけから作る固定の SQL で、利用者の入力は入らない。usage:report は運用者が手元で実行する読み取り専用の集計。"
-    },
-    {
-      "warning_type": "Unmaintained Dependency",
-      "warning_code": 120,
-      "fingerprint": "d84924377155b41e094acae7404ec2e521629d86f97b0ff628e3d1b263f8101c",
-      "check_name": "EOLRails",
-      "message": "Support for Rails 8.0.5.2 ended on 2026-11-07",
-      "file": "Gemfile.lock",
-      "line": 248,
-      "link": "https://brakemanscanner.org/docs/warning_types/unmaintained_dependency/",
-      "code": null,
-      "render_path": null,
-      "location": null,
-      "user_input": null,
-      "confidence": "High",
-      "cwe_id": [
-        1104
-      ],
-      "note": "本物の指摘（Rails 8.0 の保守は 2026-11-07 に終了）。Rails 8.1 への更新は別の PR で行う。それまで CI を止めないために一時的に無視する。8.1 に上げたらこの行は不要になり、brakeman が「使われていない無視」として知らせる。"
     }
   ],
   "brakeman_version": "8.1.0"

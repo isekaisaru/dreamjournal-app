@@ -15,7 +15,7 @@
 ## 概要
 
 YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可視化・夢の画像生成を組み合わせた、プライベートなAI夢ノートです。
-フロントエンドは Next.js 16、バックエンドは Rails 8.0 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
+フロントエンドは Next.js 16、バックエンドは Rails 8.1 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
 
 ### 検証状況と既知の制限（2026-11-17 時点）
 
@@ -29,8 +29,8 @@ YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可
 | 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 古い通信結果の画面反映を防ぐ修正（[#558](https://github.com/isekaisaru/dreamjournal-app/pull/558)）、古い版からの保存を拒否する処理と分析中の編集保護（[#566](https://github.com/isekaisaru/dreamjournal-app/pull/566)・[#567](https://github.com/isekaisaru/dreamjournal-app/pull/567)・[#569](https://github.com/isekaisaru/dreamjournal-app/pull/569)）は `main` にマージ済み。古い版からの保存の拒否は本番の 2 タブ操作で確認済み。音声経路の本番確認と、残りの対応（[#561](https://github.com/isekaisaru/dreamjournal-app/issues/561)）は未完了 |
 | 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。再送 UI・注意喚起の [#542](https://github.com/isekaisaru/dreamjournal-app/pull/542) は未マージで、サーバー側の重複防止は設計案（[#545](https://github.com/isekaisaru/dreamjournal-app/pull/545)）の段階 |
 | Sentry に送るデータの機密保護 | フロントの許可リストによる送信前処理（[#564](https://github.com/isekaisaru/dreamjournal-app/pull/564)・[#565](https://github.com/isekaisaru/dreamjournal-app/pull/565)）と、バックエンドの保護（[#563](https://github.com/isekaisaru/dreamjournal-app/pull/563)：再設定トークン・SQL 内の値・DB 例外の本文を送らない）は `main` にマージ済み。sentry-ruby 7.2 への更新時に、保護を通らないログ・メトリクスの送信を止めた（[#585](https://github.com/isekaisaru/dreamjournal-app/pull/585)）。フロントは本番で確認済み。バックエンドの本番イベントでの確認は未確認 |
-| Rails の脆弱性対応 | Rails 8.0.5.2 へ更新済み（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。7.2 系で修正版が無かった時期の暫定策（Active Storage の analyzers 無効化と `/cable` の停止、[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）は継続中。更新後の本番で、ログイン・保存・音声記録・分析が動くことを 2026-11-17 に確認。Brakeman の判定では Rails 8.0 系の保守が 2026-11-07 に終わったため、8.1 への更新を予定 |
-| Rails コードの静的検査 | Brakeman を CI で毎回実行（Backend Tests の `Brakeman`）。誤検知 2 件と、Rails 8.1 への更新で解消する 1 件は、理由を書いて `backend/config/brakeman.ignore` に記録 |
+| Rails の脆弱性対応 | 8.0 系の安全修正が 2026-11-07 に終わったため（Brakeman が検出）、Rails 8.1.4.1 へ更新済み。8.1 系の安全修正は 2027-10-10 まで。7.2 系で修正版が無かった時期の暫定策（Active Storage の analyzers 無効化と `/cable` の停止、[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）は継続中。8.0.5.2（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）の本番では、ログイン・保存・音声記録・分析が動くことを 2026-11-17 に確認。8.1 での本番確認は未実施 |
+| Rails コードの静的検査 | Brakeman を CI で毎回実行（Backend Tests の `Brakeman`）。誤検知 2 件は、理由を書いて `backend/config/brakeman.ignore` に記録 |
 | 秘密情報の管理 | 開発初期の公開コミットに秘密の値が含まれていたことを確認し、2026-11-17 に `SECRET_KEY_BASE` を交換、Rails の encrypted credentials を廃止（[#593](https://github.com/isekaisaru/dreamjournal-app/pull/593)）、本番 DB のパスワードを交換した。交換後の本番でログイン・保存・音声記録・分析を確認済み。GitHub の Secret scanning と push protection を有効化（有効化後のアラートは 0 件。履歴全体の走査完了は未確認） |
 | 依存関係の脆弱性警告 | Dependabot の未解決の警告は 0 件（2026-11-17）。Next.js は 16.4.6 へ更新済み（[#589](https://github.com/isekaisaru/dreamjournal-app/pull/589)） |
 | 特定商取引法に基づく表記・問い合わせ先 | 表記ページは未公開（下書き [#581](https://github.com/isekaisaru/dreamjournal-app/pull/581)）。利用規約とプライバシーポリシーの問い合わせ先は仮のアドレスのまま |
@@ -92,7 +92,7 @@ Whisper API を使った音声録音→テキスト変換→分析の一連フ�
 graph TD
     Browser["Browser"]
     FE["Next.js 16<br/>(Vercel)"]
-    BE["Rails 8.0 API<br/>(Render)"]
+    BE["Rails 8.1 API<br/>(Render)"]
     DB[("PostgreSQL")]
     AI["OpenAI API<br/>(gpt-4o-mini / whisper-1 / gpt-image-1)"]
     Stripe["Stripe"]
@@ -195,7 +195,7 @@ sentry-ruby 7 では、この保護を通らないログ・メトリクスが既
 Dependabot の更新は、変更履歴と自分のコードを照合してから判断しています。
 
 - **Stripe SDK 20 系**: CI はすべて成功していましたが、固定の API バージョンが変わり、寄付の Checkout で使っている `payment_method_types` が廃止されることを変更履歴で確認しました。テストは Stripe をモックしているため検知できません。マージせずに閉じ、test-mode の通し QA と合わせて対応する方針にしました（[#535](https://github.com/isekaisaru/dreamjournal-app/pull/535)）。
-- **Rails 7.2 → 8.0**: 7.2 系に修正版が無い脆弱性に対し、まず影響する入口を止める暫定策を入れ（[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）、そのあと 8.0 へ更新しました（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。
+- **Rails 7.2 → 8.0 → 8.1**: 7.2 系に修正版が無い脆弱性に対し、まず影響する入口を止める暫定策を入れ（[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）、そのあと 8.0 へ更新しました（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。8.0 系の安全修正が終わったことを CI の Brakeman が検出したため、続けて 8.1 へ更新しました（既定値の設定 `load_defaults 7.0` は変えず、変わる部分を小さくしています）。
 
 ### ⑪ 費用と継続を数える仕組み
 
@@ -230,7 +230,7 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 - **確かめる**: Stripe test-mode での通し QA（登録 → 支払い → プレミアム → 解約）、特定商取引法に基づく表記ページの公開、Stripe SDK の更新
 - **数える**: 月次の利用レポートと OpenAI の実額から、1 回あたりの費用と採算の合う人数を出す
 - **届ける**: 少人数に使ってもらい、何日続いたか・どこで止まったかを記録して、続けるかどうかを判断する
-- **品質**: ESLint に整形の検査と React hooks の検査を足す。テストコードの型検査を CI に入れる。CI の実行環境の固定を外すための Playwright の更新（Ruby は更新済み）。Rails 8.1 への更新。音声記録の再送時の重複防止
+- **品質**: ESLint に整形の検査と React hooks の検査を足す。テストコードの型検査を CI に入れる。CI の実行環境の固定を外すための Playwright の更新（Ruby は更新済み）。Rails の既定値（`load_defaults 7.0`）を 1 段ずつ上げる。音声記録の再送時の重複防止
 - **あとで**: OpenAI モデルの比較検証（`OPENAI_CHAT_MODEL` 環境変数で切り替え可能）、INP の計測と改善、N+1 の解消
 
 ---
@@ -241,7 +241,7 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 <summary>利用技術</summary>
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, Framer Motion
-- **Backend**: Ruby on Rails 8.0 (API mode), Ruby 3.3, PostgreSQL
+- **Backend**: Ruby on Rails 8.1 (API mode), Ruby 3.3, PostgreSQL
 - **Testing**: Playwright, RSpec, Jest
 - **AI / External Services**: OpenAI API (`gpt-4o-mini`, `whisper-1`, `gpt-image-1`), Stripe Checkout / Subscription / Billing Portal, Sentry
 - **Security**: Rack::Attack (rate limiting), JWT + HttpOnly Cookie, CORS, GitHub Secret scanning / push protection
