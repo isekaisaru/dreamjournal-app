@@ -17,7 +17,7 @@ jobs:
       - name: Setup Ruby for isolated regression test
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3.0"
+          ruby-version: "3.3.13"
 
       - name: Test secret exclusion failure propagation without Docker
         run: ruby backend/test/security/docker_secret_exclusion_test.rb

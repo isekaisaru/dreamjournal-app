@@ -10,7 +10,7 @@
 # 3. 開発/本番環境の適切な切り分け
 # 4. セキュリティ強化（non-rootユーザー）
 
-ARG RUBY_VERSION=3.3.0
+ARG RUBY_VERSION=3.3.13
 ARG RAILS_ENV=production
 
 # ========================================

@@ -2,6 +2,8 @@ require 'rails_helper'
 require 'tempfile'
 
 RSpec.describe 'AudioDreams API', type: :request do
+  include ActiveSupport::Testing::TimeHelpers
+
   let!(:user) { create(:user, :with_self_profile) }
   let(:audio_tempfile) do
     file = Tempfile.new(['audio', '.webm'])
@@ -43,6 +45,15 @@ RSpec.describe 'AudioDreams API', type: :request do
         expect(dream.title).to include('音声記録')
         expect(dream.content).to eq('音声解析中...')
         expect(dream.analysis_status).to eq('pending')
+      end
+
+      it '仮の題名の日時は日本時間で付ける（サーバーの時刻は UTC）' do
+        travel_to Time.utc(2026, 11, 16, 20, 49) do
+          post '/analyze_audio_dream', params: { file: audio_upload }, headers: auth_headers(user)
+        end
+
+        expect(response).to have_http_status(:ok)
+        expect(user.dreams.order(:created_at).last.title).to eq('音声記録 2026/11/17 05:49')
       end
 
       it 'トライアルの永続カウンタ上限に達している場合は403を返す' do
