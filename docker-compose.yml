@@ -34,7 +34,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        RUBY_VERSION: "3.3.0"
+        RUBY_VERSION: "3.3.13"
         RAILS_ENV: development
     volumes:
       - ./backend:/app:cached # ソースコード同期
