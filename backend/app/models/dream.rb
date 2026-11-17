@@ -6,6 +6,32 @@ class Dream < ApplicationRecord
   # （AIの分析結果・生成画像の保存では進めない）。
   USER_EDITABLE_ATTRIBUTES = %w[title content dream_profile_id emotion_ids].freeze
 
+  # 音声の夢は、録音を受け取った時点では「音声記録 YYYY/MM/DD HH:MM」（日本時間）の仮の題名にし、
+  # 書き起こしができたら、その冒頭を題名にする（利用者が題名を直していなければ）。
+  AUDIO_TITLE_TIME_ZONE = "Asia/Tokyo".freeze
+  AUDIO_PLACEHOLDER_TITLE_FORMAT = %r{\A音声記録 \d{4}/\d{2}/\d{2} \d{2}:\d{2}\z}
+  TRANSCRIPT_TITLE_MAX_LENGTH = 20
+
+  def self.audio_placeholder_title(time = Time.current)
+    "音声記録 #{time.in_time_zone(AUDIO_TITLE_TIME_ZONE).strftime('%Y/%m/%d %H:%M')}"
+  end
+
+  def self.audio_placeholder_title?(title)
+    AUDIO_PLACEHOLDER_TITLE_FORMAT.match?(title.to_s)
+  end
+
+  # 書き起こしの最初の文（句点・感嘆符・疑問符・改行まで）を題名にする。
+  # 末尾の句点は外し、20文字を超えるときは20文字で切って「…」を付ける。中身が無ければ nil。
+  def self.title_from_transcript(transcript)
+    first = transcript.to_s
+                      .split(/(?<=[。！？!?])|\R/)
+                      .map { |sentence| sentence.strip.sub(/[。．.]+\z/, "").strip }
+                      .find(&:present?)
+    return nil if first.nil?
+
+    first.length > TRANSCRIPT_TITLE_MAX_LENGTH ? "#{first[0, TRANSCRIPT_TITLE_MAX_LENGTH]}…" : first
+  end
+
   belongs_to :user, optional: false
   belongs_to :dream_profile, optional: true
   has_many :dream_emotions, dependent: :destroy

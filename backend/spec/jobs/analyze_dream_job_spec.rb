@@ -65,17 +65,59 @@ RSpec.describe AnalyzeDreamJob, type: :job do
 
     before { allow(AudioAnalysisService).to receive(:new).and_return(service) }
 
-    it "本文が仮文のままなら書き起こしを本文に入れ、編集の版を1つ進める。タイトルは変えない" do
+    it "本文と題名が仮のままなら、書き起こしを本文に、その冒頭を題名に入れ、編集の版を1つ進める" do
       allow(service).to receive(:call).and_return(result)
 
       described_class.new.perform(dream.id)
 
       dream.reload
       expect(dream.content).to eq("うみのそこをあるくゆめをみました")
-      expect(dream.title).to eq("音声記録 2026/11/12 10:00")
+      expect(dream.title).to eq("うみのそこをあるくゆめをみました")
       expect(dream.edit_version).to eq(1)
       expect(dream.analysis_status).to eq("done")
       expect(dream.analysis_json).to include("analysis" => "海の底は心の奥を表します。")
+    end
+
+    it "長い書き起こしは、最初の文の20文字までを題名にする" do
+      long = "宇宙人が家の庭に来て、いっしょに空を飛んで遠くの星まで行く夢を見ました。とても楽しかったです。"
+      allow(service).to receive(:call).and_return(result.merge(transcript: long))
+
+      described_class.new.perform(dream.id)
+
+      dream.reload
+      expect(dream.title).to eq("宇宙人が家の庭に来て、いっしょに空を飛ん…")
+      expect(dream.content).to eq(long)
+    end
+
+    it "最初の文が短いときは、句点を外してその文だけを題名にする" do
+      allow(service).to receive(:call).and_return(result.merge(transcript: "宇宙人が来る夢を見ました。とても楽しかった。"))
+
+      described_class.new.perform(dream.id)
+
+      expect(dream.reload.title).to eq("宇宙人が来る夢を見ました")
+    end
+
+    it "書き起こしを待つ間に利用者が題名だけを直していたら、その題名を残す" do
+      allow(service).to receive(:call) do
+        Dream.where(id: dream.id).update_all(title: "手で直したタイトル", edit_version: 1)
+        result
+      end
+
+      described_class.new.perform(dream.id)
+
+      dream.reload
+      expect(dream.title).to eq("手で直したタイトル")
+      expect(dream.content).to eq("うみのそこをあるくゆめをみました")
+      expect(dream.edit_version).to eq(2)
+    end
+
+    it "題名が仮の形でなければ（今回の変更より前の夢も含めて）題名を変えない" do
+      Dream.where(id: dream.id).update_all(title: "音声記録")
+      allow(service).to receive(:call).and_return(result)
+
+      described_class.new.perform(dream.id)
+
+      expect(dream.reload.title).to eq("音声記録")
     end
 
     it "書き起こしを待つ間に利用者が本文を直していたら、その本文を残して分析結果だけ保存する" do

@@ -77,12 +77,16 @@ class AnalyzeDreamJob < ApplicationJob
   end
 
   # 書き起こしは、本文がまだ仮文のときだけ本文に入れる。
-  # OpenAI を待つ間に利用者が本文を直していたら、その本文を残して分析結果だけを保存する。
-  # タイトルは書き換えない（Issue #561）。
+  # 題名は、本文がまだ仮文で、かつ題名が仮の形（音声記録 YYYY/MM/DD HH:MM）のままのときだけ、書き起こしの冒頭にする。
+  # OpenAI を待つ間に利用者が本文や題名を直していたら、それを残して分析結果だけを保存する（Issue #561）。
   def save_audio_result(dream, result)
     dream.with_lock do # 最新の行を読み直してロックし、利用者の保存と比較・書き込みの間に割り込ませない
       if awaiting_transcript?(dream)
         dream.content = result[:transcript]
+        if Dream.audio_placeholder_title?(dream.title)
+          title = Dream.title_from_transcript(result[:transcript])
+          dream.title = title if title
+        end
         dream.edit_version += 1 # 本文が変わるので編集の版を進める（古い画面からの保存を409にする）
       end
       dream.update!(analysis_status: "done", analysis_json: result, analyzed_at: Time.current)
