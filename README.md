@@ -17,22 +17,25 @@
 YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可視化・夢の画像生成を組み合わせた、プライベートなAI夢ノートです。
 フロントエンドは Next.js 16、バックエンドは Rails 8.0 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
 
-### 検証状況と既知の制限（2026-11-16 時点）
+### 検証状況と既知の制限（2026-11-17 時点）
 
 「実装済み」「CI 成功」「本番で動作確認済み」は区別して管理しています。CI の成功は、外部サービスをモックした範囲を含むため、本番での動作保証とは扱っていません。
 
 | 項目 | 状況 |
 |---|---|
-| CI（Jest / RSpec / Playwright） | 確認時の `main`（`5e16a566`）は Jest 839 件・RSpec 633 件・Playwright 53 件がすべて成功。E2E は API・Stripe をモックしたシナリオ。ESLint と、テストコードの型検査は CI に未導入（アプリ本体の型は `next build` で検査） |
+| CI（Jest / RSpec / Playwright） | 確認時の `main`（`f8510096`）は Jest 839 件・RSpec 636 件・Playwright 53 件がすべて成功。E2E は API・Stripe をモックしたシナリオ。ESLint と、テストコードの型検査は CI に未導入（アプリ本体の型は `next build` で検査） |
 | Stripe 決済（寄付・月額課金） | 実装済み・過去に本番での決済記録あり。現行コードに対する test-mode の通し QA は未完了。Stripe SDK の 20 系は、Checkout の `payment_method_types` 廃止で寄付が失敗するため見送り中（[#535](https://github.com/isekaisaru/dreamjournal-app/pull/535) に理由を記録。CI は Stripe をモックするため成功していた） |
 | 料金プランと利用上限 | 画像生成はプレミアム限定（[#578](https://github.com/isekaisaru/dreamjournal-app/pull/578)）、音声記録は無料プランで月 5 回まで（[#579](https://github.com/isekaisaru/dreamjournal-app/pull/579)）。案内文と実際の制限の食い違いを直した（[#580](https://github.com/isekaisaru/dreamjournal-app/pull/580)）。本番画面での表示確認は未確認 |
 | 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 古い通信結果の画面反映を防ぐ修正（[#558](https://github.com/isekaisaru/dreamjournal-app/pull/558)）、古い版からの保存を拒否する処理と分析中の編集保護（[#566](https://github.com/isekaisaru/dreamjournal-app/pull/566)・[#567](https://github.com/isekaisaru/dreamjournal-app/pull/567)・[#569](https://github.com/isekaisaru/dreamjournal-app/pull/569)）は `main` にマージ済み。古い版からの保存の拒否は本番の 2 タブ操作で確認済み。音声経路の本番確認と、残りの対応（[#561](https://github.com/isekaisaru/dreamjournal-app/issues/561)）は未完了 |
 | 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。再送 UI・注意喚起の [#542](https://github.com/isekaisaru/dreamjournal-app/pull/542) は未マージで、サーバー側の重複防止は設計案（[#545](https://github.com/isekaisaru/dreamjournal-app/pull/545)）の段階 |
 | Sentry に送るデータの機密保護 | フロントの許可リストによる送信前処理（[#564](https://github.com/isekaisaru/dreamjournal-app/pull/564)・[#565](https://github.com/isekaisaru/dreamjournal-app/pull/565)）と、バックエンドの保護（[#563](https://github.com/isekaisaru/dreamjournal-app/pull/563)：再設定トークン・SQL 内の値・DB 例外の本文を送らない）は `main` にマージ済み。sentry-ruby 7.2 への更新時に、保護を通らないログ・メトリクスの送信を止めた（[#585](https://github.com/isekaisaru/dreamjournal-app/pull/585)）。フロントは本番で確認済み。バックエンドの本番イベントでの確認は未確認 |
-| Rails の脆弱性対応 | Rails 8.0.5.2 へ更新済み（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。7.2 系で修正版が無かった時期の暫定策（Active Storage の analyzers 無効化と `/cable` の停止、[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）は継続中。更新後の本番確認（ログイン・保存・分析・音声）は未確認 |
+| Rails の脆弱性対応 | Rails 8.0.5.2 へ更新済み（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。7.2 系で修正版が無かった時期の暫定策（Active Storage の analyzers 無効化と `/cable` の停止、[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）は継続中。更新後の本番で、ログイン・保存・音声記録・分析が動くことを 2026-11-17 に確認 |
+| 秘密情報の管理 | 開発初期の公開コミットに秘密の値が含まれていたことを確認し、2026-11-17 に `SECRET_KEY_BASE` を交換、Rails の encrypted credentials を廃止（[#593](https://github.com/isekaisaru/dreamjournal-app/pull/593)）、本番 DB のパスワードを交換した。交換後の本番でログイン・保存・音声記録・分析を確認済み。GitHub の Secret scanning と push protection を有効化（有効化後のアラートは 0 件。履歴全体の走査完了は未確認） |
+| 依存関係の脆弱性警告 | Dependabot の未解決の警告は 0 件（2026-11-17）。Next.js は 16.4.6 へ更新済み（[#589](https://github.com/isekaisaru/dreamjournal-app/pull/589)） |
 | 特定商取引法に基づく表記・問い合わせ先 | 表記ページは未公開（下書き [#581](https://github.com/isekaisaru/dreamjournal-app/pull/581)）。利用規約とプライバシーポリシーの問い合わせ先は仮のアドレスのまま |
 | 夢の森のスマホ実機表示 | ドラッグ時のエラー修正（[#557](https://github.com/isekaisaru/dreamjournal-app/pull/557)）は実機確認待ちで未マージ |
-| 本番環境と `main` の一致 | デプロイ中のバージョンと `main` の照合は未確認 |
+| 本番環境と `main` の一致 | 2026-11-17 に、バックエンド（Render）は [#593](https://github.com/isekaisaru/dreamjournal-app/pull/593) のコミット、フロントエンド（Vercel）は [#589](https://github.com/isekaisaru/dreamjournal-app/pull/589) のコミットのデプロイ成功を確認。継続して照合する仕組みは無い |
+| CI の実行環境 | GitHub Actions の `ubuntu-latest` が 26.04 になり、Ruby 3.3.0 と Playwright 1.60 が動かなくなったため、`ubuntu-24.04` に固定している（[#591](https://github.com/isekaisaru/dreamjournal-app/pull/591)）。Ruby と Playwright の更新による根本対応は未着手 |
 
 技術選定では「モダンだから」ではなく、ひとりでも、大切な人とも迷わず使える UX と、継続運用しやすい構成になるかを重視しています。
 
@@ -197,6 +200,17 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 
 月ごとの AI 利用回数（プラン別）・概算の費用・記録の継続状況を、個人を特定できる値を出さずに集計する読み取り専用のコマンドを用意しています（`bin/rails "usage:report[YYYY-MM]"`、[`docs/usage-report.md`](docs/usage-report.md)）。料金プランと利用上限を、推測ではなく実際の利用量から見直すためのものです。
 
+### ⑫ 公開コミットに残っていた秘密の値への対応
+
+開発初期の公開コミットに秘密の値が含まれていたことを、2026 年 11 月の監査で確認しました。次の順で対応しています。
+
+- **値を表示せずに調べる**: 履歴の走査は、コミット・ファイル名・変数名・件数だけを出力する形で行い、秘密の値は画面にもログにも出していません。暗号化ファイルの中身も、ネットワークを切ったコンテナの中で開き、鍵の「名前」だけを確認しました。
+- **照合せずに交換する**: 公開された値は「漏れた前提」で扱い、本番の値と同じかどうかを確かめる前に交換しました。`SECRET_KEY_BASE` は、ログイン（別の鍵で署名する JWT）を切らずに交換できることを、先にコードとテストで確認しています。
+- **鍵を作り直すのではなく、仕組みごとやめる**: Rails の encrypted credentials は、本番で値を使っていなかったため、鍵を再発行せずにファイルごと廃止しました（[#593](https://github.com/isekaisaru/dreamjournal-app/pull/593)）。credentials を読むコードが戻らないよう、回帰テストで固定しています（`backend/spec/security/no_rails_credentials_spec.rb`）。
+- **再発を防ぐ**: GitHub の Secret scanning と push protection を有効にし、Docker イメージに秘密のファイルが入らないことを CI で確認しています。
+
+交換の途中で起きた本番の障害（DB への IPv6 接続が届かない、メモリ不足による再起動）は、ログから原因を切り分けて直しました。
+
 ---
 
 ## 4. 開発の記録（技術記事）
@@ -215,7 +229,7 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 - **確かめる**: Stripe test-mode での通し QA（登録 → 支払い → プレミアム → 解約）、特定商取引法に基づく表記ページの公開、Stripe SDK の更新
 - **数える**: 月次の利用レポートと OpenAI の実額から、1 回あたりの費用と採算の合う人数を出す
 - **届ける**: 少人数に使ってもらい、何日続いたか・どこで止まったかを記録して、続けるかどうかを判断する
-- **品質**: ESLint とテストコードの型検査を CI に入れる。音声記録の再送時の重複防止
+- **品質**: ESLint とテストコードの型検査を CI に入れる。CI の実行環境の固定を外すための Ruby・Playwright の更新。音声記録の再送時の重複防止
 - **あとで**: OpenAI モデルの比較検証（`OPENAI_CHAT_MODEL` 環境変数で切り替え可能）、INP の計測と改善、N+1 の解消
 
 ---
@@ -229,7 +243,7 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 - **Backend**: Ruby on Rails 8.0 (API mode), Ruby 3.3, PostgreSQL
 - **Testing**: Playwright, RSpec, Jest
 - **AI / External Services**: OpenAI API (`gpt-4o-mini`, `whisper-1`, `gpt-image-1`), Stripe Checkout / Subscription / Billing Portal, Sentry
-- **Security**: Rack::Attack (rate limiting), JWT + HttpOnly Cookie, CORS
+- **Security**: Rack::Attack (rate limiting), JWT + HttpOnly Cookie, CORS, GitHub Secret scanning / push protection
 - **DevOps**: Vercel, Render, Docker Compose, GitHub Actions
 </details>
 
@@ -253,12 +267,12 @@ make dev-up
 <details>
 <summary>CI/CD</summary>
 
-GitHub Actions で `main` への Push / PR 時に、次の 4 つを実行します。
+GitHub Actions で `main` への Push / PR 時に、次の 4 つを実行します（実行環境は `ubuntu-24.04` に固定）。
 
-| ワークフロー | 内容（2026-11-16 の `main` での件数） |
+| ワークフロー | 内容（2026-11-17 の `main` での件数） |
 |---|---|
 | Frontend Tests | Jest 839 件（82 ファイル） |
-| Backend Tests | RSpec 633 件。あわせて `structure.sql` の再生成結果と RLS の状態を照合 |
+| Backend Tests | RSpec 636 件。あわせて `structure.sql` の再生成結果と RLS の状態を照合 |
 | E2E Tests | Playwright 53 件（本番ビルドに対して実行） |
 | Backend Docker Security | Docker イメージをビルドし、秘密情報が含まれないことを確認 |
 
