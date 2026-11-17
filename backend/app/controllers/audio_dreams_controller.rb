@@ -40,7 +40,7 @@ class AudioDreamsController < ApplicationController
 
     # 1. Dreamレコードを作成 (ステータス: pending)
     dream = user.dreams.new(
-      title: "音声記録 #{Time.current.strftime('%Y/%m/%d %H:%M')}",
+      title: Dream.audio_placeholder_title,
       content: "音声解析中...",
       analysis_status: :pending
     )
