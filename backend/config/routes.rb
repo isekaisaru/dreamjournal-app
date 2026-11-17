@@ -62,7 +62,7 @@ Rails.application.routes.draw do
   post '/checkout', to: 'checkout#create'
   get '/checkout/session', to: 'checkout#show_session'
   post '/billing_portal', to: 'billing_portal#create'
-  post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（署名検証は次回実装）
+  post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（STRIPE_WEBHOOK_SECRET で署名を検証する）
 
   # パスワードリセット関連
   resources :password_resets, only: [:create, :update]
