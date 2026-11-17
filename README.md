@@ -8,27 +8,34 @@
 
 [![E2E Tests](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/e2e-test.yml/badge.svg)](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/e2e-test.yml)
 [![Backend Tests](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/backend-test.yml/badge.svg)](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/backend-test.yml)
+[![Frontend Tests](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/frontend-test.yml/badge.svg)](https://github.com/isekaisaru/dreamjournal-app/actions/workflows/frontend-test.yml)
 
 **🌐 公開URL:** https://dreamjournal-app.vercel.app
 
 ## 概要
 
 YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可視化・夢の画像生成を組み合わせた、プライベートなAI夢ノートです。
-フロントエンドは Next.js 16、バックエンドは Rails 7.2 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
+フロントエンドは Next.js 16、バックエンドは Rails 8.0 API を採用し、認証、AI 連携、寄付・月額課金、監視、テストまでを個人開発として、Claude Code・Codex などの AI コーディングツールと協働して構築しています（役割分担は [Author](#author) を参照）。
 
-### 検証状況と既知の制限（2026-11-14 時点）
+### 検証状況と既知の制限（2026-11-17 時点）
 
 「実装済み」「CI 成功」「本番で動作確認済み」は区別して管理しています。CI の成功は、外部サービスをモックした範囲を含むため、本番での動作保証とは扱っていません。
 
 | 項目 | 状況 |
 |---|---|
-| CI（Jest / RSpec / Playwright） | 確認時の `main`（`aa35ed1f`）は Jest・Playwright 成功。RSpec ジョブは `structure.sql` 再生成の整合性確認で失敗し、テスト本体は未実行（[実行結果](https://github.com/isekaisaru/dreamjournal-app/actions/runs/43482810957)）。E2E の一部は API・Stripe をモックしたシナリオ |
-| Stripe 決済（寄付・月額課金） | 実装済み・過去に本番での決済記録あり。現行コードに対する test-mode の通し QA は未完了 |
-| 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 古い通信結果の画面反映を防ぐ修正（[#558](https://github.com/isekaisaru/dreamjournal-app/pull/558)）は `main` にマージ済み。古い版からの保存を拒否する処理と分析中の編集保護（[#566](https://github.com/isekaisaru/dreamjournal-app/pull/566)・[#567](https://github.com/isekaisaru/dreamjournal-app/pull/567)・[#569](https://github.com/isekaisaru/dreamjournal-app/pull/569)）もマージ済み。本番での動作確認は未確認 |
-| 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。再送 UI・注意喚起の [#542](https://github.com/isekaisaru/dreamjournal-app/pull/542) は未マージで、サーバー側の重複防止は同 PR の対象外 |
-| Sentry に送るデータの機密保護 | フロントの許可リストによる送信前処理とブラウザ・Node.js・Edge への接続（[#564](https://github.com/isekaisaru/dreamjournal-app/pull/564)・[#565](https://github.com/isekaisaru/dreamjournal-app/pull/565)）は `main` にマージ済み。フロントのトランザクション・ログ・メトリクス送信は停止。バックエンドの追加保護（[#563](https://github.com/isekaisaru/dreamjournal-app/pull/563)）は未マージ。本番イベント・ソースマップの復号は未確認 |
-| 夢の森のスマホ実機表示 | 最新版での実機確認は未完了 |
-| 本番環境と `main` の一致 | デプロイ中のバージョンと `main` の照合は未確認 |
+| CI（Jest / RSpec / Playwright） | 確認時の `main`（`f8510096`）は Jest 839 件・RSpec 636 件・Playwright 53 件がすべて成功。E2E は API・Stripe をモックしたシナリオ。ESLint は CI で実行している（第1段階：TypeScript の書き方の検査。整形の検査と React hooks の検査は未導入）。テストコードの型検査は CI に未導入（アプリ本体の型は `next build` で検査） |
+| Stripe 決済（寄付・月額課金） | 実装済み・過去に本番での決済記録あり。現行コードに対する test-mode の通し QA は未完了。Stripe SDK の 20 系は、Checkout の `payment_method_types` 廃止で寄付が失敗するため見送り中（[#535](https://github.com/isekaisaru/dreamjournal-app/pull/535) に理由を記録。CI は Stripe をモックするため成功していた） |
+| 料金プランと利用上限 | 画像生成はプレミアム限定（[#578](https://github.com/isekaisaru/dreamjournal-app/pull/578)）、音声記録は無料プランで月 5 回まで（[#579](https://github.com/isekaisaru/dreamjournal-app/pull/579)）。案内文と実際の制限の食い違いを直した（[#580](https://github.com/isekaisaru/dreamjournal-app/pull/580)）。本番画面での表示確認は未確認 |
+| 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 古い通信結果の画面反映を防ぐ修正（[#558](https://github.com/isekaisaru/dreamjournal-app/pull/558)）、古い版からの保存を拒否する処理と分析中の編集保護（[#566](https://github.com/isekaisaru/dreamjournal-app/pull/566)・[#567](https://github.com/isekaisaru/dreamjournal-app/pull/567)・[#569](https://github.com/isekaisaru/dreamjournal-app/pull/569)）は `main` にマージ済み。古い版からの保存の拒否は本番の 2 タブ操作で確認済み。音声経路の本番確認と、残りの対応（[#561](https://github.com/isekaisaru/dreamjournal-app/issues/561)）は未完了 |
+| 音声記録の再送時の重複登録 | 応答不明時に再送すると重複し得る既知リスク。再送 UI・注意喚起の [#542](https://github.com/isekaisaru/dreamjournal-app/pull/542) は未マージで、サーバー側の重複防止は設計案（[#545](https://github.com/isekaisaru/dreamjournal-app/pull/545)）の段階 |
+| Sentry に送るデータの機密保護 | フロントの許可リストによる送信前処理（[#564](https://github.com/isekaisaru/dreamjournal-app/pull/564)・[#565](https://github.com/isekaisaru/dreamjournal-app/pull/565)）と、バックエンドの保護（[#563](https://github.com/isekaisaru/dreamjournal-app/pull/563)：再設定トークン・SQL 内の値・DB 例外の本文を送らない）は `main` にマージ済み。sentry-ruby 7.2 への更新時に、保護を通らないログ・メトリクスの送信を止めた（[#585](https://github.com/isekaisaru/dreamjournal-app/pull/585)）。フロントは本番で確認済み。バックエンドの本番イベントでの確認は未確認 |
+| Rails の脆弱性対応 | Rails 8.0.5.2 へ更新済み（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。7.2 系で修正版が無かった時期の暫定策（Active Storage の analyzers 無効化と `/cable` の停止、[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）は継続中。更新後の本番で、ログイン・保存・音声記録・分析が動くことを 2026-11-17 に確認 |
+| 秘密情報の管理 | 開発初期の公開コミットに秘密の値が含まれていたことを確認し、2026-11-17 に `SECRET_KEY_BASE` を交換、Rails の encrypted credentials を廃止（[#593](https://github.com/isekaisaru/dreamjournal-app/pull/593)）、本番 DB のパスワードを交換した。交換後の本番でログイン・保存・音声記録・分析を確認済み。GitHub の Secret scanning と push protection を有効化（有効化後のアラートは 0 件。履歴全体の走査完了は未確認） |
+| 依存関係の脆弱性警告 | Dependabot の未解決の警告は 0 件（2026-11-17）。Next.js は 16.4.6 へ更新済み（[#589](https://github.com/isekaisaru/dreamjournal-app/pull/589)） |
+| 特定商取引法に基づく表記・問い合わせ先 | 表記ページは未公開（下書き [#581](https://github.com/isekaisaru/dreamjournal-app/pull/581)）。利用規約とプライバシーポリシーの問い合わせ先は仮のアドレスのまま |
+| 夢の森のスマホ実機表示 | ドラッグ時のエラー修正（[#557](https://github.com/isekaisaru/dreamjournal-app/pull/557)）は実機確認待ちで未マージ |
+| 本番環境と `main` の一致 | 2026-11-17 に、バックエンド（Render）は [#593](https://github.com/isekaisaru/dreamjournal-app/pull/593) のコミット、フロントエンド（Vercel）は [#589](https://github.com/isekaisaru/dreamjournal-app/pull/589) のコミットのデプロイ成功を確認。継続して照合する仕組みは無い |
+| CI の実行環境 | GitHub Actions の `ubuntu-latest` が 26.04 になり、Ruby 3.3.0 と Playwright 1.60 が動かなくなったため、`ubuntu-24.04` に固定している（[#591](https://github.com/isekaisaru/dreamjournal-app/pull/591)）。Ruby と Playwright の更新による根本対応は未着手 |
 
 技術選定では「モダンだから」ではなく、ひとりでも、大切な人とも迷わず使える UX と、継続運用しやすい構成になるかを重視しています。
 
@@ -45,11 +52,12 @@ YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可
 
 Whisper API を使った音声録音→テキスト変換→分析の一連フローを実装しています。
 「朝起きたばかりで文字を打つのが面倒」という場面に対応し、録音ボタン一つで夢を記録できます。
+文字起こしと分析で費用がかかるため、無料プランは月 5 回まで（残り回数を画面に表示）、プレミアムは月の上限なし（短時間の連続利用には別にレート制限あり）にしています。
 
 ### gpt-image-1 による夢のビジュアル化
 
 夢の内容や AI 分析結果をもとに OpenAI の画像生成モデル（gpt-image-1）で画像を生成し、夢の世界をビジュアルで表現できます。
-月次 31 枚上限（`check_monthly_image_limit`）でコストを管理し、Rack::Attack による追加のレート制限も設けています。
+1 枚あたりの費用が大きいため、プレミアム会員だけの機能にしています（`require_premium_for_image`）。月次 31 枚上限（`check_monthly_image_limit`）でコストを管理し、Rack::Attack による追加のレート制限も設けています。
 2026 年 5 月廃止予定だった dall-e-3 から gpt-image-1 へ移行済みで、`b64_json` レスポンスを直接 DB に保存することで期限切れ URL の問題を解消しています。
 
 ### 月次サマリーと統計
@@ -83,7 +91,7 @@ Whisper API を使った音声録音→テキスト変換→分析の一連フ�
 graph TD
     Browser["Browser"]
     FE["Next.js 16<br/>(Vercel)"]
-    BE["Rails 7.2 API<br/>(Render)"]
+    BE["Rails 8.0 API<br/>(Render)"]
     DB[("PostgreSQL")]
     AI["OpenAI API<br/>(gpt-4o-mini / whisper-1 / gpt-image-1)"]
     Stripe["Stripe"]
@@ -95,6 +103,8 @@ graph TD
     BE -->|Dream analysis / Image generation| AI
     BE -->|Checkout Session| Stripe
     Stripe -->|Webhook POST| BE
+    FE -.->|Errors| Sentry
+    BE -.->|Errors| Sentry
 ```
 
 ### この構成を選んだ理由
@@ -173,6 +183,34 @@ Subscription フローでは `client_reference_id` → `stripe_customer_id` → 
 日本時間（JST）での日付処理を `lib/date.ts` に集約し、`toLocaleString("ja-JP")` が返す「2026年」のような日本語文字列が URL パラメータに混入するバグを防いでいます。
 `en-CA` ロケールで `YYYY-MM-DD` 形式を取得し、`.slice(0,7)` で月キーを生成することで、Vercel（UTC 環境）でも JST 基準の月グループが正確に機能します。
 
+### ⑨ エラー監視へ送るデータを最小にする
+
+Sentry の `send_default_pii = false` だけでは、パスワード再設定のトークン（URL のパス・Referer・ジョブの引数）や、SQL に埋め込まれた検索語、DB 例外の本文が送られることを、監査で確認しました。
+そこで、フロントは許可した項目だけを送る方式に、バックエンドは `before_send` / `before_send_transaction` でトークンと SQL 内の値を取り除く方式にしています（`backend/lib/sentry_event_scrubber.rb`・`backend/lib/sentry_job_arguments_filter.rb`）。保護の処理が失敗したときは、未処理のイベントを送らずに捨てます。
+sentry-ruby 7 では、この保護を通らないログ・メトリクスが既定で送られるようになったため、更新と同時に送信を止め、設定を回帰テストで固定しました。
+
+### ⑩ 依存関係の更新を「CI の成功」だけで判断しない
+
+Dependabot の更新は、変更履歴と自分のコードを照合してから判断しています。
+
+- **Stripe SDK 20 系**: CI はすべて成功していましたが、固定の API バージョンが変わり、寄付の Checkout で使っている `payment_method_types` が廃止されることを変更履歴で確認しました。テストは Stripe をモックしているため検知できません。マージせずに閉じ、test-mode の通し QA と合わせて対応する方針にしました（[#535](https://github.com/isekaisaru/dreamjournal-app/pull/535)）。
+- **Rails 7.2 → 8.0**: 7.2 系に修正版が無い脆弱性に対し、まず影響する入口を止める暫定策を入れ（[#575](https://github.com/isekaisaru/dreamjournal-app/pull/575)）、そのあと 8.0 へ更新しました（[#577](https://github.com/isekaisaru/dreamjournal-app/pull/577)）。
+
+### ⑪ 費用と継続を数える仕組み
+
+月ごとの AI 利用回数（プラン別）・概算の費用・記録の継続状況を、個人を特定できる値を出さずに集計する読み取り専用のコマンドを用意しています（`bin/rails "usage:report[YYYY-MM]"`、[`docs/usage-report.md`](docs/usage-report.md)）。料金プランと利用上限を、推測ではなく実際の利用量から見直すためのものです。
+
+### ⑫ 公開コミットに残っていた秘密の値への対応
+
+開発初期の公開コミットに秘密の値が含まれていたことを、2026 年 11 月の監査で確認しました。次の順で対応しています。
+
+- **値を表示せずに調べる**: 履歴の走査は、コミット・ファイル名・変数名・件数だけを出力する形で行い、秘密の値は画面にもログにも出していません。暗号化ファイルの中身も、ネットワークを切ったコンテナの中で開き、鍵の「名前」だけを確認しました。
+- **照合せずに交換する**: 公開された値は「漏れた前提」で扱い、本番の値と同じかどうかを確かめる前に交換しました。`SECRET_KEY_BASE` は、ログイン（別の鍵で署名する JWT）を切らずに交換できることを、先にコードとテストで確認しています。
+- **鍵を作り直すのではなく、仕組みごとやめる**: Rails の encrypted credentials は、本番で値を使っていなかったため、鍵を再発行せずにファイルごと廃止しました（[#593](https://github.com/isekaisaru/dreamjournal-app/pull/593)）。credentials を読むコードが戻らないよう、回帰テストで固定しています（`backend/spec/security/no_rails_credentials_spec.rb`）。
+- **再発を防ぐ**: GitHub の Secret scanning と push protection を有効にし、Docker イメージに秘密のファイルが入らないことを CI で確認しています。
+
+交換の途中で起きた本番の障害（DB への IPv6 接続が届かない、メモリ不足による再起動）は、ログから原因を切り分けて直しました。
+
 ---
 
 ## 4. 開発の記録（技術記事）
@@ -186,11 +224,13 @@ Subscription フローでは `client_reference_id` → `stripe_customer_id` → 
 
 ## 5. 今後の展望・課題
 
-- 画像生成・AI 分析の利用量に連動したプレミアムプラン設計と課金導線の整備
-- N+1 の解消やクエリ改善など、データ量増加を見据えたバックエンド最適化
-- 自動テストの拡充と、より安全な CI/CD の継続改善
-- INP の計測と改善（PageSpeed Insights で現状把握後に着手予定）
-- OpenAI モデルの比較検証（`OPENAI_CHAT_MODEL` 環境変数を活用して gpt-5-mini / gpt-5-nano の品質・コストを評価）
+新しい機能を増やすより先に、「確かめる → 数える → 届ける」の順で進めています。
+
+- **確かめる**: Stripe test-mode での通し QA（登録 → 支払い → プレミアム → 解約）、特定商取引法に基づく表記ページの公開、Stripe SDK の更新
+- **数える**: 月次の利用レポートと OpenAI の実額から、1 回あたりの費用と採算の合う人数を出す
+- **届ける**: 少人数に使ってもらい、何日続いたか・どこで止まったかを記録して、続けるかどうかを判断する
+- **品質**: ESLint に整形の検査と React hooks の検査を足す。テストコードの型検査を CI に入れる。CI の実行環境の固定を外すための Ruby・Playwright の更新。音声記録の再送時の重複防止
+- **あとで**: OpenAI モデルの比較検証（`OPENAI_CHAT_MODEL` 環境変数で切り替え可能）、INP の計測と改善、N+1 の解消
 
 ---
 
@@ -200,10 +240,10 @@ Subscription フローでは `client_reference_id` → `stripe_customer_id` → 
 <summary>利用技術</summary>
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, Framer Motion
-- **Backend**: Ruby on Rails 7.2 (API mode), Ruby 3.3, PostgreSQL
+- **Backend**: Ruby on Rails 8.0 (API mode), Ruby 3.3, PostgreSQL
 - **Testing**: Playwright, RSpec, Jest
 - **AI / External Services**: OpenAI API (`gpt-4o-mini`, `whisper-1`, `gpt-image-1`), Stripe Checkout / Subscription / Billing Portal, Sentry
-- **Security**: Rack::Attack (rate limiting), JWT + HttpOnly Cookie, CORS
+- **Security**: Rack::Attack (rate limiting), JWT + HttpOnly Cookie, CORS, GitHub Secret scanning / push protection
 - **DevOps**: Vercel, Render, Docker Compose, GitHub Actions
 </details>
 
@@ -227,21 +267,31 @@ make dev-up
 <details>
 <summary>CI/CD</summary>
 
-GitHub Actions で `main` への Push / PR 時に Playwright、RSpec、Jest を実行し、主要フローの回帰を検知できるようにしています。
+GitHub Actions で `main` への Push / PR 時に、次の 4 つを実行します（実行環境は `ubuntu-24.04` に固定）。
+
+| ワークフロー | 内容（2026-11-17 の `main` での件数） |
+|---|---|
+| Frontend Tests | ESLint（`yarn lint`）と Jest 839 件（82 ファイル） |
+| Backend Tests | RSpec 636 件。あわせて `structure.sql` の再生成結果と RLS の状態を照合 |
+| E2E Tests | Playwright 53 件（本番ビルドに対して実行） |
+| Backend Docker Security | Docker イメージをビルドし、秘密情報が含まれないことを確認 |
 
 **Playwright E2E カバレッジ（CI 実行分）**
 
-CI（GitHub Actions）では認証不要・APIモック済みのシナリオを自動実行しています。
+CI（GitHub Actions）では、API をモックしたシナリオを自動実行しています。
 
 | シナリオファイル | カバー内容 |
 |---|---|
 | `smoke.spec.ts` | アプリ起動・ログインリンク表示 |
 | `donation.spec.ts` | 寄付フロー・Stripe Checkout 遷移 |
+| `checkout-email-gate.spec.ts` | メール未確認のときの決済ガード（寄付・プレミアム）と案内表示 |
 | `dream-detail-flow.spec.ts` | 夢詳細表示・編集モード切り替え |
 | `registration-flow.spec.ts` | パスワード強度バー（弱い/普通/強い）・バリデーション・登録成功→`/home` 遷移 |
 | `trial-flow.spec.ts` | 残り分析回数バッジ・AI分析成功・上限到達時のアップグレードカード表示 |
+| `email-verification-flow.spec.ts` | メール確認リンク（トークンなし・期限切れ・成功）と再送の案内 |
+| `password-reset-flow.spec.ts` | パスワード再設定フォームの入力チェック・送信中表示・成功／失敗時の表示 |
 
-認証が必要なシナリオ（`home-flow.spec.ts`、`month-summary-flow.spec.ts`）はローカル環境で実行します。
+ホーム・月次サマリー・夢の森・プロフィール・ログアウトのシナリオ（`home-flow.spec.ts` など 5 ファイル）は、CI では実行しておらず、ローカル環境で実行します。
 </details>
 
 ---
