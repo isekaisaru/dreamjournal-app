@@ -35,7 +35,7 @@ YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可
 | 特定商取引法に基づく表記・問い合わせ先 | 表記ページは未公開（下書き [#581](https://github.com/isekaisaru/dreamjournal-app/pull/581)）。利用規約とプライバシーポリシーの問い合わせ先は仮のアドレスのまま |
 | 夢の森のスマホ実機表示 | ドラッグ時のエラー修正（[#557](https://github.com/isekaisaru/dreamjournal-app/pull/557)）は実機確認待ちで未マージ |
 | 本番環境と `main` の一致 | 2026-11-17 に、バックエンド（Render）は [#593](https://github.com/isekaisaru/dreamjournal-app/pull/593) のコミット、フロントエンド（Vercel）は [#589](https://github.com/isekaisaru/dreamjournal-app/pull/589) のコミットのデプロイ成功を確認。継続して照合する仕組みは無い |
-| CI の実行環境 | GitHub Actions の `ubuntu-latest` が 26.04 になり、Ruby 3.3.0 と Playwright 1.60 が動かなくなったため、`ubuntu-24.04` に固定している（[#591](https://github.com/isekaisaru/dreamjournal-app/pull/591)）。Ruby と Playwright の更新による根本対応は未着手 |
+| CI の実行環境 | GitHub Actions の `ubuntu-latest` が 26.04 になり、Ruby 3.3.0 と Playwright 1.60 が動かなくなったため、`ubuntu-24.04` に固定している（[#591](https://github.com/isekaisaru/dreamjournal-app/pull/591)）。Ruby は 3.3.13 へ更新済み（CI と本番の Docker の両方）。Playwright の更新は未着手のため、固定は継続中 |
 
 技術選定では「モダンだから」ではなく、ひとりでも、大切な人とも迷わず使える UX と、継続運用しやすい構成になるかを重視しています。
 
