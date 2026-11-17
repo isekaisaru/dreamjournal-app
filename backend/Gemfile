@@ -71,7 +71,8 @@ group :development, :test do
   gem 'shoulda-matchers', '~> 8.0.1'
   gem 'database_cleaner-active_record'
 
-
+  # Static analysis for security vulnerabilities (bin/brakeman, CI で毎回実行)
+  gem "brakeman", require: false
 end
 
 group :test do

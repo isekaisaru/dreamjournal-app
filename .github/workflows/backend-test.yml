@@ -141,3 +141,22 @@ jobs:
         working-directory: ./backend
         run: |
           bundle exec rspec
+
+  brakeman:
+    # Rails のコードに危ない書き方（SQL インジェクションなど）がないかを、アプリを起動せずに調べる。
+    # 誤検知と、別の PR で直す指摘は、理由を書いて config/brakeman.ignore に入れる。
+    name: Brakeman
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3.13"
+          bundler-cache: true
+          working-directory: ./backend
+
+      - name: Scan for security vulnerabilities
+        working-directory: ./backend
+        run: bin/brakeman --no-pager
