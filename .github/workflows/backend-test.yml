@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     name: RSpec
+    # この job だけ 24.04 に残す。26.04 の pg_dump は 18 系で `SET transaction_timeout = 0;` を
+    # 出し、下の structure.sql 検証が失敗するため（24.04 は 16 系で一致する）。
     runs-on: ubuntu-24.04
     env:
       RAILS_ENV: test
@@ -146,7 +148,7 @@ jobs:
     # Rails のコードに危ない書き方（SQL インジェクションなど）がないかを、アプリを起動せずに調べる。
     # 誤検知と、別の PR で直す指摘は、理由を書いて config/brakeman.ignore に入れる。
     name: Brakeman
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 

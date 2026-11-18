@@ -36,7 +36,7 @@ YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可
 | 特定商取引法に基づく表記・問い合わせ先 | 表記ページは未公開（下書き [#581](https://github.com/isekaisaru/dreamjournal-app/pull/581)）。利用規約とプライバシーポリシーの問い合わせ先は仮のアドレスのまま |
 | 夢の森のスマホ実機表示 | ドラッグ時のエラー修正（[#557](https://github.com/isekaisaru/dreamjournal-app/pull/557)）は実機確認待ちで未マージ |
 | 本番環境と `main` の一致 | 2026-11-17 に、バックエンド（Render）は [#593](https://github.com/isekaisaru/dreamjournal-app/pull/593) のコミット、フロントエンド（Vercel）は [#589](https://github.com/isekaisaru/dreamjournal-app/pull/589) のコミットのデプロイ成功を確認。継続して照合する仕組みは無い |
-| CI の実行環境 | GitHub Actions の `ubuntu-latest` が 26.04 になり、Ruby 3.3.0 と Playwright 1.60 が動かなくなったため、`ubuntu-24.04` に固定している（[#591](https://github.com/isekaisaru/dreamjournal-app/pull/591)）。Ruby は 3.3.13 へ更新済み（CI と本番の Docker の両方）。Playwright の更新は未着手のため、固定は継続中 |
+| CI の実行環境 | GitHub Actions の `ubuntu-latest` が 26.04 になり、Ruby 3.3.0 と Playwright 1.60 が動かなくなったため、一時的に `ubuntu-24.04` に固定した（[#591](https://github.com/isekaisaru/dreamjournal-app/pull/591)）。Ruby を 3.3.13、Playwright を 26.04 に対応した 1.61.1 へ更新し、実行環境を `ubuntu-26.04` に移した。ただし RSpec の job だけは、26.04 の `pg_dump`（18 系）が `structure.sql` に新しい設定行を出すため `ubuntu-24.04` に残した。`ubuntu-latest` は使わず版を明示し、次の版への移行は自分で決める |
 
 技術選定では「モダンだから」ではなく、ひとりでも、大切な人とも迷わず使える UX と、継続運用しやすい構成になるかを重視しています。
 
@@ -230,7 +230,7 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 - **確かめる**: Stripe test-mode での通し QA（登録 → 支払い → プレミアム → 解約）、特定商取引法に基づく表記ページの公開、Stripe SDK の更新
 - **数える**: 月次の利用レポートと OpenAI の実額から、1 回あたりの費用と採算の合う人数を出す
 - **届ける**: 少人数に使ってもらい、何日続いたか・どこで止まったかを記録して、続けるかどうかを判断する
-- **品質**: ESLint に整形の検査と React hooks の検査を足す。テストコードの型検査を CI に入れる。CI の実行環境の固定を外すための Playwright の更新（Ruby は更新済み）。Rails の既定値（`load_defaults 7.0`）を 1 段ずつ上げる。音声記録の再送時の重複防止
+- **品質**: ESLint に整形の検査と React hooks の検査を足す。テストコードの型検査を CI に入れる。CI の Node.js を 20 から 22 以上へ上げ（Node 20 は保守終了）、Playwright を最新へ。Rails の既定値（`load_defaults 7.0`）を 1 段ずつ上げる。音声記録の再送時の重複防止
 - **あとで**: OpenAI モデルの比較検証（`OPENAI_CHAT_MODEL` 環境変数で切り替え可能）、INP の計測と改善、N+1 の解消
 
 ---
@@ -268,7 +268,7 @@ make dev-up
 <details>
 <summary>CI/CD</summary>
 
-GitHub Actions で `main` への Push / PR 時に、次の 4 つを実行します（実行環境は `ubuntu-24.04` に固定）。
+GitHub Actions で `main` への Push / PR 時に、次の 4 つを実行します（実行環境は `ubuntu-26.04` を明示。RSpec だけ `ubuntu-24.04`）。
 
 | ワークフロー | 内容（2026-11-17 の `main` での件数） |
 |---|---|
