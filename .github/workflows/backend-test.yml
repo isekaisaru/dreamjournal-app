@@ -7,7 +7,9 @@ on:
 jobs:
   test:
     name: RSpec
-    runs-on: ubuntu-26.04
+    # この job だけ 24.04 に残す。26.04 の pg_dump は 18 系で `SET transaction_timeout = 0;` を
+    # 出し、下の structure.sql 検証が失敗するため（24.04 は 16 系で一致する）。
+    runs-on: ubuntu-24.04
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:password@localhost:5432/test_db
