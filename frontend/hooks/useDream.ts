@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Dream } from "../app/types";
 import { useAuth } from "@/context/AuthContext";
 import apiClient from "../lib/apiClient";
@@ -54,7 +53,6 @@ export const useDream = (id?: string) => {
   // 保存が 409 edit_conflict で拒否された（別の画面・端末の保存が先に確定した）。
   // 入力を守るため dream は差し替えず、利用者が最新の読み込みを選ぶまで残す。
   const [editConflict, setEditConflict] = useState(false);
-  const router = useRouter();
   const { authStatus, isLoggedIn } = useAuth();
   const numericId = parseDreamId(id);
   // 夢IDを素早く切り替えると、古いIDの応答が新しい方より後に届くことがある。
