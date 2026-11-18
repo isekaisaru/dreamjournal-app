@@ -29,6 +29,8 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ./frontend
+        # ふだんは 1 分以内。Ubuntu の配布元が遅いと止まり続ける（2026-11-19 に約35分）ため上限を置く。
+        timeout-minutes: 10
         run: npx playwright install --with-deps
 
       - name: Build frontend
