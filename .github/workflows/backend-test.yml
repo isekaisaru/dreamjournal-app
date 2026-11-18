@@ -7,7 +7,7 @@ on:
 jobs:
   test:
     name: RSpec
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     env:
       RAILS_ENV: test
       DATABASE_URL: postgres://postgres:password@localhost:5432/test_db
@@ -146,7 +146,7 @@ jobs:
     # Rails のコードに危ない書き方（SQL インジェクションなど）がないかを、アプリを起動せずに調べる。
     # 誤検知と、別の PR で直す指摘は、理由を書いて config/brakeman.ignore に入れる。
     name: Brakeman
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 
