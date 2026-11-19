@@ -48,13 +48,6 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/login") || pathname.startsWith("/register");
   const pageIsProtected = isProtectedPage(pathname);
 
-  // Only these pages render MorpheusLoginRequired for unauthenticated users.
-  // Every other protected page still redirects to /login.
-  const hasInAppLoginGuidance =
-    pathname === "/home" ||
-    pathname === "/insights" ||
-    pathname.startsWith("/dream/month");
-
   if (!token && pageIsProtected) {
     // Let the page render its in-app login guidance instead of forcing an
     // immediate redirect. Protected data is still guarded by backend APIs.

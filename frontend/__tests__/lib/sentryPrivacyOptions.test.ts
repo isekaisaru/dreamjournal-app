@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import { sentryPrivacyOptions } from "@/lib/sentryPrivacyOptions";
 
 // Sentry へは何も送らない。`init` に渡された設定を記録するだけの差し替え。

@@ -27,7 +27,6 @@ jest.mock("react-hot-toast", () => ({
   default: { success: jest.fn(), error: jest.fn() },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const toast = require("react-hot-toast").default as {
   success: ReturnType<typeof jest.fn>;
   error: ReturnType<typeof jest.fn>;

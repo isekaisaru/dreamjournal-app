@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   FILTERED_MESSAGE,
   FILTERED_URL,

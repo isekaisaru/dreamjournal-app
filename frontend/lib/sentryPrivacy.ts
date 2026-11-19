@@ -31,7 +31,7 @@ function finiteNumber(value: unknown): number | undefined {
 // 英数字・記号の短い識別子(種別名・バージョン・環境名など)だけを通す。
 const SAFE_SHORT_TEXT = /^[\w.@+\-/ ]{1,200}$/;
 // category / type / mechanism.type のような名前。
-const SAFE_NAME = /^[\w.\-]{1,64}$/;
+const SAFE_NAME = /^[\w.-]{1,64}$/;
 // 例外の type は、形で判定せず「既知の名前」だけを通す(それ以外は "Error")。
 // 形が識別子らしいだけでは、トークンや独自に付けた名前を区別できないため。
 // ApiError はこのアプリの lib/apiClient.ts のクラス。

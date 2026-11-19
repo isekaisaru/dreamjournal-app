@@ -40,7 +40,7 @@ export default function ForestPage() {
     // router is intentionally excluded: Next's router is a stable singleton in
     // production, but re-including it here caused a runaway re-fetch loop in
     // tests where useRouter() is mocked to return a fresh object every render.
-  }, [authStatus, load]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [authStatus, load]);
 
   const selectedProfile = useMemo(
     () => profiles.find((p) => p.id === selectedProfileId) ?? null,
