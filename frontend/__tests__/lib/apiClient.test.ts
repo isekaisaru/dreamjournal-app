@@ -1,5 +1,8 @@
 import { apiFetch, clientLogin } from "../../lib/apiClient";
 
+// fetch と同じ引数の型。mock.calls[n][0]（呼び出した URL）を型の上でも読めるようにする
+type FetchFn = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
 describe("apiFetch timeout policy", () => {
   const originalFetch = global.fetch;
 
@@ -42,7 +45,7 @@ describe("apiFetch timeout policy", () => {
     "tries refresh and retries the original request when %s returns 401",
     async (endpoint) => {
       const fetchMock = jest
-        .fn<() => Promise<Response>>()
+        .fn<FetchFn>()
         .mockResolvedValueOnce({
           ok: false,
           status: 401,
@@ -74,7 +77,7 @@ describe("apiFetch timeout policy", () => {
 
   it("does not try refresh again when the retried original request still returns 401", async () => {
     const fetchMock = jest
-      .fn<() => Promise<Response>>()
+      .fn<FetchFn>()
       .mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -117,7 +120,7 @@ describe("apiFetch timeout policy", () => {
 
   it("returns the original 401 when refresh fails", async () => {
     const fetchMock = jest
-      .fn<() => Promise<Response>>()
+      .fn<FetchFn>()
       .mockResolvedValueOnce({
         ok: false,
         status: 401,

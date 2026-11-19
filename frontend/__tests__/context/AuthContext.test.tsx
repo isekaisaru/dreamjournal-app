@@ -247,7 +247,9 @@ describe("403 / 404 / 500 (恒久的エラー)", () => {
 // ---------------------------------------------------------------------------
 
 describe("一時障害 (502/503/504/network error)", () => {
-  beforeEach(() => jest.useFakeTimers());
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
   afterEach(() => {
     // 残っているタイマーをすべて消化してから実タイマーに戻す
     act(() => {
@@ -370,7 +372,9 @@ describe("一時障害 (502/503/504/network error)", () => {
 // ---------------------------------------------------------------------------
 
 describe("リトライ上限 (3回) 到達後", () => {
-  beforeEach(() => jest.useFakeTimers());
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
   afterEach(() => {
     act(() => {
       jest.runAllTimers();

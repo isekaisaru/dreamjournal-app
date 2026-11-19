@@ -17,7 +17,7 @@ jest.mock("framer-motion", () => ({
           children?: React.ReactNode;
           [key: string]: unknown;
         }) => {
-          const Tag = tag as keyof JSX.IntrinsicElements;
+          const Tag = tag as keyof React.JSX.IntrinsicElements;
           // framer 固有の props は除去して描画する
           const {
             initial: _i,
