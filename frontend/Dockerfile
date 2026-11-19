@@ -1,11 +1,11 @@
 # Stage 1: 依存関係のインストール
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json yarn.lock* ./
 RUN yarn install --frozen-lockfile --network-timeout 1000000
 
 # Stage 2: ビルドステージ
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # NEXT_PUBLIC_* はビルド時にバンドルへ埋め込まれるため ARG/ENV で受け取る
@@ -19,7 +19,7 @@ COPY . .
 RUN yarn build
 
 # Stage 3: 本番実行ステージ
-FROM node:20-alpine
+FROM node:22-alpine
 
 # 作業ディレクトリの設定
 WORKDIR /app
