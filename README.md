@@ -23,7 +23,7 @@ YumeTree（ユメツリー）は、夢の記録・AI 分析・感情タグの可
 
 | 項目 | 状況 |
 |---|---|
-| CI（Jest / RSpec / Playwright） | 確認時の `main`（`f8510096`）は Jest 839 件・RSpec 636 件・Playwright 53 件がすべて成功。E2E は API・Stripe をモックしたシナリオ。ESLint は CI で実行し、警告も 0 件を保つ（`--max-warnings 0`。第1段階：TypeScript の書き方の検査。整形の検査と React hooks の検査は未導入）。テストコードの型検査は CI に未導入（アプリ本体の型は `next build` で検査） |
+| CI（Jest / RSpec / Playwright） | 確認時の `main`（`f8510096`）は Jest 839 件・RSpec 636 件・Playwright 53 件がすべて成功。E2E は API・Stripe をモックしたシナリオ。ESLint は CI で実行し、警告も 0 件を保つ（`--max-warnings 0`。第1段階：TypeScript の書き方の検査。整形の検査と React hooks の検査は未導入）。型検査（`tsc --noEmit`）も CI で実行し、アプリ本体に加えてテストと E2E のコードも検査する |
 | Stripe 決済（寄付・月額課金） | 実装済み・過去に本番での決済記録あり。現行コードに対する test-mode の通し QA は未完了。Stripe SDK の 20 系は、Checkout の `payment_method_types` 廃止で寄付が失敗するため見送り中（[#535](https://github.com/isekaisaru/dreamjournal-app/pull/535) に理由を記録。CI は Stripe をモックするため成功していた） |
 | 料金プランと利用上限 | 画像生成はプレミアム限定（[#578](https://github.com/isekaisaru/dreamjournal-app/pull/578)）、音声記録は無料プランで月 5 回まで（[#579](https://github.com/isekaisaru/dreamjournal-app/pull/579)）。案内文と実際の制限の食い違いを直した（[#580](https://github.com/isekaisaru/dreamjournal-app/pull/580)）。本番画面での表示確認は未確認 |
 | 夢詳細画面の非同期競合（素早い夢の切り替え時の更新・削除） | 古い通信結果の画面反映を防ぐ修正（[#558](https://github.com/isekaisaru/dreamjournal-app/pull/558)）、古い版からの保存を拒否する処理と分析中の編集保護（[#566](https://github.com/isekaisaru/dreamjournal-app/pull/566)・[#567](https://github.com/isekaisaru/dreamjournal-app/pull/567)・[#569](https://github.com/isekaisaru/dreamjournal-app/pull/569)）は `main` にマージ済み。古い版からの保存の拒否は本番の 2 タブ操作で確認済み。音声経路の本番確認と、残りの対応（[#561](https://github.com/isekaisaru/dreamjournal-app/issues/561)）は未完了 |
@@ -230,7 +230,7 @@ Dependabot の更新は、変更履歴と自分のコードを照合してから
 - **確かめる**: Stripe test-mode での通し QA（登録 → 支払い → プレミアム → 解約）、特定商取引法に基づく表記ページの公開、Stripe SDK の更新
 - **数える**: 月次の利用レポートと OpenAI の実額から、1 回あたりの費用と採算の合う人数を出す
 - **届ける**: 少人数に使ってもらい、何日続いたか・どこで止まったかを記録して、続けるかどうかを判断する
-- **品質**: ESLint に整形の検査と React hooks の検査を足す。テストコードの型検査を CI に入れる。Playwright を最新へ。Rails の既定値（`load_defaults 7.0`）を 1 段ずつ上げる。音声記録の再送時の重複防止
+- **品質**: ESLint に整形の検査と React hooks の検査を足す。Playwright を最新へ。Rails の既定値（`load_defaults 7.0`）を 1 段ずつ上げる。音声記録の再送時の重複防止
 - **あとで**: OpenAI モデルの比較検証（`OPENAI_CHAT_MODEL` 環境変数で切り替え可能）、INP の計測と改善、N+1 の解消
 
 ---
@@ -272,7 +272,7 @@ GitHub Actions で `main` への Push / PR 時に、次の 4 つを実行しま�
 
 | ワークフロー | 内容（2026-11-17 の `main` での件数） |
 |---|---|
-| Frontend Tests | ESLint（`yarn lint`・警告 0 件）と Jest 839 件（82 ファイル） |
+| Frontend Tests | ESLint（`yarn lint`・警告 0 件）、型検査（`yarn typecheck`・テストを含む）と Jest 839 件（82 ファイル） |
 | Backend Tests | RSpec 636 件。あわせて `structure.sql` の再生成結果と RLS の状態を照合。別の job で Brakeman（Rails コードの静的な安全検査） |
 | E2E Tests | Playwright 53 件（本番ビルドに対して実行） |
 | Backend Docker Security | Docker イメージをビルドし、秘密情報が含まれないことを確認 |

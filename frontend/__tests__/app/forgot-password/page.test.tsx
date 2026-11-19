@@ -9,9 +9,9 @@ describe("ForgotPasswordPage", () => {
   beforeEach(() => {
     process.env = { ...originalEnv, NEXT_PUBLIC_VERCEL_ENV: "production" };
     delete process.env.NEXT_PUBLIC_API_URL;
-    global.fetch = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn<() => Promise<Response>>().mockResolvedValue({
       ok: true,
-    } as Response);
+    } as Response) as unknown as typeof fetch;
   });
 
   afterEach(() => {

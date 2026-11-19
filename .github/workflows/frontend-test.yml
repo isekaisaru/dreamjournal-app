@@ -25,6 +25,10 @@ jobs:
       - name: Run lint
         working-directory: ./frontend
         run: yarn lint
+      - name: Type check (app, tests and e2e)
+        working-directory: ./frontend
+        # next build はアプリ本体しか型を見ないため、テストと E2E のコードもここで検査する
+        run: yarn typecheck
       - name: Run tests
         working-directory: ./frontend
         run: yarn test --coverage --watchAll=false
