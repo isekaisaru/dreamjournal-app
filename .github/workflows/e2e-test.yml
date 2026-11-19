@@ -31,7 +31,9 @@ jobs:
         working-directory: ./frontend
         # ふだんは 1 分以内。Ubuntu の配布元が遅いと止まり続ける（2026-11-19 に約35分）ため上限を置く。
         timeout-minutes: 10
-        run: npx playwright install --with-deps
+        # playwright.config.ts の projects は chromium だけなので、firefox・webkit 本体と
+        # それら専用の OS 部品は入れない。配布元から取る量が減り、遅いときの影響も小さくなる。
+        run: npx playwright install --with-deps chromium
 
       - name: Build frontend
         working-directory: ./frontend
