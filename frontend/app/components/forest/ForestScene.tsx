@@ -174,7 +174,11 @@ export default function ForestScene({
           capturedRef.current = true;
         }
       }
-      setView((v) => clamp({ ...v, x: dragRef.current!.vx + dx, y: dragRef.current!.vy + dy }));
+      // 移動先はイベントの時点で確定させる。状態更新の関数は描画時まで遅れて呼ばれることがあり、
+      // その前に pointerup / 2本目の指で dragRef.current が null になると例外になるため。
+      const nextX = dragRef.current.vx + dx;
+      const nextY = dragRef.current.vy + dy;
+      setView((v) => clamp({ ...v, x: nextX, y: nextY }));
     }
   };
   const onPointerUp = (e: React.PointerEvent) => {
