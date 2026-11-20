@@ -8,7 +8,7 @@ jest.mock("@/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-const mockGet = jest.fn();
+const mockGet = jest.fn<(...args: unknown[]) => Promise<Dream[]>>();
 jest.mock("@/lib/apiClient", () => ({
   __esModule: true,
   default: { get: (...args: unknown[]) => mockGet(...args) },

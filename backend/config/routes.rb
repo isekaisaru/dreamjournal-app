@@ -10,6 +10,7 @@ Rails.application.routes.draw do
 
   # 音声解析用エンドポイント
   post "/analyze_audio_dream", to: "audio_dreams#create"
+  get "/audio_quota", to: "audio_dreams#quota" # 音声分析の残り回数
 
   resources :dreams, only: [:index, :show, :create, :update, :destroy] do
     member do
@@ -61,7 +62,7 @@ Rails.application.routes.draw do
   post '/checkout', to: 'checkout#create'
   get '/checkout/session', to: 'checkout#show_session'
   post '/billing_portal', to: 'billing_portal#create'
-  post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（署名検証は次回実装）
+  post '/webhooks/stripe', to: 'webhooks#stripe'  # Webhook（STRIPE_WEBHOOK_SECRET で署名を検証する）
 
   # パスワードリセット関連
   resources :password_resets, only: [:create, :update]

@@ -25,6 +25,16 @@ module App
     config.middleware.use Rack::Deflater
     config.middleware.use Rack::Attack
 
+    # Rails 7.2 には修正版が出ていない警告への暫定策。Rails 8.0.5.2 以降へ上げたら見直す。
+    # - GHSA-v924-7rp8-4mxh: 添付時の解析で ffprobe / ffmpeg / ImageMagick が、アップロードされた
+    #   ファイル名の拡張子からデコーダを選ぶ。このアプリは解析結果（音声の長さなど）を使わないので、
+    #   外部ツールを呼ぶ analyzer と previewer を外す（文字起こしは AudioAnalysisService が別に行う）。
+    # - GHSA-8474-xrp6-wh69: Action Cable の subscribe で DoS の恐れがある。Action Cable は使って
+    #   いないので、/cable を routes に置かない。
+    config.active_storage.analyzers = []
+    config.active_storage.previewers = []
+    config.action_cable.mount_path = nil
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.

@@ -24,7 +24,7 @@ jest.mock("@/context/AuthContext", () => ({
 
 jest.mock("@/lib/apiClient", () => ({
   __esModule: true,
-  default: { get: jest.fn().mockResolvedValue([]) },
+  default: { get: jest.fn<() => Promise<unknown>>().mockResolvedValue([]) },
 }));
 
 function setup() {

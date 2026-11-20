@@ -12,7 +12,6 @@ jest.mock("framer-motion", () => {
     {},
     {
       get: (_, tag) =>
-        // eslint-disable-next-line react/display-name
         React.forwardRef(({ children, ...props }: any, ref: any) => {
           const {
             initial, animate, exit, transition, variants, whileHover, whileTap,

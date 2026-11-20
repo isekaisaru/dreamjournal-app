@@ -16,7 +16,7 @@ describe("resolveDreamEmotionNames", () => {
 
   it("AIタグが空配列なら手動emotionsにフォールバックする（バグ回帰防止）", () => {
     const dream = makeDream({
-      analysis_json: { emotion_tags: [] } as Dream["analysis_json"],
+      analysis_json: { emotion_tags: [] as string[] } as Dream["analysis_json"],
       emotions: [{ id: 1, name: "怒り" }] as Dream["emotions"],
     });
     expect(resolveDreamEmotionNames(dream)).toEqual(["怒り"]);

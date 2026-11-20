@@ -15,6 +15,7 @@ const FREE_FEATURES = [
   { label: "AI分析", detail: "月10回まで" },
   { label: "夢の記録", detail: "無制限" },
   { label: "感情タグ", detail: "利用可" },
+  { label: "音声で記録", detail: "月5回まで" },
   { label: "月次サマリー", detail: "利用不可" },
   { label: "夢の画像生成", detail: "利用不可" },
 ];
@@ -23,6 +24,7 @@ const PREMIUM_FEATURES = [
   { label: "AI分析", detail: "たっぷり使える" },
   { label: "夢の記録", detail: "無制限" },
   { label: "感情タグ", detail: "利用可" },
+  { label: "音声で記録", detail: "たっぷり使える" },
   { label: "月次サマリー", detail: "月ごとのAIまとめ" },
   { label: "夢の画像生成", detail: "月31枚" },
 ];

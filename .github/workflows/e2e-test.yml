@@ -10,14 +10,14 @@ on:
 jobs:
   test:
     name: Playwright
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "22"
 
       - name: Validate dependency resolution policy
         working-directory: ./frontend
@@ -29,7 +29,11 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: ./frontend
-        run: npx playwright install --with-deps
+        # ふだんは 1 分以内。Ubuntu の配布元が遅いと止まり続ける（2026-11-19 に約35分）ため上限を置く。
+        timeout-minutes: 10
+        # playwright.config.ts の projects は chromium だけなので、firefox・webkit 本体と
+        # それら専用の OS 部品は入れない。配布元から取る量が減り、遅いときの影響も小さくなる。
+        run: npx playwright install --with-deps chromium
 
       - name: Build frontend
         working-directory: ./frontend

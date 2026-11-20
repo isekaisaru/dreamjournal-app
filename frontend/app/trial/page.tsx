@@ -313,7 +313,7 @@ export default function TrialPage() {
         <MorpheusSmall
           expression="curious"
           title="夢を記録してみましょう"
-          message="夢の内容を書いて「AIにきいてみる」を押すと、感情と意味を読み解きます。登録後は、声での記録や夢からのAI画像生成も試せます。"
+          message="夢の内容を書いて「AIにきいてみる」を押すと、感情と意味を読み解きます。登録後は、声での記録も試せます。夢からのAI画像生成はプレミアムプランで使えます。"
         />
       </div>
 
@@ -476,7 +476,7 @@ export default function TrialPage() {
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      🖼️ 登録後は保存した夢からAI画像生成も試せます
+                      🖼️ 夢からのAI画像生成はプレミアムプランで使えます
                     </p>
                   </div>
                 )}
@@ -526,7 +526,7 @@ export default function TrialPage() {
             体験版のAI分析は <span className="text-sky-600 dark:text-sky-400 font-medium">3回</span> まで
           </p>
           <p className="text-xs text-muted-foreground/80 mb-4">
-            体験用アカウントが自動で作成されます。登録後は継続保存、声での記録、夢からのAI画像生成に進めます。
+            体験用アカウントが自動で作成されます。登録後は継続保存や声での記録に進めます。夢からのAI画像生成はプレミアムプランの機能です。
           </p>
           <Link
             href="/register"

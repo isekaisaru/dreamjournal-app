@@ -18,9 +18,6 @@ export async function POST(req: Request) {
   const requestBody = await req.text();
 
   try {
-    // リクエストボディをJSONとして確実にパースして再構築する（ドロップ防止）
-    const requestData = await req.json().catch(() => null);
-
     const upstream = await fetch(`${backendUrl}/checkout`, {
       method: "POST",
       headers: {

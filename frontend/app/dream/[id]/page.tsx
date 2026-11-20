@@ -8,9 +8,11 @@ import {
   getChildFriendlyEmotionLabel,
 } from "../../components/EmotionTag";
 import { useDream, type DreamInput } from "../../../hooks/useDream";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import apiClient, { isEmailVerificationRequiredError } from "../../../lib/apiClient";
+import { toFriendlyErrorMessage } from "../../../lib/friendlyErrors";
 import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 import { useAuth } from "../../../context/AuthContext";
 import { AgeGroup } from "@/app/types";
@@ -40,6 +42,8 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         button: "ゆめのえを かく",
         imageRedraw: "かきなおす",
         imageGenerating: "かいています...",
+        imagePremiumOnly: "ゆめのえは プレミアムで かけるよ",
+        imagePremiumLink: "プレミアムを みる",
       };
     case "preteen":
       return {
@@ -50,6 +54,8 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         button: "夢のイラストを生成",
         imageRedraw: "描き直す",
         imageGenerating: "生成中...",
+        imagePremiumOnly: "夢のイラストはプレミアムプランで描けます",
+        imagePremiumLink: "プレミアムを見る",
       };
     case "teen":
     case "adult":
@@ -62,6 +68,8 @@ function getDreamDetailCopy(ageGroup: AgeGroup | undefined) {
         button: "画像を生成する",
         imageRedraw: "再生成",
         imageGenerating: "生成中...",
+        imagePremiumOnly: "夢の画像生成はプレミアムプランの機能です",
+        imagePremiumLink: "プレミアムを見る",
       };
   }
 }
@@ -87,17 +95,30 @@ export default function DreamDetailPage({
 }) {
   // `use`フックでPromiseを解決し、`id`を取得します
   const { id: dreamId } = use(params);
+  const { authStatus } = useAuth();
+  // 夢ID・認証状態ごとに作り直し、編集中・削除確認・画像生成などの状態と、
+  // 古い画像生成・削除の完了を、別の夢や認証変更後の画面へ持ち越さない。
+  return (
+    <DreamDetailContent key={`${dreamId}:${authStatus}`} dreamId={dreamId} />
+  );
+}
+
+function DreamDetailContent({ dreamId }: { dreamId: string }) {
   const {
     dream,
     error,
     isLoading: dreamLoading,
     isUpdating,
+    editConflict = false,
     updateDream: hookUpdateDream,
     deleteDream: hookDeleteDream,
+    reloadDream,
   } = useDream(dreamId);
 
   const { user } = useAuth();
   const copy = getDreamDetailCopy(user?.age_group);
+  // 画像生成はプレミアム限定（バックエンドも premium? で 403 を返す）
+  const canGenerateImage = user?.premium === true;
 
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -108,6 +129,17 @@ export default function DreamDetailPage({
   const [imageError, setImageError] = useState<string | null>(null);
   const [imageVerificationRequired, setImageVerificationRequired] = useState(false);
   const [imageQuota, setImageQuota] = useState<{ used: number; limit: number; remaining: number } | null>(null);
+  // 削除確認を開いた時点の夢ID。確定時にURL・表示中の夢と照合する。
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  // この画面（この夢ID）がまだ表示中か。古い保存・削除・画像生成の完了を反映しないために使う。
+  const isActiveRef = useRef(true);
+
+  useEffect(() => {
+    isActiveRef.current = true;
+    return () => {
+      isActiveRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (error) {
@@ -116,10 +148,13 @@ export default function DreamDetailPage({
   }, [error]);
 
   useEffect(() => {
+    if (!canGenerateImage) return;
     apiClient.get<{ used: number; limit: number; remaining: number }>("/dreams/image_quota")
-      .then(setImageQuota)
+      .then((quota) => {
+        if (isActiveRef.current) setImageQuota(quota);
+      })
       .catch(() => {/* 非致命的 */});
-  }, []);
+  }, [canGenerateImage]);
 
   useEffect(() => {
     if (dream?.generated_image_url) {
@@ -138,13 +173,17 @@ export default function DreamDetailPage({
         {},
         { timeoutMs: 60_000 }
       );
+      if (!isActiveRef.current) return;
       setGeneratedImageUrl(result.image_url);
     } catch (err) {
+      if (!isActiveRef.current) return;
       if (isEmailVerificationRequiredError(err)) {
         setImageVerificationRequired(true);
       } else {
         setImageError(
-          err instanceof Error ? err.message : "えの せいせい に しっぱい しました"
+          err instanceof Error
+            ? toFriendlyErrorMessage(err)
+            : "えの せいせい に しっぱい しました"
         );
       }
     } finally {
@@ -168,20 +207,42 @@ export default function DreamDetailPage({
   const handleUpdateSubmit = async (formData: DreamInput) => {
     if (!dreamId) return;
     const success = await hookUpdateDream(formData);
-    if (success) {
+    if (success && isActiveRef.current) {
       setIsEditing(false);
     }
   };
 
+  // 保存の競合（Issue #561）のあと、利用者が選んだときだけ最新を読み込む。
+  // 読み込み中は編集フォームが外れて最新の内容で作り直されるので、いまの入力は消える。
+  const handleReloadLatest = async () => {
+    await reloadDream?.();
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // 競合を知ったまま閲覧に戻ると、古い内容を表示し続けてしまうため読み込み直す
+    if (editConflict) {
+      void reloadDream?.();
+    }
+  };
+
   const handleDeleteClick = () => {
+    setDeleteTargetId(dream?.id ?? null);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (dream && dream.id) {
+    // 確認ダイアログの対象・URLの夢ID・表示中の夢データIDがすべて一致するときだけ削除する
+    const targetId = deleteTargetId;
+    if (
+      targetId !== null &&
+      String(targetId) === dreamId &&
+      dream?.id === targetId
+    ) {
       setIsDeleting(true);
       try {
-        const success = await hookDeleteDream(dream.id);
+        const success = await hookDeleteDream(targetId);
+        if (!isActiveRef.current) return;
         setIsDeleteDialogOpen(false);
         if (success) {
           router.push("/home");
@@ -189,7 +250,9 @@ export default function DreamDetailPage({
       } catch (err) {
         console.error("削除処理中にエラー:", err);
       } finally {
-        setIsDeleting(false);
+        if (isActiveRef.current) {
+          setIsDeleting(false);
+        }
       }
     } else {
       console.error("削除対象の夢が見つかりません。");
@@ -206,7 +269,9 @@ export default function DreamDetailPage({
 
   if (error && !dream)
     return (
-      <p className="text-destructive text-center mt-10">エラー: {error}</p>
+      <p className="text-destructive text-center mt-10">
+        エラー: {toFriendlyErrorMessage(error)}
+      </p>
     );
 
   if (!dream)
@@ -224,12 +289,37 @@ export default function DreamDetailPage({
           <h1 className="text-2xl font-bold text-foreground">ゆめ の なおし</h1>
           <button
             type="button"
-            onClick={() => setIsEditing(false)}
+            onClick={handleCancelEdit}
             className="text-sm text-muted-foreground hover:text-foreground border border-border rounded-lg px-4 py-2 transition-colors"
           >
             やめる
           </button>
         </div>
+
+        {editConflict ? (
+          <div
+            role="alert"
+            className="mb-6 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-foreground"
+          >
+            <p className="font-semibold">
+              べつの がめんや たんまつで、さきに ほぞんされているよ。
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              いまの にゅうりょくは まだ のこっているよ。さいしんの ないようを みるときは、ボタンを おしてね。
+            </p>
+            <button
+              type="button"
+              onClick={handleReloadLatest}
+              className="mt-3 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+            >
+              さいしんの ないようを よみこむ（いまの にゅうりょくは きえるよ）
+            </button>
+          </div>
+        ) : error ? (
+          <p role="alert" className="mb-6 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
 
         <DreamForm
           initialData={dream}
@@ -362,20 +452,34 @@ export default function DreamDetailPage({
           profileColor={dream.dream_profile?.color}
         />
         {generatedImageUrl ? (
-          <div className="space-y-2 mt-2">
-            {imageError && (
-              <p className="text-xs text-destructive">{imageError}</p>
-            )}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleGenerateImage}
-                disabled={isGeneratingImage}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-              >
-                {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
-              </button>
+          canGenerateImage ? (
+            <div className="space-y-2 mt-2">
+              {imageError && (
+                <p className="text-xs text-destructive">{imageError}</p>
+              )}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {isGeneratingImage ? copy.imageGenerating : copy.imageRedraw}
+                </button>
+              </div>
             </div>
+          ) : null
+        ) : !canGenerateImage ? (
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              🎨 {copy.imagePremiumOnly}
+            </p>
+            <Link
+              href="/subscription"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-primary/40 px-4 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+            >
+              {copy.imagePremiumLink}
+            </Link>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 py-6">

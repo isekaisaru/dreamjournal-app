@@ -1,5 +1,5 @@
 class AiUsageLog < ApplicationRecord
-  FEATURES = %w[dream_analysis image_generation monthly_summary].freeze
+  FEATURES = %w[dream_analysis image_generation monthly_summary audio_analysis].freeze
 
   belongs_to :user
 

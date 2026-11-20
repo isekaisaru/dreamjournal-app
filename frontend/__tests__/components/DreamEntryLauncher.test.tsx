@@ -28,6 +28,11 @@ jest.mock("@/lib/toast", () => ({
   toast: { success: jest.fn(), error: jest.fn() },
 }));
 
+const mockGetAudioQuota = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+jest.mock("@/lib/apiClient", () => ({
+  getAudioQuota: (...args: unknown[]) => mockGetAudioQuota(...args),
+}));
+
 const mockedUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockedUseVoiceRecorder = useVoiceRecorder as jest.MockedFunction<
   typeof useVoiceRecorder
@@ -69,6 +74,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   currentUser = null;
   capturedOnBlobReady = null;
+  // 既定では残り回数の応答を返さないまま（読み込み中）にする
+  mockGetAudioQuota.mockImplementation(() => new Promise(() => {}));
   mockedUseAuth.mockImplementation(() => makeAuthValue());
   mockedUseVoiceRecorder.mockImplementation((opts) => {
     capturedOnBlobReady = opts?.onBlobReady ?? null;
@@ -91,12 +98,90 @@ describe("DreamEntryLauncher", () => {
     expect(screen.getByText("のこり 1かい")).toBeInTheDocument();
   });
 
-  it("通常ユーザーには残り回数バッジを表示しない", () => {
+  it("無料プランでも残り回数を読み込み中のあいだはバッジを表示しない", () => {
     currentUser = { trial_user: false };
     render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
     openSheet();
 
     expect(screen.queryByText(/のこり/)).not.toBeInTheDocument();
+  });
+
+  it("プレミアム会員には残り回数バッジを出さず、残り回数も取りにいかない", () => {
+    currentUser = { trial_user: false, premium: true };
+    render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+    openSheet();
+
+    expect(screen.queryByText(/のこり/)).not.toBeInTheDocument();
+    expect(mockGetAudioQuota).not.toHaveBeenCalled();
+  });
+
+  it("お試しユーザーは残り回数をサーバーに取りにいかない（user の回数を使う）", () => {
+    currentUser = { trial_user: true, premium: false, trial_audio_count: 0 };
+    render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+
+    expect(mockGetAudioQuota).not.toHaveBeenCalled();
+  });
+
+  describe("無料プラン（月の上限）", () => {
+    it("今月の残り回数をバッジで表示する", async () => {
+      currentUser = { trial_user: false, premium: false };
+      mockGetAudioQuota.mockResolvedValue({ used: 2, limit: 5, remaining: 3 });
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      expect(await screen.findByText("のこり 3かい")).toBeInTheDocument();
+    });
+
+    it("残り0回なら録音を始めず、プレミアムへの案内を出す", async () => {
+      currentUser = { trial_user: false, premium: false };
+      mockGetAudioQuota.mockResolvedValue({ used: 5, limit: 5, remaining: 0 });
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+
+      const cta = await screen.findByRole("link", {
+        name: /プレミアムで もっと はなす/,
+      });
+      expect(cta).toHaveAttribute("href", "/subscription");
+      expect(screen.getByText("こんげつの ぶんは おしまい だよ")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: /こえで はなす/ }));
+      expect(startRecording).not.toHaveBeenCalled();
+    });
+
+    it("残り0回なら voiceFirst でも録音を始めない", async () => {
+      currentUser = { trial_user: false, premium: false };
+      mockGetAudioQuota.mockResolvedValue({ used: 5, limit: 5, remaining: 0 });
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" voiceFirst />);
+      await act(async () => {});
+
+      openSheet();
+
+      expect(startRecording).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("link", { name: /プレミアムで もっと はなす/ })
+      ).toBeInTheDocument();
+    });
+
+    it("録音が成功したら残り回数を1つ減らす", async () => {
+      currentUser = { trial_user: false, premium: false };
+      mockGetAudioQuota.mockResolvedValue({ used: 4, limit: 5, remaining: 1 });
+      mockedUpload.mockResolvedValue({ message: "ok" } as Awaited<
+        ReturnType<typeof uploadAndAnalyzeAudio>
+      >);
+      render(<DreamEntryLauncher buttonLabel="ゆめを のこす" />);
+      openSheet();
+      expect(await screen.findByText("のこり 1かい")).toBeInTheDocument();
+
+      await act(async () => {
+        await capturedOnBlobReady?.(new Blob());
+      });
+
+      openSheet();
+      expect(screen.getByText("のこり 0かい")).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /プレミアムで もっと はなす/ })
+      ).toBeInTheDocument();
+    });
   });
 
   it("残り0回のトライアルユーザーは録音できず本登録CTAが出る", () => {

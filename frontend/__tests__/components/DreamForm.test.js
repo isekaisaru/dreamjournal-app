@@ -317,7 +317,7 @@ describe("DreamForm", () => {
     await user.click(screen.getByRole("button", { name: /モルペウスに\s*きく/ }));
 
     const upgradeLink = await screen.findByRole("link", {
-      name: /プレミアムで無制限に使う/,
+      name: /プレミアムで もっと使う/,
     });
     expect(upgradeLink).toHaveAttribute("href", "/subscription");
     expect(screen.getByText("今月の無料分析回数を使い切ったよ")).toBeInTheDocument();
