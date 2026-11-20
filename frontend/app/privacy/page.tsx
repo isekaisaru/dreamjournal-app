@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { SUPPORT_EMAIL } from "@/lib/site";
+
 export const metadata: Metadata = {
   title: "プライバシーポリシー | YumeTree",
   description: "YumeTree（ユメツリー）のプライバシーポリシー（個人情報保護方針）",
@@ -262,12 +264,16 @@ export default function PrivacyPage() {
               </p>
               <p className="text-gray-900 font-semibold">
                 📧 Email:{" "}
-                <Link
-                  href="mailto:support@dreamjournal.example.com"
-                  className="text-indigo-600 hover:underline"
-                >
-                  support@dreamjournal.example.com
-                </Link>
+                {SUPPORT_EMAIL ? (
+                  <a
+                    href={`mailto:${SUPPORT_EMAIL}`}
+                    className="text-indigo-600 hover:underline break-all"
+                  >
+                    {SUPPORT_EMAIL}
+                  </a>
+                ) : (
+                  <span>準備中</span>
+                )}
               </p>
               <p className="text-sm text-gray-600 mt-4">
                 運営者: YumeTree開発チーム
