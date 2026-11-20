@@ -48,16 +48,9 @@ jobs:
       - name: Verify RLS state
         working-directory: ./backend
         run: |
+          # public の表すべてが「RLS 有効・FORCE なし・policy 0件」（Default Deny）かを確かめる。
+          # 新しい表で RLS を付け忘れると、ここで止まる。
           bundle exec rails runner - <<'RUBY'
-          expected_tables = %w[
-            dream_profiles
-            ai_usage_logs
-            payments
-            processed_webhook_events
-            dream_image_generations
-            checkout_attempts
-          ]
-
           rows = ActiveRecord::Base.connection.exec_query(<<~SQL).to_a
             SELECT c.relname AS table_name,
                    c.relrowsecurity AS rls_enabled,
@@ -67,18 +60,20 @@ jobs:
               JOIN pg_namespace n ON n.oid = c.relnamespace
               LEFT JOIN pg_policy p ON p.polrelid = c.oid
              WHERE n.nspname = 'public'
-               AND c.relname IN (#{expected_tables.map { |name| ActiveRecord::Base.connection.quote(name) }.join(', ')})
+               AND c.relkind IN ('r', 'p')
              GROUP BY c.relname, c.relrowsecurity, c.relforcerowsecurity
           SQL
 
-          states = rows.index_by { |row| row.fetch("table_name") }
-          invalid_tables = expected_tables.reject do |table_name|
-            state = states[table_name]
-            state && state.fetch("rls_enabled") && !state.fetch("force_rls") && state.fetch("policy_count").zero?
-          end
+          table_names = rows.map { |row| row.fetch("table_name") }
+          missing_tables = %w[users dreams payments schema_migrations] - table_names
+          abort "Expected tables not found: #{missing_tables.join(', ')}" if missing_tables.any?
 
-          abort "Unexpected RLS state: #{invalid_tables.join(', ')}" if invalid_tables.any?
-          puts "Verified default-deny RLS on #{expected_tables.length} tables"
+          invalid_tables = rows.reject do |state|
+            state.fetch("rls_enabled") && !state.fetch("force_rls") && state.fetch("policy_count").zero?
+          end.map { |state| state.fetch("table_name") }
+
+          abort "Unexpected RLS state: #{invalid_tables.sort.join(', ')}" if invalid_tables.any?
+          puts "Verified default-deny RLS on all #{rows.length} public tables"
           RUBY
 
       - name: Verify structure.sql regeneration
