@@ -16,7 +16,6 @@ RSpec.describe 'structured_logging.rb が差し替えるロガーのレベル' d
 
   before do
     @original_logger = Rails.logger
-    @original_log_level = Rails.application.config.log_level
     @constants_defined_before = constants_defined_by_initializer.select { |name| Object.const_defined?(name) }
 
     allow(ENV).to receive(:[]).and_call_original
@@ -34,11 +33,12 @@ RSpec.describe 'structured_logging.rb が差し替えるロガーのレベル' d
       Object.send(:remove_const, name) if Object.const_defined?(name)
     end
     Rails.logger = @original_logger
-    Rails.application.config.log_level = @original_log_level
   end
 
+  # config.log_level= は broadcast_log_level も書き換え、元の値へ戻しても残ってしまうため、
+  # 代入せずに読み出しだけをスタブする。
   def load_initializer_with(log_level)
-    Rails.application.config.log_level = log_level
+    allow(Rails.application.config).to receive(:log_level).and_return(log_level)
     load initializer_path
   end
 
