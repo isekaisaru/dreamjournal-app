@@ -35,6 +35,16 @@ module App
     config.active_storage.previewers = []
     config.action_cable.mount_path = nil
 
+    # 本番の通り道（ブラウザ → Vercel の /proxy → Render）では、Forwarded にブラウザの IP、
+    # X-Forwarded-For に途中の中継の IP が入る。Rails 8.1 から両方を照らし合わせるようになり、
+    # 食い違うと request.remote_ip が IpSpoofAttackError を出し、Rails の開始ログ（"Started ... for <IP>"）
+    # の時点で落ちるため、ログインなどが 500 になった。
+    # remote_ip はセッションに残す参考情報（ip_address）とログにだけ使い、認証や
+    # レート制限（Rack::Attack は自前で X-Forwarded-For を読む）には使わないので、照合を外す。
+    # 照合を外した remote_ip は Forwarded の値で、偽装されうる参考情報として扱う。
+    # 中継の IP の範囲が分かったら、trusted_proxies を設定して照合を戻すのが本来の形。
+    config.action_dispatch.ip_spoofing_check = false
+
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.

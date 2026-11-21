@@ -62,6 +62,28 @@ RSpec.describe 'Authentication API', type: :request do
       end
     end
 
+    # 本番はブラウザ → Vercel（/proxy の rewrite）→ Render の順に通る。Render に届く時点で
+    # X-Forwarded-For には途中の中継の IP が並び、Forwarded にはブラウザの IP だけが入る。
+    # Rails 8.1 はこの2つの食い違いを「IP の偽装」とみなして例外にし、ログインが 500 になった。
+    # （IP は文書用の予約アドレス。本物の利用者の IP は書かない）
+    context 'Vercel と Render を経由して Forwarded と X-Forwarded-For が食い違う場合' do
+      let(:proxied_headers) do
+        {
+          'HOST' => 'backend',
+          'X-Forwarded-For' => '203.0.113.10,198.51.100.20, 192.0.2.30, 10.0.0.5',
+          'Forwarded' => 'for=203.0.113.10;host=backend;proto=https'
+        }
+      end
+
+      it 'IP の偽装とみなさずにログインできる' do
+        post '/auth/login', params: valid_credentials, as: :json, headers: proxied_headers
+
+        expect(response).to have_http_status(:ok)
+        expect(response.cookies['access_token']).to be_present
+        expect(response.cookies['refresh_token']).to be_present
+      end
+    end
+
     context 'メールアドレスが存在しない場合' do
       it 'ログインが失敗する' do
         post '/auth/login', params: {
