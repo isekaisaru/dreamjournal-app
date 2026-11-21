@@ -157,7 +157,7 @@ variant 変更時にエラー状態を `useEffect` でリセットすること�
 
 この機能では、モデル・API・フロントエンドUIの実装に加えて、本番DB migration、既存ユーザー補完、本番ブラウザでの `/profiles` 動作確認、一時的な補完処理の撤去まで行いました。
 さらに Supabase Security Advisor の `rls_disabled_in_public` 警告に対応し、フロントエンドから Supabase へ直接アクセスしていない構成を確認した上で、`public.dream_profiles` の Row Level Security を有効化しました。policy なしの Default Deny 方針により、Rails API という正規ルートは維持しつつ、Supabase の直接アクセス口を閉じています。
-警告が出るたびに1表ずつ閉じるやり方では、古くからある `users` や `dreams` が残っていたため、のちに public の全表へ同じ方針を広げ、CI とテストで「RLS の無い表が1つでもあれば失敗する」ようにしました。
+警告が出るたびに1表ずつ閉じるやり方では、古くからある `users` や `dreams` の RLS が本番にしか無く、migration と `structure.sql` に記録されていませんでした。そこで public の全表を migration で記録して本番とそろえ、CI とテストで「RLS の無い表が1つでもあれば失敗する」ようにしました。
 
 ### ⑥ 監視・セキュリティ・レート制限を後回しにしない
 
