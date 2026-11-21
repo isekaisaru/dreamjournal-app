@@ -46,7 +46,10 @@ if Rails.env.production? || ENV['STRUCTURED_LOGGING'] == 'true'
   # ========================================
   # 🚀 Rails ログ設定
   # ========================================
-  Rails.logger = Logger.new(STDOUT)
+  # Logger.new の既定レベルは DEBUG なので、production.rb の config.log_level
+  # （RAILS_LOG_LEVEL、既定 info）を必ず渡す。渡していなかったため、本番は
+  # RAILS_LOG_LEVEL=info でも DEBUG で動き、SQL の本文とバインド値がログに出ていた（2026-11-22）。
+  Rails.logger = Logger.new(STDOUT, level: Rails.application.config.log_level)
   Rails.logger.formatter = JsonFormatter.new
 
   # ========================================
