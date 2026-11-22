@@ -20,7 +20,6 @@ const customJestConfig = {
   modulePathIgnorePatterns: ["<rootDir>/.next/"],
   testPathIgnorePatterns: [
     "<rootDir>/.next/",
-    "<rootDir>/tests/e2e/",
     "<rootDir>/e2e/",
     // このファイルはテストのヘルパーであり、テスト自体ではないため除外する
     "<rootDir>/__tests__/utils/mockFactory.js",
