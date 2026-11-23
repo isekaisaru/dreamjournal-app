@@ -120,6 +120,7 @@ module SentryEventScrubber
 
   # SQL の文字列値を '[FILTERED]' に置き換える。閉じていない文字列は末尾まで除く。
   # 閉じていない "..." は、その後ろの区切りを判定できないので、末尾まで除く。
+  # 本番の遅い SQL のログ（config/initializers/structured_logging.rb）からも使う。
   def self.scrub_sql_strings(text)
     scanner = StringScanner.new(text)
     out = +''
@@ -147,7 +148,6 @@ module SentryEventScrubber
     end
     out
   end
-  private_class_method :scrub_sql_strings
 
   # `/*` を読んだ直後から、対応する `*/` まで（閉じていなければ末尾まで）読み飛ばす。
   def self.skip_block_comment(scanner)

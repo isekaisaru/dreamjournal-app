@@ -23,7 +23,14 @@ if Rails.env.development? || ENV['DEBUG_TOOLS'] == 'true'
       Rails.logger.warn "\n" + "="*80
       Rails.logger.warn "🐌 SLOW QUERY DETECTED (#{duration_ms.round(2)}ms)"
       Rails.logger.warn "="*80
-      Rails.logger.warn "SQL: #{data[:sql]}"
+      # 夢の検索語は SQL 文に埋め込まれるので、文字列の値は伏せる（structured_logging.rb と同じ）。
+      # DEBUG_TOOLS=true なら本番でも動くため。
+      sql = begin
+        SentryEventScrubber.scrub_sql_strings(data[:sql].to_s)
+      rescue StandardError
+        SentryEventScrubber::REDACTED
+      end
+      Rails.logger.warn "SQL: #{sql}"
       Rails.logger.warn "Name: #{data[:name]}"
       Rails.logger.warn "Connection: #{data[:connection_id]}"
       Rails.logger.warn "="*80 + "\n"
@@ -41,7 +48,7 @@ if Rails.env.development? || ENV['DEBUG_TOOLS'] == 'true'
       Rails.logger.warn "="*80
       Rails.logger.warn "Controller: #{data[:controller]}##{data[:action]}"
       Rails.logger.warn "Method: #{data[:method]}"
-      Rails.logger.warn "Path: #{data[:path]}"
+      Rails.logger.warn "Path: #{data[:path].to_s.split('?', 2).first}" # クエリ文字列（検索語など）は出さない
       Rails.logger.warn "Parameters: #{data[:params].except('controller', 'action')}"
       Rails.logger.warn "Status: #{data[:status]}"
       Rails.logger.warn "View Runtime: #{data[:view_runtime].round(2)}ms" if data[:view_runtime]
