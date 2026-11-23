@@ -13,5 +13,11 @@ Rails.application.config.filter_parameters += [
   # 夢日記の本文はユーザーの機微な自由記述のため、Railsの自動リクエストログ
   # （Parameters: {...}）に出さない。DreamsController#create の手動ログは
   # 別途削除済みだが、こちらは他コントローラ・将来の変更に対する保険。
-  :title, :content
+  :title, :content,
+  # 夢の検索語（GET /dreams?query=...）も夢の中身に近いので出さない。
+  # Parameters の行と process_action の params が [FILTERED] になる。
+  # URL のクエリ文字列は、Started の行（started_request_log_without_query.rb）と
+  # 構造化ログ（structured_logging.rb）でまるごと出さない。filtered_path は
+  # `;` やエンコードしたキー（q%75ery=...）で伏せきれないため。
+  :query
 ]
