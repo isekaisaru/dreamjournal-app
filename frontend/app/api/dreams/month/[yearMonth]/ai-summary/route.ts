@@ -3,6 +3,11 @@ import { forwardedOriginHeaders } from "@/app/api/checkout/request-origin";
 
 export const runtime = "nodejs";
 
+// Rails（MonthlySummariesController::YEAR_MONTH_FORMAT）と同じ形。
+// yearMonth は Rails の URL にそのまま埋め込むため、「../../billing_portal?」のような値で
+// 利用者の Cookie つきの POST を Rails の別の入口へ転送されないよう、ここで弾く。
+const YEAR_MONTH_FORMAT = /^\d{4}-(0[1-9]|1[0-2])$/;
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ yearMonth: string }> }
@@ -14,6 +19,13 @@ export async function POST(
   }
 
   const { yearMonth } = await params;
+  if (!YEAR_MONTH_FORMAT.test(yearMonth)) {
+    return Response.json(
+      { error: "年月の形式が正しくありません（YYYY-MM）。" },
+      { status: 400 }
+    );
+  }
+
   const TIMEOUT_MS = 30_000;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
