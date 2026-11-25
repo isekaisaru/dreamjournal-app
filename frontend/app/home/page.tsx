@@ -591,7 +591,7 @@ export default function HomePage() {
             {analysisQuota.remaining === 0 ? (
               <p className="text-xs text-destructive">
                 今月の上限に達しました。
-                <Link href="/subscription" className="underline ml-1">プレミアムで無制限に</Link>
+                <Link href="/subscription" className="underline ml-1">プレミアムで もっと使う</Link>
               </p>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -654,7 +654,7 @@ export default function HomePage() {
           >
             <p className="font-bold text-primary mb-1">✨ プレミアムを試してみる</p>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              AI分析 たっぷり使える・夢の画像生成・月次サマリー。月額¥590で使い放題。
+              AI分析 たっぷり使える・夢の画像生成・月次サマリー。月額¥590。
             </p>
           </Link>
         )}

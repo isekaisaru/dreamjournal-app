@@ -426,6 +426,13 @@ export async function getAnalysisQuota(): Promise<AnalysisQuota> {
   return apiFetch<AnalysisQuota>("/dreams/analysis_quota");
 }
 
+// 音声分析の残り回数（無料プランは月の上限、お試しは体験の上限、プレミアムは unlimited）
+export type AudioQuota = AnalysisQuota;
+
+export async function getAudioQuota(): Promise<AudioQuota> {
+  return apiFetch<AudioQuota>("/audio_quota");
+}
+
 export async function getDreamProfiles(): Promise<DreamProfile[]> {
   return apiFetch<DreamProfile[]>("/dream_profiles");
 }

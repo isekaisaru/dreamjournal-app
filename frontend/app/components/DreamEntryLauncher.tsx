@@ -8,6 +8,7 @@ import { Loader2, Mic, Pencil, Sparkles, Square, X } from "lucide-react";
 import type { AnalysisResult } from "@/app/types";
 import { useAuth } from "@/context/AuthContext";
 import useVoiceRecorder from "@/hooks/useVoiceRecorder";
+import { getAudioQuota, type AudioQuota } from "@/lib/apiClient";
 import { AudioUploadError, uploadAndAnalyzeAudio } from "@/lib/audioAnalysis";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -56,13 +57,37 @@ export default function DreamEntryLauncher({
   // state 反映前の連打でも二重送信しないためのガード
   const isSubmittingRef = useRef(false);
 
-  // お試しユーザー（課金前）だけ音声の残り回数を表示・制限する
+  // お試しユーザー（課金前）は user の回数で、無料プランは月の残り回数で、音声を表示・制限する
   const isTrial = user?.trial_user === true && !user?.premium;
-  const audioRemaining = Math.max(
-    0,
-    TRIAL_AUDIO_LIMIT - (user?.trial_audio_count ?? 0)
-  );
-  const audioLimitReached = isTrial && audioRemaining === 0;
+  const isFreePlan = !!user && !user.premium && !isTrial;
+  const [freeAudioQuota, setFreeAudioQuota] = useState<AudioQuota | null>(null);
+
+  // 録音してから断ると話した夢が失われるため、無料プランは先に残り回数を取っておく
+  useEffect(() => {
+    if (!isFreePlan) {
+      setFreeAudioQuota(null);
+      return undefined;
+    }
+    let active = true;
+    getAudioQuota()
+      .then((quota) => {
+        if (active) setFreeAudioQuota(quota);
+      })
+      .catch(() => {/* 取れなくても録音は止めない（サーバー側で上限を確認する） */});
+    return () => {
+      active = false;
+    };
+  }, [isFreePlan]);
+
+  const freeAudioRemaining =
+    isFreePlan && typeof freeAudioQuota?.remaining === "number"
+      ? freeAudioQuota.remaining
+      : null;
+  const audioRemaining = isTrial
+    ? Math.max(0, TRIAL_AUDIO_LIMIT - (user?.trial_audio_count ?? 0))
+    : freeAudioRemaining;
+  const audioLimitReached = audioRemaining === 0;
+  const showAudioRemaining = isTrial || freeAudioRemaining !== null;
 
   const handleAnalysisResult = useCallback(
     (result: AnalysisResult) => {
@@ -92,6 +117,16 @@ export default function DreamEntryLauncher({
             trial_audio_count: (user.trial_audio_count ?? 0) + 1,
           });
         }
+        // 無料プランは月の残り回数を1つ減らす（次に開いたときにすぐ反映する）
+        setFreeAudioQuota((quota) =>
+          quota && typeof quota.remaining === "number"
+            ? {
+                ...quota,
+                used: (quota.used ?? 0) + 1,
+                remaining: Math.max(0, quota.remaining - 1),
+              }
+            : quota
+        );
         handleAnalysisResult(result);
       } catch (err) {
         console.error("Failed to analyze audio dream", err);
@@ -204,7 +239,7 @@ export default function DreamEntryLauncher({
       return;
     }
 
-    // お試しの残り回数が0なら開始させない。のこっている録音がある間も、
+    // お試し・無料プランの残り回数が0なら開始させない。のこっている録音がある間も、
     // 確認なしに旧録音が捨てられないよう新しい録音は始めさせない
     if (audioLimitReached || failedAudio) return;
 
@@ -457,8 +492,8 @@ export default function DreamEntryLauncher({
                           ? "はなしはじめる"
                           : "こえで はなす"}
                     </p>
-                    {/* お試しユーザーには残り回数バッジを見せる */}
-                    {isTrial && status !== "recording" ? (
+                    {/* お試し・無料プランには残り回数バッジを見せる */}
+                    {showAudioRemaining && status !== "recording" ? (
                       <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700">
                         のこり {audioRemaining}かい
                       </span>
@@ -474,7 +509,9 @@ export default function DreamEntryLauncher({
                         : status === "confirming"
                           ? "マイクを つかうよ。よういが できたら もういちど おしてね"
                           : audioLimitReached
-                            ? "きょうの おためしは おしまい だよ"
+                            ? isTrial
+                              ? "きょうの おためしは おしまい だよ"
+                              : "こんげつの ぶんは おしまい だよ"
                             : "ボタンを おして、そのまま はなしてみよう"}
                   </p>
                 </div>
@@ -506,14 +543,14 @@ export default function DreamEntryLauncher({
                 </div>
               </button>
 
-              {/* お試しの音声が残り0回のときは本登録へ誘導する */}
+              {/* 残り0回のときは、お試しは本登録へ、無料プランはプレミアムへ誘導する */}
               {audioLimitReached ? (
                 <Link
-                  href="/register"
+                  href={isTrial ? "/register" : "/subscription"}
                   onClick={() => setIsOpen(false)}
                   className="flex items-center justify-center gap-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                  とうろくして もっと はなす
+                  {isTrial ? "とうろくして もっと はなす" : "プレミアムで もっと はなす"}
                 </Link>
               ) : null}
             </div>

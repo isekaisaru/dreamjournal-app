@@ -46,7 +46,10 @@ if Rails.env.production? || ENV['STRUCTURED_LOGGING'] == 'true'
   # ========================================
   # 🚀 Rails ログ設定
   # ========================================
-  Rails.logger = Logger.new(STDOUT)
+  # Logger.new の既定レベルは DEBUG なので、production.rb の config.log_level
+  # （RAILS_LOG_LEVEL、既定 info）を必ず渡す。渡していなかったため、本番は
+  # RAILS_LOG_LEVEL=info でも DEBUG で動き、SQL の本文とバインド値がログに出ていた（2026-11-22）。
+  Rails.logger = Logger.new(STDOUT, level: Rails.application.config.log_level)
   Rails.logger.formatter = JsonFormatter.new
 
   # ========================================
@@ -91,6 +94,19 @@ if Rails.env.production? || ENV['STRUCTURED_LOGGING'] == 'true'
       })
     end
 
+    # SQL の本文から文字列の値を '[FILTERED]' に置き換えてから出す。
+    # DreamFilterQuery は夢の検索語を `where("title ILIKE :query", query: ...)` で SQL 文に
+    # 直接埋め込むので、そのまま出すと検索語がログに残る（2026-11-23）。
+    # 置き換えは Sentry に送る SQL と同じ処理（lib/sentry_event_scrubber.rb）を使う。
+    # 置き換えに失敗したときは、値を出さないよう SQL ごと伏せる（ログのせいでクエリを失敗させない）。
+    def self.loggable_sql(sql)
+      return sql unless sql.is_a?(String)
+
+      SentryEventScrubber.scrub_sql_strings(sql)
+    rescue StandardError
+      SentryEventScrubber::REDACTED
+    end
+
     def self.health_check(status:, checks: {}, response_time_ms: nil)
       Rails.logger.info({
         event_type: 'health_check',
@@ -114,7 +130,9 @@ if Rails.env.production? || ENV['STRUCTURED_LOGGING'] == 'true'
       controller: data[:controller],
       action: data[:action],
       method: data[:method],
-      path: data[:path],
+      # クエリ文字列（夢の検索語 ?query=... など）は出さない。filtered_path でも伏せきれない
+      # 書き方があるため（config/initializers/started_request_log_without_query.rb 参照）。
+      path: data[:path].to_s.split('?', 2).first,
       status: data[:status],
       user_agent: data[:headers]['HTTP_USER_AGENT'],
       remote_ip: data[:headers]['REMOTE_ADDR']
@@ -130,7 +148,7 @@ if Rails.env.production? || ENV['STRUCTURED_LOGGING'] == 'true'
       StructuredLogger.performance(
         operation: 'database_query',
         duration_ms: duration_ms,
-        sql: data[:sql],
+        sql: StructuredLogger.loggable_sql(data[:sql]),
         name: data[:name]
       )
     end

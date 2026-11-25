@@ -196,7 +196,7 @@ export default function ParticleField({ phase, season, weather = "firefly", star
       cancelAnimationFrame(raf);
       ro?.disconnect();
     };
-  }, [reduceMotion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [reduceMotion]); // 他の値は propsRef から読むので、描き直しは reduceMotion が変わったときだけ
 
   return (
     <canvas

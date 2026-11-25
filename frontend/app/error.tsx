@@ -1,9 +1,20 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import * as Sentry from "@sentry/nextjs";
 
-const ErrorComponent = ({ reset }: { reset: () => void }) => {
+const ErrorComponent = ({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) => {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <div
       className="mx-auto mt-6 max-w-md rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-center shadow-md"

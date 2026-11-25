@@ -9,19 +9,26 @@ on:
 jobs:
   test:
     name: Jest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "22"
       - name: Validate dependency resolution policy
         working-directory: ./frontend
         run: yarn check:resolutions
       - name: Install dependencies
         working-directory: ./frontend
         run: yarn install --frozen-lockfile
+      - name: Run lint
+        working-directory: ./frontend
+        run: yarn lint
+      - name: Type check (app, tests and e2e)
+        working-directory: ./frontend
+        # next build はアプリ本体しか型を見ないため、テストと E2E のコードもここで検査する
+        run: yarn typecheck
       - name: Run tests
         working-directory: ./frontend
         run: yarn test --coverage --watchAll=false

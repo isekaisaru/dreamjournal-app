@@ -1,0 +1,51 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "1d69c063bfadec3c2ceedecfd548352570709c137ba12f0854a15e0a42453090",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/stripe_webhook_event_processor.rb",
+      "line": 40,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "ApplicationRecord.connection.execute(\"SELECT pg_advisory_xact_lock(#{Digest::SHA256.digest(stripe_event_id.to_s).unpack1(\"q>\")})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "StripeWebhookEventProcessor",
+        "method": "acquire_event_lock!"
+      },
+      "user_input": "Digest::SHA256.digest(stripe_event_id.to_s).unpack1(\"q>\")",
+      "confidence": "Medium",
+      "cwe_id": [
+        89
+      ],
+      "note": "誤検知。埋め込む lock_key は Digest::SHA256.digest(...).unpack1('q>') の結果で、必ず整数になる。利用者の入力した文字列は SQL に入らない。決済の経路なので、警告を消すためだけのコード変更はしない。"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "95ab6149124e5bf6fad2d303f17d6d909d4a1714d6a8751330e3aecde0936958",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/services/usage_report.rb",
+      "line": 162,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "Arel.sql(\"MIN(#{local_date_sql})\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "UsageReport",
+        "method": "continuation_summary"
+      },
+      "user_input": "local_date_sql",
+      "confidence": "Medium",
+      "cwe_id": [
+        89
+      ],
+      "note": "誤検知。local_date_sql は定数 TIME_ZONE（\"Asia/Tokyo\"）だけから作る固定の SQL で、利用者の入力は入らない。usage:report は運用者が手元で実行する読み取り専用の集計。"
+    }
+  ],
+  "brakeman_version": "8.1.0"
+}

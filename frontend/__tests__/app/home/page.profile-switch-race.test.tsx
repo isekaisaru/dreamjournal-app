@@ -24,15 +24,16 @@ jest.mock("@/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-const mockGet = jest.fn();
+// 引数（url）の型は各テストの mockImplementation 側で書くので、ここでは any にする
+const mockGet = jest.fn<(...args: any[]) => Promise<unknown>>();
 jest.mock("@/lib/apiClient", () => ({
   __esModule: true,
   default: { get: (...args: unknown[]) => mockGet(...args) },
-  getEmotions: jest.fn().mockResolvedValue([]),
+  getEmotions: jest.fn<() => Promise<unknown>>().mockResolvedValue([]),
   getAnalysisQuota: jest
-    .fn()
+    .fn<() => Promise<unknown>>()
     .mockResolvedValue({ unlimited: true, used: null, limit: null, remaining: null }),
-  getDreamProfiles: jest.fn().mockResolvedValue([
+  getDreamProfiles: jest.fn<() => Promise<DreamProfile[]>>().mockResolvedValue([
     { id: 1, name: "A", avatar_emoji: "🐱", color: "#f97316", relationship: "self", active: true, position: 0, archived: false, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" } as DreamProfile,
     { id: 2, name: "B", avatar_emoji: "🐶", color: "#22c55e", relationship: "child", active: true, position: 1, archived: false, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" } as DreamProfile,
   ]),

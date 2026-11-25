@@ -32,6 +32,24 @@ Sentry.init do |config|
   #
   # 定数は呼び出し時に解決されるので、初期化順序の影響を受けない。
   config.before_send = lambda do |event, _hint|
-    SentryJobArgumentsFilter.call(event)
+    event = SentryJobArgumentsFilter.call(event)
+    event && SentryEventScrubber.call(event)
   end
+
+  # トランザクションには before_send が効かないので別に登録する。
+  # 再設定トークンと SQL 内の検索語の扱いは lib/sentry_event_scrubber.rb 参照。
+  config.before_send_transaction = lambda do |event, _hint|
+    SentryEventScrubber.call(event)
+  end
+
+  # sentry-ruby 7 から、ログとメトリクスが既定で送られる（enable_logs / enable_metrics は廃止され、
+  # 止める設定が無い）。ログの文面や属性は上の before_send / before_send_transaction を通らず、
+  # トークンや SQL の値の保護が効かないので、送る直前にすべて捨てる。
+  # 使い始めるときは、先にこの2つへ保護を作ること。引数の数が版で変わっても動くよう、何個でも受け取る。
+  config.before_send_log = ->(*) { nil }
+  config.before_send_metric = ->(*) { nil }
+
+  # Rails の構造化ログ（SQL やリクエストの内容が入る）は sentry-rails 7.1 から既定で無効。
+  # 既定が変わっても送らないよう、明示しておく。
+  config.rails.structured_logging.enabled = false
 end

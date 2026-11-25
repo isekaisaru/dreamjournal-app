@@ -21,8 +21,8 @@ jest.mock("@/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-const mockGetDreamProfiles = jest.fn();
-const mockGetDreamsForProfile = jest.fn();
+const mockGetDreamProfiles = jest.fn<(...args: unknown[]) => Promise<DreamProfile[]>>();
+const mockGetDreamsForProfile = jest.fn<(...args: any[]) => Promise<Dream[]>>();
 jest.mock("@/lib/apiClient", () => ({
   __esModule: true,
   getDreamProfiles: (...args: unknown[]) => mockGetDreamProfiles(...args),
