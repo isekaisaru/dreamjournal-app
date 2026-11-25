@@ -57,6 +57,25 @@ RSpec.describe UserSession, type: :model do
       # 最も古い2件が失効している
       expect(sessions.last(2).map { |s| s.reload.revoked_at }).to all(be_present)
     end
+
+    # 失効・期限切れのセッションは二度と使われないが、消さないと表に積もり続ける。
+    # ログインのたびに、その人の「使えなくなって 30 日すぎた」セッションを消す。
+    it '失効・期限切れから 30 日すぎたセッションを消し、それより新しいものは残す' do
+      old_revoked = create(:user_session, user: user, revoked_at: 31.days.ago)
+      old_expired = create(:user_session, user: user, expires_at: 31.days.ago)
+      recent_revoked = create(:user_session, user: user, revoked_at: 1.day.ago)
+      recent_expired = create(:user_session, user: user, expires_at: 1.day.ago)
+      active = create(:user_session, user: user)
+      other_users_old = create(:user_session, revoked_at: 31.days.ago)
+
+      UserSession.prune_for(user)
+
+      expect(UserSession.exists?(old_revoked.id)).to be false
+      expect(UserSession.exists?(old_expired.id)).to be false
+      expect(UserSession.where(id: [recent_revoked.id, recent_expired.id, active.id]).count).to eq(3)
+      # ほかの人のセッションには触らない
+      expect(UserSession.exists?(other_users_old.id)).to be true
+    end
   end
 
   describe '#rotate!' do
