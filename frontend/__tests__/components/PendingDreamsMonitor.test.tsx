@@ -16,13 +16,13 @@ jest.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: jest.fn() }),
 }));
 
-const fetchMock = jest.fn();
+const fetchMock = jest.fn<typeof fetch>();
 
 describe("PendingDreamsMonitor", () => {
   beforeEach(() => {
     jest.useFakeTimers();
     fetchMock.mockReset();
-    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) } as Response);
     global.fetch = fetchMock as unknown as typeof fetch;
     jest.spyOn(console, "log").mockImplementation(() => {});
   });
