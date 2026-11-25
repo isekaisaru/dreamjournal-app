@@ -1,4 +1,10 @@
 class User < ApplicationRecord
+  # users.refresh_token（平文・期限なし）は #414 で user_sessions に置きかえた古い列。
+  # 列を消す migration の前に、アプリがこの列を読み書きしない版を先にデプロイする。
+  # （デプロイ中に古い版が残っていても、INSERT が消えた列を指して失敗しないように）
+  # 列を消したあと、この行も消す。
+  self.ignored_columns += ['refresh_token']
+
   FREE_ANALYSIS_MONTHLY_LIMIT = 10
 
   # パスワード認証機能を提供
