@@ -16,6 +16,8 @@ class DreamsController < ApplicationController
   IMAGE_MONTHLY_LIMIT           = 31  # 画像生成の月次上限（プレミアム限定機能）
   FREE_ANALYSIS_MONTHLY_LIMIT   = User::FREE_ANALYSIS_MONTHLY_LIMIT
   PREMIUM_DAILY_ANALYSIS_LIMIT  = 50  # プレミアムユーザーの1日あたりフェアユース上限
+  STATUSES_MAX_IDS              = 100 # GET /dreams/statuses で一度に問い合わせられる件数
+  STATUSES_IDS_FORMAT           = /\A\d+(,\d+)*\z/
   
 
   # GET /dreams
@@ -35,7 +37,14 @@ class DreamsController < ApplicationController
 
   # GET /dreams/statuses?ids=1,2,3
   def statuses
-    ids = params[:ids].to_s.split(",").map(&:to_i)
+    # 画面が問い合わせるのは分析待ちの夢だけなので 100 件あれば十分。
+    # 形がおかしい・多すぎる ids は DB に流さず 400 にする。
+    raw_ids = params[:ids].to_s
+    unless raw_ids.match?(STATUSES_IDS_FORMAT) && raw_ids.count(",") < STATUSES_MAX_IDS
+      return render json: { error: "ids は数字のカンマ区切りで、#{STATUSES_MAX_IDS} 件までです。" }, status: :bad_request
+    end
+
+    ids = raw_ids.split(",").map(&:to_i)
     # current_user の持つ夢だけを対象にする（セキュリティ）
     dreams = current_user.dreams.where(id: ids).select(:id, :analysis_status)
     
