@@ -63,4 +63,23 @@ describe("InsightsPage", () => {
     expect(screen.getByText("ムードカレンダー")).toBeInTheDocument();
     expect(screen.getByText("記録の流れ（半年）")).toBeInTheDocument();
   });
+
+  // 家族のプロフィールの夢もまとめて数えている。子どもだけの傾向だと読みちがえないように書く。
+  // また「%」は夢の数ではなく、気持ちのタグの数で割っている（2026-11-25）。
+  it("家族みんなの夢を合わせて数えていることと、% が何の割合かを書く", async () => {
+    mockGet.mockResolvedValue([
+      dream(1, new Date().toISOString(), "嬉しい"),
+    ]);
+    render(<InsightsPage />);
+
+    expect(
+      await screen.findByText("この アカウントの みんなの ゆめを あわせて かぞえているよ")
+    ).toBeInTheDocument();
+    expect(screen.getByText("前向きな きもちの わりあい")).toBeInTheDocument();
+    // 分母（つけた気持ちタグぜんぶ）を、コードのコメントだけでなく画面にも書く（Codex レビュー指摘）
+    expect(
+      screen.getByText("％は、つけた きもちタグ ぜんぶを 100％として かぞえているよ")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/前向きな夢/)).not.toBeInTheDocument();
+  });
 });

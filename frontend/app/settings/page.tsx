@@ -525,7 +525,8 @@ const SettingsPage = () => {
               </h2>
               <p className="text-sm leading-relaxed text-muted-foreground md:text-base">
                 このアプリは、あなたの ゆめを 大切にしまっておく場所です。
-                かいた ゆめは あなただけのものなので、ほかのひとに 見られません。
+                かいた ゆめは そとに 公開されません。
+                おなじ アカウントを つかう ひとは、プロフィールを きりかえると みんなの ゆめを 見られるよ。
                 かぞくみんなで、あんしんして つかってね。
               </p>
             </section>

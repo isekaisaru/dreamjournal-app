@@ -130,3 +130,17 @@ describe("DonationPage: Checkoutのメール確認エラー", () => {
     });
   });
 });
+
+// 500円の応援と、月590円のプレミアムを見くらべる人が、寄付でも機能が増えると思わないようにする（2026-11-25）。
+describe("DonationPage: 寄付とプレミアムのちがい", () => {
+  it("支払う前に、1回だけの応援で機能は増えないことと、プレミアムの入口を出す", () => {
+    render(<DonationPage />);
+
+    expect(
+      screen.getByText(/1回だけの おうえんです。プレミアムの きのうは ふえません/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "プレミアムプランを見る" })
+    ).toHaveAttribute("href", "/subscription");
+  });
+});
