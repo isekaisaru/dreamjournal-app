@@ -62,7 +62,9 @@ digest は bcrypt ではなく **SHA256**。refresh token は128bit以上のラ�
 ### 後続クリーンアップ（別PR・burn-in後）
 
 - `users.refresh_token` カラムの削除（レガシー互換パスの削除と同時）
-- 期限切れ・失効セッションの定期削除（rake or migration）
+- 期限切れ・失効セッションの削除: ログインのたびに呼ぶ `UserSession.prune_for(user)` で、
+  その人の「失効または期限切れから 30 日すぎた」セッションを消す（2026-11）。
+  ログインしない人の古い行は残るので、全体の掃除が要るときは定期実行を足す。
 
 ## PR2: メールアドレス有効化（account activation）
 
