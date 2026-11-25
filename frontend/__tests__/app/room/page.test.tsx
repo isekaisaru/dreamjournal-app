@@ -174,13 +174,15 @@ it("ページ離脱時に進行中の画像取得signalを中断する", async (
   expect(signal.aborted).toBe(true);
 });
 
-it("夢が0件なら夢の記録へのCTAを表示する", async () => {
+// 子どもの「おへや」から記録したら、記録画面でもその子が選ばれているようにする。
+// 以前は /dream/new だけで「自分」が選ばれ、誰の夢かを取りちがえやすかった（2026-11-25）。
+it("夢が0件なら、このプロフィールを選んだ状態の夢の記録へのCTAを表示する", async () => {
   mockGetDreamsForProfile.mockResolvedValue([]);
   render(<DreamRoomPage />);
 
   expect(await screen.findByRole("link", { name: "ゆめを きろくする" })).toHaveAttribute(
     "href",
-    "/dream/new"
+    "/dream/new?dream_profile_id=1"
   );
 });
 
