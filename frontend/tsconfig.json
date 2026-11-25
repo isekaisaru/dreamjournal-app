@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "lib": [
       "dom",
       "dom.iterable",
@@ -34,7 +33,7 @@
         "./*"
       ],
       "@/hooks/*": [
-        "hooks/*"
+        "./hooks/*"
       ]
     },
     "target": "ES2017"
