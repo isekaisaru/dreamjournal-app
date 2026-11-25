@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import LandingPage from "@/app/components/LandingPage";
 
 const mockReplace = jest.fn();
@@ -43,5 +43,47 @@ describe("LandingPage", () => {
 
     expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  // 前にログインした人（認証ヒントあり）は、トップでもサーバーに確認する。
+  // サーバーが寝ていると確認が20秒以上かかり、そのあいだ点だけの画面になっていた（2026-11-25 本番で確認）。
+  // 少し待っても終わらなければ、紹介を先に見せる（確認が終わってログイン済みなら /home へ移る）。
+  describe("認証確認が長引いたとき", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("少し待っても終わらなければ、紹介を表示する（リダイレクトはしない）", () => {
+      mockUseAuth.mockReturnValue({ authStatus: "checking" });
+      render(<LandingPage />);
+
+      expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+
+      act(() => {
+        jest.advanceTimersByTime(1500);
+      });
+
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("YumeTree");
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("紹介を表示したあとでログイン済みと分かったら、/home へ移る", async () => {
+      mockUseAuth.mockReturnValue({ authStatus: "checking" });
+      const { rerender } = render(<LandingPage />);
+
+      act(() => {
+        jest.advanceTimersByTime(1500);
+      });
+      expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+
+      mockUseAuth.mockReturnValue({ authStatus: "authenticated" });
+      rerender(<LandingPage />);
+
+      await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/home"));
+    });
   });
 });
