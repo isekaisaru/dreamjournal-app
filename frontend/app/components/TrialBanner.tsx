@@ -52,7 +52,7 @@ export default function TrialBanner({
         className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
       >
         <Sparkles size={16} />
-        とうろくして ぜんぶ つかう
+        むりょうで とうろくして つづける
       </Link>
     </div>
   );

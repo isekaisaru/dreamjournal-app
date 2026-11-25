@@ -14,6 +14,16 @@ describe("TrialBanner", () => {
     expect(cta).toHaveAttribute("href", "/register");
   });
 
+  // 「ぜんぶ つかう」だと、画像（プレミアム限定）まで無料で使えると読める（2026-11-25）。
+  it("本登録で何ができるかを、誤解しない言葉で伝える", () => {
+    render(<TrialBanner analysisCount={0} audioCount={0} />);
+
+    expect(
+      screen.getByRole("link", { name: "むりょうで とうろくして つづける" })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/ぜんぶ つかう/)).not.toBeInTheDocument();
+  });
+
   it("使用回数から残回数を計算して表示する", () => {
     render(<TrialBanner analysisCount={1} audioCount={0} />);
 

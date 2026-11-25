@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import MorpheusSmall from "@/app/components/MorpheusSmall";
 import EmailVerificationBanner from "@/app/components/EmailVerificationBanner";
 
@@ -51,6 +52,16 @@ export default function DonationPage() {
           </h1>
           <p className="mt-4 text-base text-muted-foreground">
             500円であなたの夢日記を応援できます
+          </p>
+          {/* 月額のプレミアムと見くらべる人が、寄付でも機能が増えると思わないようにする */}
+          <p className="mt-2 text-sm text-muted-foreground">
+            1回だけの おうえんです。プレミアムの きのうは ふえません。
+            <Link
+              href="/subscription"
+              className="ml-1 font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              プレミアムプランを見る
+            </Link>
           </p>
 
           {/* モルペウスのメッセージ */}
