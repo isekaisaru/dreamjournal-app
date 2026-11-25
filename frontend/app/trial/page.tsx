@@ -499,7 +499,7 @@ export default function TrialPage() {
             <li>✨ AI分析が <span className="font-bold text-white">毎月10回</span> 使える</li>
             <li>🌙 夢を <span className="font-bold text-white">継続して記録</span> できる</li>
             <li>🎙️ <span className="font-bold text-white">声で話すだけ</span> で記録できる</li>
-            <li>🖼️ AIが夢を <span className="font-bold text-white">画像にしてくれる</span></li>
+            <li>🖼️ AIが夢を <span className="font-bold text-white">画像にしてくれる</span>（プレミアムプラン）</li>
           </ul>
           <p className="text-xs text-sky-300/70 mb-4">ひとりでも、大切な人とも使えます</p>
           <Link

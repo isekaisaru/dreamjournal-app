@@ -64,6 +64,8 @@ export default function DreamForm({
   const [isFetchingEmotions, setIsFetchingEmotions] = useState(false);
   // 音声解析結果を保持するstate
   const [analysisText, setAnalysisText] = useState<string | null>(null);
+  // 「モルペウスに きく」の結果は保存前のおためし。この画面で分析したら、保存するまで案内を出す。
+  const [hasUnsavedAnalysis, setHasUnsavedAnalysis] = useState(false);
   const [suggestedEmotionNames, setSuggestedEmotionNames] = useState<string[]>(
     []
   );
@@ -206,6 +208,7 @@ export default function DreamForm({
     try {
       const result = await previewAnalysis(content);
       setAnalysisText(result.analysis);
+      setHasUnsavedAnalysis(true);
       setSuggestedEmotionNames(result.emotion_tags);
       setSelectedEmotionIds(mapEmotionNamesToIds(emotions, result.emotion_tags));
       setAnalysisRevealKey((current) => current + 1);
@@ -591,6 +594,11 @@ export default function DreamForm({
           <p className="mt-2 text-xs text-muted-foreground">
             ないよう や タグ は、じぶんで なおせるよ。
           </p>
+          {hasUnsavedAnalysis && (
+            <p className="mt-2 rounded-2xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs font-medium leading-relaxed text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
+              この おへんじは まだ のこして いないよ。さいごに「{submitLabel}」を おすと、ゆめと いっしょに のこるよ。
+            </p>
+          )}
             </motion.div>
           )}
         </aside>

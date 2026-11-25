@@ -215,7 +215,8 @@ export default function DreamRoomPage() {
           <RoomEmptyState
             icon="🛏️"
             message="まだ ゆめが きろくされていないよ"
-            href="/dream/new"
+            // この おへやの プロフィールを選んだ状態で記録画面を開く（誰の夢かを取りちがえない）
+            href={`/dream/new?dream_profile_id=${profileId}`}
             action="ゆめを きろくする"
           />
         ) : frameDreams.length === 0 ? (

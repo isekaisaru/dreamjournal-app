@@ -103,6 +103,14 @@ export default function InsightsPage() {
             {ym.replace("-", "年")}月のふりかえり
           </p>
           <h1 className="text-2xl font-bold text-foreground">きもちインサイト</h1>
+          {/* 家族のプロフィールの夢もまとめて集計している。子どもだけの傾向だと読みちがえないように書く */}
+          <p className="mt-1 text-xs text-muted-foreground">
+            この アカウントの みんなの ゆめを あわせて かぞえているよ
+          </p>
+          {/* 分母は夢の数ではなく、気持ちのタグの数（1つの夢に複数タグがありうる）。スマホでも見えるここに書く */}
+          <p className="text-xs text-muted-foreground">
+            ％は、つけた きもちタグ ぜんぶを 100％として かぞえているよ
+          </p>
         </div>
         <span
           aria-label={`${Number(ym.split("-")[1])}月の記録`}
@@ -116,7 +124,8 @@ export default function InsightsPage() {
       <div className="mb-4 hidden grid-cols-2 gap-3.5 md:grid lg:grid-cols-4">
         <KpiCard label="今月の記録" value={String(total)} unit="こ" tone="text-foreground" />
         <KpiCard label="連続記録" value={String(streak)} unit="日" tone="text-orange-600 dark:text-orange-400" />
-        <KpiCard label="前向きな夢" value={String(positiveRate)} unit="%" tone="text-emerald-600 dark:text-emerald-400" />
+        {/* 分母は夢の数ではなく、気持ちのタグの数（1つの夢に複数タグがありうる） */}
+        <KpiCard label="前向きな きもちの わりあい" value={String(positiveRate)} unit="%" tone="text-emerald-600 dark:text-emerald-400" />
         <KpiCard label="いちばんの きもち" value={topEmotion} tone="text-primary" small />
       </div>
 
@@ -240,7 +249,7 @@ function InsightSummary({
       <p className="relative text-[13px] leading-loose">
         {total > 0 ? (
           <>
-            今月は <b className="text-sky-500">前向きな夢が{positiveRate}%</b>。とくに「{topEmotion}」の気持ちが多く、心のうごきが見えてきたよ。
+            今月は <b className="text-sky-500">前向きな きもちが{positiveRate}%</b>。とくに「{topEmotion}」の気持ちが多く、心のうごきが見えてきたよ。
           </>
         ) : (
           <>今月はまだ記録がないみたい。ひとつ書くと、ここに今月のまとめが出るよ。</>
