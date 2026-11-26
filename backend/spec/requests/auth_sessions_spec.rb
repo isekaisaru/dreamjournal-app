@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 # user_sessions テーブル導入後のセッション管理の振る舞い
-# （多端末ログイン・トークンローテーション・端末別ログアウト・レガシー移行）
+# （多端末ログイン・トークンローテーション・端末別ログアウト）
 RSpec.describe 'Auth sessions (refresh token digest)', type: :request do
   let!(:user) { create(:user, email: 'session@example.com') }
   let(:host) { { 'HOST' => 'backend' } }
@@ -76,17 +76,23 @@ RSpec.describe 'Auth sessions (refresh token digest)', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it 'レガシー（users.refresh_token）のトークンはセッションへ透過的に移行される' do
+    it '存在しない（未登録の）トークンは 401' do
+      refresh_with(SecureRandom.urlsafe_base64(64))
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    # users.refresh_token（平文・期限なし）は #414 で user_sessions に置きかえた古い仕組み。
+    # 列に古い値が残っていても、それでは復帰できず 401 になる（再ログインしてもらう）。
+    it '古い users.refresh_token に残った平文トークンでは復帰できず 401 になり、セッションも作らない' do
       legacy_token = SecureRandom.urlsafe_base64(64)
-      user.update_column(:refresh_token, legacy_token)
+      ActiveRecord::Base.connection.exec_update(
+        'UPDATE users SET refresh_token = $1 WHERE id = $2',
+        'legacy',
+        [legacy_token, user.id]
+      )
 
-      expect { refresh_with(legacy_token) }.to change(UserSession, :count).by(1)
-      expect(response).to have_http_status(:ok)
-      expect(user.reload.refresh_token).to be_nil
-
-      # 発行された新トークンで継続利用できる
-      refresh_with(response.cookies['refresh_token'])
-      expect(response).to have_http_status(:ok)
+      expect { refresh_with(legacy_token) }.not_to change(UserSession, :count)
+      expect(response).to have_http_status(:unauthorized)
     end
   end
 
