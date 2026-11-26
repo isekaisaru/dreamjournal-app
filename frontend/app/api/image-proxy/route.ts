@@ -62,6 +62,11 @@ export async function GET(request: Request): Promise<Response> {
     }
 
     const contentType = upstream.headers.get("content-type") ?? "image/png";
+    // SVG は中に script を書ける。このアプリと同じドメインから返すと、
+    // 直接開かれたときにスクリプトが動きうるため、中継しない。
+    if (contentType.toLowerCase().startsWith("image/svg+xml")) {
+      return new Response("Unsupported image type", { status: 502 });
+    }
     const safeContentType = contentType.startsWith("image/")
       ? contentType
       : "image/png";

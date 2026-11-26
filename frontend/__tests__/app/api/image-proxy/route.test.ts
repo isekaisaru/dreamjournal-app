@@ -87,6 +87,21 @@ describe("GET /api/image-proxy", () => {
     });
   });
 
+  describe("SVG は返さない", () => {
+    // SVG は中に script を書ける画像。このアプリと同じドメインから SVG を返すと、
+    // 直接開かれたときにスクリプトが動きうるため、上流が SVG を返したら 502 にする。
+    it.each(["image/svg+xml", "image/svg+xml; charset=utf-8", "IMAGE/SVG+XML"])(
+      "upstream の Content-Type が %s なら 502",
+      async (contentType) => {
+        fetchMock.mockResolvedValue(makeImageResponse(contentType));
+
+        const res = await GET(makeRequest(ALLOWED_URL));
+
+        expect(res.status).toBe(502);
+      }
+    );
+  });
+
   describe("400: url パラメータ不正", () => {
     it("url パラメータが未指定なら 400", async () => {
       const res = await GET(makeRequest());
