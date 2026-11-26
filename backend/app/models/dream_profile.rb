@@ -5,7 +5,9 @@ class DreamProfile < ApplicationRecord
   MAX_ACTIVE_COUNT = 5
 
   belongs_to :user
-  has_many :dreams, dependent: :nullify
+  # dreams.dream_profile_id は NOT NULL なので、夢を残したままプロフィールだけは消せない。
+  # 夢を守るため、夢が1件でもあれば削除を断る（Issue #496）。退会時は User 側で夢が先に消える。
+  has_many :dreams, dependent: :restrict_with_error
 
   validates :name,         presence: true, length: { maximum: 30 }
   validates :avatar_emoji, presence: true

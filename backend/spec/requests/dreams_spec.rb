@@ -1034,6 +1034,43 @@ RSpec.describe 'Dreams API', type: :request do
         expect(dream.reload.generated_image_url).to be_nil
       end
 
+      # 上限チェックのあとに時間のかかる画像生成を呼ぶので、同時に何回も押されると
+      # 全部が「まだ上限前」と判断して上限をこえてしまう。先に 1 枚分の枠を取ってから呼ぶ。
+      context '枠の先取り（同時リクエスト対策）' do
+        it '画像生成を呼ぶ時点で、もう今月の 1 枚として数えられている' do
+          count_during_generate = nil
+          allow(images_client).to receive(:generate) do
+            count_during_generate = user.dream_image_generations.generated_in_month.count
+            { 'data' => [{ 'url' => generated_url }] }
+          end
+
+          expect {
+            authenticated_post "/dreams/#{dream.id}/generate_image", user
+          }.to change(DreamImageGeneration, :count).by(1)
+
+          expect(response).to have_http_status(:ok)
+          expect(count_during_generate).to eq(1)
+        end
+
+        it '画像URLが取れなかったときは、先に取った枠を返す' do
+          allow(images_client).to receive(:generate).and_return({ 'data' => [{}] })
+
+          expect {
+            authenticated_post "/dreams/#{dream.id}/generate_image", user
+          }.not_to change(DreamImageGeneration, :count)
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+
+        it '生成に失敗したときは、先に取った枠を返す' do
+          allow(images_client).to receive(:generate).and_raise(Net::ReadTimeout)
+
+          expect {
+            authenticated_post "/dreams/#{dream.id}/generate_image", user
+          }.not_to change(DreamImageGeneration, :count)
+          expect(response).to have_http_status(:gateway_timeout)
+        end
+      end
+
       it 'OpenAI クライアントが nil の場合は 503 を返す' do
         $openai_client = nil
 
