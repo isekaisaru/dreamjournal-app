@@ -157,6 +157,50 @@ RSpec.describe 'MonthlySummaries API', type: :request do
       end
     end
 
+    # 上限チェックと記録のあいだに AI を呼ぶと、同時に何回も押されたとき
+    # 全部が「まだ 2 回」と判断して上限をこえてしまう。
+    # 先に 1 回分の枠を取り（記録を作り）、そのあとで AI を呼ぶ。
+    context '枠の先取り（同時リクエスト対策）' do
+      it 'AI を呼ぶ時点で、もう今月の 1 回分として数えられている' do
+        user = create(:user, premium: true)
+        count_during_generate = nil
+
+        allow(MonthlySummaryService).to receive(:generate) do
+          count_during_generate = AiUsageLog.this_month_for_user(user, 'monthly_summary').count
+          { summary: 'テスト' }
+        end
+
+        authenticated_post '/dreams/month/2026-04/ai_summary', user
+
+        expect(response).to have_http_status(:ok)
+        expect(count_during_generate).to eq(1)
+        expect(AiUsageLog.this_month_for_user(user, 'monthly_summary').count).to eq(1)
+      end
+
+      it 'AI がエラーのときは、先に取った枠を返す' do
+        user = create(:user, premium: true)
+
+        allow(MonthlySummaryService).to receive(:generate)
+          .and_return({ error: 'AIサービスとの通信に失敗しました。' })
+
+        expect {
+          authenticated_post '/dreams/month/2026-04/ai_summary', user
+        }.not_to change { AiUsageLog.where(user: user, feature: 'monthly_summary').count }
+      end
+
+      it '対象月に夢がないときも、枠を返す' do
+        user = create(:user, premium: true)
+
+        allow(MonthlySummaryService).to receive(:generate)
+          .and_return({ error: 'この月に夢がありません。' })
+
+        expect {
+          authenticated_post '/dreams/month/2026-04/ai_summary', user
+        }.not_to change { AiUsageLog.where(user: user, feature: 'monthly_summary').count }
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
     context 'サービスがエラーを返す場合' do
       it '500 を返す' do
         user = create(:user, premium: true)
