@@ -118,11 +118,15 @@ class ApplicationController < ActionController::API
     same_site_policy = Rails.env.production? ? :none : :lax
     secure_flag = Rails.env.production? # 本番環境のみHTTPSを想定
 
+    # 有効期限を付けないと「ブラウザを閉じたら消える Cookie」になり、
+    # サーバー側のセッション（refresh token）が生きていてもログアウトされてしまう。
+    # それぞれのトークンの寿命にそろえて期限を付ける。
     cookies[:access_token] = {
       value: access_token,
       httponly: true,
       secure: secure_flag,
       same_site: same_site_policy,
+      expires: Time.zone.at(AuthService.jwt_expiration_time),
       path: '/' # 全てのパスでCookieが利用可能になるよう設定
     }
     cookies[:refresh_token] = {
@@ -130,6 +134,7 @@ class ApplicationController < ActionController::API
       httponly: true,
       secure: secure_flag,
       same_site: same_site_policy,
+      expires: AuthService.refresh_token_lifetime.from_now,
       path: '/'
     }
   end
