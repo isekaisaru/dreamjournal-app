@@ -11,6 +11,37 @@ RSpec.describe DreamProfile, type: :model do
   end
 
   # ------------------------------------------------------------------ #
+  # 削除のしかた（Issue #496）                                            #
+  # dreams.dream_profile_id は NOT NULL なので、夢が残ったまま            #
+  # プロフィールだけ消すことはできない。夢を消さずに守るため、            #
+  # 夢が1件でもあるプロフィールの削除は断る。                            #
+  # ------------------------------------------------------------------ #
+  describe "削除" do
+    let!(:profile) { create(:dream_profile, :self_profile, user: user) }
+
+    it "夢が残っているプロフィールは消さず、理由をエラーに入れる" do
+      dream = create(:dream, user: user, dream_profile: profile)
+
+      expect(profile.destroy).to be false
+      expect(profile.errors[:base]).to be_present
+      expect(DreamProfile.exists?(profile.id)).to be true
+      expect(dream.reload.dream_profile_id).to eq(profile.id)
+    end
+
+    it "夢がないプロフィールは消せる" do
+      expect(profile.destroy).to be_truthy
+      expect(DreamProfile.exists?(profile.id)).to be false
+    end
+
+    it "退会（ユーザー削除）では夢もプロフィールもまとめて消える" do
+      create(:dream, user: user, dream_profile: profile)
+
+      expect { user.destroy! }.to change(DreamProfile, :count).by(-1)
+                                                .and change(Dream, :count).by(-1)
+    end
+  end
+
+  # ------------------------------------------------------------------ #
   # 基本バリデーション                                                    #
   # ------------------------------------------------------------------ #
   describe "基本バリデーション" do
