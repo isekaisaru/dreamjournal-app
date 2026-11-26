@@ -79,7 +79,9 @@ class AudioAnalysisService
 
       response = @client.audio.transcribe(
         parameters: {
-          model: "whisper-1",
+          # whisper-1 は 2027-02-26 に提供終了予定。後継の gpt-transcribe などへは
+          # コードを変えずに環境変数で切り替えられるようにしておく。
+          model: ENV["OPENAI_TRANSCRIBE_MODEL"].presence || "whisper-1",
           file: temp_file,
           response_format: "json",
           language: "ja"
