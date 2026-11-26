@@ -6,6 +6,8 @@
 class UserSession < ApplicationRecord
   # 1ユーザーが同時に保持できる有効セッション数（端末数の上限）
   MAX_ACTIVE_SESSIONS = 5
+  # 失効・期限切れのセッションを残しておく日数（調査用の猶予）。すぎたら消す。
+  DEAD_SESSION_RETENTION = 30.days
 
   belongs_to :user
 
@@ -27,10 +29,17 @@ class UserSession < ApplicationRecord
     active.find_by(refresh_token_digest: digest(token))
   end
 
-  # 上限を超えた古いセッションを失効させる（多端末対応の暴走防止）
+  # 上限を超えた古いセッションを失効させる（多端末対応の暴走防止）。
+  # あわせて、その人の「使えなくなって DEAD_SESSION_RETENTION すぎた」セッションを消す。
+  # 二度と使われない行が表に積もり続けないようにするため（定期実行の仕組みが無くても回る）。
   def self.prune_for(user)
     overflow = user.user_sessions.active.order(created_at: :desc).offset(MAX_ACTIVE_SESSIONS)
     overflow.update_all(revoked_at: Time.current)
+
+    cutoff = DEAD_SESSION_RETENTION.ago
+    user.user_sessions
+        .where("revoked_at < :cutoff OR expires_at < :cutoff", cutoff: cutoff)
+        .delete_all
   end
 
   def revoke!

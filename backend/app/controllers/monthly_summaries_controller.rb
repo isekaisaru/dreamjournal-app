@@ -16,8 +16,18 @@ class MonthlySummariesController < ApplicationController
       return render json: { error: '年月の形式が正しくありません（YYYY-MM）。' }, status: :bad_request
     end
 
-    monthly_count = AiUsageLog.this_month_for_user(current_user, 'monthly_summary').count
-    if monthly_count >= MONTHLY_SUMMARY_LIMIT
+    # 上限チェックと記録を、ユーザー行のロックの中でまとめて行う。
+    # AI を呼ぶ前に 1 回分の枠を取っておくので、同時に何回押されても上限をこえない。
+    # ロックは数えて記録を作るあいだだけで、時間のかかる AI 呼び出しはロックの外で行う。
+    monthly_count = nil
+    usage_log = current_user.with_lock do
+      monthly_count = AiUsageLog.this_month_for_user(current_user, 'monthly_summary').count
+      next nil if monthly_count >= MONTHLY_SUMMARY_LIMIT
+
+      AiUsageLog.create!(user: current_user, feature: 'monthly_summary')
+    end
+
+    unless usage_log
       return render json: {
         error: "今月の月次サマリー上限（#{MONTHLY_SUMMARY_LIMIT}回）に達しました。来月またお試しください。",
         limit_reached: true,
@@ -26,14 +36,19 @@ class MonthlySummariesController < ApplicationController
       }, status: :too_many_requests
     end
 
-    result = MonthlySummaryService.generate(current_user, year_month)
+    begin
+      result = MonthlySummaryService.generate(current_user, year_month)
+    rescue StandardError
+      usage_log.destroy!
+      raise
+    end
 
     if result[:error]
+      # 作れなかった回は数えない（先に取った枠を返す）
+      usage_log.destroy!
       status = result[:error].include?('夢がありません') ? :not_found : :internal_server_error
       return render json: { error: result[:error] }, status: status
     end
-
-    AiUsageLog.create!(user: current_user, feature: 'monthly_summary')
 
     render json: { summary: result[:summary] }, status: :ok
   end

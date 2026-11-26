@@ -262,6 +262,11 @@ class DreamsController < ApplicationController
       return render json: { error: "画像生成機能は現在利用できません" }, status: :service_unavailable
     end
 
+    # 時間のかかる画像生成の前に、1 枚分の枠を先に取る。
+    # 同時に何回押されても、月の上限をこえて生成しないようにするため。
+    @image_slot = reserve_image_slot
+    return render_image_limit_reached(current_month_image_generation_count) unless @image_slot
+
     content = @dream.content.to_s.truncate(400)
     analysis = @dream.analysis_json&.dig("analysis").to_s.truncate(200)
 
@@ -288,23 +293,23 @@ class DreamsController < ApplicationController
       end
 
     unless image_url
+      release_image_slot
       return render json: { error: "画像URLの取得に失敗しました" }, status: :unprocessable_entity
     end
 
-    generated_at = Time.current
-    Dream.transaction do
-      @dream.update!(generated_image_url: image_url, image_generated_at: generated_at)
-      @dream.dream_image_generations.create!(user: current_user, generated_at: generated_at)
-    end
+    @dream.update!(generated_image_url: image_url, image_generated_at: @image_slot.generated_at)
 
     render json: { image_url: image_url }, status: :ok
   rescue Faraday::TimeoutError, Net::ReadTimeout, Net::OpenTimeout => e
+    release_image_slot
     Rails.logger.error "[generate_image] Timeout for dream #{@dream.id}: #{e.message}"
     render json: { error: "画像の生成に時間がかかりすぎました。しばらく待ってからお試しください。" }, status: :gateway_timeout
   rescue OpenAI::Error => e
+    release_image_slot
     Rails.logger.error "[generate_image] OpenAI error for dream #{@dream.id}: #{e.message}"
     render json: { error: "画像の生成に失敗しました。しばらく待ってからお試しください。" }, status: :unprocessable_entity
   rescue StandardError => e
+    release_image_slot
     Rails.logger.error "[generate_image] Unexpected error for dream #{@dream.id}: #{e.message}"
     render json: { error: "画像の生成に失敗しました。" }, status: :internal_server_error
   end
@@ -482,15 +487,34 @@ class DreamsController < ApplicationController
     # 画像生成の月次上限チェック
     def check_monthly_image_limit
       count = current_month_image_generation_count
+      render_image_limit_reached(count) if count >= IMAGE_MONTHLY_LIMIT
+    end
 
-      if count >= IMAGE_MONTHLY_LIMIT
-        render json: {
-          error: "今月の画像生成上限（#{IMAGE_MONTHLY_LIMIT}枚）に達しました。来月またお試しください。",
-          limit_reached: true,
-          monthly_image_count: count,
-          monthly_image_limit: DreamsController::IMAGE_MONTHLY_LIMIT
-        }, status: :forbidden
+    def render_image_limit_reached(count)
+      render json: {
+        error: "今月の画像生成上限（#{IMAGE_MONTHLY_LIMIT}枚）に達しました。来月またお試しください。",
+        limit_reached: true,
+        monthly_image_count: count,
+        monthly_image_limit: DreamsController::IMAGE_MONTHLY_LIMIT
+      }, status: :forbidden
+    end
+
+    # ユーザー行をロックして「数える → 1 枚分を記録する」をまとめて行う。
+    # 上限に達していれば nil。ロックはこの短いあいだだけ。
+    def reserve_image_slot
+      current_user.with_lock do
+        next nil if current_month_image_generation_count >= IMAGE_MONTHLY_LIMIT
+
+        @dream.dream_image_generations.create!(user: current_user, generated_at: Time.current)
       end
+    end
+
+    # 生成できなかった回は数えない（先に取った枠を返す）
+    def release_image_slot
+      @image_slot&.destroy!
+      @image_slot = nil
+    rescue StandardError => e
+      Rails.logger.error "[generate_image] Failed to release image slot for dream #{@dream&.id}: #{e.class}"
     end
 
     def current_month_image_generation_count
