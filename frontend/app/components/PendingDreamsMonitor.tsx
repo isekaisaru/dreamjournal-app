@@ -8,6 +8,8 @@ import { useAuth } from "@/context/AuthContext";
 
 /** ポーリングのタイムアウト上限: 3分 */
 const POLLING_TIMEOUT_MS = 3 * 60 * 1000;
+// /api/dreams/statuses（と Rails）が一度に受けつける件数の上限
+const STATUS_BATCH_SIZE = 100;
 
 export default function PendingDreamsMonitor() {
   const router = useRouter();
@@ -146,21 +148,29 @@ export default function PendingDreamsMonitor() {
       }
 
       try {
-        const idsParam = pendingIds.join(",");
-        // Fix: 401 error by adding credentials and headers
-        const res = await fetch(
-          `/api/dreams/statuses?ids=${idsParam}&t=${Date.now()}`,
-          {
-            credentials: "include", // 必須: これがないとCookieが送られない
-            headers: {
-              Accept: "application/json",
-            },
-            cache: "no-store",
-          }
+        // 上限をこえないよう、100 件ずつに分けて問い合わせる
+        const batches: number[][] = [];
+        for (let i = 0; i < pendingIds.length; i += STATUS_BATCH_SIZE) {
+          batches.push(pendingIds.slice(i, i + STATUS_BATCH_SIZE));
+        }
+        const responses = await Promise.all(
+          batches.map((batch) =>
+            fetch(
+              `/api/dreams/statuses?ids=${batch.join(",")}&t=${Date.now()}`,
+              {
+                credentials: "include", // 必須: これがないとCookieが送られない
+                headers: {
+                  Accept: "application/json",
+                },
+                cache: "no-store",
+              }
+            )
+          )
         );
 
-        if (!res.ok) {
-          if (res.status === 401) {
+        const failed = responses.find((res) => !res.ok);
+        if (failed) {
+          if (failed.status === 401) {
             console.warn(
               "[PendingDreamsMonitor] 401 Unauthorized during polling. User might be logged out."
             );
@@ -174,7 +184,13 @@ export default function PendingDreamsMonitor() {
           return;
         }
 
-        const statusMap: Record<string, string> = await res.json();
+        const statusMaps: Record<string, string>[] = await Promise.all(
+          responses.map((res) => res.json())
+        );
+        const statusMap: Record<string, string> = Object.assign(
+          {},
+          ...statusMaps
+        );
 
         // 完了または失敗したものを抽出
         const completedIds = pendingIds.filter((id) => {
