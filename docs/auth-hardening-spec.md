@@ -61,7 +61,10 @@ digest は bcrypt ではなく **SHA256**。refresh token は128bit以上のラ�
 
 ### 後続クリーンアップ（別PR・burn-in後）
 
-- `users.refresh_token` カラムの削除（レガシー互換パスの削除と同時）
+- `users.refresh_token` カラムの削除。デプロイ中の古い版が消えた列へ INSERT して失敗しないよう、2段階で行う。
+  - 1段目（2026-11）: レガシー互換パスを削除し、`User.ignored_columns` で列をアプリから見えなくする。
+    以後、旧カラムのトークンでの refresh は通常の 401（要再ログイン）になる。
+  - 2段目: 1段目が本番に出たあと、列を消す migration を入れ、`ignored_columns` の行も消す。
 - 期限切れ・失効セッションの定期削除（rake or migration）
 
 ## PR2: メールアドレス有効化（account activation）
