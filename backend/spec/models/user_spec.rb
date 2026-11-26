@@ -1,6 +1,14 @@
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
+  describe '古い users.refresh_token 列' do
+    # 列を消す前に、アプリがこの列を読み書きしない状態でデプロイする（2段階の1段目）。
+    # 列が残っていても、モデルからは見えないことを確かめる。
+    it 'モデルの列として扱わない' do
+      expect(User.column_names).not_to include('refresh_token')
+    end
+  end
+
   describe '#reset_monthly_analysis_count_if_needed!' do
     it 'resets the count when the tracked month is stale' do
       user = create(
