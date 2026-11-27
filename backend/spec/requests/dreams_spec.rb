@@ -961,7 +961,7 @@ RSpec.describe 'Dreams API', type: :request do
       it '画像を生成して generated_image_url を保存し 200 を返す' do
         expect(images_client).to receive(:generate).with(
           parameters: hash_including(
-            model: 'gpt-image-1',
+            model: 'gpt-image-2.6-flare',
             n: 1,
             size: '1024x1024',
             quality: 'medium',
@@ -1059,6 +1059,31 @@ RSpec.describe 'Dreams API', type: :request do
             authenticated_post "/dreams/#{dream.id}/generate_image", user
           }.not_to change(DreamImageGeneration, :count)
           expect(response).to have_http_status(:unprocessable_entity)
+        end
+
+        it 'モデル名の間違いや廃止で OpenAI が 4xx を返したときも、枠を返して 422 にする' do
+          allow(images_client).to receive(:generate).and_raise(
+            Faraday::BadRequestError.new('the server responded with status 400')
+          )
+
+          expect {
+            authenticated_post "/dreams/#{dream.id}/generate_image", user
+          }.not_to change(DreamImageGeneration, :count)
+          expect(response).to have_http_status(:unprocessable_entity)
+          expect(json_response['error']).to include('画像の生成に失敗しました')
+          expect(dream.reload.generated_image_url).to be_nil
+        end
+
+        it 'OPENAI_IMAGE_MODEL を設定するとそのモデルで生成する' do
+          allow(ENV).to receive(:[]).and_call_original
+          allow(ENV).to receive(:[]).with('OPENAI_IMAGE_MODEL').and_return('gpt-image-2.6-sunburst')
+          expect(images_client).to receive(:generate).with(
+            parameters: hash_including(model: 'gpt-image-2.6-sunburst')
+          ).and_return({ 'data' => [{ 'b64_json' => 'aGVsbG8=' }] })
+
+          authenticated_post "/dreams/#{dream.id}/generate_image", user
+
+          expect(response).to have_http_status(:ok)
         end
 
         it '生成に失敗したときは、先に取った枠を返す' do
