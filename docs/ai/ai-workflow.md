@@ -43,22 +43,30 @@
 
 ### 手順
 
-1. 手元のリポジトリで最新を取り、PR のブランチに切り替える
+1. 今の作業を守ったまま、PR の中身を別のフォルダ（worktree）に出す
+
+   > 注意: `git switch` や `git pull` は、今いるブランチと作業フォルダのファイルを書き換えます。
+   > 書きかけ（未コミット）の変更があると、PR の変更と混ざったり、コンフリクトで止まったりします。
+   > そこで、PR は別のフォルダで開きます。たとえると、散らかった台所はそのままにして、隣の空いた台所で味見だけする方法です。
 
    ```bash
-   git fetch origin
-   git switch <PR のブランチ名>
-   git pull
+   git status --short                                   # 何か出たら「書きかけあり」。この手順ならそのままで大丈夫
+   git fetch origin main <PR のブランチ名>              # origin/* だけが新しくなる（作業中のファイルは変わらない）
+   git worktree add --detach ../yume-review-<PR番号> origin/<PR のブランチ名>
+   cd ../yume-review-<PR番号>
    ```
 
-2. レビューする範囲（base と head の SHA）を確かめてメモする
+   - 別フォルダには `.gitignore` されているファイル（`.env`・`AGENTS.md`・`CLAUDE.md` など）は入りません。秘密を AI に渡さないためにも好都合です
+   - `git worktree add` が「already exists」で止まったら、前回のフォルダが残っています。下の「片付け」をしてからやり直します
+
+2. レビューする範囲（base と head の SHA）を確かめてメモする（手順 1 の別フォルダの中で）
 
    ```bash
    git rev-parse origin/main   # base SHA（比べる元）
    git rev-parse HEAD          # head SHA（PR の最新）
    ```
 
-3. リポジトリのフォルダで Antigravity を開く（初回は Google AI Pro の個人アカウントでログイン）
+3. 手順 1 で作った別フォルダ（`../yume-review-<PR番号>`）で Antigravity を開く（初回は Google AI Pro の個人アカウントでログイン）
 4. 次の文を貼る（`<base>` と `<head>` は 2 でメモした SHA に置き換える）
 
    ```
@@ -70,7 +78,17 @@
    ```
 
 5. 大事な指摘を、base と head の SHA を添えて PR に自分でコメントする（または Claude に「この指摘を直して」と渡す）
-6. その後に PR へ push があったら、head SHA が変わるので、必要ならもう一度レビューする
+6. その後に PR へ push があったら、head SHA が変わるので、必要ならもう一度レビューする（片付けてから手順 1 からやり直す）
+7. 片付け: 元のフォルダに戻って、別フォルダを消す（PR の中身は GitHub にあるので、消しても困りません）
+
+   ```bash
+   cd <元のリポジトリのフォルダ>
+   git worktree remove ../yume-review-<PR番号>
+   git worktree list            # 元のフォルダだけになっていれば OK
+   git status --short           # 手順 1 の前と同じなら、書きかけは無事
+   ```
+
+   > `git worktree remove` は、別フォルダに変更が残っていると止まります。Gemini には編集させないルールなので普通は起きませんが、止まったら中身を確かめてから判断してください（`--force` で無理に消さない）。
 
 ## AI に任せないこと
 
