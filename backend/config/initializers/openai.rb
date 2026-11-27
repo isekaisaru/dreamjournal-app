@@ -9,7 +9,7 @@ end
 if ENV['OPENAI_API_KEY'].present?
   $openai_client = OpenAI::Client.new(
     access_token: ENV['OPENAI_API_KEY'],
-    request_timeout: 55  # gpt-image-1 は最大60秒かかるが、Puma worker_timeout(90s)より短く設定
+    request_timeout: 55  # 画像生成は最大60秒かかることがあるが、Puma worker_timeout(90s)より短く設定
   )
 else
   # 本番環境でキーがない場合のみエラーを発生させる。開発環境ではnilを許容。

@@ -40,7 +40,7 @@ const HIGHLIGHTS = [
   {
     icon: ImageIcon,
     title: "夢のビジュアル化",
-    body: "gpt-image-1 が夢の世界を絵にする。月31枚まで生成できる。",
+    body: "AI が夢の世界を絵にする。月31枚まで生成できる。",
     color: "text-purple-400",
     bg: "bg-purple-500/10",
   },
