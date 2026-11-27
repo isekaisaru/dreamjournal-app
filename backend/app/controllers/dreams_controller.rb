@@ -14,6 +14,9 @@ class DreamsController < ApplicationController
   TRIAL_DREAM_LIMIT             = 7   # トライアルユーザーの夢作成件数上限
   TRIAL_ANALYSIS_LIMIT          = 3   # トライアルユーザーの分析回数上限
   IMAGE_MONTHLY_LIMIT           = 31  # 画像生成の月次上限（プレミアム限定機能）
+  # gpt-image-1 は 2026-10-23 に OpenAI 側で提供終了。後継のうち速い方を既定にする。
+  # 変えたいときは Render の環境変数 OPENAI_IMAGE_MODEL で上書きできる。
+  DEFAULT_IMAGE_MODEL           = "gpt-image-2.6-flare"
   FREE_ANALYSIS_MONTHLY_LIMIT   = User::FREE_ANALYSIS_MONTHLY_LIMIT
   PREMIUM_DAILY_ANALYSIS_LIMIT  = 50  # プレミアムユーザーの1日あたりフェアユース上限
   STATUSES_MAX_IDS              = 100 # GET /dreams/statuses で一度に問い合わせられる件数
@@ -256,7 +259,7 @@ class DreamsController < ApplicationController
   end
 
   # POST /dreams/:id/generate_image
-  # DALL-E 3 で夢のイメージ画像を生成し URL を保存する
+  # OpenAI の画像モデルで夢のイメージ画像を生成し保存する
   def generate_image
     unless $openai_client
       return render json: { error: "画像生成機能は現在利用できません" }, status: :service_unavailable
@@ -274,7 +277,7 @@ class DreamsController < ApplicationController
 
     response = $openai_client.images.generate(
       parameters: {
-        model: ENV["OPENAI_IMAGE_MODEL"].presence || "gpt-image-1",
+        model: image_generation_model,
         prompt: prompt,
         n: 1,
         size: "1024x1024",
@@ -304,9 +307,10 @@ class DreamsController < ApplicationController
     release_image_slot
     Rails.logger.error "[generate_image] Timeout for dream #{@dream.id}: #{e.message}"
     render json: { error: "画像の生成に時間がかかりすぎました。しばらく待ってからお試しください。" }, status: :gateway_timeout
-  rescue OpenAI::Error => e
+  rescue OpenAI::Error, Faraday::ClientError => e
+    # Faraday::ClientError は 4xx（モデル名の間違い・廃止など）。枠を返して 422 にする。
     release_image_slot
-    Rails.logger.error "[generate_image] OpenAI error for dream #{@dream.id}: #{e.message}"
+    Rails.logger.error "[generate_image] OpenAI error for dream #{@dream.id} model=#{image_generation_model}: #{e.class} #{e.message}"
     render json: { error: "画像の生成に失敗しました。しばらく待ってからお試しください。" }, status: :unprocessable_entity
   rescue StandardError => e
     release_image_slot
@@ -515,6 +519,11 @@ class DreamsController < ApplicationController
       @image_slot = nil
     rescue StandardError => e
       Rails.logger.error "[generate_image] Failed to release image slot for dream #{@dream&.id}: #{e.class}"
+    end
+
+    # 環境変数 OPENAI_IMAGE_MODEL があればそれを使う。無ければ DEFAULT_IMAGE_MODEL。
+    def image_generation_model
+      ENV["OPENAI_IMAGE_MODEL"].presence || DEFAULT_IMAGE_MODEL
     end
 
     def current_month_image_generation_count
