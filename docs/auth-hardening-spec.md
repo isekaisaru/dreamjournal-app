@@ -65,7 +65,9 @@ digest は bcrypt ではなく **SHA256**。refresh token は128bit以上のラ�
   - 1段目（2026-11）: レガシー互換パスを削除し、`User.ignored_columns` で列をアプリから見えなくする。
     以後、旧カラムのトークンでの refresh は通常の 401（要再ログイン）になる。
   - 2段目: 1段目が本番に出たあと、列を消す migration を入れ、`ignored_columns` の行も消す。
-- 期限切れ・失効セッションの定期削除（rake or migration）
+- 期限切れ・失効セッションの削除: ログインのたびに呼ぶ `UserSession.prune_for(user)` で、
+  その人の「失効または期限切れから 30 日すぎた」セッションを消す（2026-11）。
+  ログインしない人の古い行は残るので、全体の掃除が要るときは定期実行を足す。
 
 ## PR2: メールアドレス有効化（account activation）
 

@@ -3,6 +3,12 @@ import { resolveBackendUrl } from "../../checkout/backend-url";
 
 const BACKEND_URL = resolveBackendUrl();
 
+// ids は Rails の URL にそのまま埋め込むため、数字のカンマ区切りだけを通す。
+// 「1&user_id=2」のような値で、Rails へ余計なパラメーターを足されないようにする。
+const IDS_FORMAT = /^\d+(,\d+)*$/;
+// 画面が一度に問い合わせるのは分析待ちの夢だけなので、100 件あれば十分。
+const MAX_IDS = 100;
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const ids = searchParams.get("ids");
@@ -10,6 +16,13 @@ export async function GET(req: NextRequest) {
   if (!ids) {
     return NextResponse.json(
       { error: "ids parameter is required" },
+      { status: 400 }
+    );
+  }
+
+  if (!IDS_FORMAT.test(ids) || ids.split(",").length > MAX_IDS) {
+    return NextResponse.json(
+      { error: "ids must be up to 100 comma-separated numbers" },
       { status: 400 }
     );
   }
