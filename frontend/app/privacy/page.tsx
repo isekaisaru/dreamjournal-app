@@ -113,39 +113,39 @@ export default function PrivacyPage() {
               <p>当サービスは、以下の外部サービスを使っています：</p>
               <div className="grid md:grid-cols-2 gap-4 mt-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">🤖 OpenAI API（米国）</h4>
+                  <h4 className="font-semibold mb-2">🤖 OpenAI API（米国の会社）</h4>
                   <p className="text-sm">
-                    夢の分析・画像づくり・音声の文字起こしで使用。夢の内容や録音を送信しますが、OpenAI の API に送ったデータは、初期設定では AI の学習に使われません。
+                    夢の分析・画像づくり・音声の文字起こしで使用。夢の内容や録音を送信しますが、OpenAI の API に送ったデータは、初期設定では AI の学習に使われません（不正利用の監視のため、OpenAI 側で最大30日保存されることがあります）。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">💳 Stripe（米国）</h4>
+                  <h4 className="font-semibold mb-2">💳 Stripe（米国・アイルランドの会社）</h4>
                   <p className="text-sm">
-                    有料プランと寄付の支払いで使用。カード番号は Stripe の画面で入力され、当サービスには届きません。
+                    有料プランと寄付の支払いで使用。カード番号は Stripe の画面で入力され、当サービスには届きません。Stripe では、情報が米国などで取りあつかわれることがあります。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">🗄️ Supabase（日本・東京）</h4>
+                  <h4 className="font-semibold mb-2">🗄️ Supabase（保存場所: 日本・東京）</h4>
                   <p className="text-sm">
-                    データベースサービス。アカウントと夢の記録を保存します。
+                    データベースサービス。アカウントと夢の記録を、東京にあるサーバーに保存します。運営している会社は日本の外の会社です。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">☁️ Vercel / Render（米国）</h4>
+                  <h4 className="font-semibold mb-2">☁️ Vercel / Render（米国の会社）</h4>
                   <p className="text-sm">
-                    サーバーサービス。アプリの動作に必要です。録音ファイルは文字起こしのあいだ Render のサーバーに置かれます。
+                    サーバーサービス。アプリの動作に必要です。主に米国のサーバーで動いています。声で記録したときの録音ファイルは、Render のサーバーに保存されます。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">📊 Sentry（米国）</h4>
+                  <h4 className="font-semibold mb-2">📊 Sentry（米国の会社）</h4>
                   <p className="text-sm">
                     エラー監視で使用。エラー発生時の情報のみを送信し、Cookie や夢の本文は送らないようにしています。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">✉️ Resend（米国）</h4>
+                  <h4 className="font-semibold mb-2">✉️ Resend（米国の会社）</h4>
                   <p className="text-sm">
-                    確認メールなどの送信で使用。メールアドレスを送信します。
+                    確認メールなどの送信で使用。送り先のメールアドレスと、メールの本文（確認用のリンクなど）を送信します。
                   </p>
                 </div>
               </div>
@@ -160,8 +160,8 @@ export default function PrivacyPage() {
             </h2>
             <div className="space-y-3 text-gray-700">
               <p>
-                上の外部サービスのうち、Supabase 以外は<strong>米国</strong>の会社・サーバーです。
-                みなさまの情報は、これらのサービスを通じて米国で取りあつかわれることがあります。
+                上の外部サービスは、どれも<strong>日本の外にある会社</strong>が運営しています。
+                データベース（Supabase）の保存場所は日本（東京）ですが、それ以外のサービスでは、みなさまの情報が主に<strong>米国</strong>で取りあつかわれることがあります。
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
                 <li>
@@ -208,7 +208,7 @@ export default function PrivacyPage() {
                   許可された人だけがアクセス可能
                 </li>
                 <li>
-                  <strong>エラー監視</strong>: 24時間体制で問題を検知
+                  <strong>エラー監視</strong>: 問題が起きたら自動で知らせが届くしくみ
                 </li>
               </ul>
             </div>
@@ -246,6 +246,9 @@ export default function PrivacyPage() {
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>
                   <strong>夢の記録</strong>: アカウント削除まで永久保存
+                </li>
+                <li>
+                  <strong>音声の録音</strong>: 文字に起こしたあとも、その夢の記録と一緒に保存します。夢の記録やアカウントを削除すると、録音も消えます
                 </li>
                 <li>
                   <strong>ログイン情報</strong>: アカウント削除まで保存
