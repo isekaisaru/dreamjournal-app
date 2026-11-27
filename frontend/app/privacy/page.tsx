@@ -22,7 +22,7 @@ export default function PrivacyPage() {
               このページでは、どんな情報を集めて、どのように使うかを、わかりやすく説明します。
             </p>
             <p className="text-sm text-gray-600 mt-4">
-              <strong>最終更新日:</strong> 2026年1月24日
+              <strong>最終更新日:</strong> 2026年11月28日
             </p>
           </section>
 
@@ -48,6 +48,15 @@ export default function PrivacyPage() {
                   タイトル、内容、感情タグ、記録した日時
                 </li>
                 <li>
+                  <strong>音声</strong>:
+                  声で夢を記録したときの録音（文字に起こすために使います）
+                </li>
+                <li>
+                  <strong>お支払いの情報</strong>:
+                  プランの契約や寄付の記録。カード番号は決済サービスの
+                  Stripe が直接あつかい、当サービスは保存しません
+                </li>
+                <li>
                   <strong>利用状況</strong>:
                   いつログインしたか、どのページを見たかなど
                 </li>
@@ -67,6 +76,8 @@ export default function PrivacyPage() {
                 <li>ログイン機能の提供（本人確認）</li>
                 <li>夢の記録・検索・分析機能の提供</li>
                 <li>サービスの改善（エラー検知、使いやすさの向上）</li>
+                <li>有料プランと寄付の支払い・管理</li>
+                <li>確認メールなど、サービスに必要なお知らせの送信</li>
                 <li>お問い合わせへの対応</li>
               </ul>
             </div>
@@ -102,30 +113,75 @@ export default function PrivacyPage() {
               <p>当サービスは、以下の外部サービスを使っています：</p>
               <div className="grid md:grid-cols-2 gap-4 mt-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">🤖 OpenAI API</h4>
+                  <h4 className="font-semibold mb-2">🤖 OpenAI API（米国の会社）</h4>
                   <p className="text-sm">
-                    夢の分析機能で使用。夢の内容を送信しますが、OpenAIは学習には使いません。
+                    夢の分析・画像づくり・音声の文字起こしで使用。夢の内容や録音を送信しますが、OpenAI の API に送ったデータは、初期設定では AI の学習に使われません（不正利用の監視のため、OpenAI 側で最大30日保存されることがあります）。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">📊 Sentry</h4>
+                  <h4 className="font-semibold mb-2">💳 Stripe（米国・アイルランドの会社）</h4>
                   <p className="text-sm">
-                    エラー監視で使用。エラー発生時の情報のみを送信します。
+                    有料プランと寄付の支払いで使用。カード番号は Stripe の画面で入力され、当サービスには届きません。Stripe では、情報が米国などで取りあつかわれることがあります。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">🗄️ Supabase</h4>
+                  <h4 className="font-semibold mb-2">🗄️ Supabase（保存場所: 日本・東京）</h4>
                   <p className="text-sm">
-                    データベースサービス。すべてのデータを安全に保存します。
+                    データベースサービス。アカウントと夢の記録を、東京にあるサーバーに保存します。運営している会社は日本の外の会社です。
                   </p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold mb-2">☁️ Vercel / Render</h4>
+                  <h4 className="font-semibold mb-2">☁️ Vercel / Render（米国の会社）</h4>
                   <p className="text-sm">
-                    サーバーサービス。アプリの動作に必要です。
+                    サーバーサービス。アプリの動作に必要です。主に米国のサーバーで動いています。声で記録したときの録音ファイルは、Render のサーバーに保存されます。
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">📊 Sentry（米国の会社）</h4>
+                  <p className="text-sm">
+                    エラー監視で使用。エラー発生時の情報のみを送信し、Cookie や夢の本文は送らないようにしています。
+                  </p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">✉️ Resend（米国の会社）</h4>
+                  <p className="text-sm">
+                    確認メールなどの送信で使用。送り先のメールアドレスと、メールの本文（確認用のリンクなど）を送信します。
                   </p>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* 4-2. 外国にある事業者への提供 */}
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <span>🌏</span>
+              <span>4-2. 日本の外にあるサービスについて</span>
+            </h2>
+            <div className="space-y-3 text-gray-700">
+              <p>
+                上の外部サービスは、どれも<strong>日本の外にある会社</strong>が運営しています。
+                データベース（Supabase）の保存場所は日本（東京）ですが、それ以外のサービスでは、みなさまの情報が主に<strong>米国</strong>で取りあつかわれることがあります。
+              </p>
+              <ul className="list-disc list-inside space-y-2 ml-4 text-sm">
+                <li>
+                  米国には、日本の個人情報保護法のような、すべての分野をまとめた連邦の法律はありません（分野ごとの法律や州の法律があります）。
+                  くわしくは
+                  {" "}
+                  <a
+                    href="https://www.ppc.go.jp/"
+                    className="text-indigo-600 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    個人情報保護委員会のウェブサイト（「外国における個人情報の保護に関する制度」の調査）
+                  </a>
+                  をご覧ください。
+                </li>
+                <li>
+                  それぞれのサービスは、通信の暗号化やアクセスの制限など、情報を守るしくみを用意しています。当サービスは、各社の利用規約とプライバシーポリシーを確認したうえで使っています。
+                </li>
+              </ul>
             </div>
           </section>
 
@@ -152,7 +208,7 @@ export default function PrivacyPage() {
                   許可された人だけがアクセス可能
                 </li>
                 <li>
-                  <strong>エラー監視</strong>: 24時間体制で問題を検知
+                  <strong>エラー監視</strong>: 問題が起きたら自動で知らせが届くしくみ
                 </li>
               </ul>
             </div>
@@ -190,6 +246,9 @@ export default function PrivacyPage() {
               <ul className="list-disc list-inside space-y-1 ml-4">
                 <li>
                   <strong>夢の記録</strong>: アカウント削除まで永久保存
+                </li>
+                <li>
+                  <strong>音声の録音</strong>: 文字に起こしたあとも、その夢の記録と一緒に保存します。夢の記録やアカウントを削除すると、録音も消えます
                 </li>
                 <li>
                   <strong>ログイン情報</strong>: アカウント削除まで保存
